@@ -49,6 +49,11 @@ import java.awt.*;
  * @author sulmanj
  * A container with one or more chart areas (containing labeled axes and data),
  * a key and a title, if desired.
+ * 
+ * The primary role of this class is to handle the layout of chart areas
+ * and related components, and to relay messages to them.
+ * The actual handling of graphing and data happens
+ * in the ChartArea class.
  */
 public class Chart extends JPanel
 {
@@ -314,9 +319,7 @@ public class Chart extends JPanel
 		for(int count=0; count < chartAreas.length; count++)
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
 	}
-	
-	
-	
+
 	
 	/**
 	 * Sets new values for the axis ticks.  To retain the current value for
@@ -353,6 +356,58 @@ public class Chart extends JPanel
 		for(int count = 0; count < chartAreas.length; count++)
 			setTicks(count, bigX, bigY, smallX, smallY);
 	}
+	
+	/**
+	 * Sets new values for the axis ticks by setting the number of ticks.
+	 * To retain the current value for
+	 * a tick parameter, use the flag CURRENT_VALUE.
+	 * @param bigX This many big ticks will be evenly spaced on the X axis.
+	 * @param bigY This many big ticks will be evenly spaced on the Y axis.
+	 * @param smallX Number of small ticks on the X axis between each big tick.
+	 * @param smallY Number of small ticks on the Y axis between each big tick.
+	 * @param index The index of the chart to change.
+	 */
+	public void setNumTicks(int index, int bigX, int bigY, int smallX, int smallY )
+	{	
+		//X ticks
+		if(bigX == CURRENT_VALUE && smallX != CURRENT_VALUE)
+				chartAreas[index].setTicksX(chartAreas[index].getBigTicksX(), smallX);
+		else
+		{
+			if(smallX == CURRENT_VALUE)
+				chartAreas[index].setNumTicksX(bigX, chartAreas[index].getSmallTicksX());
+			else
+				chartAreas[index].setNumTicksX(bigX, smallX);
+		}
+		//Y ticks
+		if(bigY == CURRENT_VALUE && smallY != CURRENT_VALUE)
+				chartAreas[index].setTicksY(chartAreas[index].getBigTicksY(), smallY);
+		else
+		{
+			if(smallY == CURRENT_VALUE)
+				chartAreas[index].setNumTicksY(bigY, chartAreas[index].getSmallTicksY());
+			else
+				chartAreas[index].setNumTicksY(bigY, smallY);
+		}
+	}
+	
+	
+	
+	/**
+	 * Sets new values for the axis ticks of all charts.
+	 * To retain the current value for
+	 * a tick parameter, use the flag CURRENT_VALUE.
+	 * @param bigX Big ticks on the X axis are multiples of this.
+	 * @param bigY Big ticks on the Y axis are multiples of this.
+	 * @param smallX Number of small ticks on the X axis between each big tick.
+	 * @param smallY Number of small ticks on the Y axis between each big tick.
+	 */
+	public void setNumTicks( int bigX, int bigY, int smallX, int smallY )
+	{
+		for(int count = 0; count < chartAreas.length; count++)
+			setNumTicks(count, bigX, bigY, smallX, smallY);
+	}
+	
 	
 	/**
 	 * Sets a new title for the graph.

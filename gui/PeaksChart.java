@@ -88,7 +88,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 		chart.setTitleY(1,"Height");
 		chart.setTitleX(1,"Negative mass-to-charge ratios");
 		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-		chart.setTicks(20,Chart.CURRENT_VALUE, 1,1);
+		chart.setNumTicks(10,10, 1,1);
 		chart.setBarWidth(3);
 		chart.setColor(Color.red);
 		
@@ -150,7 +150,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 	public void unZoom()
 	{
 		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-		chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
+		//chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
 		chart.packData(false, true);
 	}
 	
@@ -201,8 +201,6 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 				
 				if(peak.massToCharge == multiplier * dp.x)
 					table.addRowSelectionInterval(count + adder, count + adder);
-//				//difference between data point and peak
-//				double difference = Math.abs(dataPoint.x - multiplier * peak.massToCharge);
 				
 			}
 		}

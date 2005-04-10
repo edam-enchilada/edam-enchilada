@@ -61,7 +61,6 @@ public class ChartArea extends JComponent {
 	private Rectangle[] bars = null; //the data bars.  used for hit detection.
 	
 	//spacers between axes and edges to allow for tick mark labels and axis titles.
-	//TODO: make a method for easy axis to padding constants
 	private static final int H_AXIS_PADDING = 15;
 	private static final int V_AXIS_PADDING = 50;
 	private static final int H_TITLE_PADDING = 20;
@@ -80,6 +79,8 @@ public class ChartArea extends JComponent {
 	private double bigTicksX = 0, bigTicksY = 0; //big ticks are multiples of these
 	private int smallTicksX = 1, smallTicksY = 1; //number of small ticks between each big tick
 	private String titleX, titleY;
+	private int numSmartTicksX = -1;	//if negative, set ticks by using multiples of a number.
+	private int numSmartTicksY = -1;						// if positive, always have this many ticks.
 
 	/**
 	 * Default constructor.  Makes a new ChartArea with default
@@ -158,7 +159,23 @@ public class ChartArea extends JComponent {
 	{
 		bigTicksX = bigX;
 		smallTicksX = smallX;
+		numSmartTicksX = -1;
 		
+		createAxes();
+		repaint();
+	}
+	
+	/**
+	 * Sets new values for the x axis ticks by ensuring that there are always
+	 * bigTicks number of big ticks and smallTicks number of small ticks between
+	 * each big tick.
+	 * @param numTicks Number of big ticks on the X axis.
+	 * @param smallX Number of small ticks between each big tick.
+	 */
+	public void setNumTicksX(int bigTicks, int smallTicks)
+	{
+		assert(bigTicks > 1 && smallTicks >= 0);
+		numSmartTicksX = bigTicks;
 		createAxes();
 		repaint();
 	}
@@ -172,14 +189,31 @@ public class ChartArea extends JComponent {
 	{
 		bigTicksY = bigY;
 		smallTicksY = smallY;
+		numSmartTicksY = -1;
 		
 		createAxes();
 		repaint();
 	}
 	
 	/**
+	 * Sets new values for the y axis ticks by ensuring that there are
+	 * bigTicks number of big ticks and smallTicks number of small ticks between
+	 * each big tick.  The number of ticks may be off by one or two because
+	 * ticks may be on endpoints.
+	 * @param numTicks Number of big ticks on the Y axis.
+	 * @param smallX Number of small ticks between each big tick.
+	 */
+	public void setNumTicksY(int bigTicks, int smallTicks)
+	{
+		assert(bigTicks > 1 && smallTicks >= 0);
+		numSmartTicksY = bigTicks;
+		createAxes();
+		repaint();
+	}
+	
+	
+	/**
 	 * Sets new boundaries for the axes and displayed data.
-	 * Does not change the tick parameters.
 	 * @param xmin Minimum of X axis.
 	 * @param xmax Maximum of X axis.
 	 * @param ymin Minimum of Y axis.
@@ -195,6 +229,7 @@ public class ChartArea extends JComponent {
 		createAxes();
 		repaint();
 	}
+	
 	
 	/**
 	 * Sets a new title for the X axis.
@@ -372,9 +407,12 @@ public class ChartArea extends JComponent {
 		{
 			dp = dataIt.next();
 			
-			testbar = new Rectangle(bars[i].x - buf, bars[i].y - buf,
+			if(bars[i] != null)
+			{
+				testbar = new Rectangle(bars[i].x - buf, bars[i].y - buf,
 					bars[i].width + 2*buf, bars[i].height + 2*buf);
-			if(testbar.contains(p)) return dp;
+				if(testbar.contains(p)) return dp;
+			}
 		}
 		return null;
 	}
@@ -435,7 +473,6 @@ public class ChartArea extends JComponent {
 	
 	/**
 	 * Sets the bounds of the chart to new values that fit the dataset.
-	 * @throws NullPointerException if there is no dataset.
 	 */
 	public void pack()
 	{
@@ -444,11 +481,16 @@ public class ChartArea extends JComponent {
 	
 	/**
 	 * Sets the bounds of either or both axes to fit the dataset.
+	 * If the dataset is empty, leaves the axes alone.
 	 * @param packX Whether to change the x axis.
 	 * @param packY Whether to change the y axis.
 	 */
 	public void pack(boolean packX, boolean packY)
 	{
+		//empty dataset: do nothing
+		if(dataset == null || dataset.size() == 0)
+			return;
+		
 		java.util.Iterator i = dataset.iterator();
 		//these duplicate variables prevent changing the globals
 		// unless we really want to.
@@ -468,21 +510,41 @@ public class ChartArea extends JComponent {
 		}
 		
 		//adds some extra space on the edges
-		if(packX){
-			xmin -= (xmax - xmin) / 10;
-			xmax += (xmax - xmin) / 10;
-			this.xmin = xmin;
-			this.xmax = xmax;
+		//one element:
+		if(dataset.size() == 1)
+		{
+			if(packX)
+			{
+				this.xmin = xmin - xmin / 2;
+				this.xmax = xmax + xmax / 2;
+			}
+			if(packY)
+			{
+				this.ymin = 0;
+				this.ymax = ymax + ymax / 10;
+			}
 		}
-		if(packY){
-			ymin -= (ymax - ymin ) / 10;
-			ymax += (ymax - ymin ) /10;
-			this.ymin = ymin;
-			this.ymax = ymax;
+		else
+		{
+			if(packX)
+			{
+				xmin -= (xmax - xmin) / 10;
+				xmax += (xmax - xmin) / 10;
+				this.xmin = xmin;
+				this.xmax = xmax;
+			}
+			if(packY)
+			{
+				ymin -= (ymax - ymin ) / 10;
+				ymax += (ymax - ymin ) /10;
+				this.ymin = ymin;
+				this.ymax = ymax;
+			}
 		}
 		createAxes();
 		repaint();
 	}
+
 	
 	
 	/**
@@ -509,6 +571,18 @@ public class ChartArea extends JComponent {
 	 */
 	private void createAxes()
 	{
+		assert(xmin < xmax);
+		
+		if(numSmartTicksX > 0)
+		{
+			bigTicksX = (xmax - xmin) / numSmartTicksX;
+		}
+		
+		if(numSmartTicksY > 0)
+		{
+			bigTicksY = (ymax - ymin) / numSmartTicksY;
+		}
+		
 		if(bigTicksX == 0)
 			xAxis = new GraphAxis(xmin, xmax);
 		else
@@ -521,8 +595,7 @@ public class ChartArea extends JComponent {
 		
 		
 		xAxis.setTitle(titleX);
-		
-		
+
 		yAxis.setTitle(titleY);
 	}
 	
@@ -614,7 +687,7 @@ public class ChartArea extends JComponent {
 						(int)(height) );
 				
 				barsTemp[index] = bar; //saves in global array
-				index++;
+				
 				
 				//fills in bar
 				g2d.setColor(color);				
@@ -624,7 +697,12 @@ public class ChartArea extends JComponent {
 				g2d.setColor(Color.BLACK);
 				g2d.draw(bar);
 			}
-			
+			else
+			{
+				//puts a null bar in the array to hold its place
+				barsTemp[index] = null;
+			}
+			index++;
 		}
 		//saves in global array
 		bars = new Rectangle[index];
@@ -830,7 +908,7 @@ public class ChartArea extends JComponent {
 		{
 			//converts from relative position to screen coordinates
 			double xCoord = dataArea.x + relPos * (dataArea.width);
-			
+
 			g2d.draw(new Line2D.Double(
 					xCoord,
 					dataArea.y + dataArea.height,
