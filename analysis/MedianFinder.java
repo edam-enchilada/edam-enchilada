@@ -195,9 +195,14 @@ public class MedianFinder {
 			{
 				int j = sortedList[i].length -1;
 				tempArea = median.getAreaAt(i);
-				while (sortedList[i][j] > tempArea)
+				// this is guaranteed to end because 
+				// eventually, the list will have to be less
+				// than or equal to the median.
+				//System.out.println("Adding to numEntries");
+				while (j >= 0 && sortedList[i][j] > tempArea)
 				{
 					numEntriesGreaterThanMedian[i]++;
+					j--;
 				}
 				if (numEntriesGreaterThanMedian[i] > maxValue)
 				{
@@ -208,9 +213,10 @@ public class MedianFinder {
 							numEntriesGreaterThanMedian[i]];
 				}
 			}
-			while (magnitude < 1)
+			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
-				if (maxAreaDiff + magnitude < 1.0f)
+				System.out.println("Magnitude = " + magnitude);
+				if (maxAreaDiff + magnitude <= 1.0f)
 				{
 					median.add(maxIndex, maxAreaDiff);
 					magnitude += maxAreaDiff;
@@ -225,10 +231,11 @@ public class MedianFinder {
 						{
 							maxValue = numEntriesGreaterThanMedian[i];
 							maxIndex = i;
-							maxAreaDiff =  median.getAreaAt(i) - 
-								sortedList[i]
-							     [sortedList[i].length - 
-							      numEntriesGreaterThanMedian[i]];
+							maxAreaDiff = sortedList[i]
+									 [sortedList[i].length - 
+										numEntriesGreaterThanMedian[i]]   
+								- median.getAreaAt(i); 
+							
 						}
 				}
 				else
