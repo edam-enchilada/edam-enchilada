@@ -103,9 +103,9 @@ public class KMedians extends ClusterK {
 		{
 			mf = new MedianFinder(medianThis);
 			//BinnedPeakList tempPL = mf.getMedian();
-
+			System.out.println("finding centroid ");
 			returnThis = new Centroid(
-					mf.getMedian(), 
+					mf.getMedianSumToOne(), 
 					0,
 					origCentroids.subCollectionNum);
 		}

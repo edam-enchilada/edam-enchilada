@@ -176,6 +176,7 @@ public class MedianFinder {
 	
 	public BinnedPeakList getMedianSumToOne()
 	{
+		System.out.println("Entering GetMedianSumToOne");
 		float magnitude = 0.0f;
 		BinnedPeakList median = getMedian();
 		median.resetPosition();
@@ -191,13 +192,19 @@ public class MedianFinder {
 			int maxValue = 0; 
 			float maxAreaDiff = 0;
 			float tempArea = 0;
+			System.out.println("checking values higher");
 			for (int i = 0; i < sortedList.length; i++)
 			{
 				int j = sortedList[i].length -1;
 				tempArea = median.getAreaAt(i);
-				while (sortedList[i][j] > tempArea)
+				// this is guaranteed to end because 
+				// eventually, the list will have to be less
+				// than or equal to the median.
+				//System.out.println("Adding to numEntries");
+				while (j >= 0 && sortedList[i][j] > tempArea)
 				{
 					numEntriesGreaterThanMedian[i]++;
+					j--;
 				}
 				if (numEntriesGreaterThanMedian[i] > maxValue)
 				{
@@ -208,9 +215,11 @@ public class MedianFinder {
 							numEntriesGreaterThanMedian[i]];
 				}
 			}
-			while (magnitude < 1)
+			System.out.println("DEBUG: Adding values");
+			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
-				if (maxAreaDiff + magnitude < 1.0f)
+				System.out.println("Magnitude = " + magnitude);
+				if (maxAreaDiff + magnitude <= 1.0f)
 				{
 					median.add(maxIndex, maxAreaDiff);
 					magnitude += maxAreaDiff;
@@ -225,10 +234,11 @@ public class MedianFinder {
 						{
 							maxValue = numEntriesGreaterThanMedian[i];
 							maxIndex = i;
-							maxAreaDiff =  median.getAreaAt(i) - 
-								sortedList[i]
-							     [sortedList[i].length - 
-							      numEntriesGreaterThanMedian[i]];
+							maxAreaDiff = sortedList[i]
+									 [sortedList[i].length - 
+										numEntriesGreaterThanMedian[i]]   
+								- median.getAreaAt(i); 
+							
 						}
 				}
 				else
