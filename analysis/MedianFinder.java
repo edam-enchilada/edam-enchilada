@@ -174,8 +174,15 @@ public class MedianFinder {
 			return getKthElement(index);
 	}
 	
+	/**
+	 * Take the loaded set of spectra and produce a "normalized" median, 
+	 * that is a peaklist of magnitude of 1, which, is the closest peaklist 
+	 * as possible to all the particles that is still of length 1.
+	 * @return a "normalized" median
+	 */
 	public BinnedPeakList getMedianSumToOne()
 	{
+		// Get the median and calculate the starting magnitude
 		float magnitude = 0.0f;
 		BinnedPeakList median = getMedian();
 		median.resetPosition();
@@ -184,32 +191,45 @@ public class MedianFinder {
 			magnitude += median.getNextLocationAndArea().area;
 		}
 		
+		assert(magnitude <= 1.001f) : "Median was larger than 1: " +
+			magnitude;
+		
+		// If the median is not normalized, normalize it already
 		if (magnitude < 1.0f)
 		{
+			// For each location, Find out how many spectra have peaks 
+			// bigger than those in the median 
 			int [] numEntriesGreaterThanMedian = new int[DOUBLE_MAX];
 			int maxIndex = -1;
-			int maxValue = 0; 
+			int maxNumEntries = 0; 
 			float maxAreaDiff = 0;
 			float tempArea = 0;
 			for (int i = 0; i < sortedList.length; i++)
 			{
 				int j = sortedList[i].length -1;
-				tempArea = median.getAreaAt(i);
+				// We have to subtract MAX_LOCATION here since inside
+				// peaklists, neg. values are actually negative, but
+				// since we can't have negative array indices
+				// when we declare arrays, negative values are 
+				// positive and positive values are value+MAX_LOCATION
+				tempArea = median.getAreaAt(i-MAX_LOCATION);
 				while (j >= 0 && sortedList[i][j] - tempArea > 0.0f)
 				{
 					numEntriesGreaterThanMedian[i]++;
 					j--;
 					
-					//assert(j >= 0) :
-					//	"j is less than 0 which shouldn't happen if tempArea " +
-					//	"is really the median";
+					assert(j >= 0) :
+						"j is less than 0 which shouldn't happen if tempArea " +
+						"is really the median.\n" +
+						"median.getAreaAt(i-MAX_LOCATION) = " + tempArea + "\n" +
+						"sortedList[i][0] = " + sortedList[i][0];
 					
 				}
 				//assert (j != sortedList[i].length - 1) : 
 					//"j did not decrease";
-				if (numEntriesGreaterThanMedian[i] > maxValue)
+				if (numEntriesGreaterThanMedian[i] > maxNumEntries)
 				{
-					maxValue = numEntriesGreaterThanMedian[i];
+					maxNumEntries = numEntriesGreaterThanMedian[i];
 					maxIndex = i;
 					maxAreaDiff = sortedList[i]
 						   [sortedList[i].length - 
@@ -217,7 +237,7 @@ public class MedianFinder {
 				}
 			}
 
-			assert (maxValue > 0) : 
+			assert (maxNumEntries > 0) : 
 				"maxValue remained 0";
 			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
@@ -247,22 +267,22 @@ public class MedianFinder {
 					//numEntriesGreaterThanMedian[maxIndex] = 0;
 					maxIndex = 0;
 					maxAreaDiff = 0.0f;
-					maxValue = 0;
+					maxNumEntries = 0;
 					for (int i = 0; 
 						 i < numEntriesGreaterThanMedian.length; 
 						 i++)
 					{
-						if (numEntriesGreaterThanMedian[i] > maxValue)
+						if (numEntriesGreaterThanMedian[i] > maxNumEntries)
 						{
-							maxValue = numEntriesGreaterThanMedian[i];
+							maxNumEntries = numEntriesGreaterThanMedian[i];
 							maxIndex = i;
 							maxAreaDiff = sortedList[i]
 									 [sortedList[i].length - 
 										numEntriesGreaterThanMedian[i]]   
-								- median.getAreaAt(i); 
+								- median.getAreaAt(i-MAX_LOCATION); 
 						}
 					}
-					assert (maxValue > 0) : 
+					assert (maxNumEntries > 0) : 
 						"maxValue remained 0";
 						
 				}
