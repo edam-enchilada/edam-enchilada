@@ -485,8 +485,11 @@ public abstract class ClusterK extends Cluster {
 		float difference = 
 			totDist.get(lastIndex-1).floatValue() - 
 			totDist.get(lastIndex).floatValue();
-		difference = Math.abs(difference);
+		//difference = Math.abs(difference);
+		System.out.println("Error: " + totDist.get(lastIndex).floatValue());
 		System.out.println("Change in error: " + difference);
+		System.out.flush();
+		assert (difference >= 0.0f) : "increased error!";
 		if (difference > error) 
 			return false;
 		return true;

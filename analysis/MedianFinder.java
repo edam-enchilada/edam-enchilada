@@ -55,7 +55,7 @@ import java.util.Arrays;
  * A helper class to find the k smallest peak in a peaklist.
  */
 public class MedianFinder {
-	private static final int MAX_LOCATION = 1600;
+	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	
 	private ArrayList<BinnedPeakList> particles;
@@ -115,12 +115,12 @@ public class MedianFinder {
 			{
 				subMid = sortedList[i][particles.size()/2-1];
 				supMid = sortedList[i][particles.size()/2];
-				if (subMid == 0 &&
-					supMid == 0)
+				if (subMid == 0.0f &&
+					supMid == 0.0f)
 					;
 				else
 					returnThis.addNoChecks(i-MAX_LOCATION, 
-							(subMid+supMid)/2);
+							(subMid+supMid)/2.0f);
 			}
 		
 			return returnThis;
@@ -184,7 +184,7 @@ public class MedianFinder {
 			magnitude += median.getNextLocationAndArea().area;
 		}
 		
-		if (magnitude < 1)
+		if (magnitude < 1.0f)
 		{
 			int [] numEntriesGreaterThanMedian = new int[DOUBLE_MAX];
 			int maxIndex = -1;
@@ -195,38 +195,63 @@ public class MedianFinder {
 			{
 				int j = sortedList[i].length -1;
 				tempArea = median.getAreaAt(i);
-				// this is guaranteed to end because 
-				// eventually, the list will have to be less
-				// than or equal to the median.
-				//System.out.println("Adding to numEntries");
-				while (j >= 0 && sortedList[i][j] > tempArea)
+				while (j >= 0 && sortedList[i][j] - tempArea > 0.0f)
 				{
 					numEntriesGreaterThanMedian[i]++;
 					j--;
+					
+					//assert(j >= 0) :
+					//	"j is less than 0 which shouldn't happen if tempArea " +
+					//	"is really the median";
+					
 				}
+				//assert (j != sortedList[i].length - 1) : 
+					//"j did not decrease";
 				if (numEntriesGreaterThanMedian[i] > maxValue)
 				{
 					maxValue = numEntriesGreaterThanMedian[i];
 					maxIndex = i;
-					maxAreaDiff = tempArea - sortedList[i]
+					maxAreaDiff = sortedList[i]
 						   [sortedList[i].length - 
-							numEntriesGreaterThanMedian[i]];
+							numEntriesGreaterThanMedian[i]] - tempArea;
 				}
 			}
+
+			assert (maxValue > 0) : 
+				"maxValue remained 0";
 			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
 				System.out.println("Magnitude = " + magnitude);
+				assert maxAreaDiff > 0.0f : 
+					"areadiff to add is negative: " + maxAreaDiff;
 				if (maxAreaDiff + magnitude <= 1.0f)
 				{
-					median.add(maxIndex, maxAreaDiff);
+					assert(maxIndex < DOUBLE_MAX) :
+						"maxIndex is out of bounds: " + maxIndex;
+					median.add(maxIndex-MAX_LOCATION, maxAreaDiff);
 					magnitude += maxAreaDiff;
-					numEntriesGreaterThanMedian[maxIndex] = 0;
+					float currentValue = sortedList[maxIndex]
+													[sortedList[maxIndex]
+													.length - 
+													numEntriesGreaterThanMedian
+													[maxIndex]];
+					while (numEntriesGreaterThanMedian[maxIndex] > 0
+							&& currentValue == 
+								sortedList[maxIndex][sortedList[maxIndex].length 
+													 - 
+													 numEntriesGreaterThanMedian
+													 [maxIndex]])
+					{
+						numEntriesGreaterThanMedian[maxIndex]--;
+					}
+					//numEntriesGreaterThanMedian[maxIndex] = 0;
 					maxIndex = 0;
 					maxAreaDiff = 0.0f;
 					maxValue = 0;
 					for (int i = 0; 
 						 i < numEntriesGreaterThanMedian.length; 
 						 i++)
+					{
 						if (numEntriesGreaterThanMedian[i] > maxValue)
 						{
 							maxValue = numEntriesGreaterThanMedian[i];
@@ -235,21 +260,30 @@ public class MedianFinder {
 									 [sortedList[i].length - 
 										numEntriesGreaterThanMedian[i]]   
 								- median.getAreaAt(i); 
-							
 						}
+					}
+					assert (maxValue > 0) : 
+						"maxValue remained 0";
+						
 				}
 				else
 				{
-					median.add(maxIndex, 1.0f-magnitude);
+					assert (1.0f-magnitude > 0.0f) : 
+						"1.0f-magnitude is negative";
+					assert(maxIndex < DOUBLE_MAX) : 
+						"maxIndex is out of bounds: " + maxIndex;
+					median.add(maxIndex-MAX_LOCATION,1.0f-magnitude);
 					magnitude += 1.0f-magnitude;
+					return median;
 				}
+				
+				//assert(magnitude > tempMag) : 
+					//"magnitude has not changed positively: tempMag = " +
+					//tempMag + " magnitude = " + magnitude;
 			}
 			return median;
 		}
 		else
 			return median;
-
-		
-		//return null;
 	}
 }

@@ -81,7 +81,7 @@ public abstract class Cluster extends CollectionDivider {
 	public static final int DOT_PRODUCT = 2;
 	
 	int distanceMetric = 0;
-	private static final int MAX_LOCATION = 2000;
+	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private float[] longerLists = new float[MAX_LOCATION * 2];
 	

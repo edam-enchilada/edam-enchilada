@@ -57,7 +57,7 @@ public class BinnedPeakList {
 	private ArrayList<Float> areas;
 	int position = -1;
 
-	private static final int MAX_LOCATION = 1600;
+	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private static float[] longerLists = new float[MAX_LOCATION * 2];
 	/**
@@ -234,6 +234,8 @@ public class BinnedPeakList {
 	 */
 	public void add(float location, float area)
 	{
+		assert(location < MAX_LOCATION && location > - MAX_LOCATION) :
+			"Location to add is out of bounds" + location;
 		float temp = 0;
 		boolean exists = false;
 		int locationInt;
@@ -252,6 +254,7 @@ public class BinnedPeakList {
 				temp = areas.get(i).floatValue() + area;
 				areas.set(i,new Float(temp));
 				exists = true;
+				return;
 			}
 		}
 		if (!exists)
@@ -281,6 +284,8 @@ public class BinnedPeakList {
 	 */
 	public void addNoChecks(int location, float area)
 	{
+		assert(location < MAX_LOCATION && location > - MAX_LOCATION) : 
+			"location is out of bounds: " + location;
 		//peaks.add(new BinnedPeak(location,area));
 		locations.add(new Integer(location));
 		areas.add(new Float(area));
