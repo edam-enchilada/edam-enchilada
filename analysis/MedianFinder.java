@@ -227,6 +227,8 @@ public class MedianFinder {
 				}
 				//assert (j != sortedList[i].length - 1) : 
 					//"j did not decrease";
+				// Find the location where the most peaklists have 
+				// values higher than the median
 				if (numEntriesGreaterThanMedian[i] > maxNumEntries)
 				{
 					maxNumEntries = numEntriesGreaterThanMedian[i];
@@ -239,6 +241,10 @@ public class MedianFinder {
 
 			assert (maxNumEntries > 0) : 
 				"maxValue remained 0";
+			
+			// Magnify the median at this location, adjust the count
+			// at this location for how many peaklists are bigger
+			// than the median and go again until magnitude reaches 1.0f
 			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
 				System.out.println("Magnitude = " + magnitude);
