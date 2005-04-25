@@ -44,6 +44,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import analysis.BinnedPeakList;
+import analysis.DistanceMetric;
 
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;
@@ -119,12 +120,12 @@ public class KMeansTest extends TestCase {
         list2.add(1,0.3f);
         list2.add(3,0.3f);
 
-        kmeans.setDistanceMetric(Cluster.CITY_BLOCK);
+        kmeans.setDistanceMetric(DistanceMetric.CITY_BLOCK);
         assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100. == 0.7);
-        kmeans.setDistanceMetric(Cluster.EUCLIDEAN_SQUARED);
+        kmeans.setDistanceMetric(DistanceMetric.EUCLIDEAN_SQUARED);
         assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100.
                 == 0.17);
-        kmeans.setDistanceMetric(Cluster.DOT_PRODUCT);
+        kmeans.setDistanceMetric(DistanceMetric.DOT_PRODUCT);
         assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100.
                 == 0.97);
     }

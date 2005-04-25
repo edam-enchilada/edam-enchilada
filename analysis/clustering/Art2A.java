@@ -71,7 +71,7 @@ public class Art2A extends Cluster
 	 * @param database
 	 */
 	public Art2A(int cID, InfoWarehouse database, float v, float lr, 
-			int passes,  int dMetric, String comment) {
+			int passes,  DistanceMetric dMetric, String comment) {
 		super(cID, database, "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
 				passes + ",DMetric=" + dMetric, comment);
 		parameterString = "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
@@ -183,17 +183,15 @@ public class Art2A extends Cluster
 	/* (non-Javadoc)
 	 * @see analysis.clustering.Cluster#setDistancMetric(int)
 	 */
-	public boolean setDistanceMetric(int method) 
+	public boolean setDistanceMetric(DistanceMetric method) 
 	{
 		distanceMetric = method;
-		switch (method) {
-		case Cluster.CITY_BLOCK :
+		if (method == DistanceMetric.CITY_BLOCK)
 			return true;
-		case Cluster.EUCLIDEAN_SQUARED : 
+		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
 			return true;
-		default : 
+		else
 			return false;
-		}
 	}
 	
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,

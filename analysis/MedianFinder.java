@@ -191,7 +191,7 @@ public class MedianFinder {
 			magnitude += median.getNextLocationAndArea().area;
 		}
 		
-		assert(magnitude <= 1.001f) : "Median was larger than 1: " +
+		assert(magnitude <= 1.02f) : "Median was larger than 1: " +
 			magnitude;
 		
 		// If the median is not normalized, normalize it already
@@ -240,7 +240,7 @@ public class MedianFinder {
 			}
 
 			assert (maxNumEntries > 0) : 
-				"maxValue remained 0";
+				"maxNumEntries remained 0";
 			
 			// Magnify the median at this location, adjust the count
 			// at this location for how many peaklists are bigger

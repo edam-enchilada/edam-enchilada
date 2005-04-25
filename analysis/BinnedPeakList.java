@@ -70,12 +70,16 @@ public class BinnedPeakList {
 		areas = new ArrayList<Float>(20);
 	}
 	
+	// TODO: Update this to the real thing
 	public float getDistance(BinnedPeakList toList, DistanceMetric dMetric)
 	{
 //		TODO: Make this more graceful
 		
 		//This seems to take a 2 seconds longer?
 		//Arrays.fill(longerLists, 0.0f);
+		
+		resetPosition();
+		toList.resetPosition();
 		
 	    // longerLists keeps track of which peak locations have nonzero areas
 		for (int i = 0; i < DOUBLE_MAX; i++)
@@ -122,6 +126,8 @@ public class BinnedPeakList {
 			}
 		}	
 		
+		shorter.resetPosition();
+		longer.resetPosition();
 		float eucTemp = 0;
 		for (int i =  0; i < shorter.length(); i++)
 		{
