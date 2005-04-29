@@ -84,7 +84,9 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	private Dataset posSpecDS, negSpecDS;
 	private int atomID;
 	private String atomFile;
+	
 	private boolean spectrumLoaded = false;
+	private static final int SPECTRUM_RESOLUTION = 4;
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -390,11 +392,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		posSpecDS = new Dataset();
 		negSpecDS = new Dataset();
 		//get rid of some points, for efficiency
-		for(int i=0; i < posDP.length; i+=3)
+		for(int i=0; i < posDP.length; i+=SPECTRUM_RESOLUTION)
 		{
 			posSpecDS.add(posDP[i]);
 		}
-		for(int i=0; i < negDP.length; i+=3)
+		for(int i=0; i < negDP.length; i+=SPECTRUM_RESOLUTION)
 		{
 			negSpecDS.add(negDP[i]);
 		}

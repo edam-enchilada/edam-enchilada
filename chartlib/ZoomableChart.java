@@ -94,7 +94,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void mousePressed(MouseEvent e) 
 	{
 		if(chart.getChartIndexAt(e.getPoint(),true) != -1)
+		{
 			glassPane.start = e.getPoint();
+			//glassPane.setOpaque(true);
+		}
 		else glassPane.start = null;
 	}
 	
@@ -107,20 +110,24 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		if(glassPane.start != null)
 		{
 			glassPane.drawLine = true;
+			
 			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
 			{
+				Point oldEnd;
+				if(glassPane.end != null) oldEnd = glassPane.end;
+				else oldEnd = e.getPoint();
 				glassPane.end = e.getPoint();
-				if(glassPane.start.x < glassPane.end.x)
+				if(glassPane.start.x < oldEnd.x)
 				{
-					repaint(glassPane.start.x - 5,
+					repaint(glassPane.start.x - 10,
 							glassPane.start.y - 5,
-							glassPane.end.x + 10 - glassPane.start.x,
+							oldEnd.x + 20 - glassPane.start.x,
 							10);
 				}
 				else
-					repaint(glassPane.end.x - 5,
+					repaint(oldEnd.x - 10,
 							glassPane.start.y - 5,
-							glassPane.start.x + 10 - glassPane.end.x,
+							glassPane.start.x + 20 - oldEnd.x,
 							10);
 			}
 		}
@@ -135,7 +142,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		glassPane.drawLine = false;
 		//glassPane.repaint();
 		if(glassPane.start != null && glassPane.end != null)
+		{
 			performZoom();
+			//glassPane.setOpaque(false);
+		}
 	}
 	
 	/**

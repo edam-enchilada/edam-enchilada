@@ -274,7 +274,9 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		else if(source == nextParticleItem)
 		{
-			particlesTable.changeSelection(particlesTable.getSelectedRow() - 1,
+			int row = particlesTable.getSelectedRow();
+			if(row < particlesTable.getRowCount() - 1)
+				particlesTable.changeSelection(row + 1,
 					particlesTable.getSelectedColumn(),
 					false,
 					false);
@@ -282,7 +284,9 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		else if(source == prevParticleItem)
 		{
-			particlesTable.changeSelection(particlesTable.getSelectedRow() + 1,
+			int row = particlesTable.getSelectedRow();
+			if(row > 0)
+				particlesTable.changeSelection(row - 1,
 					particlesTable.getSelectedColumn(),
 					false,
 					false);
@@ -405,12 +409,19 @@ public class MainFrame extends JFrame implements ActionListener,
 		menuBar.add(graphMenu);
 		
 		nextParticleItem = new JMenuItem("Next Particle",
-				KeyEvent.VK_UP);
+				KeyEvent.VK_N);
+		nextParticleItem.setAccelerator(
+				KeyStroke.getKeyStroke('n'));
 		nextParticleItem.addActionListener(this);
+		
 		prevParticleItem = new JMenuItem("Previous Particle",
-				KeyEvent.VK_DOWN);
+				KeyEvent.VK_P);
+		prevParticleItem.setAccelerator(
+				KeyStroke.getKeyStroke('p'));
 		prevParticleItem.addActionListener(this);
+		
 		unzoomItem = new JMenuItem("Unzoom Graph", KeyEvent.VK_Z);
+		unzoomItem.setAccelerator(KeyStroke.getKeyStroke('z'));
 		unzoomItem.addActionListener(this);
 		
 		graphMenu.add(nextParticleItem);
@@ -720,36 +731,36 @@ public class MainFrame extends JFrame implements ActionListener,
 	 * the next particle.
 	 */
 	public void keyPressed(KeyEvent e)
-	{
-		int key = e.getKeyCode();
-		int curRow = particlesTable.getSelectedRow();
-		int curColumn = particlesTable.getSelectedColumn();
-
-		if((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN)
-				&& curRow < particlesTable.getRowCount() - 1){
-			
-			particlesTable.changeSelection(particlesTable.getSelectedRow() + 1,
-					particlesTable.getSelectedColumn(),
-					false,
-					false);
-		}
-		
-		else if((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP)
-				&& curRow > 0){
-			particlesTable.changeSelection(particlesTable.getSelectedRow() - 1,
-					particlesTable.getSelectedColumn(),
-					false,
-					false);
-		}
-		
-		//Z unzooms the chart.
-		else if(key == KeyEvent.VK_Z)
-		{
-			peaksChart.unZoom();
-		}
-		
-		
-	}
+	{}
+//		int key = e.getKeyCode();
+//		int curRow = particlesTable.getSelectedRow();
+//		int curColumn = particlesTable.getSelectedColumn();
+//
+//		if((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN)
+//				&& curRow < particlesTable.getRowCount() - 1){
+//			
+//			particlesTable.changeSelection(particlesTable.getSelectedRow() + 1,
+//					particlesTable.getSelectedColumn(),
+//					false,
+//					false);
+//		}
+//		
+//		else if((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP)
+//				&& curRow > 0){
+//			particlesTable.changeSelection(particlesTable.getSelectedRow() - 1,
+//					particlesTable.getSelectedColumn(),
+//					false,
+//					false);
+//		}
+//		
+//		//Z unzooms the chart.
+//		else if(key == KeyEvent.VK_Z)
+//		{
+//			peaksChart.unZoom();
+//		}
+//		
+//		
+//	}
 	public void keyReleased(KeyEvent e){}
 	public void keyTyped(KeyEvent e){}
 }

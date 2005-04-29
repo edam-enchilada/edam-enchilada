@@ -688,10 +688,11 @@ public class ChartArea extends JComponent {
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(color);
-		g2d.setClip(dataArea);
+		g2d.clip(dataArea);
 		g2d.setStroke(new BasicStroke(2));
 		
 		//	loops through all data points, drawing each one.
+		GeneralPath gp = new GeneralPath();
 		Iterator i = ds.iterator();
 		while(i.hasNext())
 		{
@@ -706,6 +707,7 @@ public class ChartArea extends JComponent {
 //					(int)(yCoord - dotWidth/2),
 //					dotWidth, dotWidth));
 			
+			
 			//if there is no previous point, just store locations
 			if(Double.isNaN(prevX) || Double.isNaN(prevY))
 			{
@@ -713,11 +715,13 @@ public class ChartArea extends JComponent {
 			//otherwise, draw point and connecting line
 			else
 			{
-				g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+				gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
+				//g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
 			}
 			prevX = xCoord;
 			prevY = yCoord;	
 		}
+		g2d.draw(gp);
 		
 		//cleanup
 		g2d.setClip(oldClip);
@@ -1013,5 +1017,10 @@ public class ChartArea extends JComponent {
 					dataArea.x + tickSize,
 					yCoord));
 		}
+	}
+	
+	public boolean isDoubleBuffered()
+	{
+		return false;
 	}
 }
