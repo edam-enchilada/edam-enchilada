@@ -42,16 +42,28 @@
 package gui;
 
 import javax.swing.*;
+
+import msanalyze.CalInfo;
+import msanalyze.ReadSpec;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.ZoomableChart;
+import database.InstancedResultSet;
+import database.SQLServerDatabase;
+import atom.ATOFMSParticle;
 import atom.Peak;
 
 import java.awt.*;
 import java.awt.event.*;
+
 /**
  * @author sulmanj
  *
@@ -60,14 +72,19 @@ import java.awt.event.*;
  * Contains a JTable that displays the text of the peak data displayed in the
  * chart.
  */
-public class PeaksChart extends JPanel implements MouseMotionListener {
+public class PeaksChart extends JPanel implements MouseMotionListener, ActionListener {
 	private Chart chart;
 	private ZoomableChart zchart;
 	private JTable table; 
+	private JRadioButton peakButton, specButton;
 	private javax.swing.table.AbstractTableModel datamodel;
 	private ArrayList<atom.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
 	private ArrayList<Peak> negPeaks;
+	private Dataset posSpecDS, negSpecDS;
+	private int atomID;
+	private String atomFile;
+	private boolean spectrumLoaded = false;
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -76,6 +93,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 	 */
 	public PeaksChart() {
 		peaks = new ArrayList<Peak>();
+		atomFile = null;
 		
 		setLayout(new BorderLayout());
 
@@ -94,6 +112,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 		
 		zchart = new ZoomableChart(chart);
 		zchart.addMouseMotionListener(this);
+		zchart.setFocusable(true);
 		add(zchart, BorderLayout.CENTER);
 		
 		//sets up table
@@ -105,39 +124,67 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 		table.setPreferredScrollableViewportSize(new Dimension(300, 200));
 		table.setRowSelectionAllowed(true);
 		table.setColumnSelectionAllowed(false);
-		//table.setCellSelectionEnabled(false);
-		add(new JScrollPane(table), BorderLayout.EAST);
+		
+		JPanel rightPanel = new JPanel(new BorderLayout());
+		rightPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+		
+		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
+		ButtonGroup bg = new ButtonGroup();
+		peakButton = new JRadioButton("Peaks");
+		peakButton.setActionCommand("peaks");
+		peakButton.addActionListener(this);
+		specButton = new JRadioButton("Spectrum");
+		specButton.setActionCommand("spectrum");
+		specButton.addActionListener(this);
+		bg.add(peakButton);
+		bg.add(specButton);
+		bg.setSelected(peakButton.getModel(),true);
+		buttonPanel.add(peakButton);
+		buttonPanel.add(specButton);
+		
+		rightPanel.add(buttonPanel, BorderLayout.SOUTH);
+		
+		add(rightPanel, BorderLayout.EAST);
 	}
 
 	/**
 	 * Sets the chart to display a new set of peaks.
 	 * @param newPeaks The new peaks to display.
-	 * @param title The title of the peak set or particle.
+	 * @param title atomID The id number of the atom the peaks are from.
+	 * @param filename The path of the file in which the data resides.  Null if no file
+	 * is found or desired.  This file is used for importing the full spectrum.
 	 */
-	public void setPeaks(ArrayList<Peak> newPeaks, String title)
+	public void setPeaks(ArrayList<Peak> newPeaks, int atomID, String filename)
 	{
+		this.atomID = atomID;
+		this.atomFile = filename;
+		spectrumLoaded = false;
 		peaks = newPeaks;
 		posPeaks = new ArrayList<Peak>();
 		negPeaks = new ArrayList<Peak>();
-		chartlib.Dataset chartPos = new Dataset();
-		chartlib.Dataset chartNeg = new Dataset();
+//		chartlib.Dataset chartPos = new Dataset();
+//		chartlib.Dataset chartNeg = new Dataset();
+		
+		
 		for (Peak p : peaks)
 		{
 			if(p.massToCharge > 0){
-				chartPos.add(
-						new DataPoint(p.massToCharge, p.height));
 				posPeaks.add(p);
 			}
 			else{
-				chartNeg.add(
-						new DataPoint(- p.massToCharge, p.height));
 				negPeaks.add(p);
 			}
 		}
-		chart.setDataset(0,chartPos);
-		chart.setDataset(1,chartNeg);
+		
+		if(peakButton.isSelected())
+			displayPeaks();
+		else if(specButton.isSelected())
+			displaySpectrum();
+		
+		//chart.setDataDisplayType(true, false);
+		
 		chart.packData(false, true); //updates the Y axis scale.
-		chart.setTitle("Peaks for Particle " + title);
+		chart.setTitle("Particle " + atomID);
 		datamodel.fireTableDataChanged();
 		
 		unZoom();
@@ -207,6 +254,152 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 	}
 	public void mouseDragged(MouseEvent e){}
 	
+	public void actionPerformed(ActionEvent e)
+	{
+		if(peaks == null)
+		{
+			return;
+		}
+		String command  = e.getActionCommand();
+		if(command.equals( "peaks" ))
+			displayPeaks();
+		else if(command.equals( "spectrum" ))
+			displaySpectrum();
+	}
+	
+	/**
+	 * Sets the chart to display peaks.
+	 */
+	public void displayPeaks()
+	{
+		Dataset negDS = new Dataset(), posDS = new Dataset();
+		for(Peak p : posPeaks)
+		{
+			posDS.add(
+					new DataPoint(p.massToCharge, p.height));
+		}
+		for(Peak p : negPeaks)
+		{
+			negDS.add(
+					new DataPoint(-p.massToCharge, p.height));
+		}
+		
+		chart.setDataset(0,posDS);
+		chart.setDataset(1,negDS);
+		
+		chart.setDataDisplayType(true, false);
+	}
+	
+	public void displaySpectrum()
+	{
+		if(!spectrumLoaded)
+		try{
+			getSpectrum();
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error loading spectrum");
+		}
+
+		chart.setDataset(1,negSpecDS);
+		chart.setDataset(0,posSpecDS);
+		chart.packData(false, true);
+		chart.setDataDisplayType(false, true);
+	}
+	
+	/**
+	 * Fetches the spectrum from the data file
+	 */
+	private void getSpectrum()
+	{
+		ResultSet rs;
+		int origDataSetID=0;
+		String massCalFile;
+		boolean autocal;
+		ATOFMSParticle particle;
+		
+		/*
+		 * Procedure:
+		 * (1) Use atomID to get OrigDataSet.
+		 * (2) Use OrigDataSet to get Calibration data
+		 * (3) Create CalInfo object
+		 * (4) create ATOFMS particle
+		 */
+		
+		//Get OrigDataSet from database
+		
+		SQLServerDatabase db = MainFrame.db;
+		Connection con = db.getCon();
+		
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT OrigDataSetID\n" +
+										"FROM OrigDataSets\n" +
+										"WHERE AtomID = " +
+										atomID);
+			rs.next();
+			origDataSetID = rs.getInt("OrigDataSetID");
+			} catch (SQLException e) {
+				System.err.println("Exception getting OrigDataSetID");
+				peakButton.setSelected(true);
+				return;
+			}	
+			
+			
+		//Get Calibration data
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT *\n" +
+					"FROM PeakCalibrationData\n" +
+					"WHERE DataSetID = " +
+					origDataSetID);
+			rs.next();
+			massCalFile = rs.getString("MassCalFile");
+			autocal = rs.getBoolean(6);
+			} catch (SQLException e) {
+				System.err.println("Exception getting calibration data");
+				e.printStackTrace();
+				peakButton.setSelected(true);
+				return;
+			}
+		
+			//create CalInfo object
+		try{
+			ATOFMSParticle.currCalInfo = new CalInfo(massCalFile, autocal);
+		} catch (java.io.IOException e)
+		{
+			System.err.println("Exception opening calibration file");
+			peakButton.setSelected(true);
+			return;
+		}
+		
+		//read spectrum
+		try {
+			particle = new ReadSpec(atomFile).getParticle();
+		} catch (Exception e)
+		{
+			System.err.println("Exception opening atom file");
+			peakButton.setSelected(true);
+			return;
+		}
+		
+		//	create dataset
+		DataPoint[] posDP = particle.getPosSpectrum();
+		DataPoint[] negDP = particle.getNegSpectrum();
+		
+		posSpecDS = new Dataset();
+		negSpecDS = new Dataset();
+		//get rid of some points, for efficiency
+		for(int i=0; i < posDP.length; i+=3)
+		{
+			posSpecDS.add(posDP[i]);
+		}
+		for(int i=0; i < negDP.length; i+=3)
+		{
+			negSpecDS.add(negDP[i]);
+		}
+		
+	}
 	
 	
 	
@@ -216,6 +409,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener {
 	 */
 	private class PeaksTableModel extends javax.swing.table.AbstractTableModel
 	{
+		/**
+		 * Comment for <code>serialVersionUID</code>
+		 */
+		private static final long serialVersionUID = 3618133463824348212L;
+
 		public int getColumnCount() {
 			
 			return 4;

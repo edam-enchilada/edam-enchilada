@@ -508,6 +508,30 @@ public class Chart extends JPanel
 	}
 	
 	/**
+	 * Determines how data is displayed.  If neither parameter is true, no data
+	 * will be displayed.
+	 * @param index Which chart to change.
+	 * @param showBars If true, chart will display data in bars.
+	 * @param showLines If true, chart will dislay data in lines.
+	 */
+	public void setDataDisplayType(int index, boolean showBars, boolean showLines)
+	{
+		chartAreas[index].setDataDisplayType(showBars, showLines);
+	}
+	
+	/**
+	 * Determines how data is displayed in all charts.
+	 * If neither is true, no data will be displayed.
+	 * @param showBars If true, chart will display data in bars.
+	 * @param showLines If true, chart will dislay data in lines.
+	 */
+	public void setDataDisplayType(boolean showBars, boolean showLines)
+	{
+		for(int count = 0; count < chartAreas.length; count++)
+			chartAreas[count].setDataDisplayType(showBars, showLines);
+	}
+	
+	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.
 	 */
 	public void packData()

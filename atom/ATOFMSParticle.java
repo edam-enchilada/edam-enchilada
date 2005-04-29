@@ -378,6 +378,36 @@ public class ATOFMSParticle extends Particle {
 		}
 		return -(squareThis * squareThis);
 	}
+	
+	/**
+	 * Returns the calibrated positive spectrum of the particle.
+	 */
+	public chartlib.DataPoint[] getPosSpectrum()
+	{
+		chartlib.DataPoint[] spec = new chartlib.DataPoint[posSpectrum.length];
+		for( int i=0; i < posSpectrum.length; i++)
+		{
+			spec[i] = new chartlib.DataPoint(getPosMZ(i),posSpectrum[i]);
+		}
+		return spec;
+	}
+	
+	/**
+	 * Returns the calibrated negative spectrum of the particle.
+	 */
+	public chartlib.DataPoint[] getNegSpectrum()
+	{
+		chartlib.DataPoint[] spec = new chartlib.DataPoint[negSpectrum.length];
+		for( int i=0; i < negSpectrum.length; i++)
+		{
+			spec[i] = new chartlib.DataPoint(-getNegMZ(i),negSpectrum[i]);
+		}
+		//System.out.println(negSpectrum[4500]);
+		//System.out.println(spec[4500].x);
+		return spec;
+	}
+	
+	
 	public static void setDataSetInfo(PeakParams p, CalInfo c) {
 		currPeakParams = p;
 		currCalInfo = c;

@@ -110,7 +110,18 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
 			{
 				glassPane.end = e.getPoint();
-				glassPane.repaint();
+				if(glassPane.start.x < glassPane.end.x)
+				{
+					repaint(glassPane.start.x - 5,
+							glassPane.start.y - 5,
+							glassPane.end.x + 10 - glassPane.start.x,
+							10);
+				}
+				else
+					repaint(glassPane.end.x - 5,
+							glassPane.start.y - 5,
+							glassPane.start.x + 10 - glassPane.end.x,
+							10);
 			}
 		}
 	}
@@ -122,7 +133,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		//glassPane.end = e.getPoint();  //mouseDragged provides this info already.
 										//and this may cause errors on chart edges.
 		glassPane.drawLine = false;
-		glassPane.repaint();
+		//glassPane.repaint();
 		if(glassPane.start != null && glassPane.end != null)
 			performZoom();
 	}
@@ -203,7 +214,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		{
 			Graphics2D g2d = (Graphics2D)g.create();
 			if(drawLine && start != null && end != null)
+			{
 				drawDragFeedback(g2d);
+			}
 			g2d.dispose();
 		}
 		

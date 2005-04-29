@@ -427,8 +427,12 @@ public class ReadSpec {
 			int scatdelay,
 			int[] posdata,
 			int[] negdata) {
-		
+		/*
 		ATOFMSParticle p = new ATOFMSParticle(new File(name).getName(), timetext, laserpow, 
+				digitrate, scatdelay, posdata, negdata);
+		*/
+		
+		ATOFMSParticle p = new ATOFMSParticle(name, timetext, laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 		return p;
 	}

@@ -90,6 +90,9 @@ public class MainFrame extends JFrame implements ActionListener,
 	private JMenuItem pasteItem;
 	private JMenuItem deleteAdoptItem;
 	private JMenuItem recursiveDeleteItem;
+	private JMenuItem nextParticleItem;
+	private JMenuItem prevParticleItem;
+	private JMenuItem unzoomItem;
 	private CollectionTree leftPane;
 	private JTextArea descriptionTA;
 
@@ -268,6 +271,27 @@ public class MainFrame extends JFrame implements ActionListener,
 			db.closeConnection();
 			dispose();
 		}
+		
+		else if(source == nextParticleItem)
+		{
+			particlesTable.changeSelection(particlesTable.getSelectedRow() - 1,
+					particlesTable.getSelectedColumn(),
+					false,
+					false);
+		}
+		
+		else if(source == prevParticleItem)
+		{
+			particlesTable.changeSelection(particlesTable.getSelectedRow() + 1,
+					particlesTable.getSelectedColumn(),
+					false,
+					false);
+		}
+		
+		else if(source == unzoomItem)
+		{
+			peaksChart.unZoom();
+		}
 	}
 	
 	/**
@@ -374,6 +398,26 @@ public class MainFrame extends JFrame implements ActionListener,
 		collectionMenu.add(recursiveDeleteItem);
 		collectionMenu.addSeparator();
 		collectionMenu.add(accessSelected);
+		
+		//Add a graph menu to menu bar
+		JMenu graphMenu = new JMenu("Graph");
+		graphMenu.setMnemonic(KeyEvent.VK_G);
+		menuBar.add(graphMenu);
+		
+		nextParticleItem = new JMenuItem("Next Particle",
+				KeyEvent.VK_UP);
+		nextParticleItem.addActionListener(this);
+		prevParticleItem = new JMenuItem("Previous Particle",
+				KeyEvent.VK_DOWN);
+		prevParticleItem.addActionListener(this);
+		unzoomItem = new JMenuItem("Unzoom Graph", KeyEvent.VK_Z);
+		unzoomItem.addActionListener(this);
+		
+		graphMenu.add(nextParticleItem);
+		graphMenu.add(prevParticleItem);
+		graphMenu.addSeparator();
+		graphMenu.add(unzoomItem);
+		
 		
 		//Add a help menu to the menu bar.
 		JMenu helpMenu = new JMenu("Help");
@@ -647,11 +691,12 @@ public class MainFrame extends JFrame implements ActionListener,
 			int atomID = ((Integer) 
 					particlesTable.getValueAt(row, 0))
 					.intValue();
+			String filename = (String)particlesTable.getValueAt(row,1);
+			
 			if (atomID != lastAtomID && atomID >= 0)
 			{
 				System.out.println("AtomID = " + atomID);
 				ArrayList<Peak> peaks = db.getPeaks(atomID);
-				
 				peakString = "Peaks:\n";
 
 				for (Peak p : peaks)
@@ -663,7 +708,7 @@ public class MainFrame extends JFrame implements ActionListener,
 				}
 				System.out.println(peakString);
 				peaksText.setText(peakString);
-				peaksChart.setPeaks(peaks, Integer.toString(atomID));
+				peaksChart.setPeaks(peaks, atomID, filename);
 			}
 			
 			lastAtomID = atomID;
