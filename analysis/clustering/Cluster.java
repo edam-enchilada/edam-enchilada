@@ -409,92 +409,7 @@ public abstract class Cluster extends CollectionDivider {
 		
 		return distance;
 	}
-	
-	/*//Remove this when finished testing
-	public static float getDistance(BinnedPeakList list1, 
-			BinnedPeakList list2, int distanceMetric)
-	{
-		ArrayList<Integer> checkedLocations = 
-			new ArrayList<Integer>();
-		float distance = 0;
-		BinnedPeakList longer;
-		BinnedPeakList shorter;
-		list1.resetPosition();
-		list2.resetPosition();
-		if (list1.length() < list2.length())
-		{
-			shorter = list1;
-			longer = list2;
-		}
-		else
-		{
-			longer = list1;
-			shorter = list2;
-		}
-		BinnedPeak temp;
-		float shorterTemp;
-		for (int i = 0; i < longer.length(); i++)
-		{
-			temp = longer.getNextLocationAndHeight();
-			//System.out.println("Location: " + temp.location);
-			//System.out.println("Height: " + temp.height + "\n");
-			checkedLocations.add(new Integer(temp.location));
-			if (distanceMetric == CITY_BLOCK)
-			{
-				distance += Math.abs(temp.height - 
-						shorter.getHeightAt(temp.location));
-			}
-			else if (distanceMetric == EUCLIDEAN_SQUARED)
-			{
-				shorterTemp = shorter.getHeightAt(temp.location);
-				distance += (temp.height - shorterTemp)
-				* (temp.height - shorterTemp);
-			}
-			else
-			{
-				distance = -1.0f;
-			}
-		}
-		boolean alreadyChecked = false;
-		for (int i = 0; i < shorter.length(); i++)
-		{
-			alreadyChecked = false;
-			temp = shorter.getNextLocationAndHeight();
-			float longerTemp;
-			for (Integer loc : checkedLocations)
-			{
-				if (temp.location == loc.intValue())
-				{
-					alreadyChecked = true;
-				}
-			}
-			if (alreadyChecked)
-				;
-			else
-			{
-				if (distanceMetric == CITY_BLOCK)
-				{
-					distance += Math.abs(temp.height - 
-							longer.getHeightAt(temp.location));
-				}
-				else if (distanceMetric == EUCLIDEAN_SQUARED)
-				{
-					longerTemp = longer.getHeightAt(temp.location);
-					distance += (temp.height - longerTemp) *
-					(temp.height - longerTemp);
-				}
-				else
-				{
-					distance = -1.0f;
-				}
-			}
-		}
->>>>>>> 1.27
-		
-		//System.out.println("Distance = " + distance + "\n");
-		return distance;
-	}*/
-	
+
 	protected void printDistanceToNearestCentroid(
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
@@ -694,6 +609,21 @@ public abstract class Cluster extends CollectionDivider {
 			int particleCount,
 			ArrayList<Centroid> centroidList)
 	{
+	
+		// sort centroidList.
+		ArrayList<Centroid> orderedList = new ArrayList<Centroid>();
+		int numCentroids = centroidList.size();
+		while (orderedList.size() != numCentroids) {
+			int smallestIndex = 0;
+			for (int i = 1; i < centroidList.size(); i++) 
+				if (centroidList.get(i).subCollectionNum < 
+						centroidList.get(smallestIndex).subCollectionNum) 
+					smallestIndex = i;
+			orderedList.add(centroidList.get(smallestIndex));
+			centroidList.remove(smallestIndex);
+		}
+		centroidList = orderedList;
+		
 		PrintWriter out = null;
 		StringWriter sendToDB = new StringWriter();
 		out = new PrintWriter(sendToDB
@@ -722,7 +652,8 @@ public abstract class Cluster extends CollectionDivider {
 		
 		out.println("average distance of all points from their centers " +
 		"on final assignment:");
-		out.println(totalDistancePerPass.get(totalDistancePerPass.size()-1).floatValue()/particleCount);
+		out.println(totalDistancePerPass.get(
+					totalDistancePerPass.size()-1).floatValue()/particleCount);
 		
 		out.println();
 		out.println("Peaks in centroids:");

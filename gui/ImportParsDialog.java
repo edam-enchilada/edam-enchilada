@@ -129,6 +129,10 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		setVisible(true);	
 	}
 	
+	public ImportParsDialog() {
+		// dummy constructor for testing purposes.
+	}
+	
 	private JTable getParTable()
 	{
 		pTableModel = new ParTableModel();

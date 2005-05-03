@@ -73,11 +73,13 @@ public class MainFrame extends JFrame implements ActionListener,
 	private JToolBar specButtonPanel;
 	private JSplitPane splitPane;
 	
+	private JButton importEnchiladaDataButton;
 	private JButton importParsButton;
 	private JButton exportParsButton;
 	private JButton emptyCollButton;
 	private JButton specPrevButton;
 	private JButton specNextButton;
+	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem MSAexportItem;
 	private JMenuItem emptyCollection;
@@ -168,6 +170,13 @@ public class MainFrame extends JFrame implements ActionListener,
 	{
 		Object source = e.getSource();
 
+		if (source == importEnchiladaDataButton ||
+				source == loadEnchiladaDataItem) {
+			new ImportEnchiladaDataDialog(this);
+			leftPane.updateTree();
+			validate();
+		}
+		
 		if (source == importParsButton || source == loadATOFMSItem) 
 		{
 			new ImportParsDialog(this);
@@ -262,10 +271,8 @@ public class MainFrame extends JFrame implements ActionListener,
 						"The program will now shut down to reset itself. " +
 						"Start it up again to continue.");
 				dispose();
-			}
-			
+			}			
 		}
-		
 		
 		else if (source == exitItem) {
 			db.closeConnection();
@@ -322,8 +329,11 @@ public class MainFrame extends JFrame implements ActionListener,
 		JMenu importMenu = new JMenu("Import Collection. . . ");
 		loadATOFMSItem = new JMenuItem("from ATOFMS data. . .");
 		loadATOFMSItem.addActionListener(this);
+		loadEnchiladaDataItem = new JMenuItem("from Enchilada data. . .");
+		loadEnchiladaDataItem.addActionListener(this);
 		importMenu.setMnemonic(KeyEvent.VK_I);
 		importMenu.add(loadATOFMSItem);
+		importMenu.add(loadEnchiladaDataItem);
 		
 		JMenu exportMenu = new JMenu("Export Collection. . .");
 		MSAexportItem = new JMenuItem("to MS-Analyze. . .");
@@ -461,6 +471,10 @@ public class MainFrame extends JFrame implements ActionListener,
 		importParsButton.setBorder(new EtchedBorder());
 		importParsButton.addActionListener(this);
 		
+		importEnchiladaDataButton = new JButton("Import Enchilada Data Sets");
+		importEnchiladaDataButton.setBorder(new EtchedBorder());
+		importEnchiladaDataButton.addActionListener(this);
+		
 		emptyCollButton = new JButton("New Empty Collection");
 		emptyCollButton.setBorder(new EtchedBorder());
 		emptyCollButton.addActionListener(this);
@@ -471,6 +485,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		buttonPanel.add(emptyCollButton);
 		buttonPanel.add(importParsButton);
+		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(exportParsButton);
 		add(buttonPanel);
 	}

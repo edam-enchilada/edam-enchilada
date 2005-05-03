@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's Particle class.
+ * The Original Code is EDAM Enchilada's EnchiladaDataPoint class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -37,43 +37,32 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-
-/*
- * Created on Jul 15, 2004
- */
 package atom;
+
 import java.util.ArrayList;
-
-
 
 /**
  * @author ritza
+ *
+ * TODO To change the template for this generated type comment go to
+ * Window - Preferences - Java - Code Style - Code Templates
  */
-public class Particle implements AtomicAnalysisUnit {
-
-	/**
-	 * Stores the size of the particle, according to its size calibration
-	 * file.  Defaults to zero if no size calibration file is loaded.  
-	 */
-	public float size;
-	
-	/**
-	 * The particle contains a posSpectrum and a negSpectrum, and the data
-	 * is stored as an array of ints.  The data consists of the height of each
-	 * bin.
-	 */
-	public int[] posSpectrum;
-	public int[] negSpectrum;
-	
-	/**
-	 * The list of peaks for the particle is stored in an ArrayList.
-	 */
+public class EnchiladaDataPoint implements AtomicAnalysisUnit {
 	protected ArrayList<Peak> peakList;
-		
-	/**
-	 * @return an arrayList of peaks for the particle.
-	 */
-	public ArrayList<Peak> getPeakList() {	
+	public String dataPointName;
+	
+	
+	public EnchiladaDataPoint(String str) {
+		dataPointName = str;
+		peakList = new ArrayList<Peak>();
+	}
+	
+	public void addPeak(int i, int c, float f1, double f2) {
+		peakList.add(new Peak(1,c,f1,f2));
+	}
+	
+	public ArrayList<Peak> getPeakList()
+	{
 		return peakList;
 	}
 }

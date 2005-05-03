@@ -294,31 +294,6 @@ public abstract class ClusterK extends Cluster {
 		// centroids. Only choose random peaks where at least one particle
 		// has a peak at that location.
 		if (centroidList.size() == 0) {
-
-		    // Find all the peaks in this dataset.
-			/*Set<Integer> allPeaks = new HashSet<Integer>();
-			curs.reset();
-			while (curs.next()) {
-				ParticleInfo thisParticleInfo = curs.getCurrent();
-				BinnedPeakList thisBinnedPeakList =
-					curs.getPeakListfromAtomID(thisParticleInfo.getID());
-				for (int loc=-300; loc <= 300; loc++)
-				    if (!allPeaks.contains(new Integer(loc)) && 
-				            thisBinnedPeakList.getAreaAt(loc) > 0)
-				        allPeaks.add(new Integer(loc));
-			}
-		    
-			// Choose randomized centroids based on these peaks.
-		    for (int i = 0; i < k; i++) {
-			    BinnedPeakList newList = new BinnedPeakList();
-			    for (int loc=-300; loc <= 300; loc++) {
-			        if (allPeaks.contains(new Integer(loc)))
-			            newList.add(loc,random.nextFloat());
-			    }
-			    Centroid newCent = new Centroid(normalize(newList),0);
-			    centroidList.add(newCent);
-			    
-			}*/
 		    
 		    // Take the first point as the first centroid. For each succeeding
 		    // point, take the one that is furthest away from the closest

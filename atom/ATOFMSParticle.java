@@ -68,7 +68,7 @@ public class ATOFMSParticle extends Particle {
 	public static PeakParams currPeakParams;
 	public static CalInfo currCalInfo;
 	
-	protected ArrayList<Peak> peakList = null;
+	//protected ArrayList<Peak> peakList = null;
 	
 	private double autoPosSlope, autoNegSlope, autoPosIntercept,
 		autoNegIntercept;
@@ -349,7 +349,7 @@ public class ATOFMSParticle extends Particle {
 		}
 		return true;
 	}
-	
+	// TODO:  public?
 	private double getPosMZ(int bin)
 	{
 		double squareThis = 0;

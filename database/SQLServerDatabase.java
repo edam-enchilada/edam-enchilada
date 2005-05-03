@@ -49,6 +49,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.sql.*;
 
 import analysis.BinnedPeakList;
@@ -446,7 +447,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		// first, create entries for the Atoms in the AtomInfo table
 		// and the peaklist table
 		int[] atomIDs = createAtomInfo(atomList, atomType);	
-		if (!createPeaks(atomList, atomIDs))
+		if (!createPeaks(atomList, atomIDs, atomType))
 			return false;
 		// now add atomIDs to the ownership table
 		try {
@@ -473,7 +474,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	private int[] createAtomInfo(ArrayList atomList, String atomType)
 	{
 		int idArray[] = null;
-		if (atomType.equals("ATOFMSParticle"))
 			try{
 				Statement stmt = con.createStatement();
 				
@@ -485,6 +485,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				else
 					nextID = 0;
 				idArray = new int[atomList.size()];
+				
+				if (atomType.equals("ATOFMSParticle")) {
 				for (int i = 0; i < atomList.size(); i++)
 				{
 					idArray[i] = nextID;
@@ -504,6 +506,23 @@ public class SQLServerDatabase implements InfoWarehouse
 								  currentParticle.filename + "')");
 					nextID++;
 				}
+				}
+				else if (atomType.equals("EnchiladaDataPoint")) {
+					for (int i = 0; i < atomList.size(); i++)
+					{
+						idArray[i] = nextID;
+						EnchiladaDataPoint currentParticle = (EnchiladaDataPoint) atomList.get(i);
+						
+						stmt.addBatch("INSERT INTO AtomInfo\n" +
+							  	  	  "(AtomID,[Time],LaserPower,Size,ScatDelay," +
+							  	  	  "OrigFilename)\n" +
+									  "VALUES (" + 
+									  Integer.toString(nextID) + ", '" + 
+									  new Date(0)+ "', '0', '0', '0', '" + 
+									  currentParticle.dataPointName + "')");
+						nextID++;
+					}
+				}
 				stmt.executeBatch();
 				stmt.close();
 			} catch (SQLException e){
@@ -515,7 +534,8 @@ public class SQLServerDatabase implements InfoWarehouse
 		return idArray;
 	}
 	
-	private boolean createPeaks(ArrayList atomList, int[] atomIDs)
+	private boolean createPeaks(ArrayList atomList, int[] atomIDs, 
+			String atomType)
 	{
 		if (atomIDs.length != atomList.size())
 			return false;
@@ -523,10 +543,13 @@ public class SQLServerDatabase implements InfoWarehouse
 		{
 			try {
 				Statement stmt = con.createStatement();
-				ATOFMSParticle particle;
+				AtomicAnalysisUnit particle = null;
 				for (int i = 0; i < atomList.size(); i++)
 				{
-					particle = (ATOFMSParticle) atomList.get(i);
+					if (atomType.equals("ATOFMSParticle")) 
+						particle = (ATOFMSParticle) atomList.get(i);
+					else if (atomType.equals("EnchiladaDataPoint"))
+						particle = (EnchiladaDataPoint) atomList.get(i);
 					ArrayList<Peak> peakList = particle.getPeakList();
 					
 					for (int j = 0; j < peakList.size(); j++)
@@ -2286,8 +2309,23 @@ public class SQLServerDatabase implements InfoWarehouse
 			con = db.getCon();
 
 			in = new Scanner(new File("database//SQLServerRebuildDatabase.txt"));
+			String query = "";
+			StringTokenizer token;
+			// loop through license block
 			while (in.hasNext()) {
-				String query = in.nextLine();		
+				query = in.nextLine();
+				token = new StringTokenizer(query);
+				if (token.hasMoreTokens()) {
+					String s = token.nextToken();
+					if (s.equals("CREATE"))
+						break;
+				}
+			}
+			// Update the database according to the stmts.
+			con.createStatement().executeUpdate(query);
+			
+			while (in.hasNext()) {
+				query = in.nextLine();
 				con.createStatement().executeUpdate(query);
 			}
 	        
@@ -2385,5 +2423,16 @@ public class SQLServerDatabase implements InfoWarehouse
 			e.printStackTrace();
 		}
 		return returnThis;
+	}
+	
+	public void insertGeneralParticles(ArrayList particles, 
+			int collectionID) {
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		int atomID = getNextID();
+		for (int i = 0; i < particles.size(); i++) {
+			ids.add(new Integer(atomID));
+			atomID++;
+		}
+		insertAtomicList(particles, collectionID, "EnchiladaDataPoint");
 	}
 }

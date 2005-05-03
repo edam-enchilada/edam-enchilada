@@ -104,6 +104,7 @@ public class Collection {
 		return null;
 	}
 	
+	//TODO:  Need a progress bar here.
 	public boolean exportToPar()
 	{
 		File parFile = new File(name + ".par");
