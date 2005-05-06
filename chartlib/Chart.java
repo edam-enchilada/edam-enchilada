@@ -210,9 +210,9 @@ public class Chart extends JPanel
 	 * any point in the bar.
 	 * @param index The chart to check.
 	 * @param p The point in screen coordinates.
-	 * @return A DataPoint from the dataset, or null if no data points are at p.
+	 * @return The x coordinate of the value found.
 	 */
-	public DataPoint getDataPointForPoint(int index, Point p)
+	public Double getBarForPoint(int index, Point p)
 	{
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
@@ -220,12 +220,12 @@ public class Chart extends JPanel
 		return chartAreas[index].getBarAt(q, 3);
 	}
 	
-	public DataPoint getDataPointForPoint(Point p)
+	public Double getBarForPoint(Point p)
 	{
 		int chart = getChartIndexAt(p, true);
 		if(chart == -1) return null;
 		else
-			return getDataPointForPoint(chart, p);
+			return getBarForPoint(chart, p);
 	}
 	
 //	/**
@@ -530,6 +530,20 @@ public class Chart extends JPanel
 		for(int count = 0; count < chartAreas.length; count++)
 			chartAreas[count].setDataDisplayType(showBars, showLines);
 	}
+	
+	/**
+	 * Registers the given data x coordinates to be used for hit detection.
+	 * Overwrites previous hit detection data.
+	 * In Enchilada, this allows a graph to display a full spectrum while still
+	 * allowing the user to find the peaks.
+	 * @param index The chart to affect.
+	 * @param xCoords An array of x coordinates in data space.
+	 */
+	public void setHitDetectCoords(int index, double[] xCoords)
+	{
+		chartAreas[index].setHitDetectCoords(xCoords);
+	}
+	
 	
 	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.

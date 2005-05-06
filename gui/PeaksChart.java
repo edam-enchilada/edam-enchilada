@@ -56,7 +56,6 @@ import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.ZoomableChart;
-import database.InstancedResultSet;
 import database.SQLServerDatabase;
 import atom.ATOFMSParticle;
 import atom.Peak;
@@ -86,7 +85,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	private String atomFile;
 	
 	private boolean spectrumLoaded = false;
-	private static final int SPECTRUM_RESOLUTION = 4;
+	private static final int SPECTRUM_RESOLUTION = 1;
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -164,10 +163,8 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		peaks = newPeaks;
 		posPeaks = new ArrayList<Peak>();
 		negPeaks = new ArrayList<Peak>();
-//		chartlib.Dataset chartPos = new Dataset();
-//		chartlib.Dataset chartNeg = new Dataset();
 		
-		
+		//loads peaks
 		for (Peak p : peaks)
 		{
 			if(p.massToCharge > 0){
@@ -177,6 +174,22 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 				negPeaks.add(p);
 			}
 		}
+		
+		//sets up chart to detect mouse hits on peaks
+		double[] xCoords = new double[posPeaks.size()];
+		for(int i = 0; i<xCoords.length; i++)
+		{
+			xCoords[i] = posPeaks.get(i).massToCharge;
+		}
+		chart.setHitDetectCoords(0,xCoords);
+		
+		xCoords = new double[negPeaks.size()];
+		for(int i = 0; i<xCoords.length; i++)
+		{
+			xCoords[i] = -negPeaks.get(i).massToCharge;
+		}
+		chart.setHitDetectCoords(1,xCoords);
+		
 		
 		if(peakButton.isSelected())
 			displayPeaks();
@@ -221,7 +234,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		if(chartIndex == -1) return; //mouse not pointing at a chart -> don't do anything
 		
 		//java.awt.geom.Point2D.Double dataPoint = chart.getDataValueForPoint(chartIndex, mousePoint);
-		DataPoint dp = chart.getDataPointForPoint(chartIndex, mousePoint);
+		Double dp = chart.getBarForPoint(chartIndex, mousePoint);
 		int multiplier, adder = 0;
 		
 		table.clearSelection();
@@ -229,7 +242,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		if(dp != null)
 		{
 			
-			
+			//System.out.println("Point detecting");
 			ArrayList<Peak> peaks;
 			if(chartIndex == 0)  // in positive peaks chart
 			{
@@ -248,7 +261,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			{
 				peak = peaks.get(count);
 				
-				if(peak.massToCharge == multiplier * dp.x)
+				if(peak.massToCharge == multiplier * dp)
 					table.addRowSelectionInterval(count + adder, count + adder);
 				
 			}
@@ -342,7 +355,10 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			rs.next();
 			origDataSetID = rs.getInt("OrigDataSetID");
 			} catch (SQLException e) {
-				System.err.println("Exception getting OrigDataSetID");
+				//System.err.println("Exception getting OrigDataSetID");
+				JOptionPane.showMessageDialog(null,
+						"An error occured retrieving the dataset ID from the database.",
+						"Spectrum Display Error",JOptionPane.ERROR_MESSAGE);
 				peakButton.setSelected(true);
 				return;
 			}	
@@ -359,8 +375,10 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			massCalFile = rs.getString("MassCalFile");
 			autocal = rs.getBoolean(6);
 			} catch (SQLException e) {
-				System.err.println("Exception getting calibration data");
-				e.printStackTrace();
+				//System.err.println("Exception getting calibration data");
+				JOptionPane.showMessageDialog(null,
+						"An error occured while retrieving the calibration data from the database.",
+						"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 				peakButton.setSelected(true);
 				return;
 			}
@@ -370,7 +388,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			ATOFMSParticle.currCalInfo = new CalInfo(massCalFile, autocal);
 		} catch (java.io.IOException e)
 		{
-			System.err.println("Exception opening calibration file");
+			//System.err.println("Exception opening calibration file");
+			JOptionPane.showMessageDialog(null,
+					"An error occurred while opening the calibration file.\n"
+					+ e.toString(),
+					"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 			peakButton.setSelected(true);
 			return;
 		}
@@ -380,7 +402,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			particle = new ReadSpec(atomFile).getParticle();
 		} catch (Exception e)
 		{
-			System.err.println("Exception opening atom file");
+			//System.err.println("Exception opening atom file");
+			JOptionPane.showMessageDialog(null,
+					"An error occurred while opening the atom file.\n"
+					+ e.toString(),
+					"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 			peakButton.setSelected(true);
 			return;
 		}

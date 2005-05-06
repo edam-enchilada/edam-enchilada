@@ -58,7 +58,7 @@ public class ChartArea extends JComponent {
 	private GraphAxis yAxis;
 	private Dataset dataset;
 	private Color color;
-	private Rectangle[] bars = null; //the data bars.  used for hit detection.
+	private double[] bars = null; //the data bars.  used for hit detection.
 	
 	//spacers between axes and edges to allow for tick mark labels and axis titles.
 	private static final int H_AXIS_PADDING = 15;
@@ -288,8 +288,25 @@ public class ChartArea extends JComponent {
 	{
 		this.showBars = showBars;
 		this.showLines = showLines;
-		bars = null;
+		//bars = null;
 		repaint();
+	}
+	
+	/**
+	 * Registers the given data x coordinates to be used for hit detection.
+	 * Overwrites previous hit detection data.
+	 * In Enchilada, this allows a graph to display a full spectrum while still
+	 * allowing the user to find the peaks.
+	 * @param xCoords An array of x coordinates in data space.
+	 */
+	public void setHitDetectCoords(double[] xCoords)
+	{
+		Rectangle dataArea = getDataAreaBounds();
+		bars = new double[xCoords.length];
+		for(int count = 0; count < bars.length; count++)
+		{
+			bars[count] = xCoords[count];
+		}
 	}
 
 	/**
@@ -410,29 +427,28 @@ public class ChartArea extends JComponent {
 	 * If a bar drawn at point p, returns the corresponding data point.
 	 * @param p A point in screen coordinates.
 	 * @param buf A point within buf pixels of the bar will count as part of the bar.
-	 * @return The data point the bar under point p represents.
+	 * @return The X coordinate in data space the found bar represents.
 	 */
-	public DataPoint getBarAt(Point p, int buf)
+	public Double getBarAt(Point p, int buf)
 	{
 		if(bars == null) return null;
 		int i;
 		Rectangle testbar;
-		Iterator<DataPoint> dataIt = dataset.iterator();
-		DataPoint dp;
+		Rectangle dataArea = getDataAreaBounds();
+		//Iterator<DataPoint> dataIt = dataset.iterator();
+		//DataPoint dp;
 		
-		//since the bars were created by iterating through the datset,
-		//iterating through the bar array and the dataset at the same time
-		//will keep each bar with the corresponding datapoint.
-		for(i = 0; i < bars.length && dataIt.hasNext(); i++)
+
+		for(i = 0; i < bars.length; i++)
 		{
-			dp = dataIt.next();
+			//dp = dataIt.next();
+
+			testbar = new Rectangle((int) (xAxis.relativePosition(bars[i]) * dataArea.width 
+						+ dataArea.x) - buf,
+					dataArea.y,
+					barWidth + buf*2, dataArea.height);
+			if(testbar.contains(p)) return new Double(bars[i]);
 			
-			if(bars[i] != null)
-			{
-				testbar = new Rectangle(bars[i].x - buf, bars[i].y - buf,
-					bars[i].width + 2*buf, bars[i].height + 2*buf);
-				if(testbar.contains(p)) return dp;
-			}
 		}
 		return null;
 	}
@@ -620,18 +636,9 @@ public class ChartArea extends JComponent {
 	}
 	
 	/**
-	 * This method is called by application-triggered events.
-	 * For efficiency, we'd like to only pain on system-triggered events.
-	 */
-	public void update(Graphics g)
-	{
-		System.out.println("update");
-	}
-	
-	/**
 	 * Draws the graph
 	 */
-	public void paint(Graphics g)
+	public void paintComponent(Graphics g)
 	{
 		
 		//gets the bounds of the drawing area
@@ -651,6 +658,7 @@ public class ChartArea extends JComponent {
 		if(dataset != null)
 		{
 			if(showBars) drawDataBars(g2d, dataset);
+			//if(showLines) drawDataLines(g2d, dataset);
 			if(showLines) drawDataLines(g2d, dataset);
 		}
 		
@@ -668,18 +676,80 @@ public class ChartArea extends JComponent {
 	}
 	
 	
+//	/**
+//	 * Draws the data in the dataset as a continuous line that goes from
+//	 * data point to data point.
+//	 * @param g2d The graphics context.
+//	 * @param ds The dataset to draw.
+//	 */
+//	private void drawDataLines(Graphics2D g2d, Dataset ds)
+//	{
+//		Rectangle dataArea = getDataAreaBounds();
+//		
+//		DataPoint curPoint;
+//		int index = 0;
+//		double xCoord, yCoord;	//coordinates of point to draw
+//		
+//		//	previous point - connect line from it to current point.
+//		double prevX=Double.NaN, prevY = Double.NaN;
+//		
+//		Shape oldClip = g2d.getClip();
+//		Stroke oldStroke = g2d.getStroke();
+//		g2d.setColor(color);
+//		g2d.clip(dataArea);
+//		g2d.setStroke(new BasicStroke(2));
+//		
+//		//	loops through all data points, drawing each one.
+//		//GeneralPath gp = new GeneralPath();
+//		Iterator i = ds.iterator();
+//		while(i.hasNext())
+//		{
+//			curPoint = (DataPoint)i.next();
+//			
+//			xCoord = dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width;
+//			yCoord = dataArea.y + dataArea.height 
+//				- (yAxis.relativePosition(curPoint.y) * dataArea.height);
+//			
+//		
+////			g2d.fill(new Rectangle((int)(xCoord - dotWidth/2),
+////					(int)(yCoord - dotWidth/2),
+////					dotWidth, dotWidth));
+//			
+//			
+//			//if there is no previous point, just store locations
+//			if(Double.isNaN(prevX) || Double.isNaN(prevY))
+//			{
+//			}
+//			//otherwise, draw point and connecting line
+//			else
+//			{
+//				//gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
+//				g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+//			}
+//			prevX = xCoord;
+//			prevY = yCoord;	
+//		}
+//		//g2d.draw(gp);
+//		
+//		//cleanup
+//		g2d.setClip(oldClip);
+//	}
+	
 	/**
-	 * Draws the data in the dataset as a continuous line that goes from
-	 * data point to data point.
-	 * @param g2d The graphics context.
-	 * @param ds The dataset to draw.
+	 * Draws the data in a continuous line by drawing only one
+	 * data point per horizontal pixel.
+	 * TODO: improve display accuracy by using a better algorithm for deciding
+	 * which of overlapping data points to draw.
+	 * @param g2d
+	 * @param ds
 	 */
+	
 	private void drawDataLines(Graphics2D g2d, Dataset ds)
 	{
 		Rectangle dataArea = getDataAreaBounds();
 		
-		DataPoint curPoint;
-		int index = 0;
+		DataPoint curPoint; //holder for data retrieved from dataset
+		int pixindex = 0;	//what pixel we are on
 		double xCoord, yCoord;	//coordinates of point to draw
 		
 		//	previous point - connect line from it to current point.
@@ -688,45 +758,47 @@ public class ChartArea extends JComponent {
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(color);
-		g2d.clip(dataArea);
+		g2d.clip(dataArea);	//constrains drawing to the data area
 		g2d.setStroke(new BasicStroke(2));
 		
-		//	loops through all data points, drawing each one.
-		GeneralPath gp = new GeneralPath();
+		//	loops through all data points
+		//GeneralPath gp = new GeneralPath();
 		Iterator i = ds.iterator();
-		while(i.hasNext())
+		while(i.hasNext() && pixindex < dataArea.x + dataArea.width)
 		{
 			curPoint = (DataPoint)i.next();
 			
+			//find screen coordinates of point
 			xCoord = dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width;
 			yCoord = dataArea.y + dataArea.height 
 				- (yAxis.relativePosition(curPoint.y) * dataArea.height);
 			
-		
-//			g2d.fill(new Rectangle((int)(xCoord - dotWidth/2),
-//					(int)(yCoord - dotWidth/2),
-//					dotWidth, dotWidth));
 			
-			
-			//if there is no previous point, just store locations
-			if(Double.isNaN(prevX) || Double.isNaN(prevY))
+			//only draw the first point at each pixel
+			if(pixindex < (int)xCoord)
 			{
+				//if there is no previous point, draw the line on the next pass
+				if(!(Double.isNaN(prevX) || Double.isNaN(prevY)))
+				{
+					//gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
+					g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+				}
+				prevX = xCoord;
+				prevY = yCoord;
+				pixindex = (int)xCoord;
+				
 			}
-			//otherwise, draw point and connecting line
+				//overlapping points: record highest y coordinate value
 			else
 			{
-				gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
-				//g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+				
 			}
-			prevX = xCoord;
-			prevY = yCoord;	
 		}
-		g2d.draw(gp);
+		//g2d.draw(gp);
 		
 		//cleanup
 		g2d.setClip(oldClip);
 	}
-	
 	
 	/**
 	 * Draws the data as bars.  Also saves them in the array bars[] for later access.
@@ -746,7 +818,7 @@ public class ChartArea extends JComponent {
 		
 		//loops through all data points, drawing each one.
 		Iterator i = ds.iterator();
-		Rectangle barsTemp[] = new Rectangle[ds.size()];
+		//Rectangle barsTemp[] = new Rectangle[ds.size()];
 		while(i.hasNext())
 		{
 			curPoint = (DataPoint)(i.next());
@@ -775,7 +847,7 @@ public class ChartArea extends JComponent {
 						(int)(width),
 						(int)(height) );
 				
-				barsTemp[index] = bar; //saves in global array
+				//barsTemp[index] = bar; //saves in global array
 				
 				
 				//fills in bar
@@ -789,14 +861,14 @@ public class ChartArea extends JComponent {
 			else
 			{
 				//puts a null bar in the array to hold its place
-				barsTemp[index] = null;
+				//barsTemp[index] = null;
 			}
 			index++;
 		}
 		//saves in global array
-		bars = new Rectangle[index];
-		for(int c = 0; c < index; c++)
-			bars[c] = barsTemp[c];
+		//bars = new Rectangle[index];
+		//for(int c = 0; c < index; c++)
+		//	bars[c] = barsTemp[c];
 	}
 	
 	/**

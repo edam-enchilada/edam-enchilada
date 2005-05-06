@@ -93,10 +93,15 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void mousePressed(MouseEvent e) 
 	{
-		if(chart.getChartIndexAt(e.getPoint(),true) != -1)
+		if(e.getButton() == MouseEvent.BUTTON1 )
 		{
-			glassPane.start = e.getPoint();
-			//glassPane.setOpaque(true);
+			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
+				
+			{
+				glassPane.start = e.getPoint();
+				//glassPane.setOpaque(true);
+			}
+			else glassPane.start = null;
 		}
 		else glassPane.start = null;
 	}
