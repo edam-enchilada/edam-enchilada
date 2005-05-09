@@ -335,6 +335,9 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public int copyCollection(int collectionID, int toParentID)
 	{
+		//TODO: Remove items from supercollection if we're pasting 
+		//into a subcollection of the current collection, ie if 
+		// collectionID == toParentID
 		int newID = -1;
 		try {
 			Statement stmt = con.createStatement();
