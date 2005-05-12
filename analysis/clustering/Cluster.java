@@ -86,6 +86,8 @@ public abstract class Cluster extends CollectionDivider {
 	private float[] longerLists = new float[MAX_LOCATION * 2];
 	
 	protected int zeroPeakListParticleCount = 0;
+	protected int clusterCentroidIters = 0;
+	protected int sampleIters = 0;
 	
 	/**
 	 * Builds the cluster name a bit, then sends information off
@@ -638,6 +640,9 @@ public abstract class Cluster extends CollectionDivider {
 		        zeroPeakListParticleCount);
 		if (distanceMetric == DOT_PRODUCT)
 		    out.println("Distance shown here is actually 1 - dot product.");
+		out.println("Total clustering passes during sampling = " + sampleIters);
+		out.println("Total number of centroid clustering passes = " +
+		        clusterCentroidIters);
 		out.println("Total number of passes = " + totalDistancePerPass.size());
 		out.println("Average distance of all points from their centers " +
 		"at each iteration:");

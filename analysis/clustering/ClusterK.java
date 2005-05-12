@@ -72,7 +72,7 @@ public abstract class ClusterK extends Cluster {
 	private Random random;
 
 	private static float error = 0.01f;
-	private static int numSamples = 10;
+	private static int numSamples = 50;
 	protected NonZeroCursor curs;
 	
 	/**
@@ -130,6 +130,7 @@ public abstract class ClusterK extends Cluster {
 			System.out.println("sample size: " + sampleSize);
 			ArrayList<ArrayList<Centroid>> allCentroidLists =
 			    new ArrayList<ArrayList<Centroid>>(numSamples);
+			sampleIters = 0;
 			for(int i = 0; i < numSamples; i++)
 			{
 				System.out.println("Clustering subsample #" + (i+1));
@@ -140,6 +141,7 @@ public abstract class ClusterK extends Cluster {
 				allCentroidLists.add(processPart(new ArrayList<Centroid>(),
 				        				partCurs));
 				centroidList.addAll(allCentroidLists.get(i));
+				sampleIters += totalDistancePerPass.size();
 			}
 			
 			// Of the various centroids that are found, try clustering all
@@ -150,19 +152,24 @@ public abstract class ClusterK extends Cluster {
 			float bestDistance = Float.POSITIVE_INFINITY;
 			ArrayList<Centroid> bestStartingCentroids = null;
 			int bestIndex = -1;
+			clusterCentroidIters = 0;
 			for (int i=0; i < numSamples; i++) {
+				System.out.println("Centroid clustering #" + i);
 				ArrayList<Centroid> centroids = 
 					processPart(allCentroidLists.get(i),
 							new NonZeroCursor(
 									new CentroidListCursor(centroidList)));
 				float distance = totalDistancePerPass.
 			              get(totalDistancePerPass.size()-1).floatValue();
+				clusterCentroidIters += totalDistancePerPass.size();
 			    if (distance < bestDistance) {
 			        bestDistance = distance;
 			        bestStartingCentroids = centroids;
 			        bestIndex = i;
 			    }
 			}
+			System.out.println("Centroid clustering iterations: " +
+			        clusterCentroidIters);
 			centroidList = processPart(bestStartingCentroids,
 					new NonZeroCursor(new CentroidListCursor(centroidList)));
 			partCurs.close();
