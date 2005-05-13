@@ -595,6 +595,7 @@ public class Chart extends JPanel
 	}
 	
 	
+	
 	/**
 	 * Creates new objects for all the GUI elements and lays them out.
 	 * Called when first creating Chart, or maybe afterwards if a 

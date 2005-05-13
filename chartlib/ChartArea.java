@@ -45,6 +45,7 @@ package chartlib;
 import javax.swing.JComponent;
 import java.awt.*;
 import java.awt.geom.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -659,7 +660,11 @@ public class ChartArea extends JComponent {
 		{
 			if(showBars) drawDataBars(g2d, dataset);
 			//if(showLines) drawDataLines(g2d, dataset);
-			if(showLines) drawDataLines(g2d, dataset);
+			if(showLines) 
+			{
+				drawDataLinesSmart(g2d, dataset);
+				//else drawDataLines(g2d, dataset);
+			}
 		}
 		
 		drawAxisLineX(g2d);
@@ -674,86 +679,28 @@ public class ChartArea extends JComponent {
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
 	}
-	
-	
-//	/**
-//	 * Draws the data in the dataset as a continuous line that goes from
-//	 * data point to data point.
-//	 * @param g2d The graphics context.
-//	 * @param ds The dataset to draw.
-//	 */
-//	private void drawDataLines(Graphics2D g2d, Dataset ds)
-//	{
-//		Rectangle dataArea = getDataAreaBounds();
-//		
-//		DataPoint curPoint;
-//		int index = 0;
-//		double xCoord, yCoord;	//coordinates of point to draw
-//		
-//		//	previous point - connect line from it to current point.
-//		double prevX=Double.NaN, prevY = Double.NaN;
-//		
-//		Shape oldClip = g2d.getClip();
-//		Stroke oldStroke = g2d.getStroke();
-//		g2d.setColor(color);
-//		g2d.clip(dataArea);
-//		g2d.setStroke(new BasicStroke(2));
-//		
-//		//	loops through all data points, drawing each one.
-//		//GeneralPath gp = new GeneralPath();
-//		Iterator i = ds.iterator();
-//		while(i.hasNext())
-//		{
-//			curPoint = (DataPoint)i.next();
-//			
-//			xCoord = dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width;
-//			yCoord = dataArea.y + dataArea.height 
-//				- (yAxis.relativePosition(curPoint.y) * dataArea.height);
-//			
-//		
-////			g2d.fill(new Rectangle((int)(xCoord - dotWidth/2),
-////					(int)(yCoord - dotWidth/2),
-////					dotWidth, dotWidth));
-//			
-//			
-//			//if there is no previous point, just store locations
-//			if(Double.isNaN(prevX) || Double.isNaN(prevY))
-//			{
-//			}
-//			//otherwise, draw point and connecting line
-//			else
-//			{
-//				//gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
-//				g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
-//			}
-//			prevX = xCoord;
-//			prevY = yCoord;	
-//		}
-//		//g2d.draw(gp);
-//		
-//		//cleanup
-//		g2d.setClip(oldClip);
-//	}
+
 	
 	/**
 	 * Draws the data in a continuous line by drawing only one
 	 * data point per horizontal pixel.
-	 * TODO: improve display accuracy by using a better algorithm for deciding
+
 	 * which of overlapping data points to draw.
 	 * @param g2d
 	 * @param ds
 	 */
 	
-	private void drawDataLines(Graphics2D g2d, Dataset ds)
+	private void drawDataLinesSmart(Graphics2D g2d, Dataset ds)
 	{
 		Rectangle dataArea = getDataAreaBounds();
 		
 		DataPoint curPoint; //holder for data retrieved from dataset
-		int pixindex = 0;	//what pixel we are on
-		double xCoord, yCoord;	//coordinates of point to draw
+		int pixindex = dataArea.x;	//what pixel we are on
+		int xCoord, yCoord;	//coordinates of point to draw
 		
 		//	previous point - connect line from it to current point.
-		double prevX=Double.NaN, prevY = Double.NaN;
+		int prevX=Integer.MIN_VALUE, prevY = Integer.MIN_VALUE;
+		int maxYCoord = Integer.MAX_VALUE;
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
@@ -766,39 +713,116 @@ public class ChartArea extends JComponent {
 		Iterator i = ds.iterator();
 		while(i.hasNext() && pixindex < dataArea.x + dataArea.width)
 		{
-			curPoint = (DataPoint)i.next();
 			
-			//find screen coordinates of point
-			xCoord = dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width;
-			yCoord = dataArea.y + dataArea.height 
-				- (yAxis.relativePosition(curPoint.y) * dataArea.height);
-			
-			
-			//only draw the first point at each pixel
-			if(pixindex < (int)xCoord)
+			do
 			{
-				//if there is no previous point, draw the line on the next pass
-				if(!(Double.isNaN(prevX) || Double.isNaN(prevY)))
+				curPoint = (DataPoint)i.next();
+			
+				//find screen coordinates of point
+				xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width);
+				yCoord = (int) (dataArea.y + dataArea.height 
+						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+			
+				if(xCoord < dataArea.x) break;
+				
+				//new pixel
+				if(xCoord > pixindex)
 				{
-					//gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
-					g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+					//draw
+					if(prevY != Integer.MIN_VALUE)
+					{
+						g2d.draw(new Line2D.Double(prevX, prevY, pixindex, maxYCoord));
+					}
+					
+					//reset for next pixel
+					prevX = pixindex;
+					prevY = maxYCoord;
+					maxYCoord = yCoord;
+					pixindex = xCoord;
+					break;
 				}
-				prevX = xCoord;
-				prevY = yCoord;
-				pixindex = (int)xCoord;
-				
-			}
-				//overlapping points: record highest y coordinate value
-			else
-			{
-				
-			}
+				//same pixel
+				else
+				{
+					if(maxYCoord > yCoord) maxYCoord = yCoord;
+				}
+			} while(i.hasNext());
+			
+			
+			
 		}
 		//g2d.draw(gp);
 		
 		//cleanup
 		g2d.setClip(oldClip);
+		g2d.setStroke(oldStroke);
 	}
+	
+	
+//	/**
+//	 * Draws the data in a continuous line by drawing only one
+//	 * data point per horizontal pixel.
+//	 * TODO: improve display accuracy by using a better algorithm for deciding
+//	 * which of overlapping data points to draw.
+//	 * @param g2d
+//	 * @param ds
+//	 */
+//	
+//	private void drawDataLines(Graphics2D g2d, Dataset ds)
+//	{
+//		Rectangle dataArea = getDataAreaBounds();
+//		
+//		DataPoint curPoint; //holder for data retrieved from dataset
+//		int pixindex = 0;	//what pixel we are on
+//		double xCoord, yCoord;	//coordinates of point to draw
+//		
+//		//	previous point - connect line from it to current point.
+//		double prevX=Double.NaN, prevY = Double.NaN;
+//		
+//		Shape oldClip = g2d.getClip();
+//		Stroke oldStroke = g2d.getStroke();
+//		g2d.setColor(color);
+//		g2d.clip(dataArea);	//constrains drawing to the data area
+//		g2d.setStroke(new BasicStroke(2));
+//		
+//		//	loops through all data points
+//		//GeneralPath gp = new GeneralPath();
+//		Iterator i = ds.iterator();
+//		while(i.hasNext() && pixindex < dataArea.x + dataArea.width)
+//		{
+//			curPoint = (DataPoint)i.next();
+//			
+//			//find screen coordinates of point
+//			xCoord = dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width;
+//			yCoord = dataArea.y + dataArea.height 
+//				- (yAxis.relativePosition(curPoint.y) * dataArea.height);
+//			
+//			
+//			//only draw the first point at each pixel
+//			if(pixindex < (int)xCoord)
+//			{
+//				//if there is no previous point, draw the line on the next pass
+//				if(!(Double.isNaN(prevX) || Double.isNaN(prevY)))
+//				{
+//					//gp.append(new Line2D.Double(prevX, prevY, xCoord, yCoord), false);
+//					g2d.draw(new Line2D.Double(prevX, prevY, xCoord, yCoord));
+//				}
+//				prevX = xCoord;
+//				prevY = yCoord;
+//				pixindex = (int)xCoord;
+//				
+//			}
+//				//overlapping points: record highest y coordinate value
+//			else
+//			{
+//				
+//			}
+//		}
+//		//g2d.draw(gp);
+//		
+//		//cleanup
+//		g2d.setClip(oldClip);
+//	}
 	
 	/**
 	 * Draws the data as bars.  Also saves them in the array bars[] for later access.

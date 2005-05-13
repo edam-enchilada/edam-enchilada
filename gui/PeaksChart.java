@@ -131,6 +131,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
+		
 		peakButton = new JRadioButton("Peaks");
 		peakButton.setActionCommand("peaks");
 		peakButton.addActionListener(this);
@@ -298,6 +299,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			negDS.add(
 					new DataPoint(-p.massToCharge, p.height));
 		}
+
 		
 		chart.setDataset(0,posDS);
 		chart.setDataset(1,negDS);

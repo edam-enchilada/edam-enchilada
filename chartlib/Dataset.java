@@ -47,7 +47,7 @@ import java.util.*;
 /**
  * @author sulmanj
  * Manages a collection of data for the graph.  Also can provide some display hints.
- * Contains a set of x, y coordinate pairs.
+ * Contains a set of x, y coordinate pairs ordered by x coordinate.
  */
 public class Dataset extends TreeSet<DataPoint>
 {
