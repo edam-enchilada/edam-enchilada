@@ -714,39 +714,37 @@ public class ChartArea extends JComponent {
 		while(i.hasNext() && pixindex < dataArea.x + dataArea.width)
 		{
 			
-			do
+			
+			curPoint = (DataPoint)i.next();
+			
+			//find screen coordinates of point
+			xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width);
+			yCoord = (int) (dataArea.y + dataArea.height 
+					- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+			
+			if(xCoord < dataArea.x) continue;
+			
+			//new pixel
+			if(xCoord > pixindex)
 			{
-				curPoint = (DataPoint)i.next();
-			
-				//find screen coordinates of point
-				xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width);
-				yCoord = (int) (dataArea.y + dataArea.height 
-						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
-			
-				if(xCoord < dataArea.x) break;
+				//draw
+				if(prevY != Integer.MIN_VALUE)
+				{
+					g2d.draw(new Line2D.Double(prevX, prevY, pixindex, maxYCoord));
+				}
 				
-				//new pixel
-				if(xCoord > pixindex)
-				{
-					//draw
-					if(prevY != Integer.MIN_VALUE)
-					{
-						g2d.draw(new Line2D.Double(prevX, prevY, pixindex, maxYCoord));
-					}
-					
-					//reset for next pixel
-					prevX = pixindex;
-					prevY = maxYCoord;
-					maxYCoord = yCoord;
-					pixindex = xCoord;
-					break;
-				}
-				//same pixel
-				else
-				{
-					if(maxYCoord > yCoord) maxYCoord = yCoord;
-				}
-			} while(i.hasNext());
+				//reset for next pixel
+				prevX = pixindex;
+				prevY = maxYCoord;
+				maxYCoord = yCoord;
+				pixindex = xCoord;
+				//break;
+			}
+			//same pixel
+			else
+			{
+				if(maxYCoord > yCoord) maxYCoord = yCoord;
+			}
 			
 			
 			
