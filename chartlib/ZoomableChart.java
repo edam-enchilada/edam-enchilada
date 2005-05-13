@@ -43,10 +43,10 @@
 package chartlib;
 
 import javax.swing.event.MouseInputListener;
-import javax.swing.OverlayLayout;
+import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
-import javax.swing.JLayeredPane;
+
 
 /**
  * @author sulmanj
@@ -59,13 +59,16 @@ import javax.swing.JLayeredPane;
  * mouse feedback over the chart.
  */
 public class ZoomableChart extends JLayeredPane implements MouseInputListener,
-		KeyListener {
+		AdjustmentListener {
 
 	//the two layers
 	private Chart chart;
 	private ChartZoomGlassPane glassPane;
 	
+	private JScrollBar scrollBar;
 	
+	private double defaultXmin = 0;
+	private double defaultXmax = 400;
 /**
  * Constructs a new ZoomableChart.
  * @param chart The chart the zoomable chart will display.
@@ -74,15 +77,39 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	{
 		this.chart = chart;
 		this.glassPane = new ChartZoomGlassPane();
+
+
+		
+		//on an unzoomed chart, the bar fills the whole range.
+		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, 0, 100, 0, 100);
+		scrollBar.setModel(new ScrollBarRangeModel());
+		scrollBar.addAdjustmentListener(this);
 		
 		//layout for stacking components
 		setLayout(new OverlayLayout(this));
-		add(chart,JLayeredPane.DEFAULT_LAYER);
+		
+		JPanel bottomPanel = new JPanel(new BorderLayout());
+		
+		bottomPanel.add(chart,BorderLayout.CENTER);
+		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
+		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		addMouseListener(this);
 		addMouseMotionListener(this);
-
-
+	}
+	
+	
+	public double getDefaultXmax() {
+		return defaultXmax;
+	}
+	public void setDefaultXmax(double defaultXmax) {
+		this.defaultXmax = defaultXmax;
+	}
+	public double getDefaultXmin() {
+		return defaultXmin;
+	}
+	public void setDefaultXmin(double defaultXmin) {
+		this.defaultXmin = defaultXmin;
 	}
 	
 	
@@ -154,6 +181,19 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	}
 	
 	/**
+	 * Adjusts when scroll bar is scrolled. 
+	 *
+	 */
+	public void adjustmentValueChanged(AdjustmentEvent e) {
+		double xmin = e.getValue();
+		double xmax = xmin + scrollBar.getVisibleAmount();
+//		System.out.println(e.toString());
+//		System.out.println(scrollBar.getVisibleAmount());
+//		System.out.println(scrollBar.getMaximum());
+		chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+	}
+	
+	/**
 	 * Zooms the graph using the x bounds from the last mouse drag.
 	 *
 	 */
@@ -173,9 +213,19 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		xmin = chart.getDataValueForPoint(minPoint).x;
 		xmax = chart.getDataValueForPoint(maxPoint).x;
 		
-		chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-		
+		zoom((int)xmin, (int)xmax);
+		//chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+
 	}
+	
+	public void zoom(double newXmin, double newXmax)
+	{
+		scrollBar.setValues((int)newXmin, (int)(newXmax - newXmin),
+				(int)defaultXmin, (int)defaultXmax);
+		chart.setAxisBounds(newXmin, newXmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+		scrollBar.updateUI();
+	}
+	
 	
 //	/**
 //	 * For testing: outputs the chart point of the click.
@@ -196,10 +246,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	
 	//extra mouseListener events.
 	public void mouseClicked(MouseEvent e) {}
-	public void keyTyped(KeyEvent arg0) {}
-	public void keyPressed(KeyEvent arg0) {}
 	public void mouseMoved(MouseEvent arg0) {}
-	public void keyReleased(KeyEvent arg0) {}
 	public void mouseEntered(MouseEvent arg0) {}
 	public void mouseExited(MouseEvent arg0) {}
 	
@@ -250,5 +297,32 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			g.fillRect(end.x-5, start.y-5, 10, 10);
 		}
 	}
+	
+	private class ScrollBarRangeModel extends DefaultBoundedRangeModel
+	{
+		public int getMinimum()
+		{
+			return (int)defaultXmin;
+		}
+		public int getMaximum()
+		{
+			return (int)defaultXmax;
+		}
+//		public int getValue()
+//		{
+//			
+//			int val =  (int) chart.getXmin(0);
+//			//System.out.println(val);
+//			return val;
+//		}
+//		public int getExtent()
+//		{
+//			int val = (int) (chart.getXmax(0) - chart.getXmin(0));
+//			return val;
+//		
+//		}
+	}
 
+
+	
 }

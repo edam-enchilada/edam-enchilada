@@ -260,6 +260,46 @@ public class Chart extends JPanel
 	}
 	
 	/**
+	 * Returns the lower limit on the x axis of the chart.
+	 * @param index Which chart to check.
+	 * @return the lower limit on the x axis of the chart.
+	 */
+	public double getXmin(int index)
+	{
+		return chartAreas[index].getXmin();
+	}
+	
+	/**
+	 * Returns the upper limit on the x axis of the chart.
+	 * @param index Which chart to check.
+	 * @return the upper limit on the x axis of the chart.
+	 */
+	public double getXmax(int index)
+	{
+		return chartAreas[index].getXmax();
+	}
+	
+	/**
+	 * Returns the lower limit on the y axis of the chart.
+	 * @param index Which chart to check.
+	 * @return the lower limit on the y axis of the chart.
+	 */
+	public double getYmin(int index)
+	{
+		return chartAreas[index].getYmin();
+	}
+	
+	/**
+	 * Returns the upper limit on the y axis of the chart.
+	 * @param index Which chart to check.
+	 * @return the upper limit on the y axis of the chart.
+	 */
+	public double getYmax(int index)
+	{
+		return chartAreas[index].getYmax();
+	}
+	
+	/**
 	 * Sets a dataset for all chart areas.
 	 * @param ds The dataset to add.
 	 *

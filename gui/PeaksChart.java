@@ -72,10 +72,13 @@ import java.awt.event.*;
  * chart.
  */
 public class PeaksChart extends JPanel implements MouseMotionListener, ActionListener {
+	//GUI elements
 	private Chart chart;
 	private ZoomableChart zchart;
 	private JTable table; 
 	private JRadioButton peakButton, specButton;
+	
+	//Data elements
 	private javax.swing.table.AbstractTableModel datamodel;
 	private ArrayList<atom.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
@@ -85,7 +88,12 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	private String atomFile;
 	
 	private boolean spectrumLoaded = false;
+	
 	private static final int SPECTRUM_RESOLUTION = 1;
+	private static final int DEFAULT_XMIN = 0;
+	private static final int DEFAULT_XMAX = 400;
+	
+
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -114,6 +122,8 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		zchart = new ZoomableChart(chart);
 		zchart.addMouseMotionListener(this);
 		zchart.setFocusable(true);
+		zchart.setDefaultXmin(DEFAULT_XMIN);
+		zchart.setDefaultXmax(DEFAULT_XMAX);
 		add(zchart, BorderLayout.CENTER);
 		
 		//sets up table
@@ -147,6 +157,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		rightPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
 		add(rightPanel, BorderLayout.EAST);
+
 	}
 
 	/**
@@ -212,9 +223,10 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	 */
 	public void unZoom()
 	{
-		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-		//chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
-		chart.packData(false, true);
+		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX - 1);
+//		chart.setAxisBounds(DEFAULT_XMIN,DEFAULT_XMAX, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+//		//chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
+//		chart.packData(false, true);
 	}
 	
 	
@@ -272,7 +284,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	
 	public void actionPerformed(ActionEvent e)
 	{
-		if(peaks == null)
+		if(peaks.size() == 0)
 		{
 			return;
 		}
@@ -450,8 +462,8 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		}
 
 		public int getRowCount() {
-			
-			return peaks.size();
+			if(peaks == null) return 0;
+			else return peaks.size();
 		}
 
 		public Object getValueAt(int row, int column) {
