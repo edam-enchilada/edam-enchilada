@@ -115,7 +115,7 @@ public class MainFrame extends JFrame implements ActionListener,
 	 */
 	public MainFrame()
 	{
-		super("SpASMS");
+		super("Enchilada");
 
         setDefaultLookAndFeelDecorated(true);
         
@@ -447,7 +447,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		JMenuItem helpItem = new JMenuItem("Help Contents", 
 				KeyEvent.VK_H);        
-		JMenuItem aboutItem = new JMenuItem("About SpASMS", 
+		JMenuItem aboutItem = new JMenuItem("About Enchilada", 
 				KeyEvent.VK_A);
 		
 		helpMenu.add(helpItem);
@@ -663,7 +663,7 @@ public class MainFrame extends JFrame implements ActionListener,
 			if (JOptionPane.showConfirmDialog(null,
 					"No database found. Would you like to create one?\n" +
 					"Make sure to select yes only if there is no database already present,\n"
-					+ "since this will remove any pre-existing SpASMS database.") ==
+					+ "since this will remove any pre-existing Enchilada database.") ==
 						JOptionPane.YES_OPTION) {
 
 				SQLServerDatabase.rebuildDatabase("SpASMSdb");
