@@ -174,6 +174,19 @@ public class MedianFinder {
 			return getKthElement(index);
 	}
 	
+	private String DEBUGprintMagnitudes()
+	{
+		String returnThis = "";
+		
+		for (int i = 0; i < particles.size(); i++)
+		{
+			returnThis += "\nMagnitude " + i + ": " + 
+			particles.get(i).getMagnitude(DistanceMetric.CITY_BLOCK) +
+			"\n";
+		}
+		
+		return returnThis;
+	}
 	/**
 	 * Take the loaded set of spectra and produce a "normalized" median, 
 	 * that is a peaklist of magnitude of 1, which, is the closest peaklist 
@@ -183,16 +196,12 @@ public class MedianFinder {
 	public BinnedPeakList getMedianSumToOne()
 	{
 		// Get the median and calculate the starting magnitude
-		float magnitude = 0.0f;
 		BinnedPeakList median = getMedian();
 		median.resetPosition();
-		for (int i=0; i < median.length(); i++)
-		{
-			magnitude += median.getNextLocationAndArea().area;
-		}
+		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
 		
 		assert(magnitude <= 1.001f) : "Median was larger than 1: " +
-			magnitude;
+			DEBUGprintMagnitudes() + " size = " + sortedList[0].length;
 		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)

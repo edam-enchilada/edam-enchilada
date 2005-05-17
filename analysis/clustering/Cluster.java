@@ -53,6 +53,7 @@ import database.InfoWarehouse;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
+import analysis.DistanceMetric;
 import analysis.ParticleInfo;
 
 /**
@@ -70,17 +71,17 @@ public abstract class Cluster extends CollectionDivider {
 	 * Use the City Block or Manhattan distance metric both in
 	 * normalization and in measuring distance.
 	 */
-	public static final int CITY_BLOCK = 0;
+	//public static final int CITY_BLOCK = 0;
 	
 	/**
 	 * Use the Euclidean Squared distance metric both in 
 	 * normalization and in measuring distance.
 	 */
-	public static final int EUCLIDEAN_SQUARED = 1;
+	//public static final int EUCLIDEAN_SQUARED = 1;
 	
-	public static final int DOT_PRODUCT = 2;
+	//public static final int DOT_PRODUCT = 2;
 	
-	int distanceMetric = 0;
+	DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private float[] longerLists = new float[MAX_LOCATION * 2];
@@ -108,7 +109,7 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param method
 	 * @return
 	 */
-	public abstract boolean setDistanceMetric(int method);
+	public abstract boolean setDistanceMetric(DistanceMetric method);
 	
 	/**
 	 * Prints out each peak in a peaklist.  Used for reporting results.
@@ -140,31 +141,8 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	protected BinnedPeakList normalize(BinnedPeakList list)
 	{
-		float magnitude = 0;
+		float magnitude = list.getMagnitude(distanceMetric);
 		
-		list.resetPosition();
-		//if (list.length() == 0)
-		//{
-		//	BinnedPeakList returnThis = new BinnedPeakList();
-		//	returnThis.add(0.0f,1.0f);
-		//	return returnThis;
-		//}
-		if (distanceMetric == Cluster.CITY_BLOCK)
-			for (int i = 0; i < list.length(); i++)
-			{
-				magnitude += list.getNextLocationAndArea().area;
-			}
-		else if (distanceMetric == Cluster.EUCLIDEAN_SQUARED ||
-		         distanceMetric == Cluster.DOT_PRODUCT)
-		{
-			float currentArea;
-			for (int i = 0; i < list.length(); i++)
-			{
-				currentArea = list.getNextLocationAndArea().area;
-				magnitude += currentArea*currentArea;
-			}
-			magnitude = (float) Math.sqrt(magnitude);
-		}
 		
 		BinnedPeakList returnList = new BinnedPeakList();
 		BinnedPeak temp;
@@ -227,11 +205,11 @@ public abstract class Cluster extends CollectionDivider {
 
 			// Assume optimistically that each location is unmatched in the
 			// shorter peak list.
-			if (distanceMetric == CITY_BLOCK)
+			if (distanceMetric == DistanceMetric.CITY_BLOCK)
 			    distance += temp.area;
-			else if (distanceMetric == EUCLIDEAN_SQUARED)
+			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				distance += temp.area*temp.area;
-			else if (distanceMetric == DOT_PRODUCT)
+			else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
 			    ; // If no match in shorter list, contributes nothing
 			else {
 			    assert false :
@@ -240,22 +218,23 @@ public abstract class Cluster extends CollectionDivider {
 			}
 		}	
 		
+		shorter.resetPosition();
 		float eucTemp = 0;
 		for (int i =  0; i < shorter.length(); i++)
 		{
 			temp = shorter.getNextLocationAndArea();
 			if (longerLists[temp.location+MAX_LOCATION] != 0)
 			{
-				if (distanceMetric == CITY_BLOCK)
+				if (distanceMetric == DistanceMetric.CITY_BLOCK)
 				{
 					distance -= longerLists[temp.location+MAX_LOCATION];
 				}
-				else if (distanceMetric == EUCLIDEAN_SQUARED)
+				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
 					distance -= longerLists[temp.location+MAX_LOCATION]*
 						longerLists[temp.location+MAX_LOCATION];
 				}
-				else if (distanceMetric == DOT_PRODUCT)
+				else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // Again, nothing to subtract off here
 				else {
 				    assert false :
@@ -263,14 +242,14 @@ public abstract class Cluster extends CollectionDivider {
 					distance = -1.0f;
 				}
 				
-				if (distanceMetric == CITY_BLOCK)
+				if (distanceMetric == DistanceMetric.CITY_BLOCK)
 					distance += Math.abs(temp.area-longerLists[temp.location+MAX_LOCATION]);
-				else if (distanceMetric == EUCLIDEAN_SQUARED)
+				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
 					eucTemp = temp.area-longerLists[temp.location+MAX_LOCATION];
 					distance += eucTemp*eucTemp;
 				}
-				else if (distanceMetric == DOT_PRODUCT) {
+				else if (distanceMetric == DistanceMetric.DOT_PRODUCT) {
 				    distance +=
 				        temp.area*longerLists[temp.location+MAX_LOCATION];
 				}
@@ -283,11 +262,11 @@ public abstract class Cluster extends CollectionDivider {
 			}
 			else
 			{
-				if (distanceMetric == CITY_BLOCK)
+				if (distanceMetric == DistanceMetric.CITY_BLOCK)
 					distance += temp.area;
-				else if (distanceMetric == EUCLIDEAN_SQUARED)
+				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 					distance += temp.area*temp.area;
-				else if (distanceMetric == DOT_PRODUCT)
+				else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // Nothing to add here if new match
 				else {
 				    assert false :
@@ -305,7 +284,7 @@ public abstract class Cluster extends CollectionDivider {
 		// This places distance between 0 and 1 like other measures and doesn't
 		// affect anything else. (Admittedly, this is a hack, but dot product
 		// distance is ultimately the same thing as Euclidean squared anyway).
-		if (distanceMetric == DOT_PRODUCT)
+		if (distanceMetric == DistanceMetric.DOT_PRODUCT)
 		    distance = 1-distance;
 
 		assert distance < 2.01 :
@@ -352,12 +331,12 @@ public abstract class Cluster extends CollectionDivider {
 		{
 			temp = longer.getNextLocationAndArea();
 			checkedLocations.add(new Integer(temp.location));
-			if (distanceMetric == CITY_BLOCK)
+			if (distanceMetric == DistanceMetric.CITY_BLOCK)
 			{
 				distance += Math.abs(temp.area - 
 						shorter.getAreaAt(temp.location));
 			}
-			else if (distanceMetric == EUCLIDEAN_SQUARED)
+			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 			{
 				shorterTemp = shorter.getAreaAt(temp.location);
 				distance += (temp.area - shorterTemp)
@@ -385,12 +364,12 @@ public abstract class Cluster extends CollectionDivider {
 				;
 			else
 			{
-				if (distanceMetric == CITY_BLOCK)
+				if (distanceMetric == DistanceMetric.CITY_BLOCK)
 				{
 					distance += Math.abs(temp.area - 
 							longer.getAreaAt(temp.location));
 				}
-				else if (distanceMetric == EUCLIDEAN_SQUARED)
+				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
 					longerTemp = longer.getAreaAt(temp.location);
 					distance += (temp.area - longerTemp) *
@@ -638,7 +617,7 @@ public abstract class Cluster extends CollectionDivider {
 		
 		out.println("Number of ignored particles with zero peaks = " + 
 		        zeroPeakListParticleCount);
-		if (distanceMetric == DOT_PRODUCT)
+		if (distanceMetric == DistanceMetric.DOT_PRODUCT)
 		    out.println("Distance shown here is actually 1 - dot product.");
 		out.println("Total clustering passes during sampling = " + sampleIters);
 		out.println("Total number of centroid clustering passes = " +

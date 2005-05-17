@@ -48,6 +48,7 @@ import java.util.*;
 
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
+import analysis.DistanceMetric;
 import analysis.ParticleInfo;
 import analysis.SubSampleCursor;
 import database.CollectionCursor;
@@ -214,16 +215,16 @@ public abstract class ClusterK extends Cluster {
 	 * (non-Javadoc)
 	 * @see analysis.clustering.Cluster#setDistancMetric(int)
 	 */
-	public boolean setDistanceMetric(int method) {
+	public boolean setDistanceMetric(DistanceMetric method) {
 		distanceMetric = method;
-		switch (method) {
-		case Cluster.CITY_BLOCK :
+		if (method == DistanceMetric.CITY_BLOCK)
 			return true;
-		case Cluster.EUCLIDEAN_SQUARED :
+		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
 			return true;
-		case Cluster.DOT_PRODUCT :
+		else if (method == DistanceMetric.DOT_PRODUCT)
 			return true;
-		default : 
+		else
+		{
 			throw new IllegalArgumentException("Illegal distance metric.");
 		}
 	}

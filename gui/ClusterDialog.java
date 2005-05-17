@@ -47,6 +47,7 @@ import javax.swing.*;
 
 import database.InfoWarehouse;
 
+import analysis.DistanceMetric;
 import analysis.clustering.*;
 import analysis.clustering.Cluster;
 
@@ -271,21 +272,21 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
-		int dMetInt = Cluster.CITY_BLOCK;
+		DistanceMetric dMetInt = DistanceMetric.CITY_BLOCK;
 		if (dMetric.equals(CITY_BLOCK) || 
 				dMetric.equals(KMEDIANS))
 		{
-			dMetInt = Cluster.CITY_BLOCK;
+			dMetInt = DistanceMetric.CITY_BLOCK;
 		}
 		else if (dMetric.equals(EUCLIDEAN_SQUARED) || 
 				dMetric.equals(KMEANS))
 		{
-			dMetInt = Cluster.EUCLIDEAN_SQUARED;
+			dMetInt = DistanceMetric.EUCLIDEAN_SQUARED;
 		}
 		else if (dMetric.equals(DOT_PRODUCT) || 
 				dMetric.equals(SKMEANS))
 		{
-			dMetInt = Cluster.DOT_PRODUCT;
+			dMetInt = DistanceMetric.DOT_PRODUCT;
 		}
 		if (source == okButton) {
 			if (currentShowing == ART2A)
@@ -372,7 +373,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 								JOptionPane.ERROR_MESSAGE);
 					}
 					else {
-						if (dMetInt == Cluster.CITY_BLOCK) {
+						if (dMetInt == DistanceMetric.CITY_BLOCK) {
 							KMedians kMedians = new KMedians(
 									cTree.getSelectedCollection().
 									getCollectionID(),db, k, "", 
@@ -393,8 +394,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 							kMedians.divide();
 							dispose();
 						}
-						else if (dMetInt == Cluster.EUCLIDEAN_SQUARED ||
-						         dMetInt == Cluster.DOT_PRODUCT) {
+						else if (dMetInt == DistanceMetric.EUCLIDEAN_SQUARED ||
+						         dMetInt == DistanceMetric.DOT_PRODUCT) {
 							KMeans kMeans = new KMeans(
 									cTree.getSelectedCollection().
 									getCollectionID(),db, 
