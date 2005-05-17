@@ -195,7 +195,7 @@ public class MedianFinder {
 			magnitude;
 		
 		// If the median is not normalized, normalize it already
-		if (magnitude < 1.0f)
+		if (magnitude < 0.999f)
 		{
 			// For each location, Find out how many spectra have peaks 
 			// bigger than those in the median 
@@ -204,6 +204,9 @@ public class MedianFinder {
 			int maxNumEntries = 0; 
 			float maxAreaDiff = 0;
 			float tempArea = 0;
+			assert(sortedList[0].length > 0) : "List contains no elements";
+			assert(sortedList[0].length > 1) : "List contains only one element, " +
+					"and magnitude is still < 1.0f: " + magnitude;
 			for (int i = 0; i < sortedList.length; i++)
 			{
 				int j = sortedList[i].length -1;
@@ -240,14 +243,14 @@ public class MedianFinder {
 			}
 
 			assert (maxNumEntries > 0) : 
-				"maxValue remained 0";
+				"maxValue remained 0.  List size: " + sortedList[0].length;
 			
 			// Magnify the median at this location, adjust the count
 			// at this location for how many peaklists are bigger
 			// than the median and go again until magnitude reaches 1.0f
 			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
-				System.out.println("Magnitude = " + magnitude);
+				//System.out.println("Magnitude = " + magnitude);
 				assert maxAreaDiff > 0.0f : 
 					"areadiff to add is negative: " + maxAreaDiff;
 				if (maxAreaDiff + magnitude <= 1.0f)
@@ -256,6 +259,11 @@ public class MedianFinder {
 						"maxIndex is out of bounds: " + maxIndex;
 					median.add(maxIndex-MAX_LOCATION, maxAreaDiff);
 					magnitude += maxAreaDiff;
+					assert(maxIndex >= 0) : "maxIndex negative";
+					assert(sortedList[maxIndex].length - 
+										numEntriesGreaterThanMedian
+										[maxIndex] >= 0) :
+											"negative index";
 					float currentValue = sortedList[maxIndex]
 													[sortedList[maxIndex]
 													.length - 
