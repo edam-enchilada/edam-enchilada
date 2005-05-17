@@ -1,7 +1,5 @@
 package analysis;
 
-import java.util.ArrayList;
-
 import database.CollectionCursor;
 import database.InfoWarehouse;
 
@@ -20,6 +18,9 @@ public abstract class InfoGenerator
 	 */
 	protected int collectionID;
 
+	private String name;
+	private String comment;
+	
 	/**
 	 * A pointer to an active InfoWarehouse
 	 */
@@ -42,15 +43,21 @@ public abstract class InfoGenerator
 	                "Parameter 'database' should not be null");
 	    
 		collectionID = cID;
-		
+		this.name = name;
+		this.comment = comment;
 		db = database;
 		if (db.getCollectionSize(cID) < 500000)
 			curs = db.getMemoryBinnedCursor(cID);
 		else
 			curs = db.getBinnedCursor(cID);
 		
+	}
+
+	public void generateInfo()
+	{
 		int newHostID = db.createEmptyCollection(collectionID, name, 
 				comment,generateNewDescription());
+		curs.reset();
 		while (curs.next())
 		{
 			db.addAtom(curs.getCurrent().getID(),newHostID);

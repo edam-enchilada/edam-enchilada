@@ -2,14 +2,14 @@ package analysis;
 
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.PriorityQueue;
+import java.util.ArrayList;
 
 public class PQComparator 
-implements Comparator<PriorityQueue<Integer>> 
+implements Comparator<ArrayList<Integer>> 
 {
 	public int compare(
-			PriorityQueue<Integer> arg0, 
-			PriorityQueue<Integer> arg1) 
+			ArrayList<Integer> arg0, 
+			ArrayList<Integer> arg1) 
 	{
 		Iterator<Integer> iter0 = arg0.iterator(), 
 		iter1 = arg1.iterator();
