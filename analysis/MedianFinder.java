@@ -201,7 +201,8 @@ public class MedianFinder {
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
 		
 		assert(magnitude <= 1.001f) : "Median was larger than 1: " +
-			DEBUGprintMagnitudes() + " size = " + sortedList[0].length;
+			magnitude + " median: " + particles.size()/2 + " from: " + 
+			DEBUGprintMagnitudes() + " size = " + particles.size();
 		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)
@@ -216,7 +217,7 @@ public class MedianFinder {
 			assert(sortedList[0].length > 0) : "List contains no elements";
 			assert(sortedList[0].length > 1) : "List contains only one element, " +
 					"and magnitude is still < 1.0f: " + magnitude;
-			for (int i = 0; i < sortedList.length; i++)
+			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
 				int j = sortedList[i].length -1;
 				// We have to subtract MAX_LOCATION here since inside
