@@ -81,7 +81,7 @@ public class Art2A extends Cluster
 		numPasses = passes;
 		distanceMetric = dMetric;
 		collectionID = cID;
-		totalDistancePerPass = new ArrayList<Float>();
+		totalDistancePerPass = new ArrayList<Double>();
 		/*for (int i = 0; i < numPasses; i++)
 			totalDistancePerPass.add(new Float(0.0));*/
 		size = db.getCollectionSize(collectionID);
@@ -202,14 +202,14 @@ public class Art2A extends Cluster
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
 		int closestCentroidIndex = -1;
-		float nearestDistance;
+		double nearestDistance;
 		boolean withinVigilance = false;
-		float distance;
+		double distance;
 		int chosenCluster = 0;
 		/*for (int i = 0; i < totalDistancePerPass.size(); i++)
 				totalDistancePerPass.set(i, new Float(0.0f));*/
 
-		float minTotalStableDistance = Float.POSITIVE_INFINITY;
+		double minTotalStableDistance = Double.POSITIVE_INFINITY;
 		int iterationsSinceNewMin = 0;
 		boolean stable = false;
 		
@@ -217,7 +217,7 @@ public class Art2A extends Cluster
 		{ // for each pass
 			System.out.println("Pass #:" + passIndex);
 			particleCount = 0;
-			totalDistancePerPass.add(new Float(0));
+			totalDistancePerPass.add(new Double(0));
 			while(curs.next())
 			{ // while there are particles remaining
 				particleCount++;
@@ -256,8 +256,8 @@ public class Art2A extends Cluster
 				{// if atom falls within existing cluster
 					Centroid temp = centroidList.get(chosenCluster);
 					totalDistancePerPass.set(passIndex,
-							new Float(totalDistancePerPass.get(
-										passIndex).floatValue() 
+							new Double(totalDistancePerPass.get(
+										passIndex).doubleValue() 
 											+ nearestDistance));
 
 					temp.numMembers++;

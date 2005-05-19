@@ -62,7 +62,7 @@ import analysis.ParticleInfo;
  * algorithms.
  */
 public abstract class Cluster extends CollectionDivider {
-	protected ArrayList<Float> totalDistancePerPass;
+	protected ArrayList<Double> totalDistancePerPass;
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	//protected final int NUM_REFINEMENTS = 3;
@@ -165,7 +165,7 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param list2 The second atom's peaklist.
 	 * @return the distance between the atoms.
 	 */
-	protected float getDistance(BinnedPeakList list1, 
+	protected double getDistance(BinnedPeakList list1, 
 			BinnedPeakList list2)
 	{
 		//TODO: Make this more graceful
@@ -178,7 +178,7 @@ public abstract class Cluster extends CollectionDivider {
 		{
 			longerLists[i] = 0;
 		}
-		float distance = 0;
+		double distance = 0;
 		BinnedPeakList longer;
 		BinnedPeakList shorter;
 		list1.resetPosition();
@@ -214,12 +214,12 @@ public abstract class Cluster extends CollectionDivider {
 			else {
 			    assert false :
 			        "Invalid distance metric: " + distanceMetric;
-				distance = -1.0f;
+				distance = -1.0;
 			}
 		}	
 		
 		shorter.resetPosition();
-		float eucTemp = 0;
+		double eucTemp = 0;
 		for (int i =  0; i < shorter.length(); i++)
 		{
 			temp = shorter.getNextLocationAndArea();
@@ -239,7 +239,7 @@ public abstract class Cluster extends CollectionDivider {
 				else {
 				    assert false :
 				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0f;
+					distance = -1.0;
 				}
 				
 				if (distanceMetric == DistanceMetric.CITY_BLOCK)
@@ -256,7 +256,7 @@ public abstract class Cluster extends CollectionDivider {
 				else {
 				    assert false :
 				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0f;
+					distance = -1.0;
 				}
 				
 			}
@@ -271,7 +271,7 @@ public abstract class Cluster extends CollectionDivider {
 				else {
 				    assert false :
 				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0f;
+					distance = -1.0;
 				}
 			}
 			
@@ -292,7 +292,7 @@ public abstract class Cluster extends CollectionDivider {
 		if (distance > 2) {
 			//System.out.println("Rounding off " + distance +
 			//		"to 2.0");
-			distance = 2.0f;
+			distance = 2.0;
 		}
 		return distance;
 	}
@@ -305,12 +305,12 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param list2 The second atom's peaklist.
 	 * @return the distance between the atoms.
 	 */
-	protected float ogetDistance(BinnedPeakList list1, 
+	protected double ogetDistance(BinnedPeakList list1, 
 			BinnedPeakList list2)
 	{
 		ArrayList<Integer> checkedLocations = 
 			new ArrayList<Integer>();
-		float distance = 0;
+		double distance = 0;
 		BinnedPeakList longer;
 		BinnedPeakList shorter;
 		list1.resetPosition();
@@ -326,7 +326,7 @@ public abstract class Cluster extends CollectionDivider {
 			shorter = list2;
 		}
 		BinnedPeak temp;
-		float shorterTemp;
+		double shorterTemp;
 		for (int i = 0; i < longer.length(); i++)
 		{
 			temp = longer.getNextLocationAndArea();
@@ -352,7 +352,7 @@ public abstract class Cluster extends CollectionDivider {
 		{
 			alreadyChecked = false;
 			temp = shorter.getNextLocationAndArea();
-			float longerTemp;
+			double longerTemp;
 			for (Integer loc : checkedLocations)
 			{
 				if (temp.location == loc.intValue())
@@ -398,9 +398,9 @@ public abstract class Cluster extends CollectionDivider {
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
-		float nearestDistance = 3.0f;
-		float totalDistance = 0.0f;
-		float distance = 3.0f;
+		double nearestDistance = 3.0;
+		double totalDistance = 0.0;
+		double distance = 3.0;
 		int chosenCluster = -1;
 		curs.reset();
 		while(curs.next())
@@ -444,9 +444,9 @@ public abstract class Cluster extends CollectionDivider {
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
-		float nearestDistance = 3.0f;
-		float totalDistance = 0.0f;
-		float distance = 3.0f;
+		double nearestDistance = 3.0;
+		double totalDistance = 0.0;
+		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
 		//for (Centroid c : centroidList)
@@ -493,7 +493,7 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 		//curs.close();
-		totalDistancePerPass.add(new Float(totalDistance));
+		totalDistancePerPass.add(new Double(totalDistance));
 		//for (Centroid c : centroidList)
 		//{
 		//	c.peaks = normalize(c.peaks);
@@ -510,9 +510,9 @@ public abstract class Cluster extends CollectionDivider {
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
-		float nearestDistance = 3.0f;
-		float totalDistance = 0.0f;
-		float distance = 3.0f;
+		double nearestDistance = 3.0;
+		double totalDistance = 0.0;
+		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();		
 		//for (Centroid c : centroidList)
@@ -528,7 +528,7 @@ public abstract class Cluster extends CollectionDivider {
 			// no centroid will be found further than the 
 			// vigilance since that centroid would not be 
 			// considered
-			nearestDistance = 3.0f;
+			nearestDistance = 3.0;
 			for (int centroidIndex = 0; 
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
@@ -575,7 +575,7 @@ public abstract class Cluster extends CollectionDivider {
 		}// end while there are particles remaining
 		putInSubCollectionBatchExecute();
 		curs.reset();
-		totalDistancePerPass.add(new Float(totalDistance));
+		totalDistancePerPass.add(new Double(totalDistance));
 		//curs.close();
 		//for (Centroid c : centroidList)
 		//{
@@ -631,13 +631,13 @@ public abstract class Cluster extends CollectionDivider {
 		{
 			out.println(
 					totalDistancePerPass.get(
-							distanceIndex).floatValue()/particleCount);
+							distanceIndex).doubleValue()/particleCount);
 		}
 		
 		out.println("average distance of all points from their centers " +
 		"on final assignment:");
 		out.println(totalDistancePerPass.get(
-					totalDistancePerPass.size()-1).floatValue()/particleCount);
+					totalDistancePerPass.size()-1).doubleValue()/particleCount);
 		
 		out.println();
 		out.println("Peaks in centroids:");

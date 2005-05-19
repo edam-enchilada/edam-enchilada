@@ -94,7 +94,7 @@ public abstract class ClusterK extends Cluster {
 		this.refineCentroids = refineCentroids;
 		collectionID = cID;
 		parameterString = name.concat(",K=" + k);
-		totalDistancePerPass = new ArrayList<Float>();
+		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
 		
 	}
@@ -150,7 +150,7 @@ public abstract class ClusterK extends Cluster {
 			// point. For each of the centroids that result, choose those
 			// that result in the least error.
 			System.out.println("clustering Centroids:");
-			float bestDistance = Float.POSITIVE_INFINITY;
+			double bestDistance = Double.POSITIVE_INFINITY;
 			ArrayList<Centroid> bestStartingCentroids = null;
 			int bestIndex = -1;
 			clusterCentroidIters = 0;
@@ -160,8 +160,8 @@ public abstract class ClusterK extends Cluster {
 					processPart(allCentroidLists.get(i),
 							new NonZeroCursor(
 									new CentroidListCursor(centroidList)));
-				float distance = totalDistancePerPass.
-			              get(totalDistancePerPass.size()-1).floatValue();
+				double distance = (totalDistancePerPass.
+			              get(totalDistancePerPass.size()-1).doubleValue());
 				clusterCentroidIters += totalDistancePerPass.size();
 			    if (distance < bestDistance) {
 			        bestDistance = distance;
@@ -231,8 +231,8 @@ public abstract class ClusterK extends Cluster {
 
 	private static class OutlierData implements Comparable<OutlierData> {
 		private BinnedPeakList peakList;
-		private float distance;
-		public OutlierData(BinnedPeakList pl, float d) {
+		private double distance;
+		public OutlierData(BinnedPeakList pl, double d) {
 			peakList = pl;
 			distance = d;
 		}
@@ -315,18 +315,18 @@ public abstract class ClusterK extends Cluster {
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
 				BinnedPeakList furthestPeakList = null;
-				float furthestGlobalDistance = Float.MIN_VALUE;
+				double furthestGlobalDistance = Double.MIN_VALUE;
 		        while (curs.next()) {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
 						curs.getPeakListfromAtomID(thisParticleInfo.getID());
 					thisBinnedPeakList = normalize(thisBinnedPeakList);
-					float nearestDistance = Float.MAX_VALUE;
+					double nearestDistance = Double.MAX_VALUE;
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
 					     curCent++)
 					{// for each centroid
-						float distance =
+						double distance =
 							getDistance(
 									centroidList.get(curCent).peaks,
 									thisBinnedPeakList);
@@ -351,7 +351,7 @@ public abstract class ClusterK extends Cluster {
 		
 		//clear totalDistancePerPass array.
 		totalDistancePerPass.clear(); 
-		float accumDistance = (float)0.0;
+		double accumDistance = 0.0;
 		curs.reset();
 		while (!isStable) {
 			for (ArrayList<Integer> array : particlesInCentroids){
@@ -360,19 +360,19 @@ public abstract class ClusterK extends Cluster {
 
 			outliers.clear();
 			for (int i=0; i < k; i++)
-				outliers.add(new OutlierData(null,i*Float.MIN_VALUE));
-			float smallestOutlierDistance = Float.MIN_VALUE;
+				outliers.add(new OutlierData(null,i*Double.MIN_VALUE));
+			double smallestOutlierDistance = Double.MIN_VALUE;
 			while(curs.next())
 			{ // while there are particles remaining
 				ParticleInfo thisParticleInfo = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList =
 					curs.getPeakListfromAtomID(thisParticleInfo.getID());
 				thisBinnedPeakList = normalize(thisBinnedPeakList);
-				float nearestDistance = Float.MAX_VALUE;
+				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
 				{// for each centroid
-					float distance =
+					double distance =
 						getDistance(centroidList.get(curCent).peaks,thisBinnedPeakList);
 					//If nearestDistance hasn't been set or is larger 
 					//than found distance, set the nearestCentroid index.
@@ -410,7 +410,7 @@ public abstract class ClusterK extends Cluster {
 			
 			}// end while there are particles remaining
 			zeroPeakListParticleCount = curs.getZeroCount();
-			totalDistancePerPass.add(new Float(accumDistance));
+			totalDistancePerPass.add(new Double(accumDistance));
 
 			// reset centroid list.  The averageCluster method is overwritten
 			// in K-Means and K-Medians.
@@ -420,7 +420,7 @@ public abstract class ClusterK extends Cluster {
 				centroidList.set(i, newCent);
 			}
 			//accumDistance:
-			accumDistance = (float)0.0;
+			accumDistance = 0.0;
 			// cursor:
 			curs.reset();
 
@@ -461,18 +461,18 @@ public abstract class ClusterK extends Cluster {
 	 * @param error - pre-determined error
 	 * @return - true if stable, false otherwise.
 	 */
-	public boolean stableCentroids(ArrayList<Float> totDist) {
+	public boolean stableCentroids(ArrayList<Double> totDist) {
 		if (totDist.size() == 1)
 			return false;
 		int lastIndex = totDist.size() - 1;
-		float difference = 
-			totDist.get(lastIndex-1).floatValue() - 
-			totDist.get(lastIndex).floatValue();
+		double difference = 
+			totDist.get(lastIndex-1).doubleValue() - 
+			totDist.get(lastIndex).doubleValue();
 		//difference = Math.abs(difference);
-		System.out.println("Error: " + totDist.get(lastIndex).floatValue());
+		System.out.println("Error: " + totDist.get(lastIndex).doubleValue());
 		System.out.println("Change in error: " + difference);
 		System.out.flush();
-		assert (difference >= 0.0f) : "increased error!";
+		assert (difference >= -0.000001f) : "increased error!";
 		if (difference > error) 
 			return false;
 		return true;
