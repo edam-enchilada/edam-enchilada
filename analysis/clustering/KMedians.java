@@ -102,10 +102,10 @@ public class KMedians extends ClusterK {
 		else
 		{
 			mf = new MedianFinder(medianThis);
-			//BinnedPeakList tempPL = mf.getMedian();
 			//Simply use getMedian for this to work the old way
 			returnThis = new Centroid(
-					mf.getMedianSumToOne(), 
+					mf.getMedian(),
+					//mf.getMedianSumToOne(), 
 					0,
 					origCentroids.subCollectionNum);
 		}

@@ -8,7 +8,7 @@
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry sourcepath="ECLIPSE_HOME/plugins/org.eclipse.jdt.source_3.0.0/src/org.junit_3.8.1/junitsrc.zip" kind="var" path="JUNIT_HOME/junit.jar">
+	<classpathentry kind="lib" path="C:/Program Files/eclipse-3.1m6/plugins/org.junit_3.8.1/junit.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
