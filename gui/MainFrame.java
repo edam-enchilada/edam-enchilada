@@ -527,6 +527,7 @@ public class MainFrame extends JFrame implements ActionListener,
 				ListSelectionModel.SINGLE_SELECTION);
 		lModel.addListSelectionListener(this);
 
+
 		//TODO:  Instead of using the default table model,
 		// implement a subclass of AbstractTableModel that goes
 		// directly to the database to get rows/columns
@@ -534,9 +535,9 @@ public class MainFrame extends JFrame implements ActionListener,
 		JScrollPane particlePane = 
 			new JScrollPane(particlesTable);
 		
-		peaksText = new JTextArea("Peaks:");
-		peaksText.setEditable(false);
-		peaksText.setPreferredSize(new Dimension(150, 450));
+//		peaksText = new JTextArea("Peaks:");
+//		peaksText.setEditable(false);
+//		peaksText.setPreferredSize(new Dimension(150, 450));
 		
 		/*JScrollPane peaksPane = new JScrollPane(peaksText);
 		
@@ -571,8 +572,8 @@ public class MainFrame extends JFrame implements ActionListener,
 				null, particlePane, null);
 		
 		//text version of peak data
-		JComponent panel2 = makeTextPanel(
-				peaksText);
+//		JComponent panel2 = makeTextPanel(
+//				peaksText);
 		
 		
 		//graphic version of peak data
@@ -585,8 +586,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		panel2a.addKeyListener(this);
 		panel2a.add(peaksChart);
 		
-		rightPane.addTab("Spectrum Viewer Text", null, panel2, null);
-		//rightPane.addTab("Spectrum Viewer Graph", null, panel2a, null);
+		//rightPane.addTab("Spectrum Viewer Text", null, panel2, null);
 		rightPane.addTab("Zoomable Graph", null, panel2a, null);
 		descriptionTA = new JTextArea("Description here");
 		infoPanel = makeTextPanel(descriptionTA);
@@ -733,7 +733,7 @@ public class MainFrame extends JFrame implements ActionListener,
 
 				}
 				System.out.println(peakString);
-				peaksText.setText(peakString);
+				//peaksText.setText(peakString);
 				peaksChart.setPeaks(peaks, atomID, filename);
 			}
 			

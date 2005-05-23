@@ -69,6 +69,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	
 	private double defaultXmin = 0;
 	private double defaultXmax = 400;
+	
+	private final int MIN_ZOOM = 5;
 /**
  * Constructs a new ZoomableChart.
  * @param chart The chart the zoomable chart will display.
@@ -172,11 +174,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		//glassPane.end = e.getPoint();  //mouseDragged provides this info already.
 										//and this may cause errors on chart edges.
 		glassPane.drawLine = false;
-		//glassPane.repaint();
 		if(glassPane.start != null && glassPane.end != null)
 		{
 			performZoom();
-			//glassPane.setOpaque(false);
 		}
 	}
 	
@@ -190,7 +190,13 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 //		System.out.println(e.toString());
 //		System.out.println(scrollBar.getVisibleAmount());
 //		System.out.println(scrollBar.getMaximum());
-		chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+		if(xmin >= xmax) return;
+		try
+		{
+			chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+			chart.packData(false, true);
+		}
+		catch (IllegalArgumentException ex){}
 	}
 	
 	/**
@@ -208,10 +214,20 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			minPoint.x = maxPoint.x;
 			maxPoint.x = glassPane.start.x;
 		}
-		else if(minPoint.x == maxPoint.x) return; //avoid divides by 0
+		if(maxPoint.x - minPoint.x < MIN_ZOOM)
+		{
+			repaint();	//get rid of grey dots
+			return; //zooms that are too small
+		}
 		
 		xmin = chart.getDataValueForPoint(minPoint).x;
 		xmax = chart.getDataValueForPoint(maxPoint).x;
+		
+		if(xmin >= xmax)
+		{
+			repaint();
+			return; //another case of zooms that are too small
+		}
 		
 		zoom((int)xmin, (int)xmax);
 		//chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
@@ -220,9 +236,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	
 	public void zoom(double newXmin, double newXmax)
 	{
+		chart.packData(false, true);
 		scrollBar.setValues((int)newXmin, (int)(newXmax - newXmin),
 				(int)defaultXmin, (int)defaultXmax);
-		chart.setAxisBounds(newXmin, newXmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+		
 		scrollBar.updateUI();
 	}
 	

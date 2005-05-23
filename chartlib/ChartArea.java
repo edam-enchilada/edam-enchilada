@@ -226,7 +226,13 @@ public class ChartArea extends JComponent {
 	 * @param ymax Maximum of Y axis.
 	 */
 	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax)
+	throws IllegalArgumentException
 	{
+		//check for errors
+		if(xmin >= xmax) throw new IllegalArgumentException("Xmin >= Xmax.");
+		else if(ymin >= ymax) throw new IllegalArgumentException("Ymin >= Ymax.");
+		
+		
 		this.xmin = xmin;
 		this.ymin = ymin;
 		this.xmax = xmax;
@@ -519,13 +525,16 @@ public class ChartArea extends JComponent {
 	/**
 	 * Sets the bounds of either or both axes to fit the dataset.
 	 * If the dataset is empty, leaves the axes alone.
+	 * If only packY is true, adjusts the data to fit the y values of the points
+	 * within the current x axis window.
 	 * @param packX Whether to change the x axis.
 	 * @param packY Whether to change the y axis.
 	 */
 	public void pack(boolean packX, boolean packY)
 	{
 		//empty dataset: do nothing
-		if(dataset == null || dataset.size() == 0)
+		if(dataset == null || dataset.size() == 0 
+				|| (packX == false && packY == false))
 			return;
 		
 		java.util.Iterator i = dataset.iterator();
@@ -535,20 +544,39 @@ public class ChartArea extends JComponent {
 		xmin = ymin = Double.MAX_VALUE;
 		xmax = ymax = Double.MIN_VALUE;
 		DataPoint dp;
+		int size = dataset.size();
 		
 		//this loop finds the minimum and maximum values for x and y
-		while( i.hasNext() )
+		//when x is also to be packed
+		if(packX == true)
+			while( i.hasNext() )
+			{
+				dp = (DataPoint)(i.next());
+				if(dp.y < ymin) ymin = dp.y;
+				if(dp.y > ymax) ymax = dp.y;
+				if(dp.x < xmin) xmin = dp.x;
+				if(dp.x > xmax) xmax = dp.x;
+			}
+		//if X is not being packed, only look at points within the x window
+		else
 		{
-			dp = (DataPoint)(i.next());
-			if(dp.y < ymin) ymin = dp.y;
-			if(dp.y > ymax) ymax = dp.y;
-			if(dp.x < xmin) xmin = dp.x;
-			if(dp.x > xmax) xmax = dp.x;
+			size = 0;
+			while( i.hasNext() )
+			{
+				dp = (DataPoint)(i.next());
+				if(dp.x > this.xmin && dp.x < this.xmax)
+				{
+					if(dp.y < ymin) ymin = dp.y;
+					if(dp.y > ymax) ymax = dp.y;
+					size++;
+				}
+			}
+			if(size == 0) return;
 		}
 		
-		//adds some extra space on the edges
+		
 		//one element:
-		if(dataset.size() == 1)
+		if(size == 1)
 		{
 			if(packX)
 			{
@@ -561,6 +589,8 @@ public class ChartArea extends JComponent {
 				this.ymax = ymax + ymax / 10;
 			}
 		}
+		
+//		adds some extra space on the edges
 		else
 		{
 			if(packX)
@@ -608,7 +638,6 @@ public class ChartArea extends JComponent {
 	 */
 	private void createAxes()
 	{
-		assert(xmin < xmax);
 		
 		if(numSmartTicksX > 0)
 		{
@@ -619,13 +648,14 @@ public class ChartArea extends JComponent {
 		{
 			bigTicksY = (ymax - ymin) / numSmartTicksY;
 		}
+
 		
-		if(bigTicksX == 0)
+		if(bigTicksX == 0 || xmin >= xmax)
 			xAxis = new GraphAxis(xmin, xmax);
 		else
 			xAxis = new GraphAxis(xmin, xmax, bigTicksX, smallTicksX);
 		
-		if(bigTicksY == 0)
+		if(bigTicksY == 0 || ymin >= ymax)
 			yAxis = new GraphAxis(ymin, ymax);
 		else
 			yAxis = new GraphAxis(ymin, ymax, bigTicksY, smallTicksY);
@@ -991,7 +1021,8 @@ public class ChartArea extends JComponent {
 			
 			
 			//label on each big tick, rounded to nearest hundredth
-			label = Integer.toString((int)(xBigTicksLabels[count]));
+			label = Double.toString((double)(Math.round(xBigTicksLabels[count] * 100))/100);
+			//label = Integer.toString((int)(xBigTicksLabels[count]));
 			g2d.drawString(label, 
 					(int)(dataArea.x 
 							+ tickValue * dataArea.width) - 8,
@@ -1040,8 +1071,8 @@ public class ChartArea extends JComponent {
 				drawTick(g2d,tickValue,false,true);
 			
 			
-			//label = (double)(Math.round(yBigTicksLabels[count] * 100))/100;
-			label = Integer.toString((int)(yBigTicksLabels[count]));
+			label = Double.toString((double)(Math.round(yBigTicksLabels[count] * 100))/100);
+			//label = Integer.toString((int)(yBigTicksLabels[count]));
 			g2d.drawString(label, 
 					V_TITLE_PADDING,
 					(int)(dataArea.y + dataArea.height 

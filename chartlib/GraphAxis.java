@@ -204,9 +204,6 @@ public class GraphAxis {
 	private void makeTicks()
 	{
 		
-		ArrayList<Double> bigRel = new ArrayList<Double>(numTicks() + 3);
-		ArrayList<Double> bigVal = new ArrayList<Double>(numTicks() + 3);
-		
 		//int count = 0;
 		
 		double range = max - min;
@@ -220,6 +217,9 @@ public class GraphAxis {
 					"  Ticks not initialized.");
 			return;
 		}
+		
+		ArrayList<Double> bigRel = new ArrayList<Double>(numTicks() + 3);
+		ArrayList<Double> bigVal = new ArrayList<Double>(numTicks() + 3);
 		
 		//this is the lowest multiple of bigTicksFactor greater than min
 			//actual numerical values

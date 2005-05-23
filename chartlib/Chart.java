@@ -336,6 +336,7 @@ public class Chart extends JPanel
 	 * @param index The index of the chart to change.
 	 */
 	public void setAxisBounds(int index, double xmin, double xmax, double ymin, double ymax )
+	throws IllegalArgumentException
 	{
 			//translates the flag CURRENT_VALUE into the actual value.
 		if (xmin == CURRENT_VALUE) xmin = chartAreas[index].getXmin();
@@ -355,6 +356,7 @@ public class Chart extends JPanel
 	 * @param ymax Maximum of Y axis.
 	 */
 	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax )
+	throws IllegalArgumentException
 	{
 		for(int count=0; count < chartAreas.length; count++)
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
@@ -604,6 +606,8 @@ public class Chart extends JPanel
 	}
 	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.
+	 * If only the Y axis is specified, packs the Y axis to fit the data that is
+	 * visible with the current x values.
 	 * @param packX Whether to pack the x axis.
 	 * @param packY Whether to pack the y axis.
 	 */
