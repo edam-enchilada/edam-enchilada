@@ -104,8 +104,8 @@ public class KMedians extends ClusterK {
 			mf = new MedianFinder(medianThis);
 			//Simply use getMedian for this to work the old way
 			returnThis = new Centroid(
-					mf.getMedian(),
-					//mf.getMedianSumToOne(), 
+					//mf.getMedian(),
+					mf.getMedianSumToOne(), 
 					0,
 					origCentroids.subCollectionNum);
 		}

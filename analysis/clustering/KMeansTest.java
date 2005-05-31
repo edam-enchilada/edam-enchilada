@@ -121,12 +121,12 @@ public class KMeansTest extends TestCase {
         list2.add(3,0.3f);
 
         kmeans.setDistanceMetric(DistanceMetric.CITY_BLOCK);
-        assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100. == 0.7);
+        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.CITY_BLOCK)*100)/100. == 0.7);
         kmeans.setDistanceMetric(DistanceMetric.EUCLIDEAN_SQUARED);
-        assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100.
+        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.EUCLIDEAN_SQUARED)*100)/100.
                 == 0.17);
         kmeans.setDistanceMetric(DistanceMetric.DOT_PRODUCT);
-        assertTrue(Math.round(kmeans.getDistance(list1,list2)*100)/100.
+        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.DOT_PRODUCT)*100)/100.
                 == 0.97);
     }
 

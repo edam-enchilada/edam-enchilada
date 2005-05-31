@@ -234,9 +234,11 @@ public class Art2A extends Cluster
 					 centroidIndex < centroidList.size(); 
 					 centroidIndex++)
 				{// for each centroid
-					distance = getDistance(
-							centroidList.get(centroidIndex).peaks,
-							thisBinnedPeakList);
+					distance = centroidList.get(centroidIndex).peaks.
+						getDistance(thisBinnedPeakList,distanceMetric);
+					//getDistance(
+					//		centroidList.get(centroidIndex).peaks,
+					//		thisBinnedPeakList);
 					//if (distance > 2) {
 						//System.out.print("Rounding error: ");
 						//System.out.println("dist. = " + distance + 

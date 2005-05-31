@@ -157,7 +157,8 @@ public abstract class Cluster extends CollectionDivider {
 		return returnList;
 	}
 	
-	/**
+	// replaced by BinnedPeakList.getDistance
+	/*
 	 * Returns the distance between the vectors represented by
 	 * two peaklists.  Uses whichever distance metric has been 
 	 * set.
@@ -165,7 +166,7 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param list2 The second atom's peaklist.
 	 * @return the distance between the atoms.
 	 */
-	protected double getDistance(BinnedPeakList list1, 
+	/*protected double getDistance(BinnedPeakList list1, 
 			BinnedPeakList list2)
 	{
 		//TODO: Make this more graceful
@@ -295,7 +296,7 @@ public abstract class Cluster extends CollectionDivider {
 			distance = 2.0;
 		}
 		return distance;
-	}
+	}*/
 	
 	/**
 	 * Returns the distance between the vectors represented by
@@ -416,9 +417,8 @@ public abstract class Cluster extends CollectionDivider {
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
 			{// for each centroid
-				distance = getDistance(
-						centroidList.get(centroidIndex).peaks,
-						thisBinnedPeakList);
+				distance = centroidList.get(centroidIndex).peaks.
+					getDistance(thisBinnedPeakList, distanceMetric);
 				if (distance < nearestDistance)
 				{
 					nearestDistance = distance;
@@ -466,9 +466,8 @@ public abstract class Cluster extends CollectionDivider {
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
 			{// for each centroid
-				distance = getDistance(
-						centroidList.get(centroidIndex).peaks,
-						thisBinnedPeakList);
+				distance = centroidList.get(centroidIndex).peaks.
+					getDistance(thisBinnedPeakList, distanceMetric);
 				if (distance < nearestDistance)
 				{
 					nearestDistance = distance;
@@ -533,9 +532,8 @@ public abstract class Cluster extends CollectionDivider {
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
 			{// for each centroid
-				distance = getDistance(
-						centroidList.get(centroidIndex).peaks,
-						thisBinnedPeakList);
+				distance = centroidList.get(centroidIndex).peaks.
+					getDistance(thisBinnedPeakList, distanceMetric);
 				if (distance < nearestDistance)
 				{
 					nearestDistance = distance;

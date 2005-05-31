@@ -327,9 +327,8 @@ public abstract class ClusterK extends Cluster {
 					     curCent++)
 					{// for each centroid
 						double distance =
-							getDistance(
-									centroidList.get(curCent).peaks,
-									thisBinnedPeakList);
+							centroidList.get(curCent).peaks.
+								getDistance(thisBinnedPeakList, distanceMetric);
 						//If nearestDistance hasn't been set or is larger 
 						//than found distance, set the nearestCentroid index.
 						if (distance < nearestDistance)
@@ -372,8 +371,7 @@ public abstract class ClusterK extends Cluster {
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
 				{// for each centroid
-					double distance =
-						getDistance(centroidList.get(curCent).peaks,thisBinnedPeakList);
+					double distance = centroidList.get(curCent).peaks.getDistance(thisBinnedPeakList,distanceMetric);
 					//If nearestDistance hasn't been set or is larger 
 					//than found distance, set the nearestCentroid index.
 					if (distance < nearestDistance){
@@ -472,7 +470,7 @@ public abstract class ClusterK extends Cluster {
 		System.out.println("Error: " + totDist.get(lastIndex).doubleValue());
 		System.out.println("Change in error: " + difference);
 		System.out.flush();
-		assert (difference >= -0.000001f) : "increased error!";
+		assert (difference >= -0.00001f) : "increased error!";
 		if (difference > error) 
 			return false;
 		return true;

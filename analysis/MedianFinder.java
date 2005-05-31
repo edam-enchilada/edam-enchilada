@@ -200,9 +200,9 @@ public class MedianFinder {
 		median.resetPosition();
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
 		
-		assert(magnitude <= 1.001f) : "Median was larger than 1: " +
+		/*assert(magnitude <= 1.001f) : "Median was larger than 1: " +
 			magnitude + " median: " + particles.size()/2 + " from: " + 
-			DEBUGprintMagnitudes() + " size = " + particles.size();
+			DEBUGprintMagnitudes() + " size = " + particles.size();*/
 		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)
@@ -231,8 +231,8 @@ public class MedianFinder {
 					numEntriesGreaterThanMedian[i]++;
 					j--;
 					
-					assert(j >= 0) :
-						"j is less than 0 which shouldn't happen if tempArea " +
+					assert(j >= particles.size()/2-1) :
+						"j is less than size()/2 which shouldn't happen if tempArea " +
 						"is really the median.\n" +
 						"median.getAreaAt(i-MAX_LOCATION) = " + tempArea + "\n" +
 						"sortedList[i][0] = " + sortedList[i][0];
@@ -318,6 +318,11 @@ public class MedianFinder {
 						"maxIndex is out of bounds: " + maxIndex;
 					median.add(maxIndex-MAX_LOCATION,1.0f-magnitude);
 					magnitude += 1.0f-magnitude;
+					
+					assert(median.getMagnitude(DistanceMetric.CITY_BLOCK) > 0.9999 
+							&& median.getMagnitude(DistanceMetric.CITY_BLOCK) < 1.0001) :
+						"Magnitude is out of range:" + median.getMagnitude(DistanceMetric.CITY_BLOCK);
+					
 					return median;
 				}
 				
@@ -325,7 +330,135 @@ public class MedianFinder {
 					//"magnitude has not changed positively: tempMag = " +
 					//tempMag + " magnitude = " + magnitude;
 			}
+			assert(median.getMagnitude(DistanceMetric.CITY_BLOCK) > 0.9999 
+					&& median.getMagnitude(DistanceMetric.CITY_BLOCK) < 1.0001) :
+				"Magnitude is out of range:" + median.getMagnitude(DistanceMetric.CITY_BLOCK);
+			
 			return median;
+		}
+		else if (magnitude > 1.0001)
+		{
+//			 For each location, Find out how many spectra have peaks 
+			// less than those in the median 
+			int [] numEntriesLessThanMedian = new int[DOUBLE_MAX];
+			int maxIndex = -1;
+			int maxNumEntries = 0; 
+			float maxAreaDiff = 0;
+			float tempArea = 0;
+			assert(sortedList[0].length > 0) : "List contains no elements";
+			assert(sortedList[0].length > 1) : "List contains only one element, " +
+					"and magnitude is still > 1.0f: " + magnitude;
+			for (int i = 0; i < DOUBLE_MAX; i++)
+			{
+				int j = 0;
+				// We have to subtract MAX_LOCATION here since inside
+				// peaklists, neg. values are actually negative, but
+				// since we can't have negative array indices
+				// when we declare arrays, negative values are 
+				// positive and positive values are value+MAX_LOCATION
+				tempArea = median.getAreaAt(i-MAX_LOCATION);
+				while (tempArea - sortedList[i][j] > 0.0f)
+				{
+					numEntriesLessThanMedian[i]++;
+					j++;
+					
+					assert(j <= particles.size()/2+1) :
+						"j is less than 0 which shouldn't happen if tempArea " +
+						"is really the median.\n" +
+						"median.getAreaAt(i-MAX_LOCATION) = " + tempArea + "\n" +
+						"sortedList[i][0] = " + sortedList[i][0];
+					
+				}
+				//assert (j != sortedList[i].length - 1) : 
+					//"j did not decrease";
+				// Find the location where the most peaklists have 
+				// values higher than the median
+				if (numEntriesLessThanMedian[i] > maxNumEntries)
+				{
+					maxNumEntries = numEntriesLessThanMedian[i];
+					maxIndex = i;
+					maxAreaDiff = tempArea - sortedList[i]
+						   [numEntriesLessThanMedian[i]-1];
+				}
+			}
+
+			assert (maxNumEntries > 0) : 
+				"maxValue remained 0.  List size: " + sortedList[0].length;
+			
+			// Minify the median at this location, adjust the count
+			// at this location for how many peaklists are bigger
+			// than the median and go again until magnitude reaches 1.0f
+			while (magnitude > 1.0f)
+			{
+				//System.out.println("Magnitude = " + magnitude);
+				assert maxAreaDiff > 0.0f : 
+					"areadiff to add is negative: " + maxAreaDiff;
+				if (magnitude - maxAreaDiff >= 1.0f)
+				{
+					assert(maxIndex < DOUBLE_MAX) :
+						"maxIndex is out of bounds: " + maxIndex;
+					median.add(maxIndex-MAX_LOCATION, -maxAreaDiff);
+					magnitude -= maxAreaDiff;
+					assert(maxIndex >= 0) : "maxIndex negative";
+					assert(numEntriesLessThanMedian
+										[maxIndex]-1 >= 0) :
+											"negative index";
+					float currentValue = sortedList[maxIndex]
+													[numEntriesLessThanMedian
+													[maxIndex]-1];
+					while (numEntriesLessThanMedian[maxIndex] > 0
+							&& currentValue == 
+								sortedList[maxIndex][numEntriesLessThanMedian
+													 [maxIndex]-1])
+					{
+						numEntriesLessThanMedian[maxIndex]--;
+					}
+					//numEntriesGreaterThanMedian[maxIndex] = 0;
+					maxIndex = 0;
+					maxAreaDiff = 0.0f;
+					maxNumEntries = 0;
+					for (int i = 0; 
+						 i < numEntriesLessThanMedian.length; 
+						 i++)
+					{
+						if (numEntriesLessThanMedian[i] > maxNumEntries)
+						{
+							maxNumEntries = numEntriesLessThanMedian[i];
+							maxIndex = i;
+							maxAreaDiff = median.getAreaAt(i-MAX_LOCATION) -
+								sortedList[i][numEntriesLessThanMedian[i]-1]; 
+						}
+					}
+					assert (maxNumEntries > 0) : 
+						"maxValue remained 0";
+						
+				}
+				else
+				{
+					assert (magnitude-1.0f > 0.0f) : 
+						"magnitude-1.0f is negative";
+					assert(maxIndex < DOUBLE_MAX) : 
+						"maxIndex is out of bounds: " + maxIndex;
+					median.add(maxIndex-MAX_LOCATION,1.0f-magnitude);
+					magnitude += 1.0f-magnitude;
+					
+					assert(median.getMagnitude(DistanceMetric.CITY_BLOCK) > 0.9999 
+							&& median.getMagnitude(DistanceMetric.CITY_BLOCK) < 1.0001) :
+						"Magnitude is out of range:" + median.getMagnitude(DistanceMetric.CITY_BLOCK);
+					
+					return median;
+				}
+				
+				//assert(magnitude > tempMag) : 
+					//"magnitude has not changed positively: tempMag = " +
+					//tempMag + " magnitude = " + magnitude;
+			}
+			assert(median.getMagnitude(DistanceMetric.CITY_BLOCK) > 0.9999 
+					&& median.getMagnitude(DistanceMetric.CITY_BLOCK) < 1.0001) :
+				"Magnitude is out of range:" + median.getMagnitude(DistanceMetric.CITY_BLOCK);
+			
+			return median;
+			
 		}
 		else
 			return median;
