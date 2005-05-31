@@ -44,6 +44,7 @@
 package gui;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;
@@ -51,6 +52,7 @@ import javax.swing.JButton;
 import java.awt.Component;
 import java.awt.event.*;
 import java.awt.Color;
+import java.util.ArrayList;
 
 
 
@@ -75,17 +77,19 @@ public class FilePickerEditor extends AbstractCellEditor
 	 * @param filetype
 	 * @param title
 	 */
-	public FilePickerEditor(String filetype, 
+	public FilePickerEditor(ArrayList<String> filetypes, 
 							String title, 
 							Component pDialog) 
 	{
 		fileChooser = new JFileChooser();
 		fileChooser.setDialogTitle(title);
 		fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-		fileChooser.setFileFilter(new CustomFileFilter(filetype));
+		CustomFileFilter customFilter = new CustomFileFilter();
+		for (int i = 0; i < filetypes.size(); i++)
+			customFilter.addFileFilter(filetypes.get(i));
+		
+		fileChooser.setFileFilter(customFilter);
 
-		
-		
 		button = new JButton(oldFilename);
 		button.setActionCommand(EDIT);
 		button.addActionListener(this);
@@ -94,6 +98,26 @@ public class FilePickerEditor extends AbstractCellEditor
 		
 		parent = pDialog;
 	}
+	
+	public FilePickerEditor(String filetype, 
+			String title, 
+			Component pDialog) 
+{
+fileChooser = new JFileChooser();
+fileChooser.setDialogTitle(title);
+fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+CustomFileFilter customFilter = new CustomFileFilter();
+customFilter.addFileFilter(filetype);
+fileChooser.setFileFilter(customFilter);
+
+button = new JButton(oldFilename);
+button.setActionCommand(EDIT);
+button.addActionListener(this);
+button.setBorderPainted(false);
+button.setBackground(Color.WHITE);
+
+parent = pDialog;
+}
 	
 	public void actionPerformed(ActionEvent e) 
 	{

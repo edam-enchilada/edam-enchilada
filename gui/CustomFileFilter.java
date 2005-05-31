@@ -47,6 +47,8 @@ package gui;
 import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
+
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 /**
@@ -55,17 +57,20 @@ import java.util.StringTokenizer;
  */
 public class CustomFileFilter extends FileFilter {
 
-	private String acceptType;
+	private ArrayList<String> acceptType;
 
 	/**
 	 * Construct a filefilter which accepts a given file suffix.
 	 * @param aType The suffix to accept (DO NOT include *.).
 	 */
-	public CustomFileFilter(String aType) {
+	public CustomFileFilter() {
 		super();
-		acceptType = aType;
+		acceptType = new ArrayList<String>();
 	}
 
+	public void addFileFilter(String aType) {
+		acceptType.add(aType);
+	}
 	/* (non-Javadoc)
 	 * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
 	 */
@@ -79,10 +84,10 @@ public class CustomFileFilter extends FileFilter {
 			while(strTok.hasMoreTokens()) {
 				fileType = new String(strTok.nextToken());
 			}
-			if (fileType.equals(acceptType))
-				return true;
-			else
-				return false;
+			for (int i = 0; i < acceptType.size(); i++)
+				if (fileType.equals(acceptType.get(i)))
+					return true;
+			return false;
 		}
 	}
 
@@ -90,7 +95,9 @@ public class CustomFileFilter extends FileFilter {
 	 * @see javax.swing.filechooser.FileFilter#getDescription()
 	 */
 	public String getDescription() {
-		String description = new String("*.").concat(acceptType);
+		String description = "";
+		for (int i = 0; i < acceptType.size(); i++) 
+			description += "*." + acceptType.get(i) + " ";
 		return description;
 	}
 

@@ -51,6 +51,7 @@ import java.awt.HeadlessException;
 import java.awt.event.*;
 import java.awt.*;
 import java.awt.BorderLayout;
+import java.util.ArrayList;
 
 import javax.swing.JDialog;
 import javax.swing.*;
@@ -135,20 +136,19 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	
 	private JTable getParTable()
 	{
-		pTableModel = new ParTableModel();
+		pTableModel = new ParTableModel(8);
 		JTable pTable = new JTable(pTableModel);		
 		TableColumn[] tableColumns = new TableColumn[7];
 		for (int i = 0; i < 7; i++)
 			tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
-		
 		tableColumns[0].setCellEditor(
-				new FileDialogPickerEditor("par","Import",this));
+				new FilePickerEditor("par","Import",this));
 		tableColumns[0].setPreferredWidth(250);
 		tableColumns[1].setCellEditor(
-				new FileDialogPickerEditor("cal","Mass Cal file",this));
+				new FilePickerEditor("cal","Mass Cal file",this));
 		tableColumns[1].setPreferredWidth(250);
 		tableColumns[2].setCellEditor(
-				new FileDialogPickerEditor("noz","Size Cal file",this));
+				new FilePickerEditor("noz","Size Cal file",this));
 		tableColumns[2].setPreferredWidth(250);
 	
 		for (int i=3;i<7;i++)

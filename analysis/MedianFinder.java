@@ -41,8 +41,6 @@
 /*
  * Created on Jan 7, 2005
  *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 package analysis;
 
@@ -55,7 +53,7 @@ import java.util.Arrays;
  * A helper class to find the k smallest peak in a peaklist.
  */
 public class MedianFinder {
-	private static final int MAX_LOCATION = 2500;
+	private static final int MAX_LOCATION = 5000; //2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	
 	private ArrayList<BinnedPeakList> particles;
@@ -110,6 +108,8 @@ public class MedianFinder {
 		BinnedPeakList returnThis = new BinnedPeakList();
 		if (particles.size()%2 == 0)
 		{
+			double sum = 0.0;
+			float fSum = 0.0f;
 			float subMid, supMid;
 			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
@@ -119,9 +119,16 @@ public class MedianFinder {
 					supMid == 0.0f)
 					;
 				else
+				{
+					sum += ((double) subMid + (double) supMid)/2.0;
+					fSum += (subMid+supMid)/2.0f;
 					returnThis.addNoChecks(i-MAX_LOCATION, 
 							(subMid+supMid)/2.0f);
+				}
 			}
+			System.out.println("Double Sum = " + sum);
+			System.out.println("Float sum = " + fSum);
+			System.out.flush();
 		
 			return returnThis;
 		}

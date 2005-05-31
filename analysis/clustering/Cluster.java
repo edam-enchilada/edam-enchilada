@@ -441,6 +441,11 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
 	{
+		//TODO;  Inserted this for testing purposes.
+		//for (int i = 0; i < centroidList.size(); i++) {
+		//	centroidList.get(i).peaks = normalize(centroidList.get(i).peaks);
+		//}
+		
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
@@ -505,6 +510,10 @@ public abstract class Cluster extends CollectionDivider {
 			CollectionCursor curs,
 			float vigilance)
 	{
+//		//TODO;  Inserted this for testing purposes.
+		//for (int i = 0; i < centroidList.size(); i++) {
+		//	centroidList.get(i).peaks = normalize(centroidList.get(i).peaks);
+		//}
 		Centroid outliers = new Centroid(null, 0);
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;

@@ -40,6 +40,7 @@
 package generalImporter;
 
 import gui.MainFrame;
+import gui.ParTableModel;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -65,12 +66,12 @@ public class EnchiladaDataSetImporter {
 	private int collectionID;
 	private ArrayList<EnchiladaDataPoint> particles;
 
-	public EnchiladaDataSetImporter(File f) {
+	public EnchiladaDataSetImporter(ParTableModel t) {
+		ArrayList<String> fileNames = collectTableInfo(t);
+		db = MainFrame.db;
 		particles = new ArrayList<EnchiladaDataPoint>();
-		//db = MainFrame.db;
-		db = new SQLServerDatabase("localhost","1433","SpASMSdb");
-		db.openConnection();
-		file = f;
+		for (int i = 0; i < fileNames.size(); i++) {
+		file = new File(fileNames.get(i));
 		try {
 			scan = new Scanner(file);
 		} catch (FileNotFoundException e) {
@@ -86,11 +87,26 @@ public class EnchiladaDataSetImporter {
 			multiFileProcessor();
 		else System.out.println("wrong extension");
 		db.insertGeneralParticles(particles, collectionID);
-		db.closeConnection();
+		}
+	}
+	
+	public ArrayList<String> collectTableInfo(ParTableModel table) {
+		int rowCount = table.getRowCount()-1;
+		ArrayList<String> files = new ArrayList<String>();
+		String name = "";
+		for (int i=0;i<rowCount;i++) {
+			try {
+				files.add((String)table.getValueAt(i,1));
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return files;
 	}
 	
 	public void createEmptyCollection() {
-		String name = "", comment = "", description = "", peek;
+		String name = "", comment = "", peek;
 		while(scan.hasNext()) {
 			peek = scan.nextLine();
 			if (peek.equals("^^^^^^^^"))
@@ -103,13 +119,12 @@ public class EnchiladaDataSetImporter {
 				break;
 			else comment += peek + " "; 
 		}
-		while(scan.hasNext()) {
-			peek = scan.nextLine();
-			if (peek.equals("^^^^^^^^"))
-				break;
-			else description += peek + " "; 
+		collectionID = db.createEmptyCollection(0, name, comment);	
+		// scan through ids
+		peek = "";
+		while (!peek.equals("^^^^^^^^")) {
+			peek = scan.next();
 		}
-		collectionID = db.createEmptyCollection(0, name, comment, description);	
 	}
 	
 	public void singleFileProcessor() {
@@ -164,9 +179,5 @@ public class EnchiladaDataSetImporter {
 		}
 		particles.add(part);
 		return scan;
-	}
-	
-	public static void main(String[] args) {
-		new EnchiladaDataSetImporter(new File(args[0]));
 	}
 }

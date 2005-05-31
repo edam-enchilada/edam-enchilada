@@ -47,6 +47,8 @@
  */
 package gui;
 
+import generalImporter.EnchiladaDataSetImporter;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -55,6 +57,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -98,13 +101,13 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			// dialog modal.  
 			super(owner, "Import MS-Analyze *.pars as Collections", true);
 			parent = owner;
-			setSize(1000,600);
+			setSize(500,600);
 			
 			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			
-			//JTable parTable = getParTable();
+			JTable parTable = getParTable();
 			
-			//JScrollPane scrollPane = new JScrollPane(parTable);
+			JScrollPane scrollPane = new JScrollPane(parTable);
 			
 			okButton = new JButton("OK");
 			okButton.setMnemonic(KeyEvent.VK_O);
@@ -114,15 +117,15 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			cancelButton.setMnemonic(KeyEvent.VK_C);
 			cancelButton.addActionListener(this);
 			
-		//	scrollPane.setPreferredSize(new Dimension(200, 500));
+			scrollPane.setPreferredSize(new Dimension(300, 100));
 			
 			JPanel listPane = new JPanel();
 			listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
 			JLabel label = new JLabel("Choose Datasets to Convert");
-			//label.setLabelFor(parTable);
+			label.setLabelFor(parTable);
 			listPane.add(label);
 			listPane.add(Box.createRigidArea(new Dimension(0,5)));
-			//listPane.add(scrollPane);
+			listPane.add(scrollPane);
 			listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 			
 			JPanel buttonPane = new JPanel();
@@ -139,34 +142,25 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			
 			setVisible(true);	
 		}
-		/*
-		public ImportParsDialog() {
+		
+		public ImportEnchiladaDataDialog() {
 			// dummy constructor for testing purposes.
 		}
 		
 		private JTable getParTable()
 		{
-			pTableModel = new ParTableModel();
-			JTable pTable = new JTable(pTableModel);		
-			TableColumn[] tableColumns = new TableColumn[7];
-			for (int i = 0; i < 7; i++)
-				tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
-			
-			tableColumns[0].setCellEditor(
-					new FileDialogPickerEditor("par","Import",this));
-			tableColumns[0].setPreferredWidth(250);
-			tableColumns[1].setCellEditor(
-					new FileDialogPickerEditor("cal","Mass Cal file",this));
-			tableColumns[1].setPreferredWidth(250);
-			tableColumns[2].setCellEditor(
-					new FileDialogPickerEditor("noz","Size Cal file",this));
-			tableColumns[2].setPreferredWidth(250);
-		
-			for (int i=3;i<7;i++)
-				tableColumns[i].setCellEditor(pTable.getDefaultEditor(Double.class));
+			pTableModel = new ParTableModel(2);
+			JTable pTable = new JTable(pTableModel);	
 			
 			TableColumn numColumn = pTable.getColumnModel().getColumn(0);
 			numColumn.setPreferredWidth(10);
+			TableColumn list = pTable.getColumnModel().getColumn(1);
+			ArrayList<String> filters = new ArrayList<String>();
+			filters.add("edsf");
+			filters.add("edmf");
+			list.setCellEditor(
+					new FilePickerEditor(filters,"Import",this));
+			list.setPreferredWidth(250);
 			
 			return pTable;
 		}
@@ -175,26 +169,10 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		{
 			Object source = e.getSource();
 			if (source == okButton) {
-					DataSetImporter dsi = 
-						new DataSetImporter(
-								pTableModel, parent, this);
-					// If a .par file or a .cal file is missing, don't start the process.
-					if (!dsi.nullRows()) {
-						dsi.collectTableInfo();
-						if (!exceptions)
-							dispose();
-					}
+					new EnchiladaDataSetImporter(pTableModel);
+					dispose();
 			}
 			else if (source == cancelButton)
 				dispose();
 		}
-		
-		public void displayException(String[] message) {
-			exceptions = true;
-			new ExceptionDialog(this,message);
-		}}
-*/
-		
-		public void actionPerformed(ActionEvent e){}
-
 }

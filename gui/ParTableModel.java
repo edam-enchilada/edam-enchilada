@@ -55,26 +55,27 @@ import javax.swing.table.AbstractTableModel;
  */
 public class ParTableModel extends AbstractTableModel implements TableModelListener
 {
-	private String[] columnNames = {
-			"#",
-			"*.par", 
-			"mass cal", 
-			"size cal", 
-			"Min. Height", 
-			"Min. Area", 
-			"Min. Rel. Area",
-			"Autocal"};
+	private String[] columnNames;
 	private ArrayList<ArrayList<Object>> rowData = new ArrayList<ArrayList<Object>>();
 	private ArrayList<Object> newColumn = new ArrayList<Object>();
 	private ArrayList<Object> row2 = new ArrayList<Object>();
 	int setCount;
 
 	
-	public ParTableModel() {
+	public ParTableModel(int numCols) {
 		super();
-		setCount = 0;
+		if (numCols == 8) {
+			columnNames = new String[8]; 
+			columnNames[0] = "#";
+	columnNames[1] = "*.par";
+	columnNames[2] = "mass cal"; 
+	columnNames[3] = "size cal";
+	columnNames[4] = "Min. Height"; 
+	columnNames[5] = "Min. Area";
+	columnNames[6] = "Min. Rel. Area";
+	columnNames[7] = "Autocal";
+			setCount = 0;
 		addTableModelListener(this);
-
 		newColumn.add(new Integer(++setCount));
 		newColumn.add(new String(".par file"));
 		newColumn.add(new String(".cal file"));
@@ -94,6 +95,20 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 		row2.add(new Float(0.0));
 		row2.add(new Boolean(true));
 		rowData.add(row2);
+		}
+		else if (numCols == 2){
+			setCount = 0;
+			columnNames = new String[2];
+			columnNames[0] = "#";
+			columnNames[1] = "file";
+			addTableModelListener(this);
+			newColumn.add(new Integer(++setCount));
+			newColumn.add(new String(".edsf or .esmf file"));
+			rowData.add(newColumn);
+			row2.add(new Integer(++setCount));
+			row2.add(new String(""));
+			rowData.add(newColumn);	
+		}
 	}
 	
 	public String getColumnName(int col)
@@ -138,7 +153,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 
 
 	public void tableChanged(TableModelEvent e)
-	{
+	{ if (columnNames.length == 8) {
 		if ((e.getLastRow() == rowData.size() - 1) && 
 			(e.getType() == TableModelEvent.UPDATE) &&
 			e.getColumn() == 1)
@@ -176,6 +191,28 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			lastRow.set(7, (Boolean) rowData.get(rowData.size()-2).get(7));
 			fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
 		}
+	}
+	else if (columnNames.length == 2) {
+		if ((e.getLastRow() == rowData.size() - 1) && 
+				(e.getType() == TableModelEvent.UPDATE) &&
+				e.getColumn() == 1)
+			{
+				if (!((String)rowData.get(e.getLastRow()).get(1)).equals(""))
+				{
+					ArrayList<Object> newRow = new ArrayList<Object>(8);
+					newRow.add(new Integer(++setCount));
+					newRow.add(new String(""));
+					rowData.add(newRow);
+					fireTableRowsInserted(rowData.size()-1,rowData.size()-1);
+				}
+			}
+			if ((e.getLastRow() == rowData.size() - 2) &&
+				(e.getType() == TableModelEvent.UPDATE))
+			{
+				ArrayList<Object> lastRow = (ArrayList<Object>) rowData.get(rowData.size()-1);
+				fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
+			}
+	}
 	}
 
 
