@@ -303,7 +303,6 @@ public class SQLServerDatabase implements InfoWarehouse
 										"FROM Collections\n");
 			rs.next();
 			nextID = rs.getInt(1) + 1;
-			
 			stmt.executeUpdate("INSERT INTO Collections\n" +
 							   "(CollectionID, Name, Comment)\n" +
 							   "VALUES (" +

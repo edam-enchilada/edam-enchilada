@@ -60,41 +60,43 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 	private ArrayList<Object> newColumn = new ArrayList<Object>();
 	private ArrayList<Object> row2 = new ArrayList<Object>();
 	int setCount;
-
+	
 	
 	public ParTableModel(int numCols) {
 		super();
 		if (numCols == 8) {
+			setCount = 0;
+			addTableModelListener(this);
+			
 			columnNames = new String[8]; 
 			columnNames[0] = "#";
-	columnNames[1] = "*.par";
-	columnNames[2] = "mass cal"; 
-	columnNames[3] = "size cal";
-	columnNames[4] = "Min. Height"; 
-	columnNames[5] = "Min. Area";
-	columnNames[6] = "Min. Rel. Area";
-	columnNames[7] = "Autocal";
-			setCount = 0;
-		addTableModelListener(this);
-		newColumn.add(new Integer(++setCount));
-		newColumn.add(new String(".par file"));
-		newColumn.add(new String(".cal file"));
-		newColumn.add(new String(".noz file"));
-		newColumn.add(new Integer(0));
-		newColumn.add(new Integer(0));
-		newColumn.add(new Float(0.0));
-		newColumn.add(new Boolean(true));
-		rowData.add(newColumn);
-
-		row2.add(new Integer(++setCount));
-		row2.add(new String(""));
-		row2.add(new String(""));
-		row2.add(new String(""));
-		row2.add(new Integer(0));
-		row2.add(new Integer(0));
-		row2.add(new Float(0.0));
-		row2.add(new Boolean(true));
-		rowData.add(row2);
+			columnNames[1] = "*.par";
+			columnNames[2] = "mass cal"; 
+			columnNames[3] = "size cal";
+			columnNames[4] = "Min. Height"; 
+			columnNames[5] = "Min. Area";
+			columnNames[6] = "Min. Rel. Area";
+			columnNames[7] = "Autocal";
+			
+			newColumn.add(new Integer(++setCount));
+			newColumn.add(new String(".par file"));
+			newColumn.add(new String(".cal file"));
+			newColumn.add(new String(".noz file"));
+			newColumn.add(new Integer(0));
+			newColumn.add(new Integer(0));
+			newColumn.add(new Float(0.0));
+			newColumn.add(new Boolean(true));
+			rowData.add(newColumn);
+			
+			row2.add(new Integer(++setCount));
+			row2.add(new String(""));
+			row2.add(new String(""));
+			row2.add(new String(""));
+			row2.add(new Integer(0));
+			row2.add(new Integer(0));
+			row2.add(new Float(0.0));
+			row2.add(new Boolean(true));
+			rowData.add(row2);
 		}
 		else if (numCols == 2){
 			setCount = 0;
@@ -144,19 +146,19 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 		rowData.get(row).set(col,value);
 		fireTableCellUpdated(row,col);
 	}
-		
+	
 	
 	public Class<?> getColumnClass(int c) 
-	{
+			{
 		return getValueAt(0,c).getClass();
-	}
-
-
+			}
+	
+	
 	public void tableChanged(TableModelEvent e)
 	{ if (columnNames.length == 8) {
 		if ((e.getLastRow() == rowData.size() - 1) && 
-			(e.getType() == TableModelEvent.UPDATE) &&
-			e.getColumn() == 1)
+				(e.getType() == TableModelEvent.UPDATE) &&
+				e.getColumn() == 1)
 		{
 			if (!((String)rowData.get(e.getLastRow()).get(1)).equals(""))
 			{
@@ -180,7 +182,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			}
 		}
 		if ((e.getLastRow() == rowData.size() - 2) &&
-			(e.getType() == TableModelEvent.UPDATE))
+				(e.getType() == TableModelEvent.UPDATE))
 		{
 			ArrayList<Object> lastRow = (ArrayList<Object>) rowData.get(rowData.size()-1);
 			lastRow.set(2, (String) rowData.get(rowData.size()-2).get(2));
@@ -196,24 +198,24 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 		if ((e.getLastRow() == rowData.size() - 1) && 
 				(e.getType() == TableModelEvent.UPDATE) &&
 				e.getColumn() == 1)
+		{
+			if (!((String)rowData.get(e.getLastRow()).get(1)).equals(""))
 			{
-				if (!((String)rowData.get(e.getLastRow()).get(1)).equals(""))
-				{
-					ArrayList<Object> newRow = new ArrayList<Object>(8);
-					newRow.add(new Integer(++setCount));
-					newRow.add(new String(""));
-					rowData.add(newRow);
-					fireTableRowsInserted(rowData.size()-1,rowData.size()-1);
-				}
+				ArrayList<Object> newRow = new ArrayList<Object>(8);
+				newRow.add(new Integer(++setCount));
+				newRow.add(new String(""));
+				rowData.add(newRow);
+				fireTableRowsInserted(rowData.size()-1,rowData.size()-1);
 			}
-			if ((e.getLastRow() == rowData.size() - 2) &&
+		}
+		if ((e.getLastRow() == rowData.size() - 2) &&
 				(e.getType() == TableModelEvent.UPDATE))
-			{
-				ArrayList<Object> lastRow = (ArrayList<Object>) rowData.get(rowData.size()-1);
-				fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
-			}
+		{
+			ArrayList<Object> lastRow = (ArrayList<Object>) rowData.get(rowData.size()-1);
+			fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
+		}
 	}
 	}
-
-
+	
+	
 }
