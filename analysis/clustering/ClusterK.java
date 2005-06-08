@@ -441,21 +441,6 @@ public abstract class ClusterK extends Cluster {
 				}
 			}
 		} // end while loop
-		
-		
-		//TODO: Entered normalizing stuff here.
-		/**MedianFinder mf;
-		ArrayList<Integer> atomIDs;
-		ArrayList<BinnedPeakList> particles;
-		CollectionCursor ccurs = new CollectionCursor(collectionID);
-			for (int i = 0; i < k; i++) {
-				atomIDs = particlesInCentroids.get(i);
-				for (int j = 0; j < atomIDs.size(); j++) {
-					particles.add(ccurs.getPeakListfromAtomID(j));
-				}
-				mf = new MedianFinder(particles);
-				centroidList.set(i,new Centroid(mf.getMedianSumToOne(),atomIDs.size()));
-			}*/
 			
 		// Remove the last pass in the total distance array,
 		// since these are duplicates.
