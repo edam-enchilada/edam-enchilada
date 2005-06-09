@@ -109,6 +109,7 @@ public class KMedians extends ClusterK {
 					//mf.getMedianSumToOne(), 
 					0,
 					origCentroids.subCollectionNum);
+			returnThis.peaks = normalize(returnThis.peaks);
 		}
 		return returnThis;
 	}
