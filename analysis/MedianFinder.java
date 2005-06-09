@@ -53,7 +53,7 @@ import java.util.Arrays;
  * A helper class to find the k smallest peak in a peaklist.
  */
 public class MedianFinder {
-	private static final int MAX_LOCATION = 20000; //2500;
+	private static final int MAX_LOCATION = 2500;//20000; //2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	
 	private ArrayList<BinnedPeakList> particles;

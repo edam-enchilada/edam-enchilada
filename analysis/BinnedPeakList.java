@@ -57,7 +57,7 @@ public class BinnedPeakList {
 	private ArrayList<Float> areas;
 	int position = -1;
 
-	private static final int MAX_LOCATION = 20000; //2500;
+	private static final int MAX_LOCATION = 2500;//20000; //2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private static float[] longerLists = new float[MAX_LOCATION * 2];
 	/**
