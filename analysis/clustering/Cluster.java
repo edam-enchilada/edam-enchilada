@@ -431,7 +431,6 @@ public abstract class Cluster extends CollectionDivider {
 			
 		}// end while there are particles remaining
 		curs.reset();
-		//curs.close();
 		
 		System.out.println("Stable Centroid average distance: " + 
 				totalDistance/particleCount);
@@ -451,10 +450,6 @@ public abstract class Cluster extends CollectionDivider {
 		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
-		//for (Centroid c : centroidList)
-		//{
-		//	c.peaks = normalize(c.peaks);
-		//}
 		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;
@@ -493,12 +488,7 @@ public abstract class Cluster extends CollectionDivider {
 		}// end while there are particles remaining
 		putInSubCollectionBatchExecute();
 		curs.reset();
-		//curs.close();
 		totalDistancePerPass.add(new Double(totalDistance));
-		//for (Centroid c : centroidList)
-		//{
-		//	c.peaks = normalize(c.peaks);
-		//}
 		printDescriptionToDB(particleCount, centroidList);
 		return newHostID;
 	}

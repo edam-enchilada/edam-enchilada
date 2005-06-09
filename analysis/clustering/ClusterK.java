@@ -49,6 +49,7 @@ import java.util.*;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.MedianFinder;
 import analysis.ParticleInfo;
 import analysis.SubSampleCursor;
 import database.CollectionCursor;
@@ -180,7 +181,6 @@ public abstract class ClusterK extends Cluster {
 		centroidList = processPart(centroidList, curs);
 		
 		System.out.println("returning");
-		
 		
 		returnThis = 
 			assignAtomsToNearestCentroid(centroidList, curs);
