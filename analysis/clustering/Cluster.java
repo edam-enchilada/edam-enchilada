@@ -441,7 +441,6 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
 	{
-		
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
@@ -450,6 +449,7 @@ public abstract class Cluster extends CollectionDivider {
 		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
+	
 		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;

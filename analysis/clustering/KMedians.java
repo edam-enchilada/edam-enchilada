@@ -105,11 +105,11 @@ public class KMedians extends ClusterK {
 			//Simply use getMedian for this to work the old way
 			// TODO:
 			returnThis = new Centroid(
-					//mf.getMedian(),
-					mf.getMedianSumToOne(), 
+					mf.getMedian(),
+					//mf.getMedianSumToOne(), 
 					0,
 					origCentroids.subCollectionNum);
-			//returnThis.peaks = normalize(returnThis.peaks);
+			returnThis.peaks = normalize(returnThis.peaks);
 		}
 		return returnThis;
 	}

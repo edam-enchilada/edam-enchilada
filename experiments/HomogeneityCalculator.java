@@ -24,9 +24,20 @@ import database.SQLServerDatabase;
 public class HomogeneityCalculator {
 	public static void main(String args[])
 	{
+		switch(Integer.parseInt(args[0])) {
+		case 0:
+			calculateParticles();
+			break;
+		case 1: 
+			calculateDocuments();
+		}
+	}
+	
+	public static void calculateParticles() {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter collectionID: ");
 		int cID = sc.nextInt();
+		
 		SQLServerDatabase db = new SQLServerDatabase();
 		db.openConnection();
 		
@@ -83,4 +94,57 @@ public class HomogeneityCalculator {
 		}
 		db.closeConnection();
 	}
+	
+	public static void calculateDocuments() {
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter collectionID: ");
+		int cID = sc.nextInt();
+		
+		SQLServerDatabase db = new SQLServerDatabase();
+		db.openConnection();
+		
+		Connection con = db.getCon();
+		
+		try {
+			Statement stmt = con.createStatement();
+			ArrayList<String> filenames = new ArrayList<String>();
+			ArrayList<Integer> counts = new ArrayList<Integer>();
+			
+			ResultSet rs = stmt.executeQuery(
+					"SELECT OrigFilename\n" +
+					"FROM AtomInfo, AtomMembership\n" +
+					"	WHERE AtomMembership.CollectionID = " + cID + "\n" +
+					"	AND AtomMembership.AtomID = AtomInfo.AtomID");
+			while (rs.next())
+			{
+				String filename = rs.getString(1);
+				int truncate = filename.lastIndexOf("/");
+				filename = filename.substring(0,truncate);
+				boolean nameFound = false;
+				for (int i = 0; i < filenames.size(); i++)
+				{
+					if (filename.equals(filenames.get(i)))
+					{
+						counts.set(i, new Integer(counts.get(i).intValue()+1));
+						nameFound = true;
+					}
+				}
+				if (!nameFound)
+				{
+					filenames.add(filename);
+					counts.add(new Integer(1));
+				}
+			}
+			for (int i = 0; i < filenames.size(); i++)
+			{
+				System.out.println("Filename: " + filenames.get(i) + " = " +
+						counts.get(i));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		db.closeConnection();
+	}
+	
 }

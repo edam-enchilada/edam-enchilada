@@ -53,7 +53,7 @@ import java.util.Arrays;
  * A helper class to find the k smallest peak in a peaklist.
  */
 public class MedianFinder {
-	private static final int MAX_LOCATION = 2500;//20000; //2500;
+	private static final int MAX_LOCATION = 20000; //2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	
 	private ArrayList<BinnedPeakList> particles;
@@ -225,6 +225,9 @@ public class MedianFinder {
 			assert(sortedList[0].length > 0) : "List contains no elements";
 			assert(sortedList[0].length > 1) : "List contains only one element, " +
 					"and magnitude is still < 1.0f: " + magnitude;
+			
+			//TODO:  magnitude can still be summed to one if there's only one element.  
+			// Fix this eventually.
 			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
 				int j = sortedList[i].length -1;
@@ -356,6 +359,8 @@ public class MedianFinder {
 			assert(sortedList[0].length > 0) : "List contains no elements";
 			assert(sortedList[0].length > 1) : "List contains only one element, " +
 					"and magnitude is still > 1.0f: " + magnitude;
+//			TODO:  magnitude can still be summed to one if there's only one element.  
+			// Fix this eventually.
 			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
 				int j = 0;

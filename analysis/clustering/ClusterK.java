@@ -429,6 +429,9 @@ public abstract class ClusterK extends Cluster {
 				return centroidList;
 			}
 
+			for (int i = 0; i < totalDistancePerPass.size(); i++)
+				System.out.println("pass " + i + ": " + totalDistancePerPass.get(i));
+			
 			// If there is one (or more) empty centroids, replace them 
 			ArrayList<Integer> emptyCentIndex = new ArrayList<Integer>();
 			isStable = stableCentroids(totalDistancePerPass);
