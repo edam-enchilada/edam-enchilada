@@ -66,7 +66,8 @@ public abstract class CollectionDivider {
 
 	/**
 	 * Store each row in memory on the first pass and in 
-	 * subsequent passes.  CURRENTLY UNTESTED!!!
+	 * subsequent passes.  
+	 * TODO: CURRENTLY UNTESTED!!!
 	 */
 	public static final int STORE_ON_FIRST_PASS = 1;
 
@@ -157,12 +158,17 @@ public abstract class CollectionDivider {
 		subCollectionID = db.createEmptyCollection(newHostID,
 				Integer.toString(numSubCollections), 
 				Integer.toString(numSubCollections));
-		if (subCollectionID == -1)
-			System.err.println("Error creating empty subcollection");
+		assert (subCollectionID != -1) : "Error creating empty subcollection";
 		subCollectionIDs.add(new Integer(subCollectionID));
 		return numSubCollections;
 	}
 
+	/**
+	 * Creates an empty sub Collection with a name and comments.
+	 * @param name
+	 * @param comments
+	 * @return - sub collection number
+	 */
 	protected int createSubCollection(
 			String name, 
 			String comments)
@@ -172,9 +178,8 @@ public abstract class CollectionDivider {
 		subCollectionID = db.createEmptyCollection(newHostID,
 				name, 
 				comments);
-		if (subCollectionID == -1)
-			System.err.println("Error creating empty subcollection: " + name + 
-					"Comments: " + comments);
+		assert (subCollectionID != -1) :"Error creating empty subcollection: " 
+			+ name + "Comments: " + comments;
 		subCollectionIDs.add(new Integer(subCollectionID));
 		return numSubCollections;
 	}
@@ -195,32 +200,37 @@ public abstract class CollectionDivider {
 	 * @return
 	 */
 	protected boolean putInSubCollection(int atomID, int target)
-	{
-		// TODO: Make sure this returns false when it doesn't work
-		// probably my looking at db.moveAtom
-		
+	{		
 		if (db.checkAtomParent(atomID,collectionID))
 			return db.moveAtom(atomID, collectionID, subCollectionIDs.get(target-1).intValue());
 		else
 			return db.addAtom(atomID,subCollectionIDs.get(target-1).intValue());
 	}
 	
+	/**
+	 * Initializes putInSubcollectionBatch.
+	 */
 	protected void putInSubCollectionBatchInit() {
 		atomIDsToDelete = "";
 		db.addAtomBatchInit();
 	}
 
+	/**
+	 * adds atoms to a batch that is eventually executed.
+	 * @param atomID
+	 * @param target
+	 * @return - true if atom can be added.
+	 */
 	protected boolean putInSubCollectionBatch(int atomID, int target)
 	{
-		// TODO: Make sure this returns false when it doesn't work
-		// probably my looking at db.moveAtom
-
 		atomIDsToDelete = atomIDsToDelete + atomID + ",";
-		return db.addAtomBatch(
-				atomID,
+		return db.addAtomBatch(atomID,
 				subCollectionIDs.get(target-1).intValue());
 	}
 	
+	/**
+	 * Executes putInSubCollectionBatch
+	 */
 	protected void putInSubCollectionBatchExecute()
 	{
 		if (atomIDsToDelete.length() > 0) {
@@ -244,8 +254,6 @@ public abstract class CollectionDivider {
 			return db.addAtom(atomID, newHostID);
 	}
 
-	// Everything should be set, go ahead and 
-	// run everything, return the collectionID of the host subcollection
 	/**
 	 * This is where the actual method of dividing the collection
 	 * should take place.  This is the last method that should
