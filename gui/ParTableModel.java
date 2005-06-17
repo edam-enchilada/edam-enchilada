@@ -59,7 +59,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 	private ArrayList<ArrayList<Object>> rowData = new ArrayList<ArrayList<Object>>();
 	private ArrayList<Object> newColumn = new ArrayList<Object>();
 	private ArrayList<Object> row2 = new ArrayList<Object>();
-	int setCount;
+	public int setCount;
 	
 	
 	public ParTableModel(int numCols) {

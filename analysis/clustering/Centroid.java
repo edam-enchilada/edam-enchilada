@@ -68,6 +68,11 @@ public class Centroid {
 	public int subCollectionNum;
 	
 	
+	/**
+	 * Constructor.  SubCollectionNum is automatically set to -1.
+	 * @param peaks
+	 * @param numMembers
+	 */
 	public Centroid(BinnedPeakList peaks, int numMembers)
 	{
 		this.peaks = peaks;
@@ -75,6 +80,12 @@ public class Centroid {
 		subCollectionNum = -1;
 	}
 	
+	/**
+	 * Constructor with subCollectionNumPassed as a parameter.
+	 * @param peaks
+	 * @param numMembers
+	 * @param subCollectionNum
+	 */
 	public Centroid (BinnedPeakList peaks, int numMembers,
 			int subCollectionNum)
 	{

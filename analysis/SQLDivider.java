@@ -103,18 +103,4 @@ public class SQLDivider extends CollectionDivider {
 				where);
 		return newHostID;
 	}
-	
-	/*public static void main(String args[])
-	{
-		InfoWarehouse db = new SQLServerDatabase();
-		db.openConnection();
-		
-		
-		SQLDivider sqlDivider = new SQLDivider(
-				1, db, "A name", "A comment","AtomInfo.AtomID < 100");
-		sqlDivider.setCursorType(DISK_BASED);
-		sqlDivider.divide();
-		
-		db.closeConnection();		
-	}*/
 }

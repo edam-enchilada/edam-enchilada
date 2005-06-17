@@ -47,14 +47,15 @@ import database.InfoWarehouse;
 
 /**
  * @author andersbe
+ * 
+ * PeakDivider will create a subcollection of the input collecion
+ * (cID) which contains only those particles which have peaks at
+ * all of the locations in mustContain.  Area is not checked.
  */
 public class PeakDivider extends CollectionDivider {
 	private BinnedPeakList peaks;
 	
 	/**
-	 * PeakDivider will create a subcollection of the input collecion
-	 * (cID) which contains only those particles which have peaks at
-	 * all of the locations in mustContain.  Area is not checked.
 	 * 
 	 * @param cID 			The collection to divide
 	 * @param database		The InfoWarehouse to use
@@ -114,19 +115,4 @@ public class PeakDivider extends CollectionDivider {
 		}
 		return newHostID;
 	}
-
-	/*public static void main (String[] args)
-	{
-		InfoWarehouse db = new SQLServerDatabase();
-		db.openConnection();
-		
-		BinnedPeakList bPL = new BinnedPeakList();
-		bPL.add(30.1f,0.6f);
-		PeakDivider pD = new PeakDivider(
-				1, db, "only 3", "A Comment", bPL);
-		pD.setCursorType(DISK_BASED);
-		pD.divide();
-		
-		db.closeConnection();
-	}*/
 }

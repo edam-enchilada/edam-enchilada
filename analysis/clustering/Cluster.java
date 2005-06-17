@@ -54,7 +54,6 @@ import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
-import analysis.MedianFinder;
 import analysis.ParticleInfo;
 
 /**
@@ -66,21 +65,6 @@ public abstract class Cluster extends CollectionDivider {
 	protected ArrayList<Double> totalDistancePerPass;
 	protected int numPasses,collectionID;
 	protected String parameterString;
-	//protected final int NUM_REFINEMENTS = 3;
-	
-	/**
-	 * Use the City Block or Manhattan distance metric both in
-	 * normalization and in measuring distance.
-	 */
-	//public static final int CITY_BLOCK = 0;
-	
-	/**
-	 * Use the Euclidean Squared distance metric both in 
-	 * normalization and in measuring distance.
-	 */
-	//public static final int EUCLIDEAN_SQUARED = 1;
-	
-	//public static final int DOT_PRODUCT = 2;
 	
 	DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	private static final int MAX_LOCATION = 2500;
@@ -144,7 +128,6 @@ public abstract class Cluster extends CollectionDivider {
 	{
 		float magnitude = list.getMagnitude(distanceMetric);
 		
-		
 		BinnedPeakList returnList = new BinnedPeakList();
 		BinnedPeak temp;
 		list.resetPosition();
@@ -157,148 +140,7 @@ public abstract class Cluster extends CollectionDivider {
 		}
 		return returnList;
 	}
-	
-	// replaced by BinnedPeakList.getDistance
-	/*
-	 * Returns the distance between the vectors represented by
-	 * two peaklists.  Uses whichever distance metric has been 
-	 * set.
-	 * @param list1 The first atom's peaklist.
-	 * @param list2 The second atom's peaklist.
-	 * @return the distance between the atoms.
-	 */
-	/*protected double getDistance(BinnedPeakList list1, 
-			BinnedPeakList list2)
-	{
-		//TODO: Make this more graceful
 		
-		//This seems to take a 2 seconds longer?
-		//Arrays.fill(longerLists, 0.0f);
-		
-	    // longerLists keeps track of which peak locations have nonzero areas
-		for (int i = 0; i < DOUBLE_MAX; i++)
-		{
-			longerLists[i] = 0;
-		}
-		double distance = 0;
-		BinnedPeakList longer;
-		BinnedPeakList shorter;
-		list1.resetPosition();
-		list2.resetPosition();
-		if (list1.length() < list2.length())
-		{
-			shorter = list1;
-			longer = list2;
-		}
-		else
-		{
-			longer = list1;
-			shorter = list2;
-		}
-		
-		BinnedPeak temp;
-		
-		for (int i = 0; i < longer.length(); i++)
-		{
-			temp = longer.getNextLocationAndArea();
-			longerLists[temp.location + MAX_LOCATION] = temp.area;
-			//Do we need this?: - nope
-			//bCheckedLocs[temp.location + MAX_LOCATION] = true;
-
-			// Assume optimistically that each location is unmatched in the
-			// shorter peak list.
-			if (distanceMetric == DistanceMetric.CITY_BLOCK)
-			    distance += temp.area;
-			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-				distance += temp.area*temp.area;
-			else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
-			    ; // If no match in shorter list, contributes nothing
-			else {
-			    assert false :
-			        "Invalid distance metric: " + distanceMetric;
-				distance = -1.0;
-			}
-		}	
-		
-		shorter.resetPosition();
-		double eucTemp = 0;
-		for (int i =  0; i < shorter.length(); i++)
-		{
-			temp = shorter.getNextLocationAndArea();
-			if (longerLists[temp.location+MAX_LOCATION] != 0)
-			{
-				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-				{
-					distance -= longerLists[temp.location+MAX_LOCATION];
-				}
-				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-				{
-					distance -= longerLists[temp.location+MAX_LOCATION]*
-						longerLists[temp.location+MAX_LOCATION];
-				}
-				else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
-				    ; // Again, nothing to subtract off here
-				else {
-				    assert false :
-				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0;
-				}
-				
-				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-					distance += Math.abs(temp.area-longerLists[temp.location+MAX_LOCATION]);
-				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-				{
-					eucTemp = temp.area-longerLists[temp.location+MAX_LOCATION];
-					distance += eucTemp*eucTemp;
-				}
-				else if (distanceMetric == DistanceMetric.DOT_PRODUCT) {
-				    distance +=
-				        temp.area*longerLists[temp.location+MAX_LOCATION];
-				}
-				else {
-				    assert false :
-				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0;
-				}
-				
-			}
-			else
-			{
-				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-					distance += temp.area;
-				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-					distance += temp.area*temp.area;
-				else if (distanceMetric == DistanceMetric.DOT_PRODUCT)
-				    ; // Nothing to add here if new match
-				else {
-				    assert false :
-				        "Invalid distance metric: " + distanceMetric;
-					distance = -1.0;
-				}
-			}
-			
-		}
-		
-		// Dot product distance actually ranges from 0 to 1 (since data is
-		// normalized). A value of 1 indicates two points are the same, 0
-		// indicates completely different. In order to make rest of code work
-		// (small distance is considered good), negate distance and 1 to it.
-		// This places distance between 0 and 1 like other measures and doesn't
-		// affect anything else. (Admittedly, this is a hack, but dot product
-		// distance is ultimately the same thing as Euclidean squared anyway).
-		if (distanceMetric == DistanceMetric.DOT_PRODUCT)
-		    distance = 1-distance;
-
-		assert distance < 2.01 :
-		    "Distance should be <= 2.0, actually is " + distance;
-		if (distance > 2) {
-			//System.out.println("Rounding off " + distance +
-			//		"to 2.0");
-			distance = 2.0;
-		}
-		return distance;
-	}*/
-	
 	/**
 	 * Returns the distance between the vectors represented by
 	 * two peaklists.  Uses whichever distance metric has been 
@@ -310,11 +152,9 @@ public abstract class Cluster extends CollectionDivider {
 	protected double ogetDistance(BinnedPeakList list1, 
 			BinnedPeakList list2)
 	{
-		ArrayList<Integer> checkedLocations = 
-			new ArrayList<Integer>();
+		ArrayList<Integer> checkedLocations = new ArrayList<Integer>();
 		double distance = 0;
-		BinnedPeakList longer;
-		BinnedPeakList shorter;
+		BinnedPeakList longer, shorter;
 		list1.resetPosition();
 		list2.resetPosition();
 		if (list1.length() < list2.length())
@@ -334,10 +174,8 @@ public abstract class Cluster extends CollectionDivider {
 			temp = longer.getNextLocationAndArea();
 			checkedLocations.add(new Integer(temp.location));
 			if (distanceMetric == DistanceMetric.CITY_BLOCK)
-			{
 				distance += Math.abs(temp.area - 
 						shorter.getAreaAt(temp.location));
-			}
 			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 			{
 				shorterTemp = shorter.getAreaAt(temp.location);
@@ -345,9 +183,7 @@ public abstract class Cluster extends CollectionDivider {
 				* (temp.area - shorterTemp);
 			}
 			else
-			{
 				distance = -1.0f;
-			}
 		}
 		boolean alreadyChecked = false;
 		for (int i = 0; i < shorter.length(); i++)
@@ -356,21 +192,14 @@ public abstract class Cluster extends CollectionDivider {
 			temp = shorter.getNextLocationAndArea();
 			double longerTemp;
 			for (Integer loc : checkedLocations)
-			{
 				if (temp.location == loc.intValue())
-				{
 					alreadyChecked = true;
-				}
-			}
-			if (alreadyChecked)
-				;
-			else
+			if (!(alreadyChecked))
 			{
 				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-				{
 					distance += Math.abs(temp.area - 
 							longer.getAreaAt(temp.location));
-				}
+
 				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
 					longerTemp = longer.getAreaAt(temp.location);
@@ -378,9 +207,7 @@ public abstract class Cluster extends CollectionDivider {
 					(temp.area - longerTemp);
 				}
 				else
-				{
 					distance = -1.0f;
-				}
 			}
 		}
 		
@@ -389,10 +216,15 @@ public abstract class Cluster extends CollectionDivider {
 					"to 2.0");
 			distance = 2.0f;
 		}
-		
+		assert (distance >= 0) : "distance between two peaklists is -1";
 		return distance;
 	}
 
+	/**
+	 * prints the distance to the nearest centroid.
+	 * @param centroidList
+	 * @param curs
+	 */
 	protected void printDistanceToNearestCentroid(
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
@@ -437,6 +269,13 @@ public abstract class Cluster extends CollectionDivider {
 		
 	}
 	
+	/**
+	 * This method assigns atoms to nearest centroid using only centroidList
+	 * and collection cursor.  
+	 * @param centroidList
+	 * @param curs
+	 * @return
+	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
@@ -492,6 +331,16 @@ public abstract class Cluster extends CollectionDivider {
 		printDescriptionToDB(particleCount, centroidList);
 		return newHostID;
 	}
+	
+	/**
+	 * If Art2a is the clustering tool, we need to include vigilance as another
+	 * parameter for assign atoms to nearest centroid.
+	 * 
+	 * @param centroidList
+	 * @param curs
+	 * @param vigilance
+	 * @return
+	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs,
@@ -506,10 +355,6 @@ public abstract class Cluster extends CollectionDivider {
 		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();		
-		//for (Centroid c : centroidList)
-		//{
-		//	c.peaks = normalize(c.peaks);
-		//}
 		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;
@@ -520,9 +365,8 @@ public abstract class Cluster extends CollectionDivider {
 			// vigilance since that centroid would not be 
 			// considered
 			nearestDistance = 3.0;
-			for (int centroidIndex = 0; 
-			centroidIndex < centroidList.size(); 
-			centroidIndex++)
+			for (int centroidIndex = 0; centroidIndex < centroidList.size(); 
+				centroidIndex++)
 			{// for each centroid
 				distance = centroidList.get(centroidIndex).peaks.
 					getDistance(thisBinnedPeakList, distanceMetric);
@@ -537,13 +381,11 @@ public abstract class Cluster extends CollectionDivider {
 				if (outliers.numMembers == 0)
 					outliers.subCollectionNum = 
 						createSubCollection("Outliers", "Outliers");
-				putInSubCollectionBatch(
-						thisParticleInfo.getParticleInfo().
+				putInSubCollectionBatch(thisParticleInfo.getParticleInfo().
 						getAtomID(),
 						outliers.subCollectionNum);
 				outliers.numMembers++;
-				System.out.println("Outlier #" + 
-						outliers.numMembers);
+				System.out.println("Outlier #" + outliers.numMembers);
 			}
 			else
 			{
@@ -566,18 +408,17 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
-		//curs.close();
-		//for (Centroid c : centroidList)
-		//{
-		//	c.peaks = normalize(c.peaks);
-		//}
 		printDescriptionToDB(particleCount, centroidList);
 
 		return newHostID;
 	}
 	
-	private void printDescriptionToDB(
-			int particleCount,
+	/**
+	 * prints the relevant info to the database
+	 * @param particleCount
+	 * @param centroidList
+	 */
+	private void printDescriptionToDB(int particleCount,
 			ArrayList<Centroid> centroidList)
 	{
 	
@@ -597,10 +438,7 @@ public abstract class Cluster extends CollectionDivider {
 		
 		PrintWriter out = null;
 		StringWriter sendToDB = new StringWriter();
-		out = new PrintWriter(sendToDB
-				/*new FileWriter(collectionID + ","
-				 + parameterString +
-				 ".txt")*/);
+		out = new PrintWriter(sendToDB);
 		
 		out.println("Clustering Parameters: ");
 		out.println(parameterString + "\n\n");
@@ -657,27 +495,4 @@ public abstract class Cluster extends CollectionDivider {
 		System.out.println(sendToDB.toString());
 		db.setCollectionDescription(newHostID,sendToDB.toString());
 	}
-	// For testing
-	/*public static void main (String[] args)
-	{
-		BinnedPeakList list1 = new BinnedPeakList();
-		BinnedPeakList list2 = new BinnedPeakList();
-		list1.add(30,1);
-		list2.add(10,0);
-		list2.add(30,0);
-		list1.add(10,0);
-		//list2.add(15, 23);
-		//BinnedPeak temp = list1.getNextLocationAndHeight();
-		//System.out.println(temp.location);
-		//System.out.println(temp.height + "\n");
-		//list1.resetPosition();
-		int dMetric = CITY_BLOCK;
-		list1 = normalize(list1, dMetric);
-		temp = list1.getNextLocationAndHeight();
-		System.out.println(temp.location);
-		System.out.println(temp.height);
-		list1.resetPosition();
-		//list2 = normalize(list2, dMetric);
-		System.out.println(getDistance(list1,list2,dMetric));
-	}*/
 }

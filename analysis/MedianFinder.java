@@ -74,35 +74,39 @@ public class MedianFinder {
 					"peaklists.");
 	}
 	
-	
+	/**
+	 * fills sorted list.
+	 */
 	private void fill()
 	{
 		BinnedPeakList tempPL;
-		for (int i = 0; i < particles.size(); i++)
-		{
+		for (int i = 0; i < particles.size(); i++) {
 			tempPL = particles.get(i);
 			tempPL.resetPosition();
-			for (int j = 0; j < tempPL.length(); j++)
-			{
+			for (int j = 0; j < tempPL.length(); j++) {
 				BinnedPeak peak = tempPL.getNextLocationAndArea();
-				sortedList[MAX_LOCATION+peak.location][i] = 
-					peak.area;
+				sortedList[MAX_LOCATION+peak.location][i] = peak.area;
 				locationsUsed[MAX_LOCATION+peak.location] = true;
 			}
 			tempPL.resetPosition();
 		}
 	}
 	
-	private void sort()
+	/**
+	 * sorts sortedList.
+	 */
+	private void sort() 
 	{	
 		for (int i = 0; i < DOUBLE_MAX; i++)
-		{
 			if (locationsUsed[i])
 				Arrays.sort(sortedList[i]);
-		}
 	}
 	
-	public BinnedPeakList getMedian()
+	/**
+	 * gets median.
+	 * @return binnedPeakList of medians
+	 */
+	public BinnedPeakList getMedian() 
 	{
 		if (particles.size() == 0)
 			return null;
@@ -110,16 +114,12 @@ public class MedianFinder {
 		if (particles.size()%2 == 0)
 		{
 			double sum = 0.0;
-			float fSum = 0.0f;
-			float subMid, supMid;
+			float fSum = 0.0f, subMid, supMid;
 			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
 				subMid = sortedList[i][particles.size()/2-1];
 				supMid = sortedList[i][particles.size()/2];
-				if (subMid == 0.0f &&
-					supMid == 0.0f)
-					;
-				else
+				if (!(subMid == 0.0f && supMid == 0.0f))
 				{
 					sum += ((double) subMid + (double) supMid)/2.0;
 					fSum += (subMid+supMid)/2.0f;
@@ -127,35 +127,28 @@ public class MedianFinder {
 							(subMid+supMid)/2.0f);
 				}
 			}
-			//System.out.println("Double Sum = " + sum);
-			//System.out.println("Float sum = " + fSum);
-			//System.out.flush();
-		
 			return returnThis;
 		}
 		else
-		{
 			return getKthElement(particles.size()/2);
-		}
 	}
 	
+	/**
+	 * Gets the middle element - used for an odd number of peaks.
+	 * @param k - half of # of particles
+	 * @return - binnedpeaklist of medians
+	 */
 	public BinnedPeakList getKthElement(int k)
 	{
 		if (particles.size() == 0)
 			return null;
 		if (k >= particles.size() || k < 0)
-			throw new IndexOutOfBoundsException(
-					"k must be a number from 0 to " +
-					(particles.size()-1));
+			throw new IndexOutOfBoundsException("k must be a number from 0 " +
+					"to " +	(particles.size()-1));
 		BinnedPeakList returnThis = new BinnedPeakList();
 		for (int i = 0; i < DOUBLE_MAX; i++)
-		{
-			if (sortedList[i][k] == 0)
-				;
-			else
-				returnThis.addNoChecks(i-MAX_LOCATION,
-						sortedList[i][k]);
-		}
+			if (!(sortedList[i][k] == 0))
+				returnThis.addNoChecks(i-MAX_LOCATION,sortedList[i][k]);
 		
 		return returnThis;
 	}
@@ -208,10 +201,6 @@ public class MedianFinder {
 		median.resetPosition();
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
 		
-		/*assert(magnitude <= 1.001f) : "Median was larger than 1: " +
-			magnitude + " median: " + particles.size()/2 + " from: " + 
-			DEBUGprintMagnitudes() + " size = " + particles.size();*/
-		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)
 		{
@@ -223,11 +212,11 @@ public class MedianFinder {
 			float maxAreaDiff = 0;
 			float tempArea = 0;
 			assert(sortedList[0].length > 0) : "List contains no elements";
-			assert(sortedList[0].length > 1) : "List contains only one element, " +
-					"and magnitude is still < 1.0f: " + magnitude;
+			//assert(sortedList[0].length > 1) : "List contains only one element, " +
+			//		"and magnitude is still < 1.0f: " + magnitude;
 			
 			//TODO:  magnitude can still be summed to one if there's only one element.  
-			// Fix this eventually.
+			
 			for (int i = 0; i < DOUBLE_MAX; i++)
 			{
 				int j = sortedList[i].length -1;
@@ -249,8 +238,6 @@ public class MedianFinder {
 						"sortedList[i][0] = " + sortedList[i][0];
 					
 				}
-				//assert (j != sortedList[i].length - 1) : 
-					//"j did not decrease";
 				// Find the location where the most peaklists have 
 				// values higher than the median
 				if (numEntriesGreaterThanMedian[i] > maxNumEntries)
@@ -337,9 +324,6 @@ public class MedianFinder {
 					return median;
 				}
 				
-				//assert(magnitude > tempMag) : 
-					//"magnitude has not changed positively: tempMag = " +
-					//tempMag + " magnitude = " + magnitude;
 			}
 			assert(median.getMagnitude(DistanceMetric.CITY_BLOCK) > 0.9999 
 					&& median.getMagnitude(DistanceMetric.CITY_BLOCK) < 1.0001) :
@@ -357,8 +341,8 @@ public class MedianFinder {
 			float maxAreaDiff = 0;
 			float tempArea = 0;
 			assert(sortedList[0].length > 0) : "List contains no elements";
-			assert(sortedList[0].length > 1) : "List contains only one element, " +
-					"and magnitude is still > 1.0f: " + magnitude;
+			//assert(sortedList[0].length > 1) : "List contains only one element, " +
+			//		"and magnitude is still > 1.0f: " + magnitude;
 //			TODO:  magnitude can still be summed to one if there's only one element.  
 			// Fix this eventually.
 			for (int i = 0; i < DOUBLE_MAX; i++)

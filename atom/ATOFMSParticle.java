@@ -68,8 +68,6 @@ public class ATOFMSParticle extends Particle {
 	public static PeakParams currPeakParams;
 	public static CalInfo currCalInfo;
 	
-	//protected ArrayList<Peak> peakList = null;
-	
 	private double autoPosSlope, autoNegSlope, autoPosIntercept,
 		autoNegIntercept;
 	
@@ -80,6 +78,17 @@ public class ATOFMSParticle extends Particle {
 		
 	}
 	
+	/** 
+	 * Sets all variables about the particle.  If autocalibrate is true, then
+	 * particle is autocalibrated.
+	 * @param fname - filename
+	 * @param timestr - time
+	 * @param lasPow - laser power
+	 * @param dRate - digit rate
+	 * @param sDelay - scat delay
+	 * @param pSpect - pos spectrum
+	 * @param nSpect - neg spectrum
+	 */
 	public ATOFMSParticle(String fname, 
 						  String timestr, 
 						  float lasPow,
@@ -113,8 +122,8 @@ public class ATOFMSParticle extends Particle {
 		if (currCalInfo.autocal)
 		{
 			double returnVals[] = new double[2];
-			//System.out.println("About to autocalibrate");
-			returnVals = AutoCalibrator.autoCalibrate(digitRate, AutoCalibrator.POS, posSpectrum);
+			returnVals = AutoCalibrator.autoCalibrate(digitRate, 
+					AutoCalibrator.POS, posSpectrum);
 			if (returnVals != null)
 			{
 				autoPosSlope = returnVals[0];
@@ -125,7 +134,8 @@ public class ATOFMSParticle extends Particle {
 				autoPosSlope = currCalInfo.posSlope;
 				autoPosIntercept = currCalInfo.posIntercept;
 			}
-			returnVals = AutoCalibrator.autoCalibrate(digitRate, AutoCalibrator.NEG, negSpectrum);
+			returnVals = AutoCalibrator.autoCalibrate(digitRate, 
+					AutoCalibrator.NEG, negSpectrum);
 			if (returnVals != null)
 			{
 				autoNegSlope = returnVals[0];
@@ -136,17 +146,16 @@ public class ATOFMSParticle extends Particle {
 				autoNegSlope = currCalInfo.negSlope;
 				autoNegIntercept = currCalInfo.negIntercept;
 			}
-			//System.out.println("Finished calibrating");
 		}
 	}
 	
+	/**
+	 * Gets the particle's peak list.
+	 */
 	public ArrayList<Peak> getPeakList()
 	{
-		//System.out.println("testing nullity");
-
 		if (peakList!= null)
 			return peakList;
-		//System.out.println("creating new PeakList");
 		peakList = new ArrayList<Peak>(20);
 		
 		int baselines[] = findBaseLines();
@@ -157,6 +166,10 @@ public class ATOFMSParticle extends Particle {
 		return peakList;
 	}
 	
+	/**
+	 * Finds the base lines.
+	 * @return int[2], pos and neg baselines.
+	 */
 	private int[] findBaseLines()
 	{
 		int baselines[] = new int[2];
@@ -164,8 +177,7 @@ public class ATOFMSParticle extends Particle {
 		baselines[0] = 0;
 		baselines[1] = 0;
 		
-		// This calculation does not take into account the last
-		// bin
+		// This calculation does not take into account the last bin
 		for (int i = MAX_BIN_NUMBER - MAX_BIN_NUMBER/10; i < MAX_BIN_NUMBER; i++)
 		{
 			baselines[0] += posSpectrum[i];
@@ -176,6 +188,11 @@ public class ATOFMSParticle extends Particle {
 		return baselines;
 	}
 	
+	/**
+	 * get positive peaks and put them into a sparse peak list.
+	 * @param baseline
+	 * @return true if successful
+	 */
 	private boolean getPosPeaks(int baseline)
 	{
 		int i = 0;
@@ -244,20 +261,15 @@ public class ATOFMSParticle extends Particle {
 			else
 				k++;
 		}
-		
-		//totalArea = 0;
-		//for (int n = 0; n < peakList.size(); n++)
-		//	totalArea += peakList.get(n).area;
-		// Calculate the relative areas.
-		//for (int l = 0; l < peakList.size(); l++)
-		//{
-		//	Peak peak = peakList.get(l);
-		//	peak.relArea = (float)peak.area/totalArea;
-		//	peakList.set(l, peak);
-		//}
+
 		return true;
 	}
 	
+	/**
+	 * Gets neg peaks and puts them into a sparse peaklist.
+	 * @param baseline
+	 * @return true on success.
+	 */
 	private boolean getNegPeaks(int baseline)
 	{
 		int startingListSize = peakList.size();
@@ -334,12 +346,6 @@ public class ATOFMSParticle extends Particle {
 				k++;
 		}
 		
-
-		
-		//totalArea = 0;
-		//for (int n = startingListSize; n < peakList.size(); n++)
-		//	totalArea += peakList.get(n).area;
-		
 		// Calculate the relative areas.
 		for (int l = startingListSize; l < peakList.size(); l++)
 		{
@@ -349,33 +355,36 @@ public class ATOFMSParticle extends Particle {
 		}
 		return true;
 	}
-	// TODO:  public?
+
+	/**
+	 * returns the pos. M/Z value for the given bin
+	 * @param bin
+	 * @return m/z value
+	 */
 	private double getPosMZ(int bin)
 	{
 		double squareThis = 0;
-		if (currCalInfo.autocal)
-		{
+		if (currCalInfo.autocal) 
 			squareThis = autoPosSlope*bin + autoPosIntercept;
-		}
 		else
-		{
 			squareThis = currCalInfo.posSlope*bin + currCalInfo.posIntercept;
-		}
 		
 		return squareThis * squareThis;
 	}
 	
+	/**
+	 * returns the neg. M/Z value for the given bin
+	 * @param bin
+	 * @return m/z value
+	 */
 	private double getNegMZ(int bin)
 	{
 		double squareThis = 0;
 		if (currCalInfo.autocal)
-		{
 			squareThis = autoNegSlope*bin + autoNegIntercept;
-		}
 		else
-		{
 			squareThis = currCalInfo.negSlope*bin + currCalInfo.negIntercept;
-		}
+		
 		return -(squareThis * squareThis);
 	}
 	
@@ -386,9 +395,7 @@ public class ATOFMSParticle extends Particle {
 	{
 		chartlib.DataPoint[] spec = new chartlib.DataPoint[posSpectrum.length];
 		for( int i=0; i < posSpectrum.length; i++)
-		{
 			spec[i] = new chartlib.DataPoint(getPosMZ(i),posSpectrum[i]);
-		}
 		return spec;
 	}
 	
@@ -402,8 +409,6 @@ public class ATOFMSParticle extends Particle {
 		{
 			spec[i] = new chartlib.DataPoint(-getNegMZ(i),negSpectrum[i]);
 		}
-		//System.out.println(negSpectrum[4500]);
-		//System.out.println(spec[4500].x);
 		return spec;
 	}
 	
@@ -412,12 +417,4 @@ public class ATOFMSParticle extends Particle {
 		currPeakParams = p;
 		currCalInfo = c;
 	}
-	
-	/*public void printAutoCalParams()
-	{
-		System.out.println("autoPosSlope" + autoPosSlope);
-		System.out.println("autoPosIntercept" + autoPosIntercept);
-		System.out.println("autoNegSlope" + autoNegSlope);
-		System.out.println("autoNegIntercept" + autoNegIntercept);
-	}*/
 }

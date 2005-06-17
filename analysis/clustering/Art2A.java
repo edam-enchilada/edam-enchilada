@@ -82,8 +82,6 @@ public class Art2A extends Cluster
 		distanceMetric = dMetric;
 		collectionID = cID;
 		totalDistancePerPass = new ArrayList<Double>();
-		/*for (int i = 0; i < numPasses; i++)
-			totalDistancePerPass.add(new Float(0.0));*/
 		size = db.getCollectionSize(collectionID);
 	}
 	
@@ -104,18 +102,11 @@ public class Art2A extends Cluster
 		{
 			addedPeak = addedParticle.getNextLocationAndArea();
 			centroidArea = centroid.getAreaAt(addedPeak.location);
-			//if (centroidArea != 0)
-			//{
-			//
-			// This should always be added as grabbed since 
-			// sometimes a peak might have a area of 0 and then
-			// be measured twice
 			locationsGrabbed.add(new Integer(addedPeak.location));
 			
 			returnList.addNoChecks(addedPeak.location, 
 					centroidArea + 
 					(addedPeak.area-centroidArea)*learningRate);
-			//}
 		}
 		
 		BinnedPeak centroidPeak;
@@ -126,13 +117,9 @@ public class Art2A extends Cluster
 			centroidPeak = centroid.getNextLocationAndArea();
 			alreadyAdded = false;
 			for (int j = 0; j < locationsGrabbed.size(); j++)
-			{
 				if (centroidPeak.location == 
 					locationsGrabbed.get(j).intValue())
-				{
 					alreadyAdded = true;
-				}
-			}
 			if (!alreadyAdded)
 			{
 				addedArea = addedParticle.getAreaAt(
@@ -169,7 +156,6 @@ public class Art2A extends Cluster
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			//TODO: Change this back
 			curs = new NonZeroCursor(db.getBinnedCursor(collectionID));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
@@ -197,7 +183,6 @@ public class Art2A extends Cluster
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
 			NonZeroCursor curs)
 	{
-		
 		int particleCount;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
@@ -206,9 +191,7 @@ public class Art2A extends Cluster
 		boolean withinVigilance = false;
 		double distance;
 		int chosenCluster = 0;
-		/*for (int i = 0; i < totalDistancePerPass.size(); i++)
-				totalDistancePerPass.set(i, new Float(0.0f));*/
-
+		
 		double minTotalStableDistance = Double.POSITIVE_INFINITY;
 		int iterationsSinceNewMin = 0;
 		boolean stable = false;
@@ -236,14 +219,6 @@ public class Art2A extends Cluster
 				{// for each centroid
 					distance = centroidList.get(centroidIndex).peaks.
 						getDistance(thisBinnedPeakList,distanceMetric);
-					//getDistance(
-					//		centroidList.get(centroidIndex).peaks,
-					//		thisBinnedPeakList);
-					//if (distance > 2) {
-						//System.out.print("Rounding error: ");
-						//System.out.println("dist. = " + distance + 
-						//		" for particle " + particleCount);
-					//}
 					if (distance <= vigilance)
 					{// if cluster is within the vigilance
 						if (distance < nearestDistance)
@@ -276,17 +251,13 @@ public class Art2A extends Cluster
 				}
 			}// end while there are particles remaining
 			//TODO:  the following 3 lines were commented out for plotting centroids.
-			//printDistanceToNearestCentroid(
-			//		centroidList,
-			//		curs);
+			//printDistanceToNearestCentroid(centroidList,curs);
 			System.out.println("about to reset");
 			curs.reset();
-			
 			
 			// remove outliers (an outlier is defined as any cluster
 			// containing less than .5% of the total number of particles
 			float outlierThreshold = 0.005f;
-			//for (int i = 0; i < centroidList.size(); i++)
 			int i = 0;
 			int tempNumMembers;
 			while(i < centroidList.size())
@@ -298,9 +269,6 @@ public class Art2A extends Cluster
 				{
 					System.out.println("Removing outlier centroid");
 					centroidList.remove(i);
-					//for (int j = i; j < centroidList.size();
-					//	 j++)
-						//centroidList.get(j).subCollectionNum--;
 				}
 				else
 					i++;
@@ -324,20 +292,4 @@ public class Art2A extends Cluster
 		zeroPeakListParticleCount = curs.getZeroCount();
 		return centroidList;
 	}
-	
-	/*
-	public static void main(String args[])
-	{
-		InfoWarehouse db = new SQLServerDatabase();
-		db.openConnection();
-		
-		System.out.println("collection size = " + db.getCollectionSize(1));
-		Art2A art2a = new Art2A(1,db, 1.9f, 0.1f, 15, 
-				Cluster.CITY_BLOCK, "A comment");
-		art2a.setDistanceMetric(CITY_BLOCK);
-		art2a.setCursorType(DISK_BASED);
-		art2a.divide();
-		
-		db.closeConnection();		
-	}*/
 }

@@ -45,6 +45,9 @@ package atom;
 
 /**
  * @author ritza
+ * 
+ * Peak can be constructed with height, area, rel. area and m/z or just height,
+ * area, and m/z.
  */
 public class Peak {
 	public int height;
@@ -68,6 +71,9 @@ public class Peak {
 		massToCharge = mz;
 	}
 	
+	/**
+	 * prints peak.
+	 */
 	public String toString()
 	{
 		String returnThis =

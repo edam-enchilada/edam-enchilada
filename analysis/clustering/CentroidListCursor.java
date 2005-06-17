@@ -51,6 +51,8 @@ import database.CollectionCursor;
 
 /**
  * @author andersbe
+ * 
+ * Cursor that iterates through the centroids.
  */
 public class CentroidListCursor implements CollectionCursor {
 	int i = -1;

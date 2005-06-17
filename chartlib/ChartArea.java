@@ -45,7 +45,6 @@ package chartlib;
 import javax.swing.JComponent;
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 /**

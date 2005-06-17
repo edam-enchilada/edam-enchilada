@@ -50,6 +50,8 @@ import database.InfoWarehouse;
 /**
  * @author andersbe
  *
+ * SimpleDivider is a test class.  It divides a collection in half.  
+ *
  */
 public class SimpleDivider extends CollectionDivider {
 
@@ -107,13 +109,4 @@ public class SimpleDivider extends CollectionDivider {
 		}
 		return 0;
 	}
-	/*public static void main(String args[])
-	{
-		InfoWarehouse database = new SQLServerDatabase();
-		database.openConnection();
-		SimpleDivider divider = new SimpleDivider(1, database);
-		divider.setCursorType(CollectionDivider.DISK_BASED);
-		divider.divide();
-		database.closeConnection();
-	}*/
 }

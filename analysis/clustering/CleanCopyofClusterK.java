@@ -44,15 +44,7 @@
  */
 package analysis.clustering;
 
-import java.awt.FlowLayout;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
 
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
@@ -63,7 +55,6 @@ import analysis.SubSampleCursor;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
-import externalswing.SwingWorker;
 //import database.SQLServerDatabase;
 
 /**
@@ -74,7 +65,7 @@ import externalswing.SwingWorker;
  * 
  * 
  */
-public abstract class ClusterK extends Cluster {
+public abstract class CleanCopyofClusterK extends Cluster {
 	
 	/* Declared Class Variables */
 	private boolean refineCentroids; // true to refine centroids, false otherwise.
@@ -85,16 +76,6 @@ public abstract class ClusterK extends Cluster {
 	private static float error = 0.01f;
 	private static int numSamples = 50;
 	protected NonZeroCursor curs;
-	private int returnThis;
-	private JFrame parentContainer;
-	private int curInt;
-	private double difference;
-	
-	private JDialog errorUpdate;
-	private JLabel errorLabel;
-	private JFrame container;
-	
-
 	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
@@ -106,7 +87,7 @@ public abstract class ClusterK extends Cluster {
 	 * @param refineCentroids - true to refine centroids, false otherwise.
 	 * 
 	 */
-	public ClusterK(int cID, InfoWarehouse database, int k, 
+	public CleanCopyofClusterK(int cID, InfoWarehouse database, int k, 
 			String name, String comment, boolean refineCentroids) 
 	{
 		super(cID, database,name.concat(",K=" + k),comment);
@@ -131,131 +112,80 @@ public abstract class ClusterK extends Cluster {
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
-		final SwingWorker worker = new SwingWorker() {
-			public Object construct() {
-				ArrayList<Centroid> centroidList = 
-					new ArrayList<Centroid>();
-				numParticles = db.getCollectionSize(collectionID);
-				// If refineCentroids is true, randomize the db and cluster subsamples.
-				if (refineCentroids) {
-					int sampleSize;
-					if (numSamples*4 > numParticles) 
-						sampleSize = numParticles/(numSamples*2);
-					else 
-						sampleSize = numParticles/numSamples - 1;
-					db.seedRandom(90125);
-					CollectionCursor randCurs = 
-						db.getRandomizedCursor(collectionID);
-					NonZeroCursor partCurs = null;
-					System.out.println("clustering subSamples:");
-					System.out.println("number of samples: " + numSamples);
-					System.out.println("sample size: " + sampleSize);
-					ArrayList<ArrayList<Centroid>> allCentroidLists =
-					    new ArrayList<ArrayList<Centroid>>(numSamples);
-					sampleIters = 0;
-					for(int i = 0; i < numSamples; i++)
-					{
-						curInt = i+1;
-						try {
-							SwingUtilities.invokeAndWait(new Runnable() {
-								public void run() {
-									updateErrorDialog("Clustering subsample #" + (curInt));
-								}
-							});
-						} catch (Exception e) {	e.printStackTrace(); }
-						partCurs = new NonZeroCursor(new SubSampleCursor(
-								randCurs, 
-								i*sampleSize, 
-								sampleSize));
-						allCentroidLists.add(processPart(new ArrayList<Centroid>(),
-						        				partCurs));
-						centroidList.addAll(allCentroidLists.get(i));
-						sampleIters += totalDistancePerPass.size();
-					}
-					
-					// Of the various centroids that are found, try clustering all
-					// the centroids together using each set of centroids as a starting
-					// point. For each of the centroids that result, choose those
-					// that result in the least error.
-					System.out.println("clustering Centroids:");
-					double bestDistance = Double.POSITIVE_INFINITY;
-					ArrayList<Centroid> bestStartingCentroids = null;
-					int bestIndex = -1;
-					clusterCentroidIters = 0;
-					for (int i=0; i < numSamples; i++) {
-						curInt = i+1;
-						try {
-							SwingUtilities.invokeAndWait(new Runnable() {
-								public void run() {
-									updateErrorDialog("Clustering centroid #" + (curInt));
-								}
-							});
-						} catch (Exception e) {	e.printStackTrace(); }
-						ArrayList<Centroid> centroids = 
-							processPart(allCentroidLists.get(i),
-									new NonZeroCursor(
-											new CentroidListCursor(centroidList)));
-						double distance = (totalDistancePerPass.
-					              get(totalDistancePerPass.size()-1).doubleValue());
-						clusterCentroidIters += totalDistancePerPass.size();
-					    if (distance < bestDistance) {
-					        bestDistance = distance;
-					        bestStartingCentroids = centroids;
-					        bestIndex = i;
-					    }
-					}
-					System.out.println("Centroid clustering iterations: " +
-					        clusterCentroidIters);
-					centroidList = processPart(bestStartingCentroids,
-							new NonZeroCursor(new CentroidListCursor(centroidList)));
-					partCurs.close();
-					randCurs.close();
-				} 
-				try {
-					SwingUtilities.invokeAndWait(new Runnable() {
-						public void run() {
-							updateErrorDialog("Clustering particles...");
-						}
-					});
-				} catch (Exception e) {	e.printStackTrace(); }
-				centroidList = processPart(centroidList, curs);
-				
-				System.out.println("returning");
-				
-				returnThis = 
-					assignAtomsToNearestCentroid(centroidList, curs);
-				curs.close();
-				
-				try {
-					SwingUtilities.invokeAndWait(new Runnable() {
-						public void run() {
-							errorUpdate.setVisible(false);
-							errorUpdate = null;
-						}
-					});
-				} catch (Exception e) {	e.printStackTrace(); }
-				
-				return returnThis;
+		int returnThis;
+		ArrayList<Centroid> centroidList = 
+			new ArrayList<Centroid>();
+		numParticles = db.getCollectionSize(collectionID);
+		// If refineCentroids is true, randomize the db and cluster subsamples.
+		if (refineCentroids) {
+			int sampleSize;
+			if (numSamples*4 > numParticles) 
+				sampleSize = numParticles/(numSamples*2);
+			else 
+				sampleSize = numParticles/numSamples - 1;
+			db.seedRandom(90125);
+			CollectionCursor randCurs = 
+				db.getRandomizedCursor(collectionID);
+			NonZeroCursor partCurs = null;
+			System.out.println("clustering subSamples:");
+			System.out.println("number of samples: " + numSamples);
+			System.out.println("sample size: " + sampleSize);
+			ArrayList<ArrayList<Centroid>> allCentroidLists =
+			    new ArrayList<ArrayList<Centroid>>(numSamples);
+			sampleIters = 0;
+			for(int i = 0; i < numSamples; i++)
+			{
+				System.out.println("Clustering subsample #" + (i+1));
+				partCurs = new NonZeroCursor(new SubSampleCursor(
+						randCurs, 
+						i*sampleSize, 
+						sampleSize));
+				allCentroidLists.add(processPart(new ArrayList<Centroid>(),
+				        				partCurs));
+				centroidList.addAll(allCentroidLists.get(i));
+				sampleIters += totalDistancePerPass.size();
 			}
-		};
-		worker.start();
+			
+			// Of the various centroids that are found, try clustering all
+			// the centroids together using each set of centroids as a starting
+			// point. For each of the centroids that result, choose those
+			// that result in the least error.
+			System.out.println("clustering Centroids:");
+			double bestDistance = Double.POSITIVE_INFINITY;
+			ArrayList<Centroid> bestStartingCentroids = null;
+			int bestIndex = -1;
+			clusterCentroidIters = 0;
+			for (int i=0; i < numSamples; i++) {
+				System.out.println("Centroid clustering #" + i);
+				ArrayList<Centroid> centroids = 
+					processPart(allCentroidLists.get(i),
+							new NonZeroCursor(
+									new CentroidListCursor(centroidList)));
+				double distance = (totalDistancePerPass.
+			              get(totalDistancePerPass.size()-1).doubleValue());
+				clusterCentroidIters += totalDistancePerPass.size();
+			    if (distance < bestDistance) {
+			        bestDistance = distance;
+			        bestStartingCentroids = centroids;
+			        bestIndex = i;
+			    }
+			}
+			System.out.println("Centroid clustering iterations: " +
+			        clusterCentroidIters);
+			centroidList = processPart(bestStartingCentroids,
+					new NonZeroCursor(new CentroidListCursor(centroidList)));
+			partCurs.close();
+			randCurs.close();
+		} 
+		System.out.println("clustering particles: ");
+		centroidList = processPart(centroidList, curs);
 		
-		errorUpdate = new JDialog((JFrame)container,"Clustering",true);
-		errorLabel = new JLabel("Clusters stabilize when change in error = 0");
-		errorLabel.setSize(100,250);
-		errorUpdate.add(errorLabel);
-		errorUpdate.pack();
-		errorUpdate.validate();
-		errorUpdate.setVisible(true);
+		System.out.println("returning");
 		
+		returnThis = 
+			assignAtomsToNearestCentroid(centroidList, curs);
+		curs.close();
 		return returnThis;
-	}
-	
-	public void updateErrorDialog(String str) {
-		if (errorUpdate != null) {
-		errorLabel.setText(str);
-		errorUpdate.validate();
-		}
 	}
 	
 	/**
@@ -383,7 +313,6 @@ public abstract class ClusterK extends Cluster {
 		    assert status : "Cursor is empty.";
 		    Centroid newCent = 
 		    	new Centroid(normalize(curs.getCurrent().getBinnedList()),0);
-		    // TODO:  this should be sumtoone?? for K-Medians!!!
 		    centroidList.add(newCent);
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
@@ -398,7 +327,6 @@ public abstract class ClusterK extends Cluster {
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
 					     curCent++)
-						
 					{// for each centroid
 						double distance =
 							centroidList.get(curCent).peaks.
@@ -537,16 +465,9 @@ public abstract class ClusterK extends Cluster {
 		if (totDist.size() == 1)
 			return false;
 		int lastIndex = totDist.size() - 1;
-		difference = 
+		double difference = 
 			totDist.get(lastIndex-1).doubleValue() - 
 			totDist.get(lastIndex).doubleValue();
-		try {
-			SwingUtilities.invokeAndWait(new Runnable() {
-				public void run() {
-					updateErrorDialog("Change in error = " + (difference));
-				}
-			});
-		} catch (Exception e) {	e.printStackTrace(); }
 		//difference = Math.abs(difference);
 		System.out.println("Error: " + totDist.get(lastIndex).doubleValue());
 		System.out.println("Change in error: " + difference);

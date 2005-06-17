@@ -66,12 +66,9 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
-
-import msanalyze.DataSetImporter;
 
 /**
  * @author ritza
@@ -141,10 +138,6 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			add(buttonPane, BorderLayout.SOUTH);
 			
 			setVisible(true);	
-		}
-		
-		public ImportEnchiladaDataDialog() {
-			// dummy constructor for testing purposes.
 		}
 		
 		private JTable getParTable()

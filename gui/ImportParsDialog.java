@@ -43,21 +43,15 @@
  */
 package gui;
 
-//import java.util.Vector;
-
-//import java.awt.Container;
 import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.event.*;
 import java.awt.*;
 import java.awt.BorderLayout;
-import java.util.ArrayList;
-
 import javax.swing.JDialog;
 import javax.swing.*;
 import javax.swing.table.TableColumn;
 import msanalyze.*;
-//import javax.swing.table.*;
 
 
 /**
@@ -131,9 +125,9 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	}
 	
 	public ImportParsDialog() {
-		// dummy constructor for testing purposes.
+		// TODO Auto-generated constructor stub
 	}
-	
+
 	private JTable getParTable()
 	{
 		pTableModel = new ParTableModel(8);
@@ -173,6 +167,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 					if (!exceptions)
 						dispose();
 				}
+			exceptions = false;
 		}
 		else if (source == cancelButton)
 			dispose();

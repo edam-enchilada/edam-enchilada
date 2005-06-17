@@ -41,6 +41,7 @@
 /*
  * Created on Oct 17, 2004
  */
+
 package analysis;
 import database.CollectionCursor;
 import java.util.*;
@@ -50,6 +51,9 @@ import java.util.*;
  * 
  * Assumes that subsample is small enough to remain in memory, and thus
  * caches the data in memory for repeated reads.
+ * 
+ * Cursor for the subsamples; gets particleInfo for each particle in the 
+ * given subsample.
  */
 public class SubSampleCursor implements CollectionCursor {
 
@@ -71,9 +75,7 @@ public class SubSampleCursor implements CollectionCursor {
 		
 		curs.reset();
 		for (int i = 0; i <= startIndex; i++)
-		{
 			curs.next();
-		}
 	}	
 	/* (non-Javadoc)
 	 * @see database.CollectionCursor#next()
@@ -108,9 +110,7 @@ public class SubSampleCursor implements CollectionCursor {
 	/* (non-Javadoc)
 	 * @see database.CollectionCursor#close()
 	 */
-	public void close() {
-		//curs.close();
-	}
+	public void close() {}
 
 	/* (non-Javadoc)
 	 * @see database.CollectionCursor#reset()
@@ -121,9 +121,7 @@ public class SubSampleCursor implements CollectionCursor {
 	        curs.reset();
 	        currentIndex = -1;
 	        for (int i = 0; i <= startIndex; i++)
-	        {
 	            curs.next();
-	        }
 	    }
 	    storedPosition = -1;
 	}
@@ -140,15 +138,15 @@ public class SubSampleCursor implements CollectionCursor {
 	        return null;
 	}
 
-	/* Note that this method only returns the peaklist if
-	 it has already read the ID already. */
+	/**
+	 * This method only returns the peaklist of it has already read the ID.
+	 */
 	public BinnedPeakList getPeakListfromAtomID(int id) {
 	    for (ParticleInfo particleInfo : storedInfo) {
 	        if (particleInfo.getID() == id)
 	            return particleInfo.getBinnedList();
 	    }
-	    return null;
-		
+	    return null;	
 	}
 
 }

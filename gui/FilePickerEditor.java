@@ -44,7 +44,6 @@
 package gui;
 
 import javax.swing.AbstractCellEditor;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;

@@ -44,8 +44,8 @@ import java.util.ArrayList;
 /**
  * @author ritza
  *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
+ * EnchiladaDataPoint is used to insert non-particles into the appripriate
+ * places in the db.
  */
 public class EnchiladaDataPoint implements AtomicAnalysisUnit {
 	protected ArrayList<Peak> peakList;
