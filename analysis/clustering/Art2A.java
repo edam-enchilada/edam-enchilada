@@ -201,6 +201,7 @@ public class Art2A extends Cluster
 			System.out.println("Pass #:" + passIndex);
 			particleCount = 0;
 			totalDistancePerPass.add(new Double(0));
+			ArrayList<BinnedPeakList> array;
 			while(curs.next())
 			{ // while there are particles remaining
 				particleCount++;
@@ -208,7 +209,9 @@ public class Art2A extends Cluster
 				//		particleCount);
 				thisParticleInfo = curs.getCurrent();
 				thisBinnedPeakList = thisParticleInfo.getBinnedList();
-				thisBinnedPeakList = normalize(thisBinnedPeakList);
+					thisBinnedPeakList = normalize(thisBinnedPeakList);
+			
+						
 				// no centroid will be found further than the vigilance
 				// since that centroid would not be considered
 				nearestDistance = vigilance + 1;
@@ -238,9 +241,9 @@ public class Art2A extends Cluster
 											+ nearestDistance));
 
 					temp.numMembers++;
-					temp.peaks = normalize(adjustByLearningRate(
-							thisBinnedPeakList, 
-							centroidList.get(chosenCluster).peaks));
+					temp.peaks = adjustByLearningRate(thisBinnedPeakList, 
+							centroidList.get(chosenCluster).peaks);
+					temp.peaks = normalize(temp.peaks);
 				}// end if atom falls within existing cluster
 				
 				else
@@ -250,8 +253,6 @@ public class Art2A extends Cluster
 					centroidList.add(new Centroid (thisBinnedPeakList,1));
 				}
 			}// end while there are particles remaining
-			//TODO:  the following 3 lines were commented out for plotting centroids.
-			//printDistanceToNearestCentroid(centroidList,curs);
 			System.out.println("about to reset");
 			curs.reset();
 			

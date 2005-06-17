@@ -54,6 +54,7 @@ import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.MedianFinder;
 import analysis.ParticleInfo;
 
 /**
@@ -127,7 +128,6 @@ public abstract class Cluster extends CollectionDivider {
 	protected BinnedPeakList normalize(BinnedPeakList list)
 	{
 		float magnitude = list.getMagnitude(distanceMetric);
-		
 		BinnedPeakList returnList = new BinnedPeakList();
 		BinnedPeak temp;
 		list.resetPosition();

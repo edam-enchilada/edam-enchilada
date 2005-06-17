@@ -89,6 +89,7 @@ public abstract class ClusterK extends Cluster {
 	private JFrame parentContainer;
 	private int curInt;
 	private double difference;
+	private ArrayList<BinnedPeakList> tempArray;
 	
 	private JDialog errorUpdate;
 	private JLabel errorLabel;
@@ -346,10 +347,8 @@ public abstract class ClusterK extends Cluster {
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
 				curs.next();
-				centroidList.add(
-						new Centroid(normalize(
-								curs.getCurrent().getBinnedList()),
-								1));
+				centroidList.add(new Centroid(normalize(
+						curs.getCurrent().getBinnedList()),1));
 			}
 			return centroidList;
 		}
@@ -381,9 +380,10 @@ public abstract class ClusterK extends Cluster {
 		    curs.reset();
 		    boolean status = curs.next();
 		    assert status : "Cursor is empty.";
-		    Centroid newCent = 
-		    	new Centroid(normalize(curs.getCurrent().getBinnedList()),0);
-		    // TODO:  this should be sumtoone?? for K-Medians!!!
+		    Centroid newCent = null; 
+		    newCent = new Centroid(normalize(curs.getCurrent().getBinnedList()),0);
+		  
+		    assert (newCent != null) : "Error adding centroid";
 		    centroidList.add(newCent);
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
@@ -393,7 +393,7 @@ public abstract class ClusterK extends Cluster {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
 						curs.getPeakListfromAtomID(thisParticleInfo.getID());
-					thisBinnedPeakList = normalize(thisBinnedPeakList);
+						thisBinnedPeakList = normalize(thisBinnedPeakList);
 					double nearestDistance = Double.MAX_VALUE;
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
@@ -440,7 +440,7 @@ public abstract class ClusterK extends Cluster {
 				ParticleInfo thisParticleInfo = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList =
 					curs.getPeakListfromAtomID(thisParticleInfo.getID());
-				thisBinnedPeakList = normalize(thisBinnedPeakList);
+					thisBinnedPeakList = normalize(thisBinnedPeakList);
 				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
