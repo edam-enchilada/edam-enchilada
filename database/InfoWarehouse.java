@@ -240,6 +240,8 @@ public interface InfoWarehouse {
 	public boolean addAtomBatch(int atomID, int parentID);
 
 	public boolean deleteAtomsBatch(String atomIDs, int collectionID);
+	
+	public boolean deleteAtomBatch(int atomID, int collectionID);
 
 	public void executeBatch();
 	

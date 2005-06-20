@@ -46,6 +46,8 @@
 package analysis;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Scanner;
 
 import database.CollectionCursor;
 import database.InfoWarehouse;
@@ -233,11 +235,27 @@ public abstract class CollectionDivider {
 	 */
 	protected void putInSubCollectionBatchExecute()
 	{
-		if (atomIDsToDelete.length() > 0) {
+		//System.out.println("About to execute INSERTs.");
+		//System.out.println((new Date()).toString());
+		db.executeBatch();
+		//System.out.println("Done with INSERTS, about to do DELETE");
+		//System.out.println((new Date()).toString());
+		db.addAtomBatchInit();
+		
+		if (atomIDsToDelete.length() > 0 &&
+				atomIDsToDelete.length() < 2000) {
 			atomIDsToDelete = atomIDsToDelete.substring(0,atomIDsToDelete.length()-1);
 			db.deleteAtomsBatch(atomIDsToDelete,collectionID);
+		} else if (atomIDsToDelete.length() > 0 &&
+				atomIDsToDelete.length() >= 2000) {
+			Scanner atomIDs = new Scanner(atomIDsToDelete).useDelimiter(",");
+			while (atomIDs.hasNext()) {
+				db.deleteAtomBatch(atomIDs.nextInt(), collectionID);
+			}
 		}
 		db.executeBatch();
+		//System.out.println("Done with DELETEs.");
+		//System.out.println((new Date()).toString());
 	}
 
 	/**

@@ -2129,6 +2129,21 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 	}
 	
+	public boolean deleteAtomBatch(int atomID, int collectionID) {
+		try {
+			batchStatement.addBatch(
+					"DELETE FROM AtomMembership \n" +
+					"WHERE CollectionID = " + collectionID + "\n" +
+					"AND AtomID = " + atomID);
+		} catch (SQLException e) {
+			System.err.println("Exception adding a batch statement to " +
+					"delete atoms from AtomMembership.");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
 	public void executeBatch() {
 		try {
 			batchStatement.executeBatch();
