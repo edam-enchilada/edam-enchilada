@@ -271,7 +271,8 @@ public abstract class Cluster extends CollectionDivider {
 	
 	/**
 	 * This method assigns atoms to nearest centroid using only centroidList
-	 * and collection cursor.  
+	 * and collection cursor. ClusterK only. This also averages the final
+	 * centroids with k-medians, so it is easier to compare with k-means.
 	 * @param centroidList
 	 * @param curs
 	 * @return
@@ -280,6 +281,11 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
 	{
+		
+		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
+		for (int i = 0; i < centroidList.size(); i++)
+			sums.add(new BinnedPeakList());
+		
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
 		BinnedPeakList thisBinnedPeakList = null;
@@ -310,6 +316,9 @@ public abstract class Cluster extends CollectionDivider {
 					chosenCluster = centroidIndex;
 				}
 			}// end for each centroid
+
+			sums.get(chosenCluster).addAnotherParticle(thisBinnedPeakList);
+			
 			Centroid temp = centroidList.get(chosenCluster);
 			totalDistance += nearestDistance;
 			if (temp.numMembers == 0)
@@ -328,6 +337,11 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
+		for (int i = 0; i < sums.size(); i++) {
+			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);
+			centroidList.get(i).peaks = sums.get(i);
+		}
+		
 		printDescriptionToDB(particleCount, centroidList);
 		return newHostID;
 	}
@@ -345,7 +359,7 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs,
 			float vigilance)
-	{
+	{		
 		Centroid outliers = new Centroid(null, 0);
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
@@ -354,7 +368,7 @@ public abstract class Cluster extends CollectionDivider {
 		double totalDistance = 0.0;
 		double distance = 3.0;
 		int chosenCluster = -1;
-		putInSubCollectionBatchInit();		
+		putInSubCollectionBatchInit();	
 		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;

@@ -398,4 +398,13 @@ public class BinnedPeakList {
 				largestArea = areas.get(i).floatValue();
 		return largestArea;
 	}
+	
+	public void addAnotherParticle(BinnedPeakList peaks) {
+		BinnedPeak peak = null;
+		for (int i = 0; i < peaks.length(); i++) {
+			peak = new BinnedPeak(peaks.locations.get(i).intValue(), 
+					peaks.areas.get(i).floatValue());
+			add(peak.location, peak.area);
+		}
+	}
 }
