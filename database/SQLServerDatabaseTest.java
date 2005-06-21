@@ -54,6 +54,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -450,7 +452,203 @@ public class SQLServerDatabaseTest extends TestCase {
 			e.printStackTrace();
 		}
 	}
+	
+	public void testGetNextId(){
+		db.openConnection();
+		
+		assertTrue(db.getNextID() >= 0);
+	
+		db.closeConnection();
+	}
+	
+	public void testOrphanAndAdopt(){
+		
+		db.openConnection();
+		//get info on atoms in collection 4
+		ArrayList<Integer> collection4Info = new ArrayList<Integer>();
+		collection4Info.add(10);
+		collection4Info.add(11);
+		collection4Info.add(12);
+		
+		assertTrue(db.orphanAndAdopt(4));
+		//make sure that the atoms collected before are in collection 3
+		ArrayList<Integer> collection3Info = new ArrayList<Integer>();
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("USE TestDB\n" +
+			"SELECT AtomID\n" +
+			"FROM AtomMembership\n" +
+			"WHERE CollectionID = 3");
+			while (rs.next()){
+				collection3Info.add(rs.getInt(1));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		assertTrue(collection3Info.containsAll(collection4Info));
+		
+		assertFalse(db.orphanAndAdopt(7)); //not in database
+		assertFalse(db.orphanAndAdopt(1)); //is not a subcollection (prints this)
+		
+		db.closeConnection();
+	}
 
+	public void testRecursiveDelete(){
+		db.openConnection();
+		
+		ArrayList<Integer> atomIDs = new ArrayList<Integer>();
+		Statement stmt;
+		try {
+				stmt = con.createStatement();
+			
+			ResultSet rs = stmt.executeQuery("USE TestDB\n" +
+					"SELECT AtomID\n"
+					+" FROM AtomMembership\n"
+					+" WHERE CollectionID = 3"
+					+" OR CollectionID = 4");
+			while (rs.next()){
+				atomIDs.add(rs.getInt(1));
+			}
+			
+			assertTrue(db.recursiveDelete(3));
+			
+			//make sure info for 3 and 4 is gone from database
+			for (Integer atomID : atomIDs){
+				rs = stmt.executeQuery("USE TestDB\n" +
+						"SELECT * FROM AtomInfo\n"
+						+ " WHERE AtomID = " + atomID);
+				assertFalse(rs.next());
+				rs = stmt.executeQuery("USE TestDB\n" +
+						"SELECT * FROM AtomMembership\n"
+						+ " WHERE AtomID = " + atomID);
+				assertFalse(rs.next());
+				rs = stmt.executeQuery("USE TestDB\n" +
+						"SELECT * FROM OrigDataSets\n"
+						+ " WHERE AtomID = " + atomID);
+				assertFalse(rs.next());
+				rs = stmt.executeQuery("USE TestDB\n" +
+						"SELECT * FROM Peaks\n"
+						+ " WHERE AtomID = " + atomID);
+				assertFalse(rs.next());
+			}
+			//make sure collection info and relationship info is gone
+			rs = stmt.executeQuery("USE TestDB\n" +
+					"SELECT * FROM CollectionRelationships\n"
+					+ " WHERE ChildID = 3"
+					+ " OR ChildID = 4"
+					+ " OR ParentID = 3"
+					+ " OR ParentID = 4");
+			assertFalse(rs.next());
+			rs = stmt.executeQuery("USE TestDB\n" +
+					"SELECT * FROM Collections\n"
+					+ " WHERE CollectionID = 3"
+					+ " OR CollectionID = 4");
+			assertFalse(rs.next());
+		
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		db.closeConnection();
+
+	}
+	
+	public void testGetCollectionName(){
+		db.openConnection();
+		
+		assertTrue( "One".equals(db.getCollectionName(1)) );
+		assertTrue( "Two".equals(db.getCollectionName(2)) );
+		assertTrue( "Three".equals(db.getCollectionName(3)) );
+		assertTrue( "Four".equals(db.getCollectionName(4)) );
+		
+		db.closeConnection();
+	}
+	
+	public void testGetCollectionComment(){
+		db.openConnection();
+		
+		assertTrue( "one".equals(db.getCollectionComment(1)) );
+		assertTrue( "two".equals(db.getCollectionComment(2)) );
+		assertTrue( "three".equals(db.getCollectionComment(3)) );
+		assertTrue( "four".equals(db.getCollectionComment(4)) );
+		
+		db.closeConnection();
+	}
+	
+	public void testGetCollectionSize(){
+		db.openConnection();
+		
+		final String filename = "file1";
+		final String dateString = "1983-01-19 05:05:00.0";
+		final float laserPower = (float)0.01191983;
+		final float size = (float)0.5;
+		final float digitRate = (float)0.1;
+		final int scatterDelay = 10;
+		int posSpectrum[] = new int[30000];
+		int negSpectrum[] = new int[30000];
+		int collectionID = 1;
+		int datasetID = 1;
+		
+		assertTrue( db.getCollectionSize(collectionID) == 3 );
+		
+		ATOFMSParticle particle = 
+			new ATOFMSParticle(filename, dateString, laserPower, digitRate,
+				scatterDelay, posSpectrum, negSpectrum);
+		
+		db.insertATOFMSParticle(particle, collectionID, datasetID,
+				db.getNextID());
+		
+		assertTrue( db.getCollectionSize(collectionID) == 4 );
+	
+		//should return size of collection + subcollection
+		assertTrue( db.getCollectionSize(3) == 6);
+			
+		db.closeConnection();
+	}
+
+	public void testGetAllDescendedAtoms(){
+		db.openConnection();
+		
+		//case of no child collections
+		int[] expected = {1,2,3};
+		ArrayList<Integer> actual = db.getAllDescendedAtoms(1);
+		
+		for (int i=0; i<actual.size(); i++)
+			assertTrue(actual.get(i) == expected[i]);
+		
+		//case of one child collection
+		int[] expected2 = {7,8,9,10,11,12};
+		ArrayList<Integer> actual2 = db.getAllDescendedAtoms(3);
+		
+		for (int i=1; i<=actual.size(); i++)
+			assertTrue(actual2.get(i) == expected2[i]);
+		
+		db.closeConnection();
+	}
+
+	public void testGetCollectionParticles(){
+		db.openConnection();
+		
+		//we know the particle info from inserting it	
+		ArrayList<ATOFMSParticleInfo> actual = db.getCollectionParticles(1);
+		assertEquals(actual.size(), 3);
+		
+		assertEquals(actual.get(0).getAtomID(), 1);
+//		assertEquals(actual.get(0).getLaserPower(), 1);  not retrieved in method
+		assertEquals(actual.get(0).getSize(), (float)0.1);
+//		assertEquals(actual.get(0).getScatDelay(), 1);	not retrieved in method
+		assertEquals(actual.get(0).getFilename(), "One");
+			
+		//testing for subcollection detection
+		ArrayList<ATOFMSParticleInfo> actual2 = db.getCollectionParticles(3);
+		assertEquals(actual2.size(), 6);
+				
+		db.closeConnection();
+	}
+	
 	public void testRebuildDatabase() {
 
 		try {
@@ -485,17 +683,6 @@ public class SQLServerDatabaseTest extends TestCase {
 	    assertTrue(rand1==rand2);
 	    db.closeConnection();
 	    
-	}
-
-	public void testOrphanAndAdopt() 
-	{
-		//TODO Implement orphanAndAdopt().
-		
-	}
-
-	public void testRecursiveDelete() 
-	{
-		//TODO Implement recursiveDelete().
 	}
 	
 	public void testIsPresent() {
@@ -666,6 +853,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 
+
 	public void testInsertGeneralParticles() {
 		db.openConnection();
 		 int[] pSpect = {1,2,3};
@@ -681,7 +869,5 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 		}
 
-	
-	
 	
 }
