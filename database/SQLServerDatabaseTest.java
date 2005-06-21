@@ -61,6 +61,9 @@ import msanalyze.CalInfo;
 
 import analysis.ParticleInfo;
 import atom.ATOFMSParticle;
+import atom.EnchiladaDataPoint;
+import atom.Particle;
+import atom.Peak;
 import atom.PeakParams;
 
 /**
@@ -471,75 +474,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			fail();
 		}
 	}
-	
-	private void testCursor(CollectionCursor curs)
-	{
-		ArrayList<ParticleInfo> partInfo = 
-			new ArrayList<ParticleInfo>();
-		
-		ParticleInfo temp = new ParticleInfo();
-		ATOFMSParticleInfo tempPI = 
-			new ATOFMSParticleInfo(
-					1,"One",1,0.1f,
-					new Date("9/2/2003 5:30:38 PM"));
-		//int aID, String fname, int sDelay, float lPower, Date tStamp
-		temp.setParticleInfo(tempPI);
-		temp.setID(1);
-		
-		
-		
-		partInfo.add(temp);
-		
-		//"VALUES (1,'9/2/2003 5:30:38 PM',1,0.1,1,'One')\n" +
-		//"VALUES (2,'9/2/2003 5:30:38 PM',2,0.2,2,'Two')\n" +
-		//"VALUES (3,'9/2/2003 5:30:38 PM',3,0.3,3,'Three')\n" +
-		
-		int[] ids = new int[3];
-		for (int i = 0; i < 3; i++)
-		{
-			assertTrue(curs.next());
-			assertTrue(curs.getCurrent()!= null);
-			ids[i] = curs.getCurrent().getID();
-		}
-		
-		assertFalse(curs.next());
-		
-		curs.reset();
-		
-		for (int i = 0; i < 3; i++)
-		{
-			assertTrue(curs.next());
-			assertTrue(curs.getCurrent() != null);
-			assertTrue(curs.getCurrent().getID() == ids[i]);
-		}
-		
-		assertFalse(curs.next());
-		
-		curs.reset();
-	}
-	
-	public void testGetBinnedCursor()
-	{
-		db.openConnection();
-		
-		CollectionCursor curs = db.getBinnedCursor(1);
-		
-		testCursor(curs);
-		
-		db.closeConnection();
-	}
-	
-	public void testGetMemoryBinnedCursor()
-	{
-		db.openConnection();
-		
-		CollectionCursor curs = db.getMemoryBinnedCursor(1);
-		
-		testCursor(curs);
-		
-		db.closeConnection();
-	}
-	
+
 	public void testSeedRandom()
 	{
 	    db.openConnection();
@@ -562,4 +497,191 @@ public class SQLServerDatabaseTest extends TestCase {
 	{
 		//TODO Implement recursiveDelete().
 	}
+	
+	public void testIsPresent() {
+		db.openConnection();
+		assertTrue(SQLServerDatabase.isPresent("localhost","1433","TestDB"));
+		db.closeConnection();
+	}
+	
+	public void testExportToMSAnalyzeDatabase() {
+		db.openConnection();
+		java.util.Date date = db.exportToMSAnalyzeDatabase(1,"MSAnalyzeDB","MS-Analyze");
+		assertTrue(date.toString().equals("2003-09-02"));
+		db.closeConnection();
+	}
+	
+	private void testCursor(CollectionCursor curs)
+	{
+		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
+		
+		ParticleInfo temp = new ParticleInfo();
+		ATOFMSParticleInfo tempPI = 
+			new ATOFMSParticleInfo(
+					1,"One",1,0.1f,
+					new Date("9/2/2003 5:30:38 PM"));
+		//int aID, String fname, int sDelay, float lPower, Date tStamp
+		temp.setParticleInfo(tempPI);
+		temp.setID(1);
+		
+		
+		
+		partInfo.add(temp);
+		
+		int[] ids = new int[3];
+		for (int i = 0; i < 3; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent()!= null);
+			ids[i] = curs.getCurrent().getID();
+		}
+		
+		assertFalse(curs.next());	
+		curs.reset();
+		
+		for (int i = 0; i < 3; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent() != null);
+			assertTrue(curs.getCurrent().getID() == ids[i]);
+		}
+		
+		assertFalse(curs.next());
+		curs.reset();
+	}
+	
+	public void testGetParticleInfoOnlyCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getParticleInfoOnlyCursor(1);
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetSQLCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getSQLCursor(1, "AtomInfo.AtomID != 20");
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetPeakCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getPeakCursor(1);
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetBinnedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getBinnedCursor(1);
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetMemoryBinnedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getMemoryBinnedCursor(1);	
+		testCursor(curs);	
+		db.closeConnection();
+	}
+	
+	public void testGetRandomizedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getRandomizedCursor(1);	
+		testCursor(curs);	
+		db.closeConnection();
+	}
+	
+	public void testMoveAtom() {
+		db.openConnection();
+		assertTrue(db.moveAtom(1,1,2));
+		assertTrue(db.moveAtom(1,2,1));
+		db.closeConnection();
+	}
+	
+	public void testMoveAtomBatch() {
+		db.openConnection();
+		db.atomBatchInit();
+		assertTrue(db.moveAtomBatch(1,1,2));
+		assertTrue(db.moveAtomBatch(1,2,1));
+		db.executeBatch();
+		db.closeConnection();
+	}
+	
+	/**
+	 * Tests AddAtom and DeleteAtomBatch
+	 *
+	 */
+	public void testAddAndDeleteAtom() {
+		db.openConnection();
+		db.atomBatchInit();
+		assertTrue(db.deleteAtomBatch(1,1));
+		db.executeBatch();
+		assertTrue(db.addAtom(1,1));
+		db.closeConnection();		
+	}
+	
+	/**
+	 * Tests AddAtomBatch and DeleteAtomsBatch
+	 *
+	 */
+	public void testAddAndDeleteAtomBatch() {
+		db.openConnection();
+		db.atomBatchInit();
+		assertTrue(db.deleteAtomsBatch("1",1));
+		assertTrue(db.addAtomBatch(1,1));
+		db.executeBatch();
+		db.closeConnection();
+	}
+	
+	public void testCheckAtomParent() {
+		db.openConnection();
+		assertTrue(db.checkAtomParent(1,1));
+		assertFalse(db.checkAtomParent(1,3));
+		db.closeConnection();
+	}
+	
+	public void testGetAndSetCollectionDescription() {
+		db.openConnection();
+		String description = db.getCollectionDescription(1);
+		assertTrue(db.setCollectionDescription(1,"new description"));		
+		assertTrue(db.getCollectionDescription(1).equals("new description"));
+		db.setCollectionDescription(1,description);
+		db.closeConnection();
+	}
+	
+	/* Can't try dropping db because it's in use.
+	public void testDropDatabase() {
+		db.openConnection();
+		assertTrue(SQLServerDatabase.dropDatabase("TestDB"));
+		setUp();
+	} */
+	
+	public void testGetPeaks() {
+		db.openConnection();
+		Peak peak = db.getPeaks(2).get(0);
+		assertTrue(peak.area == 15);
+		assertTrue(peak.relArea == 0.006f);
+		assertTrue(peak.height == 12);
+		db.closeConnection();
+	}
+
+	public void testInsertGeneralParticles() {
+		db.openConnection();
+		 int[] pSpect = {1,2,3};
+		 int[] nSpect = {1,2,3};
+		EnchiladaDataPoint part = new EnchiladaDataPoint("newpart");
+		ArrayList<EnchiladaDataPoint> array = new ArrayList<EnchiladaDataPoint>();
+		array.add(part);
+		int id = db.insertGeneralParticles(array,1);
+		assertTrue(db.checkAtomParent(id,1));
+		db.atomBatchInit();
+		db.deleteAtomBatch(id,1);
+		db.executeBatch();
+		db.closeConnection();
+		}
+
+	
+	
+	
 }

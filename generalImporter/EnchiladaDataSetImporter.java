@@ -50,6 +50,7 @@ import java.util.StringTokenizer;
 
 import atom.EnchiladaDataPoint;
 
+import database.Datatype;
 import database.SQLServerDatabase;
 
 /**
@@ -78,6 +79,13 @@ public class EnchiladaDataSetImporter {
 		createEmptyCollection();
 		
 		String ext = file.getName().substring(file.getName().length()-5);
+		// get datatype and create table if needed.
+		ext = ext.substring(ext.lastIndexOf("."));
+		Datatype type = new Datatype(ext);
+		if (!type.tableExists()) 
+			type.createTable();
+		
+		
 		if (ext.equals(".edsf"))
 			singleFileProcessor();
 		else if(ext.equals(".edmf"))

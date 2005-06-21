@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's DataSetProcessor class.
+ * The Original Code is EDAM Enchilada's DatasetImporter class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -39,55 +39,69 @@
 
 
 /*
- * Created on Jul 28, 2004
+ * Created on Aug 3, 2004
  *
  */
 package msanalyze;
 
-import atom.*;
-import database.*;
+import database.SQLServerDatabase;
+import externalswing.SwingWorker;
+import gui.*;
 
-import java.awt.FlowLayout;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
-import gui.ImportParsDialog;
-import gui.MainFrame;
+import atom.ATOFMSParticle;
+import atom.PeakParams;
 
-import javax.swing.SwingUtilities;
-import javax.swing.JDialog;
-import javax.swing.JProgressBar;
-import javax.swing.JLabel;
-import javax.swing.JFrame;
 import java.awt.Container;
-import externalswing.*;
-
+import java.awt.FlowLayout;
+import java.awt.Window;
+import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
 
 /**
  * @author ritza
  *
- * Processes datasets and inserts them into the database.
+ * Creates a new DataSetProcessor object for each dataset that processes the spectra and
+ * creates the particle.  It passes a file name, a CalInfo object and a PeakParams object 
+ * to DataSetProcessor.
  */
-public class DataSetProcessor {
+public class ATOFMSDataSetImporter {
 	
-	/* Variables read in from the particle table */
-	private String name;
-	private String massCalFile;
-	private String sizeCalFile;
-	private boolean autoCal;
-	private Container parentContainer;
+	private ParTableModel table;
+	private Window mainFrame;
 	private ImportParsDialog ipd;
 	
+	//Table values - used repeatedly.
+	private int rowCount;
+	private String name = "";
+	private String massCalFile, sizeCalFile;
+	private int height, area;
+	private float relArea;
+	private boolean autoCal;
+	
+	private String particleName;	
+	
+	// Progress Bar variables
 	protected JDialog waitBarDialog = null;
 	protected JProgressBar pBar = null;
 	protected JLabel pLabel = null;
 	protected int particleNum;
 	protected int totalParticles;
+	private Container parentContainer;
 	
 	/* '.par' file */
-	private File parFile;
+	protected File parFile;
 	
 	/* contains the collectionID and particleID */
 	private int[] id;
@@ -102,19 +116,123 @@ public class DataSetProcessor {
 	/* Lock to make sure database is only accessed in one batch at a time */
 	private static Integer dbLock = new Integer(0);
 	
-	public DataSetProcessor(File file, String mCalFile, String sCalFile, CalInfo cInfo, PeakParams pParams, 
-			Container parent, ImportParsDialog i, int thisDataset, int totDatasets) 
-	throws IOException, NullPointerException, DataFormatException {
-		parFile = file;
-		ATOFMSParticle.currCalInfo = cInfo;
-		ATOFMSParticle.currPeakParams = pParams;
-		positionInBatch = thisDataset;
-		totalInBatch = totDatasets;
-		parentContainer = parent;
-		ipd = i;
-		sizeCalFile = sCalFile;
-		massCalFile = mCalFile;
-		readParFileAndCreateEmptyCollection();	
+	
+	/**
+	 * 
+	 * Constructor.  Sets the particle table for the importer.
+	 * @param t - particle table model.
+	 */
+	public ATOFMSDataSetImporter(ParTableModel t, Window mf, ImportParsDialog dialog) {
+		table = t;
+		mainFrame = mf;
+		ipd = dialog;
+	}
+	
+	/**
+	 * Loops through each row, collects the information, and processes the
+	 * datasets row by row.
+	 */
+	public void collectTableInfo() {
+		rowCount = table.getRowCount()-1;
+		//Loops through each dataset and creates each collection.
+		for (int i=0;i<rowCount;i++) {
+			try {
+				// Table values for this row.
+				name = (String)table.getValueAt(i,1);
+				massCalFile = (String)table.getValueAt(i,2);
+				sizeCalFile = (String)table.getValueAt(i,3);
+				height= ((Integer)table.getValueAt(i,4)).intValue();
+				area = ((Integer)table.getValueAt(i,5)).intValue();
+				relArea = ((Float)table.getValueAt(i,6)).floatValue();
+				autoCal = ((Boolean)table.getValueAt(i,7)).booleanValue();
+				// Call relevant methods
+				processDataSet(i);
+				readParFileAndCreateEmptyCollection();
+				readSpectraAndCreateParticle();
+			} catch (Exception e) {
+				e.printStackTrace();
+				String[] s = {name + " failed to import.", "Exception: ", 
+						e.toString()};
+				ipd.displayException(s);
+			}
+		}
+	}
+	
+	/**
+	 * Sets the currCalInfo and currPeakParam 
+	 * fields of ATOFMSParticle,
+	 * creates an empty collection and fills that collection with the dataset's 
+	 * particles.
+	 */
+	public void processDataSet(int index)
+	throws IOException, DataFormatException {
+		boolean skipFile = false;
+		
+		//Create CalInfo Object.
+		CalInfo calInfo = null;
+		try {
+			if (sizeCalFile.equals(".noz file") || sizeCalFile.equals("")) 
+				calInfo = new CalInfo(massCalFile, autoCal);
+			else 
+				calInfo = new CalInfo(massCalFile,sizeCalFile, autoCal);
+		} catch (Exception e) {
+			new DataFormatException("Corrupt Calibration File: " + e.toString());
+			skipFile = true;
+		}
+		if (!skipFile) { // If we don't have to skip this row due to an error...
+			
+			// Create PeakParam Object.
+			PeakParams peakParams = new PeakParams(height,area,relArea);
+			
+			//Read '.par' file and create collection to fill.
+			parFile = new File(name);
+			ATOFMSParticle.currCalInfo = calInfo;
+			ATOFMSParticle.currPeakParams = peakParams;
+			
+			/*
+			//TODO: datatype stuff here.
+			// get datatype and create table if needed.
+			String ext = file.toString();
+			ext = ext.substring(ext.lastIndexOf("."));
+			Datatype type = new Datatype(ext);
+			if (!type.tableExists()) 
+				type.createTable();
+				*/	
+		}
+	}
+	
+	/**
+	 * This method loops through the table and checks to make sure that there is a
+	 * .par file and a .cal file for every row, as well as non-zeros for the params.
+	 * @return true if there is a null row, false if not.
+	 */
+	public boolean nullRows() {
+		String name, massCalFile;
+		int height, area;
+		float relArea;
+		for (int i=0;i<table.getRowCount()-1;i++) {
+			name = (String)table.getValueAt(i,1);
+			massCalFile = (String)table.getValueAt(i,2);
+			//Check to make sure that .par and .cal files are present.
+			if (name.equals(".par file") || name.equals("") 
+					|| massCalFile.equals(".cal file") 
+					|| massCalFile.equals("")) {
+				String[] s = {"You must enter a '.par' file and a " +
+						"'.cal' file at row # " + (i+1) + "."};
+				ipd.displayException(s);
+				return true;
+			}
+			height= ((Integer)table.getValueAt(i,4)).intValue();
+			area = ((Integer)table.getValueAt(i,5)).intValue();
+			relArea = ((Float)table.getValueAt(i,6)).floatValue();
+			if (height == 0 || area == 0 || relArea == 0.0) {
+				String[] s = {"The Peaklisting Parameters need to be greater " +
+						"than 0 at row # " + (i+1) + "."};
+				ipd.displayException(s);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -125,7 +243,7 @@ public class DataSetProcessor {
 	throws IOException, NullPointerException, DataFormatException {
 		//Read '.par' info.
 		String[] data = parVersion();
-			//CreateEmptyCollectionandDataset
+		//CreateEmptyCollectionandDataset
 		db = MainFrame.db;
 		id = new int[2];
 		System.out.println(data[0]);
@@ -135,7 +253,6 @@ public class DataSetProcessor {
 		id = db.createEmptyCollectionAndDataset(0,data[0],data[2],
 				massCalFile,sizeCalFile, ATOFMSParticle.currCalInfo,
 				ATOFMSParticle.currPeakParams);
-		readSpectraAndCreateParticle();
 	}
 	
 	/**
@@ -169,7 +286,6 @@ public class DataSetProcessor {
 				totalParticles = tParticles;
 				
 				final SwingWorker worker = new SwingWorker() {
-					String particleName;
 					
 					public Object construct() {
 						try{
@@ -202,7 +318,7 @@ public class DataSetProcessor {
 								if(particleNum % 5 == 0)
 									//doDisplay = 0;
 									try {
-										SwingUtilities.invokeAndWait(new Runnable() {
+										SwingUtilities.invokeAndWait(new Runnable() {											
 											public void run()
 											{
 												if (waitBarDialog != null)
@@ -224,55 +340,61 @@ public class DataSetProcessor {
 									}
 							}
 							SwingUtilities.invokeLater(new Runnable() {
+								
+								
+								
 								public void run()
 								{
 									waitBarDialog.setVisible(false);
 									waitBarDialog = null;
 								}
 							});
-						readSet.close();
-						final String exceptionFile = particleName;
-					}catch (Exception e) {
-						try {
-							final String exception = e.toString();
-							SwingUtilities.invokeAndWait(new Runnable() {
-								public void run()
-								{
-									String[] s = 
-									{"Corrupt particle: " + particleName + ": ", exception};
-									ipd.displayException(s);
-								}
-							});
-						} catch (Exception e2) {
-							String[] s = {"ParticleException: ", e2.toString()};
-							ipd.displayException(s);
+							readSet.close();
+							final String exceptionFile = particleName;
+						}catch (Exception e) {
+							try {
+								final String exception = e.toString();
+								SwingUtilities.invokeAndWait(new Runnable() {
+									public void run()
+									{
+										String[] s = 
+										{"Corrupt particle: " + particleName + ": ", exception};
+										ipd.displayException(s);
+									}
+								});
+							} catch (Exception e2) {
+								String[] s = {"ParticleException: ", e2.toString()};
+								ipd.displayException(s);
+							}
 						}
+						return null;
 					}
-					return null;
-				}
+					
+				};
+				worker.start();
 				
-			};
-			worker.start();
-			
-			waitBarDialog = new JDialog((JFrame)parentContainer, "Processing dataset #" + 
-					positionInBatch + " of " + totalInBatch, true);
-			waitBarDialog.setLayout(new FlowLayout());
-			pBar = new JProgressBar(0,totalParticles);
-			pBar.setValue(0);
-			pBar.setStringPainted(true);
-			pLabel = new JLabel("       Processing particle 1 of " 
-					+ totalParticles + ".                 ");
-			pLabel.setLabelFor(pBar);
-			waitBarDialog.add(pBar);
-			waitBarDialog.add(pLabel);
-			
-			waitBarDialog.pack();
-			waitBarDialog.validate();
-			waitBarDialog.setVisible(true);
-			
-		} else System.out.println("Dataset has no hits.");
+				waitBarDialog = new JDialog((JFrame)parentContainer, "Processing dataset #" + 
+						positionInBatch + " of " + totalInBatch, true);
+				waitBarDialog.setLayout(new FlowLayout());
+				pBar = new JProgressBar(0,totalParticles);
+				pBar.setValue(0);
+				pBar.setStringPainted(true);
+				pLabel = new JLabel("       Processing particle 1 of " 
+						+ totalParticles + ".                 ");
+				pLabel.setLabelFor(pBar);
+				waitBarDialog.add(pBar);
+				waitBarDialog.add(pLabel);
+				
+				waitBarDialog.pack();
+				waitBarDialog.validate();
+				waitBarDialog.setVisible(true);
+				
+			} else System.out.println("Dataset has no hits.");
+		}
 	}
-	}
+	
+	// tests for .par version (.ams,.amz)
+	// Strin[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {
 		BufferedReader readPar = new BufferedReader(new FileReader(parFile));
 		String test = readPar.readLine();
@@ -307,9 +429,7 @@ public class DataSetProcessor {
 		}
 		else {
 			throw new DataFormatException
-				("Corrupt data in " + parFile.toString() + " file.");
+			("Corrupt data in " + parFile.toString() + " file.");
 		}
 	}
-	
-	
 }

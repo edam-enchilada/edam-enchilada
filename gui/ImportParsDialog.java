@@ -158,8 +158,8 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	{
 		Object source = e.getSource();
 		if (source == okButton) {
-				DataSetImporter dsi = 
-					new DataSetImporter(
+				ATOFMSDataSetImporter dsi = 
+					new ATOFMSDataSetImporter(
 							pTableModel, parent, this);
 				// If a .par file or a .cal file is missing, don't start the process.
 				if (!dsi.nullRows()) {

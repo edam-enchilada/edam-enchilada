@@ -395,7 +395,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		return newID;
 	}
 	
-	//TODO: NOT TESTED!!!
+	
 	/**
 	 * Create a new collection from an array list of atomIDs which 
 	 * have yet to be inserted into the database.  
@@ -429,7 +429,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		return -1;
 	}
 
-	//TODO: NOT TESTED
 	/**
 	 * Inserts a list of AtomicAnalysisUnits to the warehouse.  Intended 
 	 * for use on original importation of atoms.
@@ -472,7 +471,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		return true;
 	}
 	
-	//TODO: NOT TESTED!!!
 	private int[] createAtomInfo(ArrayList atomList, String atomType)
 	{
 		int idArray[] = null;
@@ -1193,6 +1191,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		return particleInfo;
 	}
 	
+//	TODO: Leah's making unit tests for the methods above this line; 
+//	 Anna's making tests for the methods below this line.
+	
 	public java.util.Date exportToMSAnalyzeDatabase(
 			int collectionID, 
 			String newName, 
@@ -1219,41 +1220,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			ResultSet rs = null;// = stmt.executeQuery(
 			
 			InstancedResultSet irs = getAllAtomsRS(collectionID);
-			/*System.out.println(
-			"IF (OBJECT_ID('#ParticlesToExport') " +
-			"IS NOT NULL)\n" +
-			"	DROP TABLE #ParticlesToExport\n" +
-			"CREATE TABLE #ParticlesToExport (AtomID INT " +
-			"PRIMARY KEY, Filename TEXT, [Time] DATETIME, [Size] FLOAT, " +
-			"LaserPower FLOAT, NumPeaks INT, TotalPosIntegral INT, " +
-			"TotalNegIntegral INT)\n" +
-			
-			"INSERT INTO #ParticlesToExport\n" +
-			"(AtomID,Filename, [Time], [Size], LaserPower)\n" +
-			"(\n" +
-			"	SELECT AtomInfo.AtomID, OrigFilename, [Time], " +
-			"[Size], LaserPower\n" +
-			"	FROM AtomInfo, #TempParticles" + irs.instance 
-			+ "\n" +
-			"	WHERE AtomInfo.AtomID = #TempParticles" + 
-			irs.instance + ".AtomID\n" +
-			")\n" +
-			
-			"UPDATE #ParticlesToExport\n" +
-			"SET NumPeaks = \n" +
-			"	(SELECT COUNT(AtomID)\n" +
-			"		FROM Peaks\n" +
-			"			WHERE Peaks.AtomID = #ParticlesToExport.AtomID),\n" +
-			"TotalPosIntegral = \n" +
-			"	(SELECT SUM (PeakArea)\n" +
-			"		FROM Peaks\n" +
-			"			WHERE Peaks.AtomID = #ParticlesToExport.AtomID\n" +
-			"			AND Peaks.PeakLocation >= 0),\n" +
-			"TotalNegIntegral =\n" +
-			"	(SELECT SUM (PeakArea)\n" +
-			"		FROM Peaks\n" +
-			"			WHERE Peaks.AtomID = #ParticlesToExport.AtomID\n" +
-			"			AND Peaks.PeakLocation < 0)\n");*/
 			
 			// Create a table containing the values that will be 
 			// exported to the particles table in MS-Analyze
@@ -1308,12 +1274,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			// ATOFMS machine in MS-Control.
 			// TODO: Use rGetAllDescended in order to get the real first
 			// atom
-			
-			/*rs = stmt.executeQuery(
-					"SELECT COUNT (AtomID)\n" +
-					"FROM #ParticlesToExport");
-			rs.next();
-			System.out.println("count = " + rs.getInt(1));*/
 			
 			rs = stmt.executeQuery(
 					"SELECT MIN ([Time])\n" +
@@ -1508,7 +1468,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	
-	
 	private class ParticleInfoOnlyCursor 
 	implements CollectionCursor {
 		protected InstancedResultSet irs;
@@ -1575,7 +1534,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			} catch (SQLException e) {
 				System.err.println("Error checking the " +
 						"bounds of " +
-						"the ResultSet");
+						"the ResultSet.");
 				e.printStackTrace();
 				return false;
 			}
@@ -1697,12 +1656,17 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			try {
 				partInfRS.close();
-				String cursorQuery = "SELECT " +
-						"AtomInfo.AtomID, OrigFilename, " +
-						"ScatDelay, LaserPower, [Time]\n" +
-				"FROM #TempRand, AtomInfo " +
-				"WHERE " + where;
-				partInfRS = stmt.executeQuery(cursorQuery);
+				partInfRS = stmt.executeQuery(
+						"SELECT AtomInfo.AtomID, " +
+						"OrigFilename, ScatDelay, " +
+						"LaserPower, " +
+						"[Time]\n" +
+						"FROM AtomInfo, #TempParticles" + 
+						irs.instance + "\n" +
+						"WHERE #TempParticles" + 
+						irs.instance + 
+						".AtomID = AtomInfo.AtomID " +
+						"AND " + where);
 			} catch (SQLException e) {
 				System.err.println("SQL Error resetting cursor: ");
 				e.printStackTrace();
@@ -1799,30 +1763,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 	}
 	
-	public void seedRandom(int seed) {
-		try {
-			Statement stmt = con.createStatement();
-			stmt.execute("SELECT RAND(" + seed + ")\n");
-			stmt.close();
-		} catch (SQLException e) {
-			System.err.println("Error in seeding random number generator.");		
-			e.printStackTrace();
-		}
-	}
-	
-	/* Used for testing random number seeding */
-	public double getNumber() {
-	    try {
-	        Statement stmt = con.createStatement();
-	        ResultSet rs = stmt.executeQuery("SELECT RAND()");
-	        rs.next();
-	        return rs.getDouble(1);
-	    } catch (SQLException e) {
-	        System.err.println("Error in generating single number.");
-	        e.printStackTrace();
-	    }
-	    return -1;
-	}
+
 	/**
 	 * 
 	 * @author ritza
@@ -1975,8 +1916,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			return new BinnedPeakList();
 		}
 	}
-	
-	
+		
 	public CollectionCursor getParticleInfoOnlyCursor(int collectionID)
 	{
 		return new ParticleInfoOnlyCursor(collectionID);
@@ -2006,6 +1946,31 @@ public class SQLServerDatabase implements InfoWarehouse
 	public CollectionCursor getRandomizedCursor(int collectionID)
 	{
 		return new RandomizedCursor(collectionID);
+	}
+	
+	public void seedRandom(int seed) {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute("SELECT RAND(" + seed + ")\n");
+			stmt.close();
+		} catch (SQLException e) {
+			System.err.println("Error in seeding random number generator.");		
+			e.printStackTrace();
+		}
+	}
+	
+	/* Used for testing random number seeding */
+	public double getNumber() {
+	    try {
+	        Statement stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery("SELECT RAND()");
+	        rs.next();
+	        return rs.getDouble(1);
+	    } catch (SQLException e) {
+	        System.err.println("Error in generating single number.");
+	        e.printStackTrace();
+	    }
+	    return -1;
 	}
 	
 	public boolean moveAtom(int atomID, int fromParentID, int toParentID)
@@ -2084,7 +2049,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	// The following set of methods are designed for
 	// adding, moving, and deleting atoms in batch.
 	
-	public void addAtomBatchInit() {
+	public void atomBatchInit() {
 		try {
 			batchStatement = con.createStatement();
 		} catch (SQLException e) {
@@ -2175,53 +2140,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return false;
 	}
-	
-	/*public static void main(String args[])
-	{	
-		SQLServerDatabase db = new SQLServerDatabase();
-		java.sql.DatabaseMetaData dm = null;
-        java.sql.ResultSet rs = null;
-        db.openConnection();
-        try{
-             if(db.openConnection()){
-                  dm = db.getCon().getMetaData();
-                  System.out.println("Driver Information");
-                  System.out.println("\tDriver Name: "+ dm.getDriverName());
-                  System.out.println("\tDriver Version: "+ dm.getDriverVersion ());
-                  System.out.println("\nDatabase Information ");
-                  System.out.println("\tDatabase Name: "+ dm.getDatabaseProductName());
-                  System.out.println("\tDatabase Version: "+ dm.getDatabaseProductVersion());
-                  System.out.println("Avalilable Catalogs ");
-                  rs = dm.getCatalogs();
-                  while(rs.next()){
-                       System.out.println("\tcatalog: "+ rs.getString(1));
-                  } 
-                  rs.close();
-                  rs = null;
-                  //System.out.println(db.getAllDescendedAtoms(4));
-                  System.out.println("Randomization Cursor");
-                  CollectionCursor curs = db.getRandomizedCursor(1);
-                  for(int i = 0; i < 10; i++) {
-                  	curs.next(); 
-                  	System.out.println(
-                  		curs.getCurrent().getParticleInfo().getAtomID());
-                  }
-                  System.out.println("Resetting Randomization Cursor");
-                  curs.reset();
-                  for(int i = 0; i < 10; i++) {
-                  	curs.next(); 
-                  	System.out.println(
-                  		curs.getCurrent().getParticleInfo().getAtomID());
-                  }
-                  curs.close();
-             }else System.out.println("Error: No active Connection");
-        }catch(Exception e){
-             e.printStackTrace();
-        }
-        //System.out.println(db.recursiveDelete(1));
-        db.closeConnection();
-        dm=null;
-	}*/
 	
 	// Changed this from private to public.
 	public Connection getCon()
@@ -2365,7 +2283,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		return true;
 	}
 	
-	public static void dropDatabase(String dbName) {
+	public static boolean dropDatabase(String dbName) {
 		SQLServerDatabase db = null;
 		Connection con = null;
 
@@ -2395,13 +2313,13 @@ public class SQLServerDatabase implements InfoWarehouse
 		} catch (SQLException e) {
 			System.err.println("Error in dropping SQL Server database.");
 			e.printStackTrace();
+			return false;
 		} finally {
 			if (db != null)
 				db.closeConnection();
 		}
-	}	
-	
-	
+		return true;
+	}		
 	
 	/* (non-Javadoc)
 	 * @see database.InfoWarehouse#getPeaks(int)
@@ -2442,7 +2360,8 @@ public class SQLServerDatabase implements InfoWarehouse
 		return returnThis;
 	}
 	
-	public void insertGeneralParticles(ArrayList particles, 
+	// returns the last atomID used.
+	public int insertGeneralParticles(ArrayList particles, 
 			int collectionID) {
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		int atomID = getNextID();
@@ -2451,5 +2370,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			atomID++;
 		}
 		insertAtomicList(particles, collectionID, "EnchiladaDataPoint");
+		return atomID-1;
 	}
 }

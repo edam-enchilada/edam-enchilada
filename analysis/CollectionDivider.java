@@ -214,7 +214,7 @@ public abstract class CollectionDivider {
 	 */
 	protected void putInSubCollectionBatchInit() {
 		atomIDsToDelete = "";
-		db.addAtomBatchInit();
+		db.atomBatchInit();
 	}
 
 	/**
@@ -240,7 +240,7 @@ public abstract class CollectionDivider {
 		db.executeBatch();
 		//System.out.println("Done with INSERTS, about to do DELETE");
 		//System.out.println((new Date()).toString());
-		db.addAtomBatchInit();
+		db.atomBatchInit();
 		
 		if (atomIDsToDelete.length() > 0 &&
 				atomIDsToDelete.length() < 2000) {

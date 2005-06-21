@@ -99,4 +99,76 @@ public class CalInfoTest extends TestCase {
 		}
 		assertTrue(exceptionCaught == false);	
 	}
+	public class CreateTestFiles {
+	
+		private File parFile;
+		private File massFile;
+		private File sizeFile;
+		
+		public CreateTestFiles() {
+			System.out.println("creating files");
+			createParFile();
+			createMassFile();
+			createSizeFile();
+		}
+		
+		public void createParFile() {
+			try {
+				PrintWriter writer = new PrintWriter(new FileWriter("Test.par"));
+				writer.println("ATOFMS data set parameters");
+				writer.println("Z");
+				writer.println("99/99/9999 99:99:99");
+				writer.println("this is a test");
+				writer.close();
+			}catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public void createMassFile() {
+			try {
+				PrintWriter writer = new PrintWriter(new FileWriter("Test.cal"));
+				for (int i=0;i<2;i++) {
+				writer.println("0.999");
+				writer.println("-0.999");
+				}
+				for (int i=0;i<8;i++)
+				writer.println("9999,9.999");
+				
+				writer.close();
+				
+			}catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public void createSizeFile() {
+			try {
+				PrintWriter writer = new PrintWriter(new FileWriter("Test.noz"));
+				writer.println("[ATOFMS Particle Size Calibration]");
+				writer.println("Comment=this is a test");
+				writer.println("C1=0.999");
+				writer.println("C2=0.999");
+				writer.println("C3=0.999");
+				writer.println("C4=0.999");
+				writer.println("this is a test");
+				writer.close();
+				
+			}catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public File getParFile() {
+			return parFile;
+		}
+		
+		public File getMassFile() {
+			return massFile;
+		}
+		
+		public File getSizeFile() {
+			return sizeFile;
+		}
+	}
 }

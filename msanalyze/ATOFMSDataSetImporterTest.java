@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's DataSetImporter unit test class.
+ * The Original Code is EDAM Enchilada's ATOFMSDataSetImporter unit test class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -44,7 +44,11 @@
 package msanalyze;
 
 import java.awt.Window;
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.zip.DataFormatException;
 
 import javax.swing.JFrame;
 
@@ -52,21 +56,22 @@ import database.CreateTestDatabase;
 import database.SQLServerDatabase;
 import junit.framework.TestCase;
 
+import gui.ATOFMSParticleInfo;
 import gui.ImportParsDialog;
 import gui.ParTableModel;
 
 /**
  * @author ritza
  */
-public class DataSetImporterTest extends TestCase {
-	DataSetImporter importer;
+public class ATOFMSDataSetImporterTest extends TestCase {
+	ATOFMSDataSetImporter importer;
 	SQLServerDatabase db;
 	Connection con;
 	ParTableModel table;
 	/*
 	 * @see TestCase#setUp()
 	 */
-	public DataSetImporterTest(String aString)
+	public ATOFMSDataSetImporterTest(String aString)
 	{
 		super(aString);
 	}
@@ -76,9 +81,8 @@ public class DataSetImporterTest extends TestCase {
 		try {
 			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
 		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");
-			
-		} // end catch
+			System.err.println("Failed to load current driver.");	
+		} 
 		
 		con = null;
 		
@@ -92,7 +96,7 @@ public class DataSetImporterTest extends TestCase {
 		SQLServerDatabase.rebuildDatabase("TestDB");
 		new CreateTestDatabase(con); 		
 		db = new SQLServerDatabase("localhost","1433","TestDB");
-	
+		
 		// create table with one entry.
 		table = new ParTableModel(8);
 		// TODO: insert dummy row.
@@ -104,7 +108,7 @@ public class DataSetImporterTest extends TestCase {
 		table.setValueAt(true, 1, 7);
 		
 		Window mf = (Window)new JFrame();
-		importer = new DataSetImporter(table, mf, new ImportParsDialog());
+		importer = new ATOFMSDataSetImporter(table, mf, new ImportParsDialog());
 	}
 	
 	protected void tearDown()
@@ -126,6 +130,33 @@ public class DataSetImporterTest extends TestCase {
 		table = null;
 	}
 	
+	/* NullRows needs some work; write the test later.
+	 * 
+	 */
+	public void testNullRows() {
+		
+	}
+	
+	public void testParVersion() {
+		try {
+			importer.parFile = new File((String)table.getValueAt(1,1));
+			String[] info = importer.parVersion();
+			assertTrue(info[0].equals("b"));
+			assertTrue(info[1].equals("08/04/2004 15:38:47"));
+			assertTrue(info[2].equals("ambient"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * This method in turn calls 
+	 * readParFileAndCreateEmptyCollection() and
+	 * readSpectraAndCreateParticle(),
+	 * so unit tests are not needed for these two.
+	 *
+	 */
 	public void testCollectTableInfo() {
 		// Table values for this row.
 		String name = (String)table.getValueAt(1,1);
@@ -144,19 +175,39 @@ public class DataSetImporterTest extends TestCase {
 		assertTrue(autoCal = true);
 	}
 	
-	public void testProcessAllDataSets() {
+	public void testProcessDataSet() {
+		db.openConnection();
 		boolean success = true;
 		try {
-		//importer.processDataSet(1);
+			importer.processDataSet(1);			
 		} catch (Exception e) {success = false; }
 		assertTrue(success);
 		
-	}
-	
-	public void testNullRows() {
-		assertTrue(importer.nullRows());
-		table.setValueAt("random.cal", 2, 2);
-		assertTrue(importer.nullRows());
-	}
-
+		assertTrue(db.getCollectionComment(1).equals("one"));
+		assertTrue(db.getCollectionDescription(1).equals("onedescrip"));
+		assertTrue(db.getCollectionName(1).equals("One"));
+		
+		ArrayList<ATOFMSParticleInfo> particles = 
+			db.getCollectionParticles(1);
+		
+		// Check the first and last particles to see if they have been
+		// imported properly.
+		ATOFMSParticleInfo pInfo = particles.get(0);
+		
+		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
+		assertTrue(pInfo.getFilename().equals("One"));
+		assertTrue(pInfo.getAtomID() == 1);
+		assertTrue(pInfo.getLaserPower() == 0);
+		assertTrue(pInfo.getScatDelay() == 0);
+		assertTrue(pInfo.getSize() == 0.1f);
+		
+		pInfo = particles.get(particles.size()-1);
+		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
+		assertTrue(pInfo.getFilename().equals("Three"));
+		assertTrue(pInfo.getAtomID() == 3);
+		assertTrue(pInfo.getLaserPower() == 0);
+		assertTrue(pInfo.getScatDelay() == 0);
+		assertTrue(pInfo.getSize() == 0.3f);
+		db.closeConnection();	
+	}	
 }

@@ -260,5 +260,5 @@ public interface InfoWarehouse {
 	/**
 	 * 
 	 */
-	public void addAtomBatchInit();
+	public void atomBatchInit();
 }
