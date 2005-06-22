@@ -1,0 +1,174 @@
+O-Cluster
+
+(pardon the TeX markup here and there---I thought this might be a TeX file at
+one point.)
+
+This is what I have thought through so far, and will be updated as I come up
+with more shit.  Woo hoo!
+
+This is mostly the contents of a method splitActive() of Partition objects.  A
+Partition knows the standard deviation + mean of its contents in each
+dimension---XXX maybe only if it's Active, that would be nice.   (actually,
+the sum, sum of squares, and count of each thingie.  Fuck, that's a lot more
+space than I wanted to take.  Work on this.  XXX).  A Partition can be in any
+of several states, which might be represented by a state variable or by
+several subclasses: Active, Ambiguous, Frozen, or Branch.
+
+Partitions start as Active.  Active partitions are partitions that might need
+to be split.  I'll talk about how to split a partition soon.  If the partition
+does indeed split, it becomes a Branch partition.  It no longer immediately
+owns any data points, since it has given them to its children.  It can forget
+the statistics for all its histograms and such, since it doesn't need to split
+anymore.  Its children do, though, so in the process of splitting its data
+point list, it compiles statistics on the part of the list it gives to each
+child, and includes them in the constructor call.
+
+
+The top level partition is controlled by a process that pumps data from a
+random cursor into the tree of Partitions until the splitActive() method of
+the root partition returns 0, or we run out of data.  splitActive() always
+returns the number of records used by a Partition.  So for an Active or
+Ambiguous partition, it returns the number of data points in the buffer; for
+Frozen it returns 0 because we don't need to have any actual data, and for
+Branch it returns the sum of its children's data counts.  Our goal is to have
+all the Partitions be Frozen.  The data pumping is handled by having a number
+of atoms that we will keep in memory at any time, a buffer size.  When
+splitActive() returns, if it returns nonzero, there must be partitions out
+there that need more data.  So we read from our cursor a number of points
+equal to (max_atom_count - number_used), that is, the buffer size minus the
+return value of splitActive.  We then stick those into the next call to
+splitActive().  Yay!
+
+Splitting a Partition:
+
+\section{Find the binning interval, and then make histograms.}
+There are strategies for doing this.  They're completely opaque to me, since I
+don't know statistics well.  I think that they only depend, though, on the
+standard deviation and number of points in a partition.  These can be computed
+pretty easily from some ``summary statistics,'' as suggested in (Bradley,
+Fayyad, Reina, 1998) and probably other places.  The summary statistics are
+important because, with them, we can compute both the mean and standard
+deviation with just one pass through the data.  Yay!
+
+I've printed out one of the original papers that the O-Cluster paper cites
+about binning intervals, and I can't read it, but someone else can :-).
+
+So, we loop through the data in the partition, and collect sum, sum of
+squares, and count for each dimension.  This is a big loop, except that it's
+much smaller than I first thought since we have BinnedPeakLists, so it's only
+3 or 5n time rather than 2500 to 5000n.  Yay!  At the end of the loop,
+possibly set the count for each dimension to the number of data points, since
+all the rest of the particles have implicit 0's in these dimensions.
+
+Then we do some magic and out comes std. dev. and mean, and more magic, and we
+get a binning interval for each dimension.  We could easily skip all
+dimensions that have 0 or 1 (or maybe even a smarter number based on
+chi-squaredness\footnote{solve the chi-squared equation so that we find the
+number of peaks that would need to be a certain height in order for
+chi-squared to possibly be satisfied.  We don't need to pay attention to a
+dimension that has less than this many nonzero peaks.}) peaks in them, because
+they will have simple binning that is: if it's 0, it's 0.  If not, it's
+something else.  Need to think about this more thoroughly, but it's just an
+optimization, XXX.  Then we go through all the data in the partition once more
+and record a histogram for each dimension.  There should maybe be a Histogram
+class, because there might need to be cleverness.  Don't really know.  The
+histogram is a graph of # of occurrences of a peak of this height vs. peak
+height.
+
+\section{Find the best splitting point, if one exists, for this Partition.} To
+find the best splitting point, we need to find all statistically significant
+splitting points.  To find those, we need to find all possibly-significant
+splitting points.  To find those, we need to find all peaks with valleys
+between them.  OK, phew.  A peak is a histogram bin that is greater than (XXX:
+or equal to?) its neighboring bins.  To find the peaks and valleys and such,
+go through the list with a ListIterator.  Find places where the count
+decreases on both sides, and make a list of those.  While doing this, between
+any peaks, look for the bin with the lowest count.  Record this also.
+Recording these things should maybe happen in a weird horizontal data
+structure.  Such as:
+
+peak20       peak10         peak30
+    \       /      \       /     ....
+     valley4        valley5
+
+This needs to be refined.  But anyway, now we want to see which
+peak-valley-peak triplet is the best splitting point, out of the whole
+histogram.  We traverse this structure, and at each valley, calculate the
+chi-squared, which is: $\frac{2(val - exp)^2}{exp}$, where $val$ is the peak
+count of the valley and $exp$ is the average of the peak counts of the lower
+peak and the valley.  If the chi-squared of one valley is less than the 95%
+confidence chi-squared level, it should be ignored.  Delete the lower of the
+valley's peaks, which makes the valley adjascent to another valley.  Delete
+the higher (less significant) of the two valleys.  In the example above:
+
+valley4 has chi-squared of $2(4 - 7)^2/7 = 2(9)/7 = 18/7$, which is around
+2.57.  valley5 has chi-squared of $2(5-7.5)^2/7.5 = 2(6.25)/7.5$ is about
+1.67.  Imagine that valley4 is Significant but valley5 is not.  So valley5
+needs to go.  Peak10, its lower peak, is deleted, and valley5 is deleted since
+it is higher than valley4.  So now we have
+
+peak20         peak30
+      \        /
+       valley4
+
+Which is super.
+
+I think that this is statistically valid, but actually I have no idea, so it
+would be good for someone to think about it a bit more.
+
+We only delete non-significant valleys in this way because it would be wrong
+to delete ones that are significant---that's oversmoothing.  Right?
+
+Now, of the remaining, statistically significant, peak-valley-peak triplets,
+the Best one (according to the paper) is the one with the lowest histogram
+count in the valley.  That is, the split should go through the place of lowest
+density.  We might want to test with this metric and with one of choosing the
+point with the highest chi-squared value---the latter might be better for our
+data since it is so sparse...  Don't know.
+
+If a good splitting point is found, the Histogram object should keep track of
+it.  Then we go through all valid splitting points in all dimensions and look
+for the best one, the lowest-density one, and split there.  The list of data
+points is sorted (or at least that weird half-quicksort thing that people use
+to find the median or something) along the dimension that the splitting point
+is on, statistics are compiled for each subset of the data in all dimensions,
+this Partition becomes Branched, and it has 2 children, each getting the data
+either above or below the split point.
+
+If no good splitting points are found in the whole Partition, this process is
+tried again with a certainty level of 90%.  If possible split points are found
+at this confidence level, the Partition is Ambiguous, which means that it
+wants more data points.  It communicates this by returning the number of
+atoms that it has in its list, from the splitActive() method.  
+
+If nothing is found at either level, great!  There's
+only one cluster in this partition!  So we can forget all the data associated
+with the partition, and make it Frozen.  splitActive returns 0.
+
+I think that's all that needs to happen.
+
+When splitActive() is called on a Frozen Partition, it just eats the data and
+returns 0.  If all children of a Branch Partition return 0 from splitActive(),
+the Branch Partition can be considered Frozen also, since both its children
+must be.  So it can just silently discard data also.  Yay!
+
+
+One choice is whether to split Ambiguous partitions if we run out of data.  I
+don't know if this will come up, but it might... Maybe it can be reflected in
+the Collection structure, or maybe that's silly.  Meh.
+
+
+
+One alternative thing for the Frozen partitions to do is to assign atoms in
+the database to themselves when they get data pushed at them.  I'm not sure if
+I like this or not:  it would save an extra pass through the database
+reassigning atoms, but it would mean that if something broke halfway through,
+things could be in a silly state.  Also, it would mean there's a difference
+between Frozen leaf nodes and Frozen branch nodes.  That's probably ok...  It
+would also mean we always have to read all the data, although not doing this
+is a false economy since we have to do that to assign the data anyway.
+
+
+When a Partition that needs more records, or its children need more records,
+is called with splitActive(List newAtoms) a second time, the records are
+appended to the list that the Partition should keep inside it.  Yeah.
