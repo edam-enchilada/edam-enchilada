@@ -181,12 +181,71 @@ is a false economy since we have to do that to assign the data anyway.
 So I think I like it.
 
 
-Luckily, when adding statistics, the Summary Statistics are additive, so you
+Happily, when adding statistics, the Summary Statistics are additive, so you
 just have to go through the new data and add on the relevant values.  Yay!
 Though the histograms will have to be remade, in all likelihood.  We could have
 a tolerance value for differences in histogram size where below it we don't
 care about the change and we can just add to the histogram rather than
 recomputing the whole thing.
+
+
+
+
+O-Cluster Controller
+has-a:
+	database connection/random cursor thing
+	Partition hierarchy (Has a root node, technically)
+does:
+	pump data into the hierarchy
+	possibly, assign atoms to their final states
+	prints out a representation of the partition rules.
+
+O-Cluster Partition, General
+has-a:
+	reference to its parent, if it has one.
+
+O-Cluster Partition, Branch
+has-a:
+	dimension index
+	splitting point
+	frozen? flag, or possibly that's another class, but that'd be silly?
+does:
+	tells its children to try to split themselves, while feeding them
+	 more data.
+		Feeds them only the relevant data, i.e. it splits the list
+		 along the split point before routing the data along.
+		Also, if both children return 0, we don't need to bother to
+		 route data and stuff, we can ignore it.
+	Is able to make a string representation of its rule, possibly in
+	 a particularly complicated way that prints prettily.
+
+O-Cluster Partition, Frozen (leaf)
+has-a:
+	not much, right?
+does:
+	possibly, assigns atoms in the database to itself.
+	eats data.
+	returns 0.
+	Maybe keeps track of the number of atoms that go through it.
+
+O-Cluster Partition, New/Active or Ambiguous (probably the same class)
+has-a:
+	list of Histograms for each dimension
+	list of summary statistics for each dimension
+	list of data points (BPLs maybe with AtomIDs)
+	possibly, list of possible SplitPoints or something, or maybe this is
+	 procedural by iterating over the Histograms.
+does:
+	accepts new data, adds it to summary statistics, recomputes the
+	 histograms to a greater or lesser extent, and decides if it
+	 can split or not.
+	changes itself into a Branch or Frozen partition.  How the heck does
+	 that work?
+
+
+Histogram
+...
+
 
 
 
