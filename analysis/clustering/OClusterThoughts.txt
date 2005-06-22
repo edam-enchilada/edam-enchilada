@@ -9,10 +9,19 @@ with more shit.  Woo hoo!
 This is mostly the contents of a method splitActive() of Partition objects.  A
 Partition knows the standard deviation + mean of its contents in each
 dimension---XXX maybe only if it's Active, that would be nice.   (actually,
-the sum, sum of squares, and count of each thingie.  Fuck, that's a lot more
+the sum, sum of squares, and count for each dimension.  Damn, that's a lot more
 space than I wanted to take.  Work on this.  XXX).  A Partition can be in any
 of several states, which might be represented by a state variable or by
 several subclasses: Active, Ambiguous, Frozen, or Branch.
+
+The paper talks about Active partitions a lot---I don't think that we need
+those if we implement it this way.  They seem to do the algorithm in a
+breadth-first sort of way, with a list of Active partitions that are all
+updated at once, and stuff like that.  The way I describe here is more
+tree-oriented, and is depth-first.  I think that this will save some memory,
+possibly, and probably be less complicated.  Partitions are Active only for
+the duration of the first call to splitActive() on them: afterwards they
+become Ambiguous, Frozen, or Branch.
 
 Partitions start as Active.  Active partitions are partitions that might need
 to be split.  I'll talk about how to split a partition soon.  If the partition
@@ -26,7 +35,8 @@ child, and includes them in the constructor call.
 
 The top level partition is controlled by a process that pumps data from a
 random cursor into the tree of Partitions until the splitActive() method of
-the root partition returns 0, or we run out of data.  splitActive() always
+the root partition returns 0, or we run out of data.  It does this like:
+rootPartition.splitActive(newData);.  splitActive() always
 returns the number of records used by a Partition.  So for an Active or
 Ambiguous partition, it returns the number of data points in the buffer; for
 Frozen it returns 0 because we don't need to have any actual data, and for
@@ -41,7 +51,7 @@ splitActive().  Yay!
 
 Splitting a Partition:
 
-\section{Find the binning interval, and then make histograms.}
+1. ********** Find the binning interval, and then make histograms. *********
 There are strategies for doing this.  They're completely opaque to me, since I
 don't know statistics well.  I think that they only depend, though, on the
 standard deviation and number of points in a partition.  These can be computed
@@ -75,16 +85,16 @@ class, because there might need to be cleverness.  Don't really know.  The
 histogram is a graph of # of occurrences of a peak of this height vs. peak
 height.
 
-\section{Find the best splitting point, if one exists, for this Partition.} To
-find the best splitting point, we need to find all statistically significant
-splitting points.  To find those, we need to find all possibly-significant
-splitting points.  To find those, we need to find all peaks with valleys
-between them.  OK, phew.  A peak is a histogram bin that is greater than (XXX:
-or equal to?) its neighboring bins.  To find the peaks and valleys and such,
-go through the list with a ListIterator.  Find places where the count
-decreases on both sides, and make a list of those.  While doing this, between
-any peaks, look for the bin with the lowest count.  Record this also.
-Recording these things should maybe happen in a weird horizontal data
+2. *****Find the best splitting point, if one exists, for this Partition. **
+To find the best splitting point, we need to find all statistically
+significant splitting points.  To find those, we need to find all
+possibly-significant splitting points.  To find those, we need to find all
+peaks with valleys between them.  OK, phew.  A peak is a histogram bin that is
+greater than (XXX: or equal to?) its neighboring bins.  To find the peaks and
+valleys and such, go through the list with a ListIterator.  Find places where
+the count decreases on both sides, and make a list of those.  While doing
+this, between any peaks, look for the bin with the lowest count.  Record this
+also.  Recording these things should maybe happen in a weird horizontal data
 structure.  Such as:
 
 peak20       peak10         peak30
@@ -124,10 +134,11 @@ the Best one (according to the paper) is the one with the lowest histogram
 count in the valley.  That is, the split should go through the place of lowest
 density.  We might want to test with this metric and with one of choosing the
 point with the highest chi-squared value---the latter might be better for our
-data since it is so sparse...  Don't know.
+data since it is so sparse...  Don't know.  If a good splitting point is
+found, the Histogram object should keep track of it.
 
-If a good splitting point is found, the Histogram object should keep track of
-it.  Then we go through all valid splitting points in all dimensions and look
+3. ****** Split on this new awesome splitting point, or don't. *************
+Then we go through all valid splitting points in all dimensions and look
 for the best one, the lowest-density one, and split there.  The list of data
 points is sorted (or at least that weird half-quicksort thing that people use
 to find the median or something) along the dimension that the splitting point
@@ -135,7 +146,7 @@ is on, statistics are compiled for each subset of the data in all dimensions,
 this Partition becomes Branched, and it has 2 children, each getting the data
 either above or below the split point.
 
-If no good splitting points are found in the whole Partition, this process is
+If no good splitting points are found in the whole Partition, step 2 is
 tried again with a certainty level of 90%.  If possible split points are found
 at this confidence level, the Partition is Ambiguous, which means that it
 wants more data points.  It communicates this by returning the number of
@@ -167,8 +178,15 @@ things could be in a silly state.  Also, it would mean there's a difference
 between Frozen leaf nodes and Frozen branch nodes.  That's probably ok...  It
 would also mean we always have to read all the data, although not doing this
 is a false economy since we have to do that to assign the data anyway.
+So I think I like it.
 
 
-When a Partition that needs more records, or its children need more records,
-is called with splitActive(List newAtoms) a second time, the records are
-appended to the list that the Partition should keep inside it.  Yeah.
+Luckily, when adding statistics, the Summary Statistics are additive, so you
+just have to go through the new data and add on the relevant values.  Yay!
+Though the histograms will have to be remade, in all likelihood.  We could have
+a tolerance value for differences in histogram size where below it we don't
+care about the change and we can just add to the histogram rather than
+recomputing the whole thing.
+
+
+
