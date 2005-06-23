@@ -190,6 +190,20 @@ recomputing the whole thing.
 
 
 
+Should the method to add more data for consideration to a partition really
+be called "splitActive()"?  How about ponder() or consider()?  maybeSplit()
+partition()?  I like ponder() more but I think partition() might be the best
+choice for informativeness.  Or divide() or something.  Synonyms of divide:
+
+bisect, branch, break, break down, carve, chop, cleave, cross, cut, cut up,
+demarcate, detach, dichotomize, disconnect, disengage, disentangle, disjoin,
+dislocate, dismember, dissect, dissever, dissociate, dissolve, disunite,
+divorce, fork, halve, intersect, isolate, loose, part, partition, pull away, 
+quarter, rend, rupture, section, segment, segregate, sever, shear, split, 
+subdivide, sunder, tear, unbind, undo, whack off
+
+I like disjoin a lot, as well as dichotomize.  Anyway, this can be changed
+later without much trouble.  It'll be split() for now.
 
 O-Cluster Controller
 has-a:
@@ -203,6 +217,9 @@ does:
 O-Cluster Partition, General
 has-a:
 	reference to its parent, if it has one.
+	toString kinds of things - should they work recursively or through
+	 traversal by Something Else?
+	probably slots for children also.  
 
 O-Cluster Partition, Branch
 has-a:
@@ -244,8 +261,20 @@ does:
 
 
 Histogram
-...
-
+has-a:
+	binning interval (the width of a histogram bin)
+	array<Integer> of the correct length
+	A peak-finding data structure
+	list of statistically significant cut points?  or should this only be
+	 procedural?
+does:
+	bins incoming data, probably both one at a time or as a group
+	possibly figures out the right binning interval.  yes, that would be nice.
+	Finds significant splitting points for either a given confidence level (95
+	 or 90%) or a given chi-squared value (something like 2 or 3) depending
+	 on what kind of encapsulation we want.  Probably confidence level would
+	 be better.
+	
 
 
 
