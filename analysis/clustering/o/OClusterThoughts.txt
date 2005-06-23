@@ -60,16 +60,16 @@ into the next call to split().  Yay!
 Splitting a Partition:
 
 1. ********** Find the binning interval, and then make histograms. *********
-There are strategies for doing this.  They're completely opaque to me, since I
+There are strategies for doing this, mentioned on page 6 of the O-Cluster paper
+and detailed in M.P. Wand, "Data-Based Choice of Histogram Bin Width", which I 
+have printed out.  The detailed techniques are completely opaque to me, since I
 don't know statistics well.  I think that they only depend, though, on the
 standard deviation and number of points in a partition.  These can be computed
 pretty easily from some ``summary statistics,'' as suggested in (Bradley,
 Fayyad, Reina, 1998) and probably other places.  The summary statistics are
 important because, with them, we can compute both the mean and standard
-deviation with just one pass through the data.  Yay!
-
-I've printed out one of the original papers that the O-Cluster paper cites
-about binning intervals, and I can't read it, but someone else can :-).
+deviation with just one pass through the data (rather than one for the mean and
+one for the standard deviation).  Yay!
 
 So, we loop through the data in the partition, and collect sum, sum of squares,
 and count for each dimension.  This is a big loop, except that it's much
@@ -83,15 +83,15 @@ and out comes std. dev. and mean, and more magic, and we get a binning interval
 for each dimension.  We could easily skip all dimensions that have 0 or 1 peaks
 in them (or maybe even a smarter number based on chi-squaredness\footnote{solve
 the chi-squared equation so that we find the number of peaks that would need to
-be a certain height in order for chi-squared to possibly be satisfied.  We
-don't need to pay attention to a dimension that has less than this many nonzero
-peaks.}), because they will have simple binning that is: if it's 0, it's 0.  If
-not, it's something else.  Need to think about this more thoroughly, but it's
-just an optimization, XXX.  Then we go through all the data in the partition
-once more and record a histogram for each dimension.  There should maybe be a
-Histogram class, because there might need to be cleverness.  Don't really know.
-The histogram is a graph of # of occurrences of a peak of this height vs. peak
-height.
+be a certain height in order for the confidence test to possibly be satisfied.
+We don't need to pay attention to a dimension that has less than this many
+nonzero peaks.}), because they will have simple binning that is: if it's 0,
+it's 0.  If not, it's something else.  Need to think about this more
+thoroughly, but it's just an optimization, XXX.  Then we go through all the
+data in the partition once more and record a histogram for each dimension.
+There should maybe be a Histogram class, because there might need to be
+cleverness.  Don't really know.  The histogram is a graph of # of occurrences
+of a peak of this height vs. peak height.
 
 2. *****Find the best splitting point, if one exists, for this Partition. **
 This also happens inside Histogram objects, until comparisons between
