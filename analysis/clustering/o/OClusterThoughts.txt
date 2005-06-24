@@ -293,7 +293,7 @@ Histogram
 has-a:
 	binning interval (the width of a histogram bin)
 	array<Integer> of the correct length
-	A peak-finding data structure
+	A peak-finding data structure?
 	list of statistically significant cut points?  or should this
 	 only be procedural?
 does:

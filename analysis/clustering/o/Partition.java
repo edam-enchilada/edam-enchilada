@@ -15,7 +15,8 @@ public interface Partition {
 	public Partition getLeftChild();
 	public Partition getRightChild();
 	
-	public int classify(BinnedPeakList bpl);
+//	public int classify(BinnedPeakList bpl);
+	// i don't know how that's going to work...
 	public int split(List<BinnedPeakList> atoms);
 	public String rulesUp();
 	public String rulesDown();
