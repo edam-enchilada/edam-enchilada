@@ -78,24 +78,8 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	
 	protected void setUp()
 	{
-		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
-		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");	
-		} 
-		
-		con = null;
-		
-		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
-		} catch (Exception e) {
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		
-		SQLServerDatabase.rebuildDatabase("TestDB");
-		new CreateTestDatabase(con); 		
-		db = new SQLServerDatabase("localhost","1433","TestDB");
+		new CreateTestDatabase(); 		
+		db = new SQLServerDatabase("TestDB");
 		
 		// create table with one entry.
 		table = new ParTableModel(8);
@@ -118,10 +102,9 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			System.runFinalization();
 			System.gc();
 			con.close();
-			con = DriverManager.getConnection(
-					"jdbc:microsoft:sqlserver://" +
-					"localhost:1433;TestDB;SelectMethod=cursor;",
-					"SpASMS","finally");
+			db = new SQLServerDatabase("TestDB");
+			db.openConnection();
+			con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
 			con.close();
 		} catch (SQLException e) {

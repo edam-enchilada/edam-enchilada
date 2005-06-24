@@ -82,23 +82,40 @@ public class SQLServerDatabase implements InfoWarehouse
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
+		
+		File f = new File("dbconfig.ini");
+		try {
+			Scanner scan = new Scanner(f);
+			while (scan.hasNext()) {
+				String tag = scan.next();
+				String val = scan.next();
+				if (scan.hasNext())
+					scan.nextLine();
+				
+				if (tag.equalsIgnoreCase("db_url:")) { url = val; }
+				else if (tag.equalsIgnoreCase("port:")) { port = val; }
+			}
+			scan.close();
+		} catch (FileNotFoundException e) { 
+			// Don't worry if the file doesn't exist... 
+			// just go on with the default values 
+		}
 	}
 	
-	public SQLServerDatabase(String u, String p, String db)
-	{
-		url = u;
-		port = p;
-		database = db;
+	public SQLServerDatabase(String dbName) {
+		this();
+		
+		database = dbName;
 	}
-	
+
 	/**
 	 * Determine if the database is actually present (returns true if it is).
 	 */
-	public static boolean isPresent(String url, String port, String dbName) {
+	public static boolean isPresent(String dbName) {
 
 		boolean foundDatabase = false;
 		try {
-			SQLServerDatabase db = new SQLServerDatabase(url,port,"");
+			SQLServerDatabase db = new SQLServerDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
@@ -647,27 +664,39 @@ public class SQLServerDatabase implements InfoWarehouse
 						  Integer.toString(nextID) + ")");
 
 			ArrayList<Peak> peakList = particle.getPeakList();
-
-			String tempFilename = tempdir + "\\bulkfile.txt";
-			PrintWriter bulkFile = null;
-			try {
-				bulkFile = new PrintWriter(new FileWriter(tempFilename));
-			} catch (IOException e) {
-				System.err.println("Trouble creating " + tempFilename);
-				e.printStackTrace();
+			
+			// Only bulk insert if client and server are on the same machine...
+			if (database.equals("localhost")) {
+				String tempFilename = tempdir + "\\bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+				}
+	
+				for (int j = 0; j < peakList.size(); j++)
+				{
+					Peak peak = peakList.get(j);
+					bulkFile.println(nextID + "," + peak.massToCharge + "," +
+							peak.area + "," + peak.relArea + "," + peak.height);
+				}
+	
+				bulkFile.close();
+				stmt.addBatch("BULK INSERT Peaks\n" +
+						      "FROM '" + tempFilename + "'\n" +
+							  "WITH (FIELDTERMINATOR=',')");
 			}
-
-			for (int j = 0; j < peakList.size(); j++)
-			{
-				Peak peak = peakList.get(j);
-				bulkFile.println(nextID + "," + peak.massToCharge + "," +
-						peak.area + "," + peak.relArea + "," + peak.height);
+			else {
+				for (int j = 0; j < peakList.size(); j++)
+				{
+					Peak peak = peakList.get(j);
+					stmt.addBatch("INSERT INTO Peaks VALUES (" + 
+							nextID + "," + peak.massToCharge + "," +
+							peak.area + "," + peak.relArea + "," + peak.height + ")");
+				}
 			}
-
-			bulkFile.close();
-			stmt.addBatch("BULK INSERT Peaks\n" +
-					      "FROM '" + tempFilename + "'\n" +
-						  "WITH (FIELDTERMINATOR=',')");
 			
 			stmt.executeBatch();
 			stmt.close();

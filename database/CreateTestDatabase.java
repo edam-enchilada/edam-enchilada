@@ -52,8 +52,13 @@ import java.sql.Connection;
  */
 public class CreateTestDatabase {
 	
-	public CreateTestDatabase(Connection con) {
+	public CreateTestDatabase() {
+        SQLServerDatabase tempDB = new SQLServerDatabase();
+        tempDB.openConnection();
+        Connection con = tempDB.getCon();
 
+		SQLServerDatabase.rebuildDatabase("TestDB");
+		
 	    if (con == null)
 	        throw new IllegalArgumentException("con should not be null");
 		

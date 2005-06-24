@@ -658,7 +658,7 @@ public class MainFrame extends JFrame implements ActionListener,
 
 		// Verify that database exists, and give user opportunity to create
 		// if it does not.
-		if (!SQLServerDatabase.isPresent("localhost","1433","SpASMSdb")) {
+		if (!SQLServerDatabase.isPresent("SpASMSdb")) {
 
 			if (JOptionPane.showConfirmDialog(null,
 					"No database found. Would you like to create one?\n" +
@@ -671,7 +671,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 		
 		//Open database connection:
-		db = new SQLServerDatabase("localhost","1433","SpASMSdb");
+		db = new SQLServerDatabase();
 		db.openConnection();
 
 		//Schedule a job for the event-dispatching thread:

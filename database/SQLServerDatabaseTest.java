@@ -84,25 +84,8 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	protected void setUp()
 	{
-		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
-		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");
-			
-		} // end catch
-		
-		con = null;
-		
-		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
-		} catch (Exception e) {
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		
-		SQLServerDatabase.rebuildDatabase("TestDB");
-		new CreateTestDatabase(con); 		
-		db = new SQLServerDatabase("localhost","1433","TestDB");
+		new CreateTestDatabase(); 		
+		db = new SQLServerDatabase("TestDB");
 	}
 	
 	protected void tearDown()
@@ -112,10 +95,9 @@ public class SQLServerDatabaseTest extends TestCase {
 			System.runFinalization();
 			System.gc();
 			con.close();
-			con = DriverManager.getConnection(
-					"jdbc:microsoft:sqlserver://" +
-					"localhost:1433;TestDB;SelectMethod=cursor;",
-					"SpASMS","finally");
+			db = new SQLServerDatabase("TestDB");
+			db.openConnection();
+			con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
 			con.close();
 		} catch (SQLException e) {
@@ -658,7 +640,9 @@ public class SQLServerDatabaseTest extends TestCase {
 			assertTrue(SQLServerDatabase.rebuildDatabase("TestDB"));		
 			
 			db.openConnection();
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;SpASMSdb;SelectMethod=cursor;","SpASMS","finally");	
+			SQLServerDatabase tempDB = new SQLServerDatabase();
+			tempDB.openConnection();
+			con = tempDB.getCon();
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
 			boolean foundDatabase = false;
@@ -687,7 +671,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testIsPresent() {
 		db.openConnection();
-		assertTrue(SQLServerDatabase.isPresent("localhost","1433","TestDB"));
+		assertTrue(SQLServerDatabase.isPresent("TestDB"));
 		db.closeConnection();
 	}
 	
