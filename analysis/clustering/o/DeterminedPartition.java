@@ -18,11 +18,11 @@ public class DeterminedPartition implements Partition {
 	private DeterminedPartition parent;
 	private Partition left;
 	private Partition right;
-	private BinnedPeak rule;
+	private SplitRule rule;
 	private CollectionDivider collectionSource;
 	private boolean branched;
 	
-	public DeterminedPartition(DeterminedPartition par, BinnedPeak cutPoint,
+	public DeterminedPartition(DeterminedPartition par, SplitRule cutPoint,
 			Partition l, Partition r) {
 		parent = par;
 		rule = cutPoint;
