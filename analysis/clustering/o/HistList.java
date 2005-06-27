@@ -24,12 +24,10 @@ public class HistList extends ArrayList<Integer> {
 	// since this puts an extra 2 tests in the common case.  It probably
 	// doesn't actually matter?
 	public Integer get(int index) {
-		// return -1 rather than throwing an exception if the access is
-		// out of bounds.  Maybe this should technically be 0?  Hopefully
-		// it'll just be obvious if a negative number is being used somewhere
-		// it shouldn't.
+		// In a histogram, if there's nothing stored somewhere, that's
+		// implicitly a count of 0.
 		if (index < 0 || index >= size()) {
-			return -1;
+			return 0;
 		} else {
 			return super.get(index);
 		}

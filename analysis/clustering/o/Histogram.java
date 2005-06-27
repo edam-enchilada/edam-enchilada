@@ -18,15 +18,19 @@ public class Histogram {
 		extremaLocations = new LinkedList<Integer>();
 		int localMinLoc = 0;
 		for (int bin = 0; bin < histogram.size(); bin++) {
-			// we can access bin+1 and bin-1 without worrying: see get()
-			// in the HistList class.
+			// we can access past the ends of the array without worrying: see 
+			// get() in the HistList class.
 			
 			if (histogram.get(bin - 1) < histogram.get(bin)
 					&& histogram.get(bin) >= histogram.get(bin + 1))
 			{
-				// this is a peak.
+				// this bin contains a peak...
 				
-				// the condition for a peak can never be true twice in a row.
+				// the second condition is >= so that if multiple
+				// bins have the same count and are together a peak,
+				// the first one will be detected as such.
+				
+				// the condition for a peak can never be true twice in a row:
 				assert(localMinLoc != bin);
 
 				extremaLocations.add(localMinLoc);
