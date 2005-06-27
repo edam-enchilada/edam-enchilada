@@ -43,6 +43,9 @@ public class HistList extends ArrayList<Integer> {
 	public float getIndexMax(int index) {
 		return (index+1) * binWidth;
 	}
+	public float getIndexMiddle(int index) {
+		return (index + 1.5f) * binWidth;
+	}
 	
 	public float getBinWidth() {
 		return binWidth;

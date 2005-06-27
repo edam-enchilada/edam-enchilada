@@ -5,7 +5,7 @@ import java.util.*;
 public class Histogram {
 	private HistList histogram;
 	private float binWidth;
-	private LinkedList<Integer> extremaLocations;
+	private ValleyList splitPoints;
 	
 	
 	
@@ -15,7 +15,7 @@ public class Histogram {
 	}
 	
 	private int findAllExtrema() {
-		extremaLocations = new LinkedList<Integer>();
+		LinkedList<Integer> extremaLocations = new LinkedList<Integer>();
 		int localMinLoc = 0;
 		for (int bin = 0; bin < histogram.size(); bin++) {
 			// we can access past the ends of the array without worrying: see 
@@ -47,25 +47,29 @@ public class Histogram {
 		extremaLocations.remove(); // the 0th element is where the local min
 		// before 0 would go.  but there is none, so we remove it.
 		
-		return extremaLocations.size();
+		splitPoints.clear();
+		Iterator<Integer> i = extremaLocations.iterator();
+		Integer loc;
+		while (i.hasNext()) {
+			loc = i.next();
+			splitPoints.add(new Extremum(loc, histogram.get(loc)));
+		}
+		return splitPoints.numValleys();
 	}
 	
 	public List<Float> getSplitPoints(int confidencePercent) {
-		float minChi2 = targetChiSquared(confidencePercent);
+		LinkedList<Float> splits = new LinkedList<Float>();
 		if (findAllExtrema() > 1) {
-			// real stuff here!
+			splitPoints.removeInsignificant(confidencePercent);
+			for (int i = 0; i < splitPoints.numValleys(); i++) {
+				splits.add(histogram.getIndexMiddle(
+						splitPoints.getValley(i).location));
+			}
+			return splits;
 		} else {
 			return null;
 		}
-		// TODO: write method for weeding statistically insignificant points,
-		// then this method is just taking the bin # of the valley of each one
-		// and binToReal-ing it.
-		return null;
 	}
-	
-//	private float binToReal(int bin) {
-//		return histogram.getIndexMin(bin);
-//	}
 	
 	private float targetChiSquared(int confidencePercent) {
 		// TODO: find out how the statistics work for calculating a chi-squared
