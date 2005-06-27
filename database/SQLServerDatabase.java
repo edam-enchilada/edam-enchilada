@@ -667,7 +667,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			// Only bulk insert if client and server are on the same machine...
 			if (database.equals("localhost")) {
-				String tempFilename = tempdir + "\\bulkfile.txt";
+				String tempFilename = tempdir + File.separatorChar + "bulkfile.txt";
 				PrintWriter bulkFile = null;
 				try {
 					bulkFile = new PrintWriter(new FileWriter(tempFilename));

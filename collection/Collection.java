@@ -150,7 +150,7 @@ public class Collection {
 			// scatter delay MSA produces for the same dataset
 				out.println(particleCount + ", " + 
 						particle.getFilename().substring(0,1) + 
-						"\\" +
+						File.separatorChar +
 						particle.getFilename() + 
 						", " + particle.getScatDelay() + 
 						", 65535, " +

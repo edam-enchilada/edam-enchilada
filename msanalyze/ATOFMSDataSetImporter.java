@@ -307,7 +307,7 @@ public class ATOFMSDataSetImporter {
 							while (readSet.ready()) { // repeat until end of file.
 								token = new StringTokenizer(readSet.readLine(), ",");
 								token.nextToken();
-								particleName = token.nextToken();
+								particleName = token.nextToken().replace('\\', File.separatorChar);
 								particleFileName = grandParent.toString() + File.separator + particleName;
 								
 								read = new ReadSpec(particleFileName);
