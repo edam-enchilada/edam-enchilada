@@ -9,8 +9,12 @@ package analysis.clustering.o;
 
 import java.util.List;
 import analysis.BinnedPeakList;
+import analysis.CollectionDivider;
 
 public interface Partition {
+	public CollectionDivider getCollectionSource();
+	public void setCollectionSource(CollectionDivider collectionSource);
+	
 	public Partition getParent();
 	public Partition getLeftChild();
 	public Partition getRightChild();

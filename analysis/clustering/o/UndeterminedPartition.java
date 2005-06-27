@@ -5,20 +5,24 @@ package analysis.clustering.o;
 
 import java.util.List;
 
+import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
+import analysis.CollectionDivider;
 
 /**
  * @author smitht
  *
  */
 public class UndeterminedPartition implements Partition {
-	private DeterminedPartition parent;
+	private Partition parent;
 	private Partition left;
 	private Partition right;
 	private List<BinnedPeakList> dataBuffer;
 	private List<Histogram> histograms;
+	private CollectionDivider collectionSource;
 	
-	public UndeterminedPartition(DeterminedPartition par) {
+
+	public UndeterminedPartition(Partition par) {
 		parent = par;
 	}
 	/* (non-Javadoc)
@@ -67,4 +71,19 @@ public class UndeterminedPartition implements Partition {
 		return null;
 	}
 
+	private void addAtom(BinnedPeakList l) {
+		BinnedPeak peak;
+		for (int i = 0; i < l.length(); i++) {
+			peak = l.getNextLocationAndArea();
+			histograms.get(peak.location).addPeak(peak.area);
+		}
+	}
+	
+	public CollectionDivider getCollectionSource() {
+		return collectionSource;
+	}
+	public void setCollectionSource(CollectionDivider collectionSource) {
+		this.collectionSource = collectionSource;
+	}
+	
 }

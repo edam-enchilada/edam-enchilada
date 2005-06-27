@@ -15,7 +15,7 @@ import analysis.CollectionDivider;
  *
  */
 public class DeterminedPartition implements Partition {
-	private DeterminedPartition parent;
+	private Partition parent;
 	private Partition left;
 	private Partition right;
 	private SplitRule rule;
