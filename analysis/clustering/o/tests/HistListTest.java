@@ -1,5 +1,6 @@
-package analysis.clustering.o;
+package analysis.clustering.o.tests;
 
+import analysis.clustering.o.HistList;
 import junit.framework.TestCase;
 
 public class HistListTest extends TestCase {

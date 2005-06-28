@@ -1,4 +1,4 @@
-package analysis.clustering.o;
+package analysis.clustering.o.tests;
 
 import junit.framework.TestCase;
 

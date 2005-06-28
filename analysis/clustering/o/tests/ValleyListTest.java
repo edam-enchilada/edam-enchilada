@@ -1,7 +1,10 @@
-package analysis.clustering.o;
+package analysis.clustering.o.tests;
 
 //import java.util.Iterator;
 import java.util.List;
+
+import analysis.clustering.o.Extremum;
+import analysis.clustering.o.ValleyList;
 
 import junit.framework.TestCase;
 
