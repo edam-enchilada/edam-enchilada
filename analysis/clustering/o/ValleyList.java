@@ -73,14 +73,23 @@ public class ValleyList extends ArrayList<Extremum> {
 		return newCopy;
 	}
 
-	private float percentToChiSquared(int certaintyPercent) {
-		// TODO Auto-generated method stub
-		return 0;
+	private float percentToChiSquared(int percent) {
+		// percent is percent certainty.
+		// TODO: find out how the statistics work for calculating a chi-squared
+		// target thingie.
+		if (percent == 95) {
+			return 3.843f;
+		} else if (percent == 90) {
+			return 2.706f;	
+		} else {
+			throw new Error("Finding target chi-squareds is not yet implemented!");
+		}
 	}
 
 	private float chiSquared(Extremum peak, Extremum valley) {
-		// TODO Auto-generated method stub
-		return 0;
+		float expected = (peak.count + valley.count) / 2;
+		return 2*((float) (Math.pow(valley.count - expected,2))
+							/expected);
 	}
 	
 }

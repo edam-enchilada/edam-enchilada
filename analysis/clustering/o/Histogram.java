@@ -73,17 +73,10 @@ public class Histogram {
 		}
 	}
 	
-	private float targetChiSquared(int confidencePercent) {
-		// TODO: find out how the statistics work for calculating a chi-squared
-		// target thingie.
-		if (confidencePercent == 95) {
-			return 3.843f;
-		} else if (confidencePercent == 90) {
-			return 2.706f;	
-		} else {
-			throw new Error("Finding target chi-squareds is not yet implemented!");
-		}
-	}
+//	private float targetChiSquared(int confidencePercent) {
+//		return splitPoints.percentToChiSquared(confidencePercent);
+//
+//	}
 	
 	public void addPeak(float area) {
 		histogram.addPeak(area);

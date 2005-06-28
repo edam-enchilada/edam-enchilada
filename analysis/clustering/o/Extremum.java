@@ -10,4 +10,8 @@ public class Extremum {
 		this.count = count;
 	}
 	
+	public String toString() {
+		return count + " at bin " + location;
+	}
+	
 }
