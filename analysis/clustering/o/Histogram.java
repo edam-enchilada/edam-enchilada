@@ -60,7 +60,7 @@ public class Histogram {
 	public List<Float> getSplitPoints(int confidencePercent) {
 		LinkedList<Float> splits = new LinkedList<Float>();
 		if (findAllExtrema() > 1) {
-			splitPoints.removeInsignificant(confidencePercent);
+			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {
 				splits.add(histogram.getIndexMiddle(
 						splitPoints.getValley(i).location));

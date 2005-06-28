@@ -1,3 +1,10 @@
+What I'm doing:
+
+Wiring up Histogram.java to some real data and stuff, so we have some idea what
+histograms really look like.
+
+which split has the greatest change in centroid position?
+
 O-Cluster
 
 (pardon the TeX markup here and there---I thought this might be a TeX

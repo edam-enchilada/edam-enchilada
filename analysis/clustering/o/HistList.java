@@ -1,10 +1,33 @@
 package analysis.clustering.o;
 
+/**
+ * HistList.java - Slightly modified ArrayList<Integer> for holding histograms.
+ * 
+ * There are two methods with changed semantics: add(int,int) (that is, with
+ * a target index) will not give you an IndexOutOfBoundsException if you add
+ * past the end of the list: instead it just adds 0s between the current end
+ * of the list and the new element.
+ * 
+ * Similarly, get(index) won't give you that exception, it will just give you
+ * 0s.
+ * 
+ * A new method has been added, addPeak(float).  When you call it, it adds 1
+ * to the count in the bin that the argument belongs in.
+ * 
+ * @author Thomas Smith
+ */
+
+
 import java.util.ArrayList;
 
 public class HistList extends ArrayList<Integer> {
 	private float binWidth;
 	
+	public HistList(float width) {
+		super();
+		binWidth = width;
+	}
+
 	public void add(int index, int elem) {
 		// changed semantics:  When you add something past the end of a list,
 		// just add enough "0" elements for it to work.
@@ -20,16 +43,11 @@ public class HistList extends ArrayList<Integer> {
 		}
 	}
 	
-	// it might be faster to try { } catch (IndexOutOf...etc.).
-	// since this puts an extra 2 tests in the common case.  It probably
-	// doesn't actually matter?
 	public Integer get(int index) {
-		// In a histogram, if there's nothing stored somewhere, that's
-		// implicitly a count of 0.
-		if (index < 0 || index >= size()) {
-			return 0;
-		} else {
+		try {
 			return super.get(index);
+		} catch (IndexOutOfBoundsException e) {
+			return 0;
 		}
 	}
 	
