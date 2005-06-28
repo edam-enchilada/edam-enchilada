@@ -28,11 +28,11 @@ public class HistList extends ArrayList<Integer> {
 		binWidth = width;
 	}
 
-	public void add(int index, int elem) {
+	public void incrementBy(int index, int elem) {
 		// changed semantics:  When you add something past the end of a list,
 		// just add enough "0" elements for it to work.
 		try {
-			super.add(index, elem);
+			super.set(index, (super.get(index) + elem));
 		} catch (IndexOutOfBoundsException e) {
 			while(size() < index) {
 				// the above condition is right because size = max index + 1.
@@ -52,7 +52,7 @@ public class HistList extends ArrayList<Integer> {
 	}
 	
 	public void addPeak(float height) {
-		this.add((int)(height / binWidth), 1);
+		this.incrementBy((int)(height / binWidth), 1);
 	}
 	
 	public float getIndexMin(int index) {

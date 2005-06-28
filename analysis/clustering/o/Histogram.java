@@ -2,16 +2,18 @@ package analysis.clustering.o;
 
 import java.util.*;
 
+import analysis.BinnedPeakList;
+
 public class Histogram {
 	private HistList histogram;
 	private float binWidth;
 	private ValleyList splitPoints;
 	
-	
-	
-	public Histogram() {
-		// TODO: write this method too
-		// i have no idea how the constructor should work right now.
+	public Histogram(float stdDev, int count) {
+		// "Scott's normal reference rule"
+		this.binWidth = (float) (3.49f * stdDev * Math.pow(count, -1/3));
+		histogram = new HistList(binWidth);
+		splitPoints = new ValleyList();
 	}
 	
 	private int findAllExtrema() {
@@ -74,7 +76,13 @@ public class Histogram {
 	private float targetChiSquared(int confidencePercent) {
 		// TODO: find out how the statistics work for calculating a chi-squared
 		// target thingie.
-		return 0f;
+		if (confidencePercent == 95) {
+			return 3.843f;
+		} else if (confidencePercent == 90) {
+			return 2.706f;	
+		} else {
+			throw new Error("Finding target chi-squareds is not yet implemented!");
+		}
 	}
 	
 	public void addPeak(float area) {
