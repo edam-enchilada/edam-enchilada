@@ -2,8 +2,6 @@ package analysis.clustering.o;
 
 import java.util.*;
 
-import analysis.BinnedPeakList;
-
 public class Histogram {
 	private HistList histogram;
 	private float binWidth;
@@ -11,7 +9,7 @@ public class Histogram {
 	
 	public Histogram(float stdDev, int count) {
 		// "Scott's normal reference rule"
-		this.binWidth = (float) (3.49f * stdDev * Math.pow(count, -1/3));
+		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
 	}
@@ -75,7 +73,6 @@ public class Histogram {
 	
 //	private float targetChiSquared(int confidencePercent) {
 //		return splitPoints.percentToChiSquared(confidencePercent);
-//
 //	}
 	
 	public void addPeak(float area) {

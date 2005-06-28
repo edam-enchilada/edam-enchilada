@@ -21,6 +21,10 @@ package analysis.clustering.o;
 import java.util.ArrayList;
 
 public class HistList extends ArrayList<Integer> {
+	/**
+	 * I have no idea what a serialVersionUID is.
+	 */
+	private static final long serialVersionUID = 6682790280462067261L;
 	private float binWidth;
 	
 	public HistList(float width) {

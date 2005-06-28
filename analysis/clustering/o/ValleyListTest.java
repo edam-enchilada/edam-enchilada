@@ -1,12 +1,13 @@
 package analysis.clustering.o;
 
-import java.util.Iterator;
+//import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.TestCase;
 
 public class ValleyListTest extends TestCase {
 	ValleyList vl = new ValleyList();
+	ValleyList insig = new ValleyList();
 	Extremum e, f;
 	
 	protected void setUp() throws Exception {
@@ -20,6 +21,10 @@ public class ValleyListTest extends TestCase {
 		f = new Extremum(30, 16);
 		vl.add(e);
 		vl.add(f);
+		
+		insig.add(new Extremum(0, 10));
+		insig.add(new Extremum(5, 9));
+		insig.add(new Extremum(10, 15));
 	}
 
 	public void testAdd() {
@@ -70,6 +75,16 @@ public class ValleyListTest extends TestCase {
 		assertEquals(vl.getValleyNeighborhood(2),
 				    sig.getValleyNeighborhood(1));
 		assertEquals(2, sig.numValleys());
+		
+		ValleyList empty = insig.removeInsignificant(95);
+		// now "empty" actually contains just one peak
+		assertEquals(0, empty.numValleys());
+		
+		ValleyList emptier = (new ValleyList()).removeInsignificant(95);
+		// this is just to make sure running it on an empty list doesn't
+		// do anything too bad.
+		assertEquals(0, emptier.numValleys());
+
 	}
 
 }

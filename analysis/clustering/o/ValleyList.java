@@ -5,6 +5,11 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ValleyList extends ArrayList<Extremum> {
+	/**
+	 * again, no idea what a serialVersionUID is..
+	 */
+	private static final long serialVersionUID = 7308337869915628972L;
+
 	public List<Extremum> getValleyNeighborhood(int index) {
 		int realIndex = (index * 2) + 1;
 		return subList(realIndex - 1, realIndex + 2);
