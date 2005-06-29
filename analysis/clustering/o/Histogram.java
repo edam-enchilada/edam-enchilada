@@ -9,12 +9,12 @@ public class Histogram {
 	
 	public Histogram(float stdDev, int count) {
 		// "Scott's normal reference rule"
-		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1/3));
+		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
 	}
 	
-	private int findAllExtrema() {
+	private int findAllValleys() {
 		LinkedList<Integer> extremaLocations = new LinkedList<Integer>();
 		int localMinLoc = 0;
 		for (int bin = 0; bin < histogram.size(); bin++) {
@@ -50,16 +50,20 @@ public class Histogram {
 		splitPoints.clear();
 		Iterator<Integer> i = extremaLocations.iterator();
 		Integer loc;
+		Extremum e;
 		while (i.hasNext()) {
 			loc = i.next();
-			splitPoints.add(new Extremum(loc, histogram.get(loc)));
+			e = new Extremum(loc, histogram.get(loc));
+			//System.out.println(e.toString());
+			splitPoints.add(e);
 		}
+		
 		return splitPoints.numValleys();
 	}
 	
 	public List<Float> getSplitPoints(int confidencePercent) {
 		LinkedList<Float> splits = new LinkedList<Float>();
-		if (findAllExtrema() > 1) {
+		if (findAllValleys() > 0) {
 			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {
 				splits.add(histogram.getIndexMiddle(
@@ -78,5 +82,4 @@ public class Histogram {
 	public void addPeak(float area) {
 		histogram.addPeak(area);
 	}
-
 }

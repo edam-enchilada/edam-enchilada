@@ -66,7 +66,7 @@ public class HistList extends ArrayList<Integer> {
 		return (index+1) * binWidth;
 	}
 	public float getIndexMiddle(int index) {
-		return (index + 1.5f) * binWidth;
+		return (index + 0.5f) * binWidth;
 	}
 	
 	public float getBinWidth() {
