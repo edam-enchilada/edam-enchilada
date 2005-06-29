@@ -6,6 +6,7 @@ public class Histogram {
 	private HistList histogram;
 	private float binWidth;
 	private ValleyList splitPoints;
+	private int dimension;
 	
 	public Histogram(float stdDev, int count) {
 		// "Scott's normal reference rule"
@@ -79,7 +80,36 @@ public class Histogram {
 //		return splitPoints.percentToChiSquared(confidencePercent);
 //	}
 	
+	public List<SplitRule> getSplitRules(int confidencePercent) {
+		List<SplitRule> rules = new LinkedList<SplitRule>();
+		List<Float> areas = getSplitPoints(confidencePercent);
+		Iterator<Float> i = areas.iterator();
+		float thisArea;
+		
+		while (i.hasNext()) {
+			thisArea = i.next();
+			// goodness is the opposite of the density of this bin.
+			rules.add(new SplitRule(dimension, thisArea,
+					0 - histogram.get(thisArea)));
+		}
+		return rules;
+	}
+	
 	public void addPeak(float area) {
 		histogram.addPeak(area);
+	}
+
+	/**
+	 * @return Returns the dimension.
+	 */
+	public int getDimension() {
+		return dimension;
+	}
+
+	/**
+	 * @param dimension The dimension to set.
+	 */
+	public void setDimension(int dimension) {
+		this.dimension = dimension;
 	}
 }

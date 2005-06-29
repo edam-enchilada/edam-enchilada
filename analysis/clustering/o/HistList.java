@@ -55,6 +55,14 @@ public class HistList extends ArrayList<Integer> {
 		}
 	}
 	
+	public Integer get(float height) {
+		try {
+			return super.get((int)(height / binWidth));
+		} catch (IndexOutOfBoundsException e) {
+			return 0;
+		}
+	}
+	
 	public void addPeak(float height) {
 		this.incrementBy((int)(height / binWidth), 1);
 	}
