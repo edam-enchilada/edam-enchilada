@@ -21,6 +21,12 @@ public class UndeterminedPartition implements Partition {
 	private List<Histogram> histograms;
 	private CollectionDivider collectionSource;
 	
+	private float[] sum;
+	private float[] sumsq;
+	private int count;
+
+	private static final int MAX_LOCATION = 2500;
+	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 
 	public UndeterminedPartition(Partition par) {
 		parent = par;
@@ -50,7 +56,11 @@ public class UndeterminedPartition implements Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms) {
+	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
+		for (int j = 0; j < DOUBLE_MAX; j++) {
+			this.sum[j] += sum[j];
+			this.sumsq[j] += sumsq[j];
+		}
 		// TODO Auto-generated method stub
 		return 0;
 	}

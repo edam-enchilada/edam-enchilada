@@ -54,14 +54,15 @@ public class DeterminedPartition implements Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms) {
+	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
 		if (branched) {
 			// or should this do the sort and collect statistics thing?
 			// uh?
 			// what if left and right need to be created still?
 			// I guess that shouldn't happen.
-			List<List<BinnedPeakList>> divided = applyrule(atoms);
-			return left.split(divided.get(0)) + right.split(divided.get(1));
+			List<List<BinnedPeakList>> divided = rule.splitAtoms(atoms);
+			return left.split(divided.get(0), sum, sumsq) 
+				+ right.split(divided.get(1), sum, sumsq);
 		} else {
 			// TODO: assign particles to the correct collection!
 			collectionSource = parent.getCollectionSource();
@@ -83,12 +84,6 @@ public class DeterminedPartition implements Partition {
 	 */
 	public String rulesDown() {
 		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	private List<List<BinnedPeakList>> applyrule(List<BinnedPeakList> data) {
-		//List<List<BinnedPeakList>> divided = new ArrayList();
-		// TODO put actual logic here
 		return null;
 	}
 

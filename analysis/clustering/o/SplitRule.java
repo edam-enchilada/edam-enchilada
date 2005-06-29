@@ -40,4 +40,9 @@ public class SplitRule extends BinnedPeak {
 		}
 		return bucket;
 	}
+	
+	public String toString() {
+		return "Split along dimension " + location + " at value " + area +
+			" (goodness " + goodness + ")";
+	}
 }

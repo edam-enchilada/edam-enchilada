@@ -15,6 +15,12 @@ public class Histogram {
 		splitPoints = new ValleyList();
 	}
 	
+	public Histogram(float stdDev, int count, int dimension) {
+		this(stdDev, count);
+		this.dimension = dimension;
+	}
+
+	
 	private int findAllValleys() {
 		LinkedList<Integer> extremaLocations = new LinkedList<Integer>();
 		int localMinLoc = 0;
