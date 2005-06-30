@@ -46,14 +46,16 @@ package analysis.clustering;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+//import java.util.Arrays;
 
 import database.CollectionCursor;
 import database.InfoWarehouse;
-import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.MedianFinder;
+import analysis.ParticleInfo;
 
 /**
  * @author andersbe
@@ -505,6 +507,6 @@ public abstract class Cluster extends CollectionDivider {
 		}
 		//out.close();
 		System.out.println(sendToDB.toString());
-		db.setCollectionDescription(db.getCollection(newHostID),sendToDB.toString());
+		db.setCollectionDescription(newHostID,sendToDB.toString());
 	}
 }

@@ -45,7 +45,7 @@ package analysis.clustering;
 
 import java.util.ArrayList;
 
-import ATOFMS.ParticleInfo;
+import analysis.ParticleInfo;
 import analysis.BinnedPeakList;
 import database.CollectionCursor;
 

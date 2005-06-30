@@ -50,9 +50,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import ATOFMS.Peak;
-
-
+import atom.Peak;
 //import msanalyze.DataSetImporter;
 import java.awt.*;
 import java.awt.event.*;
@@ -202,7 +200,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		else if (source == deleteAdoptItem)
 		{
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.orphanAndAdopt(leftPane.getSelectedCollection());
+			db.orphanAndAdopt(leftPane.getSelectedCollection().getCollectionID());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			leftPane.updateTree();
 			validate();
@@ -211,7 +209,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		else if (source == recursiveDeleteItem)
 		{
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.recursiveDelete(leftPane.getSelectedCollection());
+			db.recursiveDelete(leftPane.getSelectedCollection().getCollectionID());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			leftPane.updateTree();
 			validate();
@@ -238,13 +236,15 @@ public class MainFrame extends JFrame implements ActionListener,
 			{
 				if (cutBool == false)
 				{
-					db.copyCollection(db.getCollection(copyID), 
-							leftPane.getSelectedCollection());
+					db.copyCollection(copyID, 
+							leftPane.getSelectedCollection().
+							getCollectionID());
 				}
 				else
 				{
-					db.moveCollection(db.getCollection(copyID), 
-							leftPane.getSelectedCollection());
+					db.moveCollection(copyID,
+							leftPane.getSelectedCollection().
+							getCollectionID());
 					
 				}
 				leftPane.updateTree();
@@ -722,7 +722,7 @@ public class MainFrame extends JFrame implements ActionListener,
 			if (atomID != lastAtomID && atomID >= 0)
 			{
 				System.out.println("AtomID = " + atomID);
-				ArrayList<Peak> peaks = db.getPeaks(db.getAtomDatatype(atomID), atomID);
+				ArrayList<Peak> peaks = db.getPeaks(atomID);
 				peakString = "Peaks:\n";
 
 				for (Peak p : peaks)

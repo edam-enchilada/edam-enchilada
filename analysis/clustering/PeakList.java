@@ -45,9 +45,7 @@ package analysis.clustering;
 
 import java.util.ArrayList;
 
-import ATOFMS.Peak;
-
-
+import atom.Peak;
 
 /**
  * @author andersbe

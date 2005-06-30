@@ -43,17 +43,12 @@
  *
  */
 package database;
+import gui.ATOFMSParticleInfo;
 
 import java.util.ArrayList;
 import java.util.Date;
 
-import atom.CreateATOFMSAtomFromDB;
-
-import ATOFMS.Peak;
-
-
-import collection.Collection;
-
+import atom.Peak;
 
 /**
  * The InfoWarehouse interface describes an interface for interacting 
@@ -78,23 +73,6 @@ public interface InfoWarehouse {
 	public boolean closeConnection();
 	
 	/**
-	 * Creates an empty collection with no atomic analysis units in it.
-	 * 
-	 * @param parent		The location to add this collection under (0
-	 * 						to add at the root).
-	 * @param name			What to call this collection in the interface
-	 * @param comment		A comment for this collection
-	 * @param description	The description of this collection to display
-	 * 						in the interface
-	 * @return				The collectionID of the resulting collection
-	 */
-	public int createEmptyCollection( String datatype,
-			int parent,
-			String name,
-			String comment,
-			String description);
-	
-	/**
 	 * Create a new collection from an array list of atomIDs which 
 	 * have yet to be inserted into the database.  
 	 * 
@@ -102,17 +80,17 @@ public interface InfoWarehouse {
 	 * 					collection (0 to insert at root level)
 	 * @param name		What to call this collection
 	 * @param comment	What to leave as the comment
-	 * @param atomType	The type of atoms you are inserting ("ATOFMSParticle" most likely
+ 	 * @param atomType	The type of atoms you are inserting ("ATOFMSParticle" most likely
 	 * @param atomList	An array list of atomID's to insert into the 
 	 * 					database
 	 * @return			The CollectionID of the new collection
-	 *//*
-	public int createCollectionFromAtoms(String datatype,
-			int parentID,
-			String name,
-			String comment,
-			ArrayList<String> atomList);
-	*/
+	 */
+	public int createCollectionFromAtoms(int parentID,
+										 String name,
+										 String comment,
+										 String atomType,
+										 ArrayList atomList);
+	
 	/**
 	 * Moves a collection and all its children from one parent to 
 	 * another.  If the subcollection was the only child of the parent
@@ -127,9 +105,37 @@ public interface InfoWarehouse {
 	 * @param toParentID The collection id of the new parent.
 	 * @return True on success. 
 	 */
-	public boolean moveCollection(Collection collection, 
-			Collection toCollection);
-
+	public boolean moveCollection(int collectionID, 
+								  int toParentID);
+	
+	/**
+	 * Creates an empty collection with no atomic analysis units in it.
+	 * @param parent	The location to add this collection under (0 
+	 * 					to add at the root).
+	 * @param name		What to call this collection in the interface.
+	 * @param comment	A comment for this collection
+	 * @return			The collectionID of the resulting collection
+	 */
+	public int createEmptyCollection(int parent, 
+			 						 String name, 
+									 String comment);
+	
+	/**
+	 * Creates an empty collection with no atomic analysis units in it.
+	 * 
+	 * @param parent		The location to add this collection under (0
+	 * 						to add at the root).
+	 * @param name			What to call this collection in the interface
+	 * @param comment		A comment for this collection
+	 * @param description	The description of this collection to display
+	 * 						in the interface
+	 * @return				The collectionID of the resulting collection
+	 */
+	public int createEmptyCollection(int parent,
+									 String name,
+									 String comment,
+									 String description);
+	
 	/**
 	 * Similar to moveCollection, except instead of removing the 
 	 * collection and its unique children, the original collection 
@@ -139,8 +145,8 @@ public interface InfoWarehouse {
 	 * @param toParentID The collection id of the new parent.  
 	 * @return The collection id of the copy.  
 	 */
-	public int copyCollection(Collection collection, Collection toCollection);
-	
+	public int copyCollection(int collectionID, int toParentID);
+
 	/**
 	 * orphanAndAdopt() essentially deletes a collection and assigns 
 	 * the ownership of all its children (collections and atoms) to 
@@ -148,7 +154,7 @@ public interface InfoWarehouse {
 	 * @param collectionID The ID of the collection to remove. 
 	 * @return true on success.
 	 */
-	public boolean orphanAndAdopt(Collection collection);
+	public boolean orphanAndAdopt(int collectionID);
 	
 	/**
 	 * Deletes a collection and unlike orphanAndAdopt() also recursively
@@ -157,7 +163,7 @@ public interface InfoWarehouse {
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
 	 */
-	public boolean recursiveDelete(Collection collection);
+	public boolean recursiveDelete(int collectionID);
 	
 	/**
 	 * Returns the id's of the immediate subchildren of the input
@@ -166,7 +172,7 @@ public interface InfoWarehouse {
 	 * 						subchildren of
 	 * @return	an array of subchildren
 	 */
-	public ArrayList<Integer> getImmediateSubCollections(Collection collection);
+	public ArrayList<Integer> getImmediateSubCollections(int collectionID);
 	
 	/**
 	 * Returns every Atom that exists in the collection identified
@@ -178,7 +184,7 @@ public interface InfoWarehouse {
 	 * 			of the descended atoms (Atom IDs in the list 
 	 * 			<em>are</em> distinct).
 	 */
-	public ArrayList<Integer> getAllDescendedAtoms(Collection collection);
+	public ArrayList<Integer> getAllDescendedAtoms(int collectionID);
 	
 	/**
 	 * Get the string representation of the given collection's name
@@ -193,63 +199,66 @@ public interface InfoWarehouse {
 	 * @param collection
 	 * @return
 	 */
-	public int getCollectionSize(int collectionID);
+	public int getCollectionSize(int collection);
 	
 	/**
-	 * Returns an array list of CreateATOFMSAtomFromDB's describing
+	 * Returns an array list of ATOFMSParticleInfo's describing
 	 * every particle descending from the given collection.
 	 * @param collectionID	The id of the collection you want
 	 * 						to find particles descended from
 	 * @return An array list of particle info.
 	 */
-	public ArrayList<CreateATOFMSAtomFromDB> getCollectionParticles(Collection collection);
+	public ArrayList<ATOFMSParticleInfo> getCollectionParticles(int collectionID);
 	
-	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);
+	public Date exportToMSAnalyzeDatabase(int collectionID, String newName, String sOdbcConnection);
 	
 	public String getCollectionComment(int collectionID);
 	
 	public boolean moveAtom(int atomID, int fromParentID, int toCollectionID);
-	
+
 	public boolean moveAtomBatch(int atomID, int fromParentID, int toCollectionID);
-	
+
 	public boolean checkAtomParent(int atomID, int isMemberOf);
 	
+	public CollectionCursor getParticleInfoOnlyCursor(int collectionID);
+	
+	public CollectionCursor getSQLCursor(int collectionID, 
+		     String where);
+	
+	public CollectionCursor getPeakCursor(int collectionID);
+	
+	public CollectionCursor getBinnedCursor(int collectionID);
+	
+	public CollectionCursor getMemoryBinnedCursor(int collectionID);
+
+	public void seedRandom(int seed);
+	
+	public CollectionCursor getRandomizedCursor(int collectionID);
+	
 	public boolean addAtom(int atomID, int parentID);
-	
+
 	public boolean addAtomBatch(int atomID, int parentID);
+
+	public boolean deleteAtomsBatch(String atomIDs, int collectionID);
 	
-	public boolean deleteAtomsBatch(String atomIDs, Collection collection);
-	
-	public boolean deleteAtomBatch(int atomID, Collection collection);
-	
+	public boolean deleteAtomBatch(int atomID, int collectionID);
+
 	public void executeBatch();
 	
 	public String getCollectionDescription(int collectionID);
 	
-	public boolean setCollectionDescription(Collection collection,
-			String description);
+	public boolean setCollectionDescription(int collectionID,
+											String description);
 	
-	public ArrayList<Peak> getPeaks(String datatype, int atomID);
-	
+	public ArrayList<Peak> getPeaks(int atomID);
+	/**
+	 * @param atomID
+	 * @param collectionID
+	 * @param i
+	 * @return
+	 */
+	/**
+	 * 
+	 */
 	public void atomBatchInit();
-	
-	public Collection getCollection(int collectionID);
-	
-	public CollectionCursor getAtomInfoOnlyCursor(Collection collection);
-	
-	public CollectionCursor getSQLCursor(Collection collection, 
-									     String where);
-	
-	public CollectionCursor getPeakCursor(Collection collection);
-	
-	public CollectionCursor getBinnedCursor(Collection collection);
-	
-	public CollectionCursor getMemoryBinnedCursor(Collection collection);
-	
-	public CollectionCursor getRandomizedCursor(Collection collection);
-	
-	public void seedRandom(int seed);
-	
-	/* Used for testing random number seeding */
-	public double getNumber();
 }

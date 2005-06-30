@@ -45,8 +45,6 @@
 package analysis.clustering;
 
 import java.util.ArrayList;
-
-import ATOFMS.ParticleInfo;
 import analysis.*;
 
 import database.InfoWarehouse;
@@ -158,10 +156,10 @@ public class Art2A extends Cluster
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
+			curs = new NonZeroCursor(db.getBinnedCursor(collectionID));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
+		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(collectionID));
 			return true;
 		default :
 			return false;

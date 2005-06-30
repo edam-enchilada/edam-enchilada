@@ -43,8 +43,8 @@
  */
 package database;
 
-import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
+import analysis.ParticleInfo;
 
 
 
