@@ -9,14 +9,15 @@ import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import database.InfoWarehouse;
 
-public class OCluster extends CollectionDivider implements Partition {
+public class OCluster extends CollectionDivider //implements Partition
+{
 	Partition root;
 	InfoWarehouse db;
 	
 	public OCluster(int cID, InfoWarehouse database, String name, String comment) {
 		super(cID, database, name, comment);
 		
-		root = new UndeterminedPartition(this);
+		root = new UndeterminedPartition();
 		root.setCollectionSource(this);
 		db = database;
 	}
