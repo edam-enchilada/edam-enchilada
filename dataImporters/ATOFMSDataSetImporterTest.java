@@ -94,8 +94,8 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		}
 		
 		SQLServerDatabase.rebuildDatabase("TestDB");
-		db = new SQLServerDatabase("localhost","1433","TestDB");
-		new CreateTestDatabase(db); 
+		db = new SQLServerDatabase();
+		new CreateTestDatabase(); 
 		
 		// create table with one entry.
 		table = new ParTableModel(8);
