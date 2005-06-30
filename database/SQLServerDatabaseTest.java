@@ -94,8 +94,8 @@ public class SQLServerDatabaseTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			con.close();
-			db = new SQLServerDatabase("TestDB");
+			//con.close();
+			db = new SQLServerDatabase("");
 			db.openConnection();
 			con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
@@ -140,6 +140,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testCreateEmptyCollectionAndDataset() {
 		db.openConnection();
+		con = db.getCon();
 		
 		int ids[] = db.createEmptyCollectionAndDataset(0,
 				"Dataset","dataset","mCalFile","sCalFile",
@@ -187,6 +188,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testCreateEmptyCollection() {
 		db.openConnection();
+		con = db.getCon();
 		int collectionID = db.createEmptyCollection(0,"Collection","collection");
 		try {
 			Statement stmt = con.createStatement();
@@ -219,7 +221,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testCopyCollection() {
 		db.openConnection();
-		
+		con = db.getCon();
 		int newLocation = db.copyCollection(2,1);
 		try {
 			Statement stmt = con.createStatement();
@@ -286,8 +288,8 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testMoveCollection() {
 		db.openConnection();
+		con = db.getCon();
 		assertTrue(db.moveCollection(2,1));
-		db.closeConnection();
 		try {
 			Statement stmt = con.createStatement();
 			
@@ -305,10 +307,12 @@ public class SQLServerDatabaseTest extends TestCase {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		db.closeConnection();
 	}
 	
 	public void testInsertATOFMSParticle() {
 		db.openConnection();
+		con = db.getCon();
 		final String filename = "file1";
 		final String dateString = "1983-01-19 05:05:00.0";
 		final float laserPower = (float)0.01191983;
@@ -347,8 +351,7 @@ public class SQLServerDatabaseTest extends TestCase {
 				scatterDelay,
 				posSpectrum, negSpectrum),
 				collectionID,datasetID,db.getNextID());
-		db.closeConnection();
-		
+	
 		try {
 			Statement stmt = con.createStatement();
 			
@@ -433,11 +436,12 @@ public class SQLServerDatabaseTest extends TestCase {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		db.closeConnection();
 	}
 	
 	public void testGetNextId(){
 		db.openConnection();
-		
+		con = db.getCon();
 		assertTrue(db.getNextID() >= 0);
 	
 		db.closeConnection();
@@ -446,6 +450,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testOrphanAndAdopt(){
 		
 		db.openConnection();
+		con = db.getCon();
 		//get info on atoms in collection 4
 		ArrayList<Integer> collection4Info = new ArrayList<Integer>();
 		collection4Info.add(10);
@@ -479,7 +484,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testRecursiveDelete(){
 		db.openConnection();
-		
+		con = db.getCon();
 		ArrayList<Integer> atomIDs = new ArrayList<Integer>();
 		Statement stmt;
 		try {
@@ -540,7 +545,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testGetCollectionName(){
 		db.openConnection();
-		
+		con = db.getCon();
 		assertTrue( "One".equals(db.getCollectionName(1)) );
 		assertTrue( "Two".equals(db.getCollectionName(2)) );
 		assertTrue( "Three".equals(db.getCollectionName(3)) );
@@ -551,7 +556,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testGetCollectionComment(){
 		db.openConnection();
-		
+		con = db.getCon();
 		assertTrue( "one".equals(db.getCollectionComment(1)) );
 		assertTrue( "two".equals(db.getCollectionComment(2)) );
 		assertTrue( "three".equals(db.getCollectionComment(3)) );
@@ -562,7 +567,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testGetCollectionSize(){
 		db.openConnection();
-		
+		con = db.getCon();
 		final String filename = "file1";
 		final String dateString = "1983-01-19 05:05:00.0";
 		final float laserPower = (float)0.01191983;
@@ -593,7 +598,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testGetAllDescendedAtoms(){
 		db.openConnection();
-		
+		con = db.getCon();
 		//case of no child collections
 		int[] expected = {1,2,3};
 		ArrayList<Integer> actual = db.getAllDescendedAtoms(1);
@@ -613,7 +618,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testGetCollectionParticles(){
 		db.openConnection();
-		
+		con = db.getCon();
 		//we know the particle info from inserting it	
 		ArrayList<ATOFMSParticleInfo> actual = db.getCollectionParticles(1);
 		assertEquals(actual.size(), 3);
@@ -634,7 +639,6 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testRebuildDatabase() {
 
 		try {
-			con.close();
 			db.closeConnection();
 			
 			assertTrue(SQLServerDatabase.rebuildDatabase("TestDB"));		
