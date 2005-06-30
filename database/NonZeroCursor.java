@@ -46,8 +46,8 @@
  */
 package database;
 
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
-import analysis.ParticleInfo;
 
 /*
  * Wraps around another binned cursor, and automatically filters out

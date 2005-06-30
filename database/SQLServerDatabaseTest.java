@@ -46,7 +46,6 @@
  */
 package database;
 
-import gui.ATOFMSParticleInfo;
 import junit.framework.TestCase;
 
 import java.sql.Connection;
@@ -54,19 +53,16 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import msanalyze.CalInfo;
 
-import analysis.ParticleInfo;
-import atom.ATOFMSParticle;
-import atom.EnchiladaDataPoint;
-import atom.Particle;
-import atom.Peak;
-import atom.PeakParams;
+import ATOFMS.ATOFMSParticle;
+import ATOFMS.CalInfo;
+import ATOFMS.ParticleInfo;
+import ATOFMS.Peak;
+import ATOFMS.PeakParams;
+import atom.CreateATOFMSAtomFromDB;
 
 /**
  * @author andersbe
@@ -110,19 +106,17 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertTrue(db.closeConnection());
 	}
 
-	// Hopefully there's a better way to test this, but right now it
-	// relies on the database having more collections than just root
-	// and succeeds if the function returns pretty much anything.  
 	public void testGetImmediateSubcollections() {
 		
 		db.openConnection();
 		
-		ArrayList<Integer> test = db.getImmediateSubCollections(0);
+		ArrayList<Integer> test = db.getImmediateSubCollections(db.getCollection(0));
 		
-		assertTrue(test.size() == 3);
+		assertTrue(test.size() == 4);
 		assertTrue(test.get(0).intValue() == 1);
 		assertTrue(test.get(1).intValue() == 2);
 		assertTrue(test.get(2).intValue() == 3);
+		assertTrue(test.get(3).intValue() == 4);
 		
 		ArrayList<Integer> collections = new ArrayList<Integer>();
 		collections.add(new Integer(0));
@@ -141,19 +135,18 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testCreateEmptyCollectionAndDataset() {
 		db.openConnection();
 		
-		int ids[] = db.createEmptyCollectionAndDataset(0,
-				"Dataset","dataset","mCalFile","sCalFile",
-				new CalInfo(), new PeakParams(12,20,(float)0.005));
+		int ids[] = db.createEmptyCollectionAndDataset("ATOFMS", 0,
+				"dataset",  "comment", "'mCalFile', 'sCalFile', 12, 20, 0.005, 0");
 		
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = con.createStatement().executeQuery(
 					"USE TestDB\n" +
 					"SELECT *\n" +
-					"FROM PeakCalibrationData\n" +
+					"FROM ATOFMSDataSetInfo\n" +
 					"WHERE DataSetID = " + ids[1]);
 			assertTrue(rs.next());
-			assertTrue(rs.getString(2).equals("Dataset"));
+			assertTrue(rs.getString(2).equals("dataset"));
 			assertTrue(rs.getString(3).equals("mCalFile"));
 			assertTrue(rs.getString(4).equals("sCalFile"));
 			assertTrue(rs.getInt(5) == 12);
@@ -164,11 +157,9 @@ public class SQLServerDatabaseTest extends TestCase {
 					"USE TestDB\n" +
 					"SELECT * FROM Collections\n" +
 					"WHERE CollectionID = " + ids[0]);
-			assertTrue(rs.next());
-			//System.out.println(rs.getString("Name"));
-			//System.out.println(rs.getString("Comment"));
-			assertTrue(rs.getString("Name").equals("Dataset"));
-			assertTrue(rs.getString("Comment").equals("dataset"));
+			rs.next();
+			assertTrue(rs.getString("Name").equals("dataset"));
+			assertTrue(rs.getString("Comment").equals("comment"));
 			assertFalse(rs.next());
 			rs = stmt.executeQuery(
 					"USE TestDB\n" +
@@ -187,7 +178,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testCreateEmptyCollection() {
 		db.openConnection();
-		int collectionID = db.createEmptyCollection(0,"Collection","collection");
+		int collectionID = db.createEmptyCollection("ATOFMS", 0,"Collection",  "collection","");
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(
@@ -220,7 +211,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testCopyCollection() {
 		db.openConnection();
 		
-		int newLocation = db.copyCollection(2,1);
+		int newLocation = db.copyCollection(db.getCollection(2),db.getCollection(1));
 		try {
 			Statement stmt = con.createStatement();
 			
@@ -286,7 +277,7 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testMoveCollection() {
 		db.openConnection();
-		assertTrue(db.moveCollection(2,1));
+		assertTrue(db.moveCollection(db.getCollection(2),db.getCollection(1)));
 		db.closeConnection();
 		try {
 			Statement stmt = con.createStatement();
@@ -309,44 +300,35 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testInsertATOFMSParticle() {
 		db.openConnection();
-		final String filename = "file1";
-		final String dateString = "1983-01-19 05:05:00.0";
+		final String filename = "'ThisFile'";
+		final String dateString = "'1983-01-19 05:05:00.0'";
 		final float laserPower = (float)0.01191983;
 		final float size = (float)0.5;
 		final float digitRate = (float)0.1;
 		final int scatterDelay = 10;
-		int posSpectrum[] = new int[30000];
-		int negSpectrum[] = new int[30000];
 		
 		ATOFMSParticle.currCalInfo = new CalInfo();
 		ATOFMSParticle.currPeakParams = new PeakParams(12,20,(float)0.005);
 		
-		for (int i = 0; i < 30000; i++)
-		{
-			posSpectrum[i] = negSpectrum[i] = 0;
-		}
-		
 		int posPeakLocation1 = 19;
-		int negPeakLocation1 = 20;
+		int negPeakLocation1 = -20;
 		int peak1Height = 80;
-		posSpectrum[posPeakLocation1] = negSpectrum[negPeakLocation1] = 
-			peak1Height;
-		
 		int posPeakLocation2 = 100;
-		int negPeakLocation2 = 101;
+		int negPeakLocation2 = -101;
 		int peak2Height = 100;
-		posSpectrum[posPeakLocation2] = negSpectrum[negPeakLocation2] = 
-			peak2Height;
 		
+		ArrayList<String> sparseData = new ArrayList<String>();
+		sparseData.add(posPeakLocation1 + ", " +  peak1Height + ", 0.1, " + peak1Height);
+		sparseData.add(negPeakLocation1 + ", " +  peak1Height + ", 0.1, " + peak1Height);
+		sparseData.add(posPeakLocation2 + ", " +  peak2Height + ", 0.1, " + peak2Height);
+		sparseData.add(negPeakLocation2 + ", " +  peak2Height + ", 0.1, " + peak2Height);
+		
+
 		int collectionID, datasetID;
 		collectionID = 2;
-		datasetID = 1;
-		int particleID = db.insertATOFMSParticle(
-				new ATOFMSParticle(
-				filename,dateString,laserPower,digitRate,
-				scatterDelay,
-				posSpectrum, negSpectrum),
-				collectionID,datasetID,db.getNextID());
+		datasetID = db.getNextID();
+		int particleID = db.insertParticle(dateString + "," + laserPower + "," + digitRate + ","	
+				+ scatterDelay + ", " + filename, sparseData, db.getCollection(collectionID),datasetID,db.getNextID());
 		db.closeConnection();
 		
 		try {
@@ -356,61 +338,50 @@ public class SQLServerDatabaseTest extends TestCase {
 					"USE TestDB\n" +
 					"SELECT PeakLocation, PeakArea, RelPeakArea," +
 					" PeakHeight\n" +
-					"FROM Peaks\n" +
+					"FROM ATOFMSAtomInfoSparse \n" +
 					"WHERE AtomID = " + particleID + "\n" +
 					"ORDER BY PeakLocation ASC");
 			
 			assertTrue(rs.next());
-
-		
-			assertTrue(rs.getFloat(1) == (float) 
-					-(negPeakLocation2 * negPeakLocation2));
+			
+			assertTrue(rs.getFloat(1) == (float) negPeakLocation2);
 			assertTrue(rs.getInt(2) == peak2Height);
-			assertTrue(rs.getFloat(3) == (float) peak2Height / 
-					(peak1Height + peak2Height));
+			assertTrue(rs.getFloat(3) == (float) 0.1);
 			assertTrue(rs.getInt(4) == peak2Height);
 			
 			assertTrue(rs.next());
-			
-			assertTrue(rs.getFloat(1) == 
-				-(negPeakLocation1 * negPeakLocation1));
+				
+			assertTrue(rs.getFloat(1) == (float) negPeakLocation1);
 			assertTrue(rs.getInt(2) == peak1Height);
-			assertTrue(rs.getFloat(3) == (float) peak1Height / 
-					(peak1Height + peak2Height));
+			assertTrue(rs.getFloat(3) == (float) 0.1);
 			assertTrue(rs.getInt(4) == peak1Height);
 			
 			assertTrue(rs.next());
 
-			assertTrue(rs.getFloat(1) == 
-				posPeakLocation1 * posPeakLocation1);
+			assertTrue(rs.getFloat(1) == (float) posPeakLocation1);
 			assertTrue(rs.getInt(2) == peak1Height);
-			assertTrue(rs.getFloat(3) == (float) peak1Height / 
-					(peak1Height + peak2Height));
+			assertTrue(rs.getFloat(3) == (float) 0.1);
 			assertTrue(rs.getInt(4) == peak1Height);
 			
 			assertTrue(rs.next());
 			
-			assertTrue(rs.getFloat(1) == posPeakLocation2
-					* posPeakLocation2);
+			assertTrue(rs.getFloat(1) == (float) posPeakLocation2);
 			assertTrue(rs.getInt(2) == peak2Height);
-			assertTrue(rs.getFloat(3) == (float) peak2Height / 
-					(peak1Height + peak2Height));
+			assertTrue(rs.getFloat(3) == (float) 0.1);
 			assertTrue(rs.getInt(4) == peak2Height);
-			assertFalse(rs.next());
 			
 			rs = stmt.executeQuery(
 					"USE TestDB\n" +
 					"SELECT [Time], LaserPower, [Size], ScatDelay, " +
 					"OrigFilename\n" +
-					"FROM AtomInfo\n" +
+					"FROM ATOFMSAtomInfoDense \n" +
 					"WHERE AtomID = " + particleID);
 			rs.next();
-
-			assertTrue(rs.getString(1).equals(dateString));
-			assertTrue(rs.getFloat(2) == laserPower / 1000);
-			assertTrue(rs.getFloat(3) == 0.0); // size
+			assertTrue(rs.getString(1).equals(dateString.substring(1,dateString.length()-1)));
+			assertTrue(rs.getFloat(2) == laserPower);
+			assertTrue(rs.getFloat(3) == digitRate); // size
 			assertTrue(rs.getInt(4) == scatterDelay);
-			assertTrue(rs.getString(5).equals(filename));
+			assertTrue(rs.getString(5).equals(filename.substring(1,filename.length()-1)));
 			
 			rs = stmt.executeQuery(
 					"USE TestDB\n" +
@@ -418,12 +389,13 @@ public class SQLServerDatabaseTest extends TestCase {
 					"FROM AtomMembership\n" +
 					"WHERE AtomID = " + particleID);
 			rs.next();
+			
 			assertTrue(rs.getInt(1) == collectionID);
 			
 			rs = stmt.executeQuery(
 					"USE TestDB\n" +
 					"SELECT OrigDataSetID\n" +
-					"FROM OrigDataSets \n" +
+					"FROM DataSetMembers \n" +
 					"WHERE AtomID = " + particleID);
 			
 			rs.next();
@@ -446,33 +418,29 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testOrphanAndAdopt(){
 		
 		db.openConnection();
-		//get info on atoms in collection 4
+			
+		assertTrue(db.orphanAndAdopt(db.getCollection(5)));
+		//make sure that the atoms collected before are in collection 4
 		ArrayList<Integer> collection4Info = new ArrayList<Integer>();
-		collection4Info.add(10);
-		collection4Info.add(11);
-		collection4Info.add(12);
-		
-		assertTrue(db.orphanAndAdopt(4));
-		//make sure that the atoms collected before are in collection 3
-		ArrayList<Integer> collection3Info = new ArrayList<Integer>();
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("USE TestDB\n" +
 			"SELECT AtomID\n" +
 			"FROM AtomMembership\n" +
-			"WHERE CollectionID = 3");
+			"WHERE CollectionID = 4");
 			while (rs.next()){
-				collection3Info.add(rs.getInt(1));
+				collection4Info.add(rs.getInt(1));
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		assertTrue(collection3Info.containsAll(collection4Info));
+		assertTrue(collection4Info.contains(new Integer(21)));
 		
-		assertFalse(db.orphanAndAdopt(7)); //not in database
-		assertFalse(db.orphanAndAdopt(1)); //is not a subcollection (prints this)
+		// removed an assert false here - changed the code to give an error 
+		// if a collectionID is passed that isn't really a collection in the db.
+		assertFalse(db.orphanAndAdopt(db.getCollection(1))); //is not a subcollection (prints this)
 		
 		db.closeConnection();
 	}
@@ -488,18 +456,17 @@ public class SQLServerDatabaseTest extends TestCase {
 			ResultSet rs = stmt.executeQuery("USE TestDB\n" +
 					"SELECT AtomID\n"
 					+" FROM AtomMembership\n"
-					+" WHERE CollectionID = 3"
-					+" OR CollectionID = 4");
+					+" WHERE CollectionID = 4");
 			while (rs.next()){
 				atomIDs.add(rs.getInt(1));
 			}
 			
-			assertTrue(db.recursiveDelete(3));
+			assertTrue(db.recursiveDelete(db.getCollection(4)));
 			
-			//make sure info for 3 and 4 is gone from database
+			//make sure info for 4 is gone from database
 			for (Integer atomID : atomIDs){
 				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM AtomInfo\n"
+						"SELECT * FROM ATOFMSAtomInfoDense\n"
 						+ " WHERE AtomID = " + atomID);
 				assertFalse(rs.next());
 				rs = stmt.executeQuery("USE TestDB\n" +
@@ -507,26 +474,19 @@ public class SQLServerDatabaseTest extends TestCase {
 						+ " WHERE AtomID = " + atomID);
 				assertFalse(rs.next());
 				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM OrigDataSets\n"
-						+ " WHERE AtomID = " + atomID);
-				assertFalse(rs.next());
-				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM Peaks\n"
+						"SELECT * FROM ATOFMSAtomInfoSparse\n"
 						+ " WHERE AtomID = " + atomID);
 				assertFalse(rs.next());
 			}
 			//make sure collection info and relationship info is gone
 			rs = stmt.executeQuery("USE TestDB\n" +
 					"SELECT * FROM CollectionRelationships\n"
-					+ " WHERE ChildID = 3"
-					+ " OR ChildID = 4"
-					+ " OR ParentID = 3"
+					+ " WHERE ChildID = 4"
 					+ " OR ParentID = 4");
 			assertFalse(rs.next());
 			rs = stmt.executeQuery("USE TestDB\n" +
 					"SELECT * FROM Collections\n"
-					+ " WHERE CollectionID = 3"
-					+ " OR CollectionID = 4");
+					+ " WHERE CollectionID = 4");
 			assertFalse(rs.next());
 		
 		} catch (SQLException e) {
@@ -563,30 +523,21 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testGetCollectionSize(){
 		db.openConnection();
 		
-		final String filename = "file1";
-		final String dateString = "1983-01-19 05:05:00.0";
+		final String filename = "'FirstFile'";
+		final String dateString = "'1983-01-19 05:05:00.0'";
 		final float laserPower = (float)0.01191983;
-		final float size = (float)0.5;
+		final float size = (float)5;
 		final float digitRate = (float)0.1;
 		final int scatterDelay = 10;
-		int posSpectrum[] = new int[30000];
-		int negSpectrum[] = new int[30000];
+		ArrayList<String> sparseData = new ArrayList<String>();
 		int collectionID = 1;
 		int datasetID = 1;
+		assertTrue( db.getCollectionSize(collectionID) == 5);
 		
-		assertTrue( db.getCollectionSize(collectionID) == 3 );
+		db.insertParticle(dateString + "," + laserPower + "," + digitRate + ","	
+				+ scatterDelay + ", " + filename, sparseData, db.getCollection(collectionID),datasetID,db.getNextID()+1);
 		
-		ATOFMSParticle particle = 
-			new ATOFMSParticle(filename, dateString, laserPower, digitRate,
-				scatterDelay, posSpectrum, negSpectrum);
-		
-		db.insertATOFMSParticle(particle, collectionID, datasetID,
-				db.getNextID());
-		
-		assertTrue( db.getCollectionSize(collectionID) == 4 );
-	
-		//should return size of collection + subcollection
-		assertTrue( db.getCollectionSize(3) == 6);
+		assertTrue( db.getCollectionSize(collectionID) == 6);
 			
 		db.closeConnection();
 	}
@@ -594,19 +545,19 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testGetAllDescendedAtoms(){
 		db.openConnection();
 		
-		//case of no child collections
-		int[] expected = {1,2,3};
-		ArrayList<Integer> actual = db.getAllDescendedAtoms(1);
+//		case of one child collection
+		int[] expected = {16,17,18,19,20,21};
+		ArrayList<Integer> actual = db.getAllDescendedAtoms(db.getCollection(4));
 		
 		for (int i=0; i<actual.size(); i++)
 			assertTrue(actual.get(i) == expected[i]);
 		
-		//case of one child collection
-		int[] expected2 = {7,8,9,10,11,12};
-		ArrayList<Integer> actual2 = db.getAllDescendedAtoms(3);
+//		case of no child collections
+		int[] expected2 = {1,2,3,4,5};
+		actual = db.getAllDescendedAtoms(db.getCollection(1));
 		
-		for (int i=1; i<=actual.size(); i++)
-			assertTrue(actual2.get(i) == expected2[i]);
+		for (int i=0; i<actual.size(); i++) 
+			assertTrue(actual.get(i) == expected2[i]);
 		
 		db.closeConnection();
 	}
@@ -615,8 +566,8 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.openConnection();
 		
 		//we know the particle info from inserting it	
-		ArrayList<ATOFMSParticleInfo> actual = db.getCollectionParticles(1);
-		assertEquals(actual.size(), 3);
+		ArrayList<CreateATOFMSAtomFromDB> actual = db.getCollectionParticles(db.getCollection(1));
+		assertEquals(actual.size(), 5);
 		
 		assertEquals(actual.get(0).getAtomID(), 1);
 //		assertEquals(actual.get(0).getLaserPower(), 1);  not retrieved in method
@@ -624,10 +575,6 @@ public class SQLServerDatabaseTest extends TestCase {
 //		assertEquals(actual.get(0).getScatDelay(), 1);	not retrieved in method
 		assertEquals(actual.get(0).getFilename(), "One");
 			
-		//testing for subcollection detection
-		ArrayList<ATOFMSParticleInfo> actual2 = db.getCollectionParticles(3);
-		assertEquals(actual2.size(), 6);
-				
 		db.closeConnection();
 	}
 	
@@ -657,17 +604,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		}
 	}
 
-	public void testSeedRandom()
-	{
-	    db.openConnection();
-	    db.seedRandom(12345);
-	    double rand1 = db.getNumber();
-	    db.seedRandom(12345);
-	    double rand2 = db.getNumber();
-	    assertTrue(rand1==rand2);
-	    db.closeConnection();
-	    
-	}
+
 	
 	public void testIsPresent() {
 		db.openConnection();
@@ -677,91 +614,12 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testExportToMSAnalyzeDatabase() {
 		db.openConnection();
-		java.util.Date date = db.exportToMSAnalyzeDatabase(1,"MSAnalyzeDB","MS-Analyze");
+		java.util.Date date = db.exportToMSAnalyzeDatabase(db.getCollection(1),"MSAnalyzeDB","MS-Analyze");
 		assertTrue(date.toString().equals("2003-09-02"));
 		db.closeConnection();
 	}
 	
-	private void testCursor(CollectionCursor curs)
-	{
-		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
-		
-		ParticleInfo temp = new ParticleInfo();
-		ATOFMSParticleInfo tempPI = 
-			new ATOFMSParticleInfo(
-					1,"One",1,0.1f,
-					new Date("9/2/2003 5:30:38 PM"));
-		//int aID, String fname, int sDelay, float lPower, Date tStamp
-		temp.setParticleInfo(tempPI);
-		temp.setID(1);
-		
-		
-		
-		partInfo.add(temp);
-		
-		int[] ids = new int[3];
-		for (int i = 0; i < 3; i++)
-		{
-			assertTrue(curs.next());
-			assertTrue(curs.getCurrent()!= null);
-			ids[i] = curs.getCurrent().getID();
-		}
-		
-		assertFalse(curs.next());	
-		curs.reset();
-		
-		for (int i = 0; i < 3; i++)
-		{
-			assertTrue(curs.next());
-			assertTrue(curs.getCurrent() != null);
-			assertTrue(curs.getCurrent().getID() == ids[i]);
-		}
-		
-		assertFalse(curs.next());
-		curs.reset();
-	}
 	
-	public void testGetParticleInfoOnlyCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getParticleInfoOnlyCursor(1);
-		testCursor(curs);
-		db.closeConnection();
-	}
-	
-	public void testGetSQLCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getSQLCursor(1, "AtomInfo.AtomID != 20");
-		testCursor(curs);
-		db.closeConnection();
-	}
-	
-	public void testGetPeakCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getPeakCursor(1);
-		testCursor(curs);
-		db.closeConnection();
-	}
-	
-	public void testGetBinnedCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getBinnedCursor(1);
-		testCursor(curs);
-		db.closeConnection();
-	}
-	
-	public void testGetMemoryBinnedCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getMemoryBinnedCursor(1);	
-		testCursor(curs);	
-		db.closeConnection();
-	}
-	
-	public void testGetRandomizedCursor() {
-		db.openConnection();
-		CollectionCursor curs = db.getRandomizedCursor(1);	
-		testCursor(curs);	
-		db.closeConnection();
-	}
 	
 	public void testMoveAtom() {
 		db.openConnection();
@@ -786,7 +644,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testAddAndDeleteAtom() {
 		db.openConnection();
 		db.atomBatchInit();
-		assertTrue(db.deleteAtomBatch(1,1));
+		assertTrue(db.deleteAtomBatch(1,db.getCollection(1)));
 		db.executeBatch();
 		assertTrue(db.addAtom(1,1));
 		db.closeConnection();		
@@ -799,7 +657,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testAddAndDeleteAtomBatch() {
 		db.openConnection();
 		db.atomBatchInit();
-		assertTrue(db.deleteAtomsBatch("1",1));
+		assertTrue(db.deleteAtomsBatch("1",db.getCollection(1)));
 		assertTrue(db.addAtomBatch(1,1));
 		db.executeBatch();
 		db.closeConnection();
@@ -815,9 +673,9 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testGetAndSetCollectionDescription() {
 		db.openConnection();
 		String description = db.getCollectionDescription(1);
-		assertTrue(db.setCollectionDescription(1,"new description"));		
+		assertTrue(db.setCollectionDescription(db.getCollection(1),"new description"));		
 		assertTrue(db.getCollectionDescription(1).equals("new description"));
-		db.setCollectionDescription(1,description);
+		db.setCollectionDescription(db.getCollection(1),description);
 		db.closeConnection();
 	}
 	
@@ -830,14 +688,14 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testGetPeaks() {
 		db.openConnection();
-		Peak peak = db.getPeaks(2).get(0);
+		Peak peak = db.getPeaks("ATOFMS",2).get(0);
 		assertTrue(peak.area == 15);
 		assertTrue(peak.relArea == 0.006f);
 		assertTrue(peak.height == 12);
 		db.closeConnection();
 	}
 
-
+/*
 	public void testInsertGeneralParticles() {
 		db.openConnection();
 		 int[] pSpect = {1,2,3};
@@ -852,6 +710,105 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.executeBatch();
 		db.closeConnection();
 		}
-
+*/
+	public void testGetAtomDatatype() {
+		db.openConnection();
+		assertTrue(db.getAtomDatatype(2).equals("ATOFMS"));
+		assertTrue(db.getAtomDatatype(18).equals("Datatype2"));
+		db.closeConnection();
+	}
+	
+	
+	public void testSeedRandom()
+	{
+	    db.openConnection();
+	    db.seedRandom(12345);
+	    double rand1 = db.getNumber();
+	    db.seedRandom(12345);
+	    double rand2 = db.getNumber();
+	    assertTrue(rand1==rand2);
+	    db.closeConnection();
+	    
+	}
+	public void testGetParticleInfoOnlyCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getAtomInfoOnlyCursor(db.getCollection(1));
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetSQLCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getSQLCursor(db.getCollection(1), "ATOFMSAtomInfoDense.AtomID != 20");
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetPeakCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getPeakCursor(db.getCollection(1));
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetBinnedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getBinnedCursor(db.getCollection(1));
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
+	public void testGetMemoryBinnedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getMemoryBinnedCursor(db.getCollection(1));	
+		testCursor(curs);	
+		db.closeConnection();
+	}
+	
+	public void testGetRandomizedCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getRandomizedCursor(db.getCollection(1));	
+		testCursor(curs);	
+		db.closeConnection();
+	}
+	
+	private void testCursor(CollectionCursor curs)
+	{
+		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
+		
+		ParticleInfo temp = new ParticleInfo();
+		CreateATOFMSAtomFromDB tempPI = 
+			new CreateATOFMSAtomFromDB(
+					1,"One",1,0.1f,
+					new Date("9/2/2003 5:30:38 PM"));
+		//int aID, String fname, int sDelay, float lPower, Date tStamp
+		temp.setParticleInfo(tempPI);
+		temp.setID(1);
+		
+		
+		
+		partInfo.add(temp);
+		
+		int[] ids = new int[5];
+		for (int i = 0; i < 5; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent()!= null);
+			ids[i] = curs.getCurrent().getID();
+		}
+		
+		assertFalse(curs.next());	
+		curs.reset();
+		
+		for (int i = 0; i < 5; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent() != null);
+			assertTrue(curs.getCurrent().getID() == ids[i]);
+		}
+		
+		assertFalse(curs.next());
+		curs.reset();
+	}
 	
 }
