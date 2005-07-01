@@ -44,27 +44,22 @@
  */
 package analysis.clustering;
 
-import java.awt.FlowLayout;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
-import analysis.MedianFinder;
-import analysis.ParticleInfo;
 import analysis.SubSampleCursor;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
 import externalswing.SwingWorker;
-//import database.SQLServerDatabase;
 
 /**
  * An intermediate class to implement if you are using an 
@@ -146,7 +141,7 @@ public abstract class ClusterK extends Cluster {
 						sampleSize = numParticles/numSamples - 1;
 					db.seedRandom(90125);
 					CollectionCursor randCurs = 
-						db.getRandomizedCursor(collectionID);
+						db.getRandomizedCursor(db.getCollection(collectionID));
 					NonZeroCursor partCurs = null;
 					System.out.println("clustering subSamples:");
 					System.out.println("number of samples: " + numSamples);
@@ -270,10 +265,10 @@ public abstract class ClusterK extends Cluster {
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(collectionID));
+			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
 		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(collectionID));
+		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
 		return true;
 		default :
 			return false;

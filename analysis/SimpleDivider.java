@@ -45,6 +45,7 @@
  */
 package analysis;
 
+import ATOFMS.ParticleInfo;
 import database.InfoWarehouse;
 
 /**
@@ -71,11 +72,11 @@ public class SimpleDivider extends CollectionDivider {
 	public boolean setCursorType(int type) {
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = db.getBinnedCursor(collectionID);
+			curs = db.getBinnedCursor(collection);
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
 			//TODO REMOVE MEMORY BINNED CURSOR IF UNNECCESARY
-			curs = db.getMemoryBinnedCursor(collectionID);
+			curs = db.getMemoryBinnedCursor(collection);
 			return true;
 		}
 		return false;
@@ -86,7 +87,7 @@ public class SimpleDivider extends CollectionDivider {
 	 */
 	public int divide() {
 		if (curs == null)
-			curs = db.getBinnedCursor(collectionID);
+			curs = db.getBinnedCursor(collection);
 		createSubCollection();
 		createSubCollection();
 		ParticleInfo temp;

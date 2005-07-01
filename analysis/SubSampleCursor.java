@@ -46,6 +46,8 @@ package analysis;
 import database.CollectionCursor;
 import java.util.*;
 
+import ATOFMS.ParticleInfo;
+
 /**
  * @author ritza
  * 

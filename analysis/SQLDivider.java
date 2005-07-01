@@ -83,7 +83,7 @@ public class SQLDivider extends CollectionDivider {
 	public boolean setCursorType(int type) {
 		if (type == DISK_BASED)
 		{
-			curs = db.getSQLCursor(collectionID, where);
+			curs = db.getSQLCursor(collection, where);
 			return true;
 		}
 		else
@@ -99,7 +99,7 @@ public class SQLDivider extends CollectionDivider {
 			int temp = curs.getCurrent().getParticleInfo().getAtomID();
 			putInHostSubCollection(temp);
 		}
-		db.setCollectionDescription(newHostID, "Divided on:\n" +
+		db.setCollectionDescription(db.getCollection(newHostID), "Divided on:\n" +
 				where);
 		return newHostID;
 	}
