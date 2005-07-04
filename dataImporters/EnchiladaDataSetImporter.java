@@ -229,7 +229,7 @@ public class EnchiladaDataSetImporter{
 					//push the last atom's info into the database
 					if (atomID >= 0)
 						db.insertParticle(atomInfoDense, 
-								atomInfoSparse,
+								atomInfoSparse, 
 								db.getCollection(collectionID), 
 								datasetID, 
 								atomID);
@@ -275,9 +275,14 @@ public class EnchiladaDataSetImporter{
 	private int[] createEmptyCollection(String line) {
 		
 		int[] collectionInfo;
-		tokenizer = new StringTokenizer(line);
+		//skip the space after the star
+		line = line.trim();
+		tokenizer = new StringTokenizer(line, "'");
 		String datasetName = tokenizer.nextToken();
-		String data = line.substring(datasetName.length() + 1, line.length());
+		//System.out.println(datasetName);
+		//needs to be +2 to account for both opening and closing apostrophes
+		String data = line.substring(datasetName.length() + 2, line.length());
+		//System.out.println("Pre-chop data: " + data);
 		data = chop(data);
 		//System.out.println(data); //debugging
 		String comment = ""; //what do we want to put in here??
@@ -298,19 +303,43 @@ public class EnchiladaDataSetImporter{
 	 */
 	private String chop(String whole){
 		
-		String pieces = "";
-		tokenizer = new StringTokenizer(whole);
-		
-		while (tokenizer.hasMoreTokens()){
+		if (!whole.contains(" "))
+			return whole;
+		else{
 			
-			if (tokenizer.countTokens() > 1)
-				pieces = pieces + tokenizer.nextToken() + ",";
-			else
-				pieces = pieces + tokenizer.nextToken();
+			String firstChar = whole.substring(0,1);
+			String firstSplit, remaining;
+			int splitPoint;
+			
+			if (firstChar.equals(" ")){
 				
+				whole = whole.trim();
+				firstChar = whole.substring(0,1);
+			
+			}
+			//to preserve apostrophe-delimited strings with multiple words
+			if (firstChar.equals("'")){
+				
+				splitPoint = whole.indexOf("'", 1) + 1;
+				firstSplit = whole.substring(0, splitPoint);
+				remaining = whole.substring(splitPoint, whole.length());
+			
+			}
+			else{
+				
+				tokenizer = new StringTokenizer(whole);
+				firstSplit = tokenizer.nextToken();
+				splitPoint = firstSplit.length();
+				if (!whole.contains(" "))
+					return whole;
+				else
+					remaining = whole.substring(splitPoint+1, whole.length());
+			
+			}
+			
+			return firstSplit + "," + chop(remaining);
 		}
 		
-		return pieces;
-		
 	}
+
 }
