@@ -43,8 +43,11 @@ package gui;
 
 import javax.swing.*;
 
-import msanalyze.CalInfo;
-import msanalyze.ReadSpec;
+import ATOFMS.ATOFMSParticle;
+import ATOFMS.CalInfo;
+import ATOFMS.Peak;
+import ATOFMS.ReadSpec;
+
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -57,8 +60,6 @@ import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.ZoomableChart;
 import database.SQLServerDatabase;
-import atom.ATOFMSParticle;
-import atom.Peak;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -80,7 +81,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	
 	//Data elements
 	private javax.swing.table.AbstractTableModel datamodel;
-	private ArrayList<atom.Peak> peaks;
+	private ArrayList<ATOFMS.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
 	private ArrayList<Peak> negPeaks;
 	private Dataset posSpecDS, negSpecDS;
@@ -106,7 +107,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		
 		setLayout(new BorderLayout());
 
-		//		sets up chart
+		// sets up chart
 		chart = new chartlib.Chart(2);
 		chart.setHasKey(false);
 		chart.setTitle("Positive and negative peak values");
@@ -329,6 +330,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		catch (Exception e)
 		{
 			System.err.println("Error loading spectrum");
+			e.printStackTrace();
 			posSpecDS = new Dataset();
 			negSpecDS = new Dataset();
 			//peakButton.setSelected(true);
@@ -367,7 +369,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		try {
 			Statement stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT OrigDataSetID\n" +
-										"FROM OrigDataSets\n" +
+										"FROM DataSetMembers\n" +
 										"WHERE AtomID = " +
 										atomID);
 			rs.next();
@@ -386,7 +388,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		try {
 			Statement stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT *\n" +
-					"FROM PeakCalibrationData\n" +
+					"FROM ATOFMSDataSetInfo\n" +
 					"WHERE DataSetID = " +
 					origDataSetID);
 			rs.next();

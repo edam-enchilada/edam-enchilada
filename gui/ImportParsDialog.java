@@ -47,11 +47,10 @@ import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.event.*;
 import java.awt.*;
-import java.awt.BorderLayout;
-import javax.swing.JDialog;
 import javax.swing.*;
 import javax.swing.table.TableColumn;
-import msanalyze.*;
+
+import dataImporters.ATOFMSDataSetImporter;
 
 
 /**

@@ -52,8 +52,6 @@ import javax.swing.event.ListSelectionListener;
 
 import ATOFMS.Peak;
 
-
-//import msanalyze.DataSetImporter;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;

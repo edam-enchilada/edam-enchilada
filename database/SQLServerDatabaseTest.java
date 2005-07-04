@@ -96,9 +96,10 @@ public class SQLServerDatabaseTest extends TestCase {
 			System.err.println(e);
 		}
 		
-		SQLServerDatabase.rebuildDatabase("TestDB");	 
+		//TODO: commented this out. AR
+		//SQLServerDatabase.rebuildDatabase("TestDB");	 
+		new CreateTestDatabase();
 		db = new SQLServerDatabase("localhost","1433","TestDB");
-		new CreateTestDatabase(db);
 
 	}
 	

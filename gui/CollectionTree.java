@@ -48,6 +48,8 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
 
+import atom.CreateATOFMSAtomFromDB;
+
 import java.awt.Cursor;
 import java.awt.GridLayout;
 import java.util.ArrayList;
@@ -106,7 +108,7 @@ public class CollectionTree extends JPanel
         // Selection will display data in particles table - wire here.
         //System.out.println(node.getCollectionID());
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        ArrayList<ATOFMSParticleInfo> particleInfo = db.getCollectionParticles(node.getCollectionID());
+        ArrayList<CreateATOFMSAtomFromDB> particleInfo = db.getCollectionParticles(db.getCollection(node.getCollectionID()));
         Vector<Object> nextRow = null;
         Vector<Vector<Object>> particleTable = parentFrame.getData();
         particleTable.clear();

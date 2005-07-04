@@ -58,6 +58,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JButton cancelButton;
 	private JTextField nameField;
 	private JTextField commentField;
+	private JTextField datatypeField;
 	
 	public EmptyCollectionDialog (JFrame parent) {
 		super (parent,"Empty Collection", true);
@@ -77,6 +78,12 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		commentPanel.add(commentLabel);
 		commentPanel.add(commentField);
 		
+		JPanel datatypePanel = new JPanel();
+		JLabel datatypeLabel = new JLabel("Datatype: ");
+		datatypeField = new JTextField(25);
+		datatypePanel.add(datatypeLabel);
+		datatypePanel.add(datatypeField);
+		
 		JPanel buttonPanel = new JPanel();
 		okButton = new JButton("OK");
 		okButton.addActionListener(this);
@@ -88,6 +95,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		JPanel mainPanel = new JPanel();
 		mainPanel.add(namePanel);
 		mainPanel.add(commentPanel);
+		mainPanel.add(datatypePanel);
 		mainPanel.add(buttonPanel);
 		
 		add(mainPanel);
@@ -98,9 +106,9 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		if (source == okButton) {
-			SQLServerDatabase db = new SQLServerDatabase();
+			SQLServerDatabase db = new SQLServerDatabase("localhost","1433","SpASMSdb");
 			db.openConnection();
-			int test = db.createEmptyCollection(0,nameField.getText(),commentField.getText());
+			int test = db.createEmptyCollection(datatypeField.getText(), 0,nameField.getText(),commentField.getText(),"");
 			db.closeConnection();
 			System.out.println("Empty Collection ID: " + test);
 			dispose();

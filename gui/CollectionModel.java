@@ -74,14 +74,14 @@ public class CollectionModel implements TreeModel {
 	 * @see javax.swing.tree.TreeModel#getRoot()
 	 */
 	public Object getRoot() {
-		return new Collection(0, db);
+		return new Collection("root", 0, db);
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
 	 */
 	public Object getChild(Object parent, int index) {
-		return new Collection(((Collection)parent).getSubCollectionIDs().
+		return new Collection(((Collection)parent).getDatatype(), ((Collection)parent).getSubCollectionIDs().
 				get(index).intValue(), db);
 
 	}

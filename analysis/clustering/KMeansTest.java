@@ -46,6 +46,7 @@ import java.sql.DriverManager;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 
+
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;
 import junit.framework.TestCase;
@@ -87,9 +88,10 @@ public class KMeansTest extends TestCase {
 			System.err.println(e);
 		}
 		
-		SQLServerDatabase.rebuildDatabase("TestDB");
+		// TODO: commented this out. AR
+		//SQLServerDatabase.rebuildDatabase("TestDB");
+		new CreateTestDatabase();
 		db = new SQLServerDatabase("localhost","1433","TestDB");
-		new CreateTestDatabase(db);
 		db.openConnection();
 		
         int cID = 1;
