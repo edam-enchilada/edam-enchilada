@@ -21,7 +21,11 @@ public class DeterminedPartition implements Partition {
 	private SplitRule rule;
 	private CollectionDivider collectionSource;
 	private boolean branched;
+
 	
+	/*
+	 * Constructors
+	 */
 	public DeterminedPartition(DeterminedPartition par, SplitRule cutPoint,
 			Partition l, Partition r) {
 		parent = par;
@@ -31,15 +35,19 @@ public class DeterminedPartition implements Partition {
 		branched = true;
 	}
 	
+	public DeterminedPartition(Partition template, SplitRule cutPoint) {
+		parent = template.getParent();
+		left = template.getLeftChild();
+		right = template.getRightChild();
+		rule = cutPoint;
+		branched = true;
+	}
+	
 	public DeterminedPartition(DeterminedPartition par) {
 		parent = par;
 		left = right = null;
 		rule = null;
 		branched = false;
-	}
-
-	public Partition getParent() {
-		return parent;
 	}
 	
 //	public int classify(BinnedPeakList bpl) {
@@ -54,15 +62,15 @@ public class DeterminedPartition implements Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
+	public int split(DataWithSummary atoms) {
 		if (branched) {
 			// or should this do the sort and collect statistics thing?
 			// uh?
 			// what if left and right need to be created still?
 			// I guess that shouldn't happen.
-			List<List<BinnedPeakList>> divided = rule.splitAtoms(atoms);
-			return left.split(divided.get(0), sum, sumsq) 
-				+ right.split(divided.get(1), sum, sumsq);
+			List<DataWithSummary> divided = rule.splitAtoms(atoms);
+			return left.split(divided.get(0)) 
+				+ right.split(divided.get(1));
 		} else {
 			// TODO: assign particles to the correct collection!
 			collectionSource = parent.getCollectionSource();
@@ -87,6 +95,10 @@ public class DeterminedPartition implements Partition {
 		return null;
 	}
 
+	/*
+	 * Boring little accessor methods
+	 */
+	
 	public Partition getLeftChild() {
 		return left;
 	}
@@ -110,6 +122,10 @@ public class DeterminedPartition implements Partition {
 	public void setCollectionSource(CollectionDivider collectionSource) {
 		this.collectionSource = collectionSource;
 	}
-	
+
+	public Partition getParent() {
+		return parent;
+	}
+
 
 }

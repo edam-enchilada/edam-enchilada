@@ -8,8 +8,9 @@ import analysis.BinnedPeakList;
 
 // should this actually extend StatSummary and have-a ArrayList?
 // nah, too many methods i'd have to deal with overriding and stuff.
+// But should it just be its own thing?
 public class DataWithSummary extends ArrayList<BinnedPeakList> {
-	protected StatSummary stats;
+	private StatSummary stats;
 
 	/* (non-Javadoc)
 	 * @see java.util.ArrayList#add(E)
@@ -39,8 +40,7 @@ public class DataWithSummary extends ArrayList<BinnedPeakList> {
 		return (float) stats.stdDev(dimension);
 	}
 	
-	public StatSummary getStatSummary() {
+	public StatSummary getStats() {
 		return stats;
 	}
-	
 }

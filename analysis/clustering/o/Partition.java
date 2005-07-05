@@ -21,7 +21,7 @@ public interface Partition {
 	
 //	public int classify(BinnedPeakList bpl);
 	// i don't know how that's going to work...
-	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq);
+	public int split(DataWithSummary atoms);
 	public String rulesUp();
 	public String rulesDown();
 }

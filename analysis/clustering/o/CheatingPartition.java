@@ -64,10 +64,13 @@ public class CheatingPartition implements Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
+	public int split(DataWithSummary atoms) {
+		StatSummary stats;
+//		>>>>>>>> this needs to use a StatSummary itself.  or just not care.
+//		so this this this hehe.  it could just use 
 		for (int j = 0; j < DOUBLE_MAX; j++) {
-			this.sum[j] += sum[j];
-			this.sumsq[j] += sumsq[j];
+			this.sum[j] += atoms.getStats().sum(j);
+			this.sumsq[j] += atoms.getStats().sumsq(j);
 		}
 
 		Iterator<BinnedPeakList> i = atoms.iterator();

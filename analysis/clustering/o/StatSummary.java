@@ -10,7 +10,7 @@ public class StatSummary {
 	private double[] sumsq;
 	private double[] sum;
 	private int count = 0;
-	//private int dimensions;
+	private int dimensions;
 
 	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
@@ -18,11 +18,6 @@ public class StatSummary {
 	/*
 	 * Constructors
 	 */
-	public StatSummary() {
-		sum = new double[DOUBLE_MAX];
-		sumsq = new double[DOUBLE_MAX];
-	}
-	
 	public StatSummary(double[] sum, double[] sumsq, int count) {
 		this.sum = sum;
 		this.sumsq = sumsq;
@@ -40,10 +35,6 @@ public class StatSummary {
 	 * Methods for Adding More Atoms or Statistics
 	 */
 	
-	public void addStats(DataWithSummary dws) {
-		addStats(dws.getStatSummary());
-	}
-	
 	public void addAll(Collection<BinnedPeakList> atoms) {
 		Iterator<BinnedPeakList> j = atoms.iterator();
 			
@@ -57,8 +48,7 @@ public class StatSummary {
 		count++;
 		for (int i = 0; i < atom.length(); i++) {
 			p = atom.getNextLocationAndArea();
-			sum[p.location + MAX_LOCATION] += p.area;
-			sumsq[p.location + MAX_LOCATION] += Math.pow(p.area,2);
+			sumsq[p.location + MAX_LOCATION] += p.area;
 		}
 	}
 	
@@ -84,25 +74,15 @@ public class StatSummary {
 		addPeak(p.location, p.area);
 	}
 	
-	/*
-	 * Removing statistics (mainly useful for testing)
-	 */
-	public void clear() {
-		for (int i = 0; i < DOUBLE_MAX; i++) {
-			sum[i]   = 0.0;
-			sumsq[i] = 0.0;
-		}
-		count = 0;
-	}
 	
 	/*
 	 * Statistical Methods
 	 */
 	public double stdDev(int dim) {
 		return Math.sqrt((sumsq[dim + MAX_LOCATION] 
-		                       - (Math.pow(sum[dim + MAX_LOCATION],2)
-		                           		/count)
-		                 )/count);
+		                                - (Math.pow(sum[dim + MAX_LOCATION],2)
+		                                		/count)
+		                          )/count);
 	}
 	
 	public double mean(int dim) {
