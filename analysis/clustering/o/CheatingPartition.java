@@ -65,35 +65,9 @@ public class CheatingPartition implements Partition {
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
 	public int split(DataWithSummary atoms) {
-		StatSummary stats;
-//		>>>>>>>> this needs to use a StatSummary itself.  or just not care.
-//		so this this this hehe.  it could just use 
-		for (int j = 0; j < DOUBLE_MAX; j++) {
-			this.sum[j] += atoms.getStats().sum(j);
-			this.sumsq[j] += atoms.getStats().sumsq(j);
-		}
-
-		Iterator<BinnedPeakList> i = atoms.iterator();
-
-		while (i.hasNext()) {
-			recordAtom(i.next());
-		}
 		return 0;
 	}
 
-	private void recordAtom(BinnedPeakList bpl) {
-		BinnedPeak p;
-		for (int i = 0; i < bpl.length(); i++) {
-			p = bpl.getNextLocationAndArea();
-			if (histograms[p.location + MAX_LOCATION] == null) {
-				histograms[p.location + MAX_LOCATION] 
-				           = new Histogram(stdDev(p.location),
-				        		   count, p.location);
-			}
-			histograms[p.location + MAX_LOCATION].addPeak(p.area);
-		}
-	}
-	
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#rulesUp()
 	 */
@@ -110,12 +84,6 @@ public class CheatingPartition implements Partition {
 		return null;
 	}
 	
-	private List<List<BinnedPeakList>> applyrule(List<BinnedPeakList> data) {
-		//List<List<BinnedPeakList>> divided = new ArrayList();
-		// TODO put actual logic here
-		return null;
-	}
-
 	public Partition getLeftChild() {
 		return left;
 	}
@@ -139,12 +107,20 @@ public class CheatingPartition implements Partition {
 	public void setCollectionSource(CollectionDivider collectionSource) {
 		this.collectionSource = collectionSource;
 	}
-	
-	public float stdDev(int dim) {
-		return (float) Math.sqrt((sumsq[dim + MAX_LOCATION] 
-		                                - (Math.pow(sum[dim + MAX_LOCATION],2)
-		                                		/count))
-		                          /count);
+
+	public void setParent(Partition parent) {
+		this.parent = parent;
 	}
 
+	public boolean transmogrifyChild(Partition oldChild, Partition newChild) {
+		if (left == oldChild) {
+			left = newChild;
+			return true;
+		} else if (right == oldChild) {
+			right = newChild;
+			return true;
+		} else {
+			return false;
+		}
+	}
 }

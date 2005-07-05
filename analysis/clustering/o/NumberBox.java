@@ -44,7 +44,7 @@ public class NumberBox {
 	}
 
 
-	public void addAtom(BinnedPeakList atom) {
+	private void addAtom(BinnedPeakList atom) {
 		assert(stats != null);
 		stats.addAtom(atom);
 		// TODO: maybe resize histogram
