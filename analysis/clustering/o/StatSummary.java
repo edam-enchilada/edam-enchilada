@@ -30,11 +30,14 @@ public class StatSummary {
 		addAll(atoms);
 	}
 	
+	public StatSummary() {
+		sumsq = new double[DOUBLE_MAX];
+		sum = new double[DOUBLE_MAX];
+	}
 	
 	/*
 	 * Methods for Adding More Atoms or Statistics
 	 */
-	
 	public void addAll(Collection<BinnedPeakList> atoms) {
 		Iterator<BinnedPeakList> j = atoms.iterator();
 			
@@ -106,5 +109,10 @@ public class StatSummary {
 	
 	public int count() {
 		return count;
+	}
+	
+	public String toString(int dim) {
+		return "Dimension " + dim + " has mean ht. " + mean(dim) 
+			+ ", std.dev " + stdDev(dim);
 	}
 }

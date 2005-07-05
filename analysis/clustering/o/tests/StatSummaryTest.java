@@ -15,7 +15,7 @@ public class StatSummaryTest extends TestCase {
 	
 	
 	protected void setUp() throws Exception {
-		r = new Random();
+		r = new Random(11235); // explicit seed, making the test deterministic
 		super.setUp();
 		atoms = new ArrayList<BinnedPeakList>();
 		BinnedPeakList tmp;

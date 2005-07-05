@@ -11,6 +11,10 @@ import analysis.BinnedPeakList;
 // But should it just be its own thing?
 public class DataWithSummary extends ArrayList<BinnedPeakList> {
 	private StatSummary stats;
+	
+	public DataWithSummary() {
+		stats = new StatSummary();
+	}
 
 	/* (non-Javadoc)
 	 * @see java.util.ArrayList#add(E)

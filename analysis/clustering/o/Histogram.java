@@ -20,6 +20,9 @@ public class Histogram {
 		this.dimension = dimension;
 	}
 
+	public void addPeak(float area) {
+		histogram.addPeak(area);
+	}
 	
 	private int findAllValleys() {
 		LinkedList<Integer> extremaLocations = new LinkedList<Integer>();
@@ -82,10 +85,6 @@ public class Histogram {
 		}
 	}
 	
-//	private float targetChiSquared(int confidencePercent) {
-//		return splitPoints.percentToChiSquared(confidencePercent);
-//	}
-	
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		List<SplitRule> rules = new LinkedList<SplitRule>();
 		List<Float> areas = getSplitPoints(confidencePercent);
@@ -101,8 +100,43 @@ public class Histogram {
 		return rules;
 	}
 	
-	public void addPeak(float area) {
-		histogram.addPeak(area);
+	public SplitRule getBestSplit(int confidencePercent) {
+		List<SplitRule> goodRules = getSplitRules(confidencePercent);
+		SplitRule best = null;
+		SplitRule temp;
+		Iterator<SplitRule> i = goodRules.iterator();
+		
+		/* if there are no good split points, this loop will not execute
+		 * and null will be returned, as it should be.
+		 */
+		while (i.hasNext()) {
+			if (best == null) {
+				best = i.next();
+			} else {
+				temp = i.next();
+				if (best.goodness < temp.goodness) {
+					best = temp;
+				}
+			}
+		}
+		return best;
+	}
+	
+	public void printHistogram(boolean printSplits) {
+		System.out.println("Histogram for Dimension " + dimension);
+		System.out.println("Pk.Area\tCount");
+		for (int i = 0; i < histogram.size(); i++) {
+			System.out.println(histogram.getIndexMiddle(i) + "\t"
+					+ histogram.get(i));
+		}
+		
+		if (printSplits) {
+			System.out.println("Valid splits at:");
+			List<SplitRule> rules = getSplitRules(95);
+			for (SplitRule rule : rules) {
+				System.out.println(rule.area);
+			}
+		}
 	}
 
 	/**

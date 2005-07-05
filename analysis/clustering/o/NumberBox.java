@@ -1,6 +1,7 @@
 package analysis.clustering.o;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
@@ -10,15 +11,20 @@ public class NumberBox {
 	private Histogram[] histograms;
 	private int MAX_LOCATION;
 	
-	public NumberBox(int numDims) {
+	public NumberBox(int numDims, StatSummary initialStats) {
 		//super;
 		MAX_LOCATION = numDims;
 		histograms = new Histogram[MAX_LOCATION * 2];
+		stats = initialStats;
 	}
-	
 
-	private void recordAtom(BinnedPeakList bpl) {
+	public NumberBox(int numDims) {
+		this(numDims, null);
+	}
+
+	private void histAtom(BinnedPeakList bpl) {
 		BinnedPeak p;
+		bpl.resetPosition();
 		for (int i = 0; i < bpl.length(); i++) {
 			p = bpl.getNextLocationAndArea();
 			if (histograms[p.location + MAX_LOCATION] == null) {
@@ -30,29 +36,69 @@ public class NumberBox {
 		}
 	}
 
+	private void histAtoms(Collection<BinnedPeakList> atoms) {
+		Iterator<BinnedPeakList> i = atoms.iterator();
+		while (i.hasNext()) {
+			histAtom(i.next());
+		}
+	}
 
 
-	public void add(BinnedPeakList atom) {
-		recordAtom(atom);
+	public void addAtom(BinnedPeakList atom) {
+		assert(stats != null);
 		stats.addAtom(atom);
+		// TODO: maybe resize histogram
+		histAtom(atom);
 	}
 
-
-	public boolean add(DataWithSummary that) {
-		//TODO: likely, logic about possibly changing histogram sizes
-		// should go here.  Actually no, somewhere else.  But this method
-		// does need more work ^^
-		// wrong way: stats.add(that);
-		
+	/*
+	 * These two methods are the same, but, I think there need to be two
+	 * of them because the addAll of DataWithSummary is O(1) while the
+	 * addAll of Collection<BinnedPeakList> is O(n).
+	 */
+	public boolean addAll(DataWithSummary that) {
+		if (stats == null) {
+			stats = new StatSummary(that);
+		} else {
+			stats.addAll(that);
+		}
+		// TODO: maybe resize histograms.
+		histAtoms(that);
 		return false;
 	}
-
-
 	public boolean addAll(Collection<BinnedPeakList> atoms) {
-		// TODO Auto-generated method stub
-		stats.addAll(atoms);
-		
-		return false;
+		if (stats == null) {
+			stats = new StatSummary(atoms);
+		} else {
+			stats.addAll(atoms);
+		}
+		// TODO: maybe resize histograms.
+		histAtoms(atoms);
+		return true;
+	}
+
+	public SplitRule getBestSplit(int confidencePercent) {
+		SplitRule best = null;
+		for (int i = 0; i < MAX_LOCATION * 2; i++) {
+			if (best == null && histograms[i] != null) {
+				best = histograms[i].getBestSplit(confidencePercent);
+			} else if (best != null && histograms[i] != null) {
+				SplitRule temp = histograms[i].getBestSplit(confidencePercent);
+				if (temp != null &&
+						temp.goodness > best.goodness) {
+					best = temp;
+				}
+			}
+		}
+		return best;
+	}
+	
+	public void printDimension(int dim) {
+		System.out.println("Trying to print stats for dim " + dim);
+		if (dim < MAX_LOCATION && dim > - MAX_LOCATION) {
+			System.out.println(stats.toString(dim));
+			histograms[dim + MAX_LOCATION].printHistogram(true);
+		}
 	}
 	
 }
