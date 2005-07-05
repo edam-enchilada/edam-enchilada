@@ -43,12 +43,17 @@ public class StatSummary {
 		}
 	}
 	
+	public void addAll(DataWithSummary atoms) {
+		addStats(atoms.getStats());
+	}
+	
 	public void addAtom(BinnedPeakList atom) {
 		BinnedPeak p;
+		atom.resetPosition();
 		count++;
 		for (int i = 0; i < atom.length(); i++) {
 			p = atom.getNextLocationAndArea();
-			sumsq[p.location + MAX_LOCATION] += p.area;
+			addPeak(p);
 		}
 	}
 	
@@ -64,13 +69,15 @@ public class StatSummary {
 		this.addStats(that.sum, that.sumsq, that.count);
 	}
 	
-	public void addPeak(int location, double area) {
+	/*
+	 * Can't increment count!  So you have to do that yourself!
+	 */
+	private void addPeak(int location, double area) {
 		sum[location + MAX_LOCATION] += area;
-		sumsq[location + MAX_LOCATION] += Math.pow(area, 2);
-		count++;
+		sumsq[location + MAX_LOCATION] += Math.pow(area, 2.0);
 	}
 	
-	public void addPeak(BinnedPeak p) {
+	private void addPeak(BinnedPeak p) {
 		addPeak(p.location, p.area);
 	}
 	
