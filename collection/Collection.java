@@ -55,7 +55,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
 
 import ATOFMS.ATOFMSParticle;
 
@@ -133,7 +133,7 @@ public class Collection {
 			int particleCount = 1;
 			out = new PrintWriter(new FileOutputStream(setFile, false));
 
-			CreateATOFMSAtomFromDB particle = null;
+			ATOFMSAtomFromDB particle = null;
 			// The Atom iterator is essentially a thin wrapper to a 
 			// Result set and thus you must call hasNext to get to the
 			// next element of the interator as it links to 

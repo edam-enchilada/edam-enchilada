@@ -136,16 +136,16 @@ public class DynamicTableGenerator {
 		try {			
 			// set DataSetInfo statement.
 			tempStr = scanner.next();
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[DataSetID]', 'INT', " + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")");
+			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[DataSetID]', 'INT', 1," + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")");
 			counter++;
 			while (!tempStr.equals(DELIMITER)) {
 				metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
 				tempStr = scanner.next().toUpperCase();
 				assert (!tempStr.equals(DELIMITER)) : "No Column Type found.";
 				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)', " + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")";				
+					metaString += tempStr + "(8000)',0, " + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")";				
 				else 
-					metaString += tempStr + "'," + DynamicTable.DataSetInfo.ordinal() + "," + counter + ")"; 
+					metaString += tempStr + "',0," + DynamicTable.DataSetInfo.ordinal() + "," + counter + ")"; 
 				counter++;
 				System.out.println(metaString);
 				stmt.addBatch(metaString);
@@ -155,16 +155,16 @@ public class DynamicTableGenerator {
 						
 			// set AtomInfoDense statement
 			tempStr = scanner.next();
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT', " + DynamicTable.AtomInfoDense.ordinal() + ", " + counter + ")");
+			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT',1, " + DynamicTable.AtomInfoDense.ordinal() + ", " + counter + ")");
 			counter++;
 			while (!tempStr.equals(DELIMITER)) {
 				metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
 				tempStr = scanner.next().toUpperCase();
 				assert (!tempStr.equals(DELIMITER)) : "No Column Type found.";
 				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)'," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")";
+					metaString += tempStr + "(8000)',0," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")";
 				else 
-					metaString += tempStr + "'," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")"; 
+					metaString += tempStr + "',0," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")"; 
 				counter++;
 				System.out.println(metaString);
 				stmt.addBatch(metaString);
@@ -173,23 +173,23 @@ public class DynamicTableGenerator {
 			counter = 0;
 			
 			// set AtomInfoSparse statement				
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT', " + DynamicTable.AtomInfoSparse.ordinal() + ", " + counter + ")");
+			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT', 1," + DynamicTable.AtomInfoSparse.ordinal() + ", " + counter + ")");
 			counter++;
 			while (scanner.hasNext()) {
 				tempStr = scanner.next();
 				assert (!tempStr.equals(DELIMITER)) : "Too many tables specified.";
+				int primary = 0;
 				if (tempStr.equals("P")) {
 					tempStr = scanner.next();
-					metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','P [" + tempStr + "]','";
+					primary = 1;
 				}
-				else
 					metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
 				assert (scanner.hasNext()) : "No Column Type Found.";
 				tempStr = scanner.next().toUpperCase();
 				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)'," + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")";
+					metaString += tempStr + "(8000)'," + primary + ", " + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")";
 				else 
-					metaString += tempStr + "'," + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")"; 
+					metaString += tempStr + "'," + primary + ", " + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")"; 
 				counter++;
 				System.out.println(metaString);
 				stmt.addBatch(metaString);
@@ -211,53 +211,52 @@ public class DynamicTableGenerator {
 			// Create DataSetInfo table
 
 			tableStr = "CREATE TABLE " + datatype + "DataSetInfo (";	
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType FROM MetaData " +
+			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
 					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
 					DynamicTable.DataSetInfo.ordinal() + "ORDER BY ColumnOrder");
+			String pText = "PRIMARY KEY(";
 			while (rs.next()) {
-				wordScanner = new Scanner(rs.getString(1));
-				tempStr = wordScanner.next();
-				if (tempStr.equals("N")) {
-					tempStr = wordScanner.next();
-					namingField = tempStr;
+				if (rs.getBoolean(3)) {
+					pText += rs.getString(1) + ", ";
 				}
-				tableStr += rs.getString(1) + " " + rs.getString(2)+ ", ";
+				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
 			}
-			tableStr += " PRIMARY KEY ([DataSetID]))";
+			tableStr += pText.substring(0,pText.length()-2) + "))";
 			System.out.println(tableStr);
 			stmt.execute(tableStr);
 			
 			// Create AtomInfoDense table
 			tableStr = "CREATE TABLE " + datatype + "AtomInfoDense (";		
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType FROM MetaData " +
+			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
 					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
 					DynamicTable.AtomInfoDense.ordinal() + "ORDER BY ColumnOrder");
-			while (rs.next()) 
+			pText = "PRIMARY KEY(";
+			while (rs.next()) {
+				if (rs.getBoolean(3)) {
+					pText += rs.getString(1) + ", ";
+				}
 				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
-			tableStr += " PRIMARY KEY ([AtomID]))";
+			}
+			tableStr += pText.substring(0,pText.length()-2) + "))";
 			System.out.println(tableStr);
 			stmt.execute(tableStr);
 			
 			// Create AtomInfoSparse table
 			tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse (";
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType FROM MetaData " +
+			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
 					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
 					DynamicTable.AtomInfoSparse.ordinal() + "ORDER BY ColumnOrder");
-			String primaryKey = "PRIMARY KEY ([AtomID]";
-			
+			pText = "PRIMARY KEY (";
 			while (rs.next()) {
-				wordScanner = new Scanner(rs.getString(1));
-				tempStr = wordScanner.next();
-				if (tempStr.equals("P")) {
-					tempStr = wordScanner.next();
-					primaryKey += ", " + tempStr;
+				if (rs.getBoolean(3)) {
+					pText += rs.getString(1) + ", ";
 				}
-				tableStr += tempStr + " " + rs.getString(2) + ", ";
+				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
 			}
-				tableStr += primaryKey + "))";
+			tableStr += pText.substring(0,pText.length()-2) + "))";
 			System.out.println(tableStr);
 			stmt.execute(tableStr);
-			
+			rs.close();
 		} catch (SQLException e) {
 			System.err.println("Error creating dynamic tables");
 			e.printStackTrace();

@@ -50,13 +50,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.Vector;
 import java.sql.*;
 
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import analysis.BinnedPeakList;
 import analysis.clustering.PeakList;
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 import gui.*;
 
@@ -90,13 +92,30 @@ public class SQLServerDatabase implements InfoWarehouse
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
+		
+		File f = new File("dbconfig.ini");
+		try {
+			Scanner scan = new Scanner(f);
+			while (scan.hasNext()) {
+				String tag = scan.next();
+				String val = scan.next();
+				if (scan.hasNext())
+					scan.nextLine();
+				
+				if (tag.equalsIgnoreCase("db_url:")) { url = val; }
+				else if (tag.equalsIgnoreCase("port:")) { port = val; }
+			}
+			scan.close();
+		} catch (FileNotFoundException e) { 
+			// Don't worry if the file doesn't exist... 
+			// just go on with the default values 
+		}
 	}
 	
-	public SQLServerDatabase(String u, String p, String db)
-	{
-		url = u;
-		port = p;
-		database = db;
+	public SQLServerDatabase(String dbName) {
+		this();
+		
+		database = dbName;
 	}
 	
 	/* Open, Close, and test for existence */
@@ -108,7 +127,7 @@ public class SQLServerDatabase implements InfoWarehouse
 
 		boolean foundDatabase = false;
 		try {
-			SQLServerDatabase db = new SQLServerDatabase(url,port,"");
+			SQLServerDatabase db = new SQLServerDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
@@ -555,7 +574,6 @@ public class SQLServerDatabase implements InfoWarehouse
 										Collection collection,
 										int datasetID, int nextID)
 	{
-		//int nextID = -1;
 		try {
 			Statement stmt = con.createStatement();
 			//System.out.println("Adding batches");
@@ -1344,21 +1362,19 @@ public class SQLServerDatabase implements InfoWarehouse
 
 	/**
 	 * gets an arraylist of ATOFMS Particles for the given collection.
-	 * Unique to ATOFMS data - need to rewrite this to be more general.  
+	 * Unique to ATOFMS data - not used anymore except for unit tests.  
 	 *
 	 */
-	public ArrayList<CreateATOFMSAtomFromDB> getCollectionParticles(Collection collection)
+	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection)
 	{
-		ArrayList<CreateATOFMSAtomFromDB> particleInfo = 
-			new ArrayList<CreateATOFMSAtomFromDB>(1000);
-		CreateATOFMSAtomFromDB temp = null;
+		ArrayList<GeneralAtomFromDB> particleInfo = 
+			new ArrayList<GeneralAtomFromDB>(1000);
 		try {
 			InstancedResultSet irs = getAllAtomsRS(collection);
 			
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(
-					"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID, OrigFilename, Size," +
-					" [Time]\n" +
+					"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID " +
 					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
 					", #TempParticles" + irs.instance 
 					+"\n" +
@@ -1372,14 +1388,47 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			while(rs.next())
 			{
-				temp = new CreateATOFMSAtomFromDB();
-				
-				temp.setAtomID(rs.getInt(1));
-				temp.setFilename(rs.getString(2));
-				temp.setSize(rs.getFloat(3));
-				temp.setDateString(dFormat.format(
-						rs.getTimestamp(4)));
-				particleInfo.add(temp);
+				particleInfo.add(new GeneralAtomFromDB(rs.getInt(1)));
+			}
+			stmt.execute("DROP TABLE " + 
+			  	"#TempParticles" + irs.instance);
+		} catch (SQLException e) {
+			System.err.println("Error collecting particle " +
+					"information:");
+			e.printStackTrace();
+		}
+		return particleInfo;
+	}
+	
+	/**
+	 * update particle table returns a vector<vector<Object>> for the gui's 
+	 * particles table.  All items are taken from AtomInfoDense, and all 
+	 * items are strings except for the atomID, which is used to produce 
+	 * graphs.
+	 */
+	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo) {
+		particleInfo.clear();
+		try {
+			InstancedResultSet irs = getAllAtomsRS(collection);
+			
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
+					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
+					", #TempParticles" + irs.instance 
+					+"\n" +
+					"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #TempParticles" + 
+					irs.instance + ".AtomID\n" +
+					"ORDER BY #TempParticles" + irs.instance + 
+					".AtomID");
+			int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
+			while(rs.next())
+			{
+				Vector<Object> vtemp = new Vector<Object>(numberColumns);
+				vtemp.add(rs.getInt(1)); // Integer for atomID
+				for (int i = 2; i <= numberColumns; i++) 
+					vtemp.add(rs.getString(i));
+				particleInfo.add(vtemp);
 			}
 			stmt.execute("DROP TABLE " + 
 			  	"#TempParticles" + irs.instance);
@@ -2087,7 +2136,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				ParticleInfo particleInfo = 
 					new ParticleInfo();
 				particleInfo.setParticleInfo(
-						new CreateATOFMSAtomFromDB(
+						new ATOFMSAtomFromDB(
 						partInfRS.getInt(1),
 						partInfRS.getString(2),
 						partInfRS.getInt(3),
@@ -2563,15 +2612,15 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 
 	/**
-	 * getColNames returns an arraylist of strings of the column names for the given table
+	 * getColNamesAndTypes returns an arraylist of strings of the column names for the given table
 	 * and datatype.  Not used yet, but may be useful in the future.  
 	 * @param datatype
 	 * @param table - dynamic table you want
 	 * @return arraylist of column names and their types.
 	 */
-	public ArrayList<ArrayList<String>> getColNames(String datatype, DynamicTable table) {
+	public ArrayList<ArrayList<String>> getColNamesAndTypes(String datatype, DynamicTable table) {
 		ArrayList<ArrayList<String>> colNames = new ArrayList<ArrayList<String>>();
-		ArrayList<String> temp = new ArrayList<String>();
+		ArrayList<String> temp;	
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT ColumnName, ColumnType FROM MetaData " +
@@ -2579,10 +2628,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			"AND TableID = " + table.ordinal() + " ORDER BY ColumnOrder");
 			
 			while (rs.next()) {
+				temp = new ArrayList<String>();
 				temp.add(rs.getString(1));
 				temp.add(rs.getString(2));
 				colNames.add(temp);
-				temp.clear();
 			}
 			
 			} catch (SQLException e) {
@@ -2592,67 +2641,32 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		return colNames;
 	}
-/*
+
 	/**
-	 * returns an arraylist of dense atom info for the given atomID.
-	 * @param atomID
-	 * @param table
-	 * @return arraylist of table info
-	 *
-	public ArrayList<FieldVariable> getAtomInfoDense(int atomID) {
-		String datatype = getAtomDatatype(atomID);
-		ArrayList<FieldVariable> colInfo = new ArrayList<FieldVariable>();
-		ArrayList<ArrayList<String>> names = 
-			getColNames(datatype, DynamicTable.AtomInfoDense);
+	 * getColNamesAndTypes returns an arraylist of strings of the column names for the given table
+	 * and datatype.  Not used yet, but may be useful in the future.  
+	 * @param datatype
+	 * @param table - dynamic table you want
+	 * @return arraylist of column names.
+	 */
+	public ArrayList<String> getColNames(String datatype, DynamicTable table) {
+		ArrayList<String> colNames = new ArrayList<String>();	
 		try {
 			Statement stmt = con.createStatement();
-		
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + 
-					getDynamicTableName(DynamicTable.AtomInfoDense,datatype) +
-					"WHERE AtomID = " + atomID);
+			ResultSet rs = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE Datatype = '" + datatype + "' " +
+			"AND TableID = " + table.ordinal() + " ORDER BY ColumnOrder");
 			
-			for (int i = 0; i < names.size(); i++)
-				colInfo.add(new FieldVariable(names.get(i).get(0), names.get(i).get(1), rs.getString(i)));
+			while (rs.next()) 
+				colNames.add(rs.getString(1));
+			
+			
 			} catch (SQLException e) {
 			System.err.println("Error retrieving column names");
 			e.printStackTrace();
 			}
-		return colInfo;
+		return colNames;
 	}
-	
-	/**
-	 * returns a 2d arraylist of sparse atom info for the given atomID.
-	 * @param atomID
-	 * @param table
-	 * @return arraylist of table info
-	 *
-	public ArrayList<SparseElement> getAtomInfoSparse(int atomID) {
-		
-		String datatype = getAtomDatatype(atomID);
-		ArrayList<SparseElement> colInfo = new ArrayList<SparseElement>();
-		ArrayList<FieldVariable> temp = new ArrayList<FieldVariable>();
-		ArrayList<ArrayList<String>> names = 
-			getColNames(datatype, DynamicTable.AtomInfoDense);
-		try {
-			Statement stmt = con.createStatement();
-		
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + 
-					getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) +
-					"WHERE AtomID = " + atomID);
-			
-			while (rs.next()) {
-				for (int i = 0; i < names.size(); i++)
-					temp.add(new FieldVariable(names.get(i).get(0), names.get(i).get(1), rs.getString(i)));
-				colInfo.add(new SparseElement(temp));
-				temp.clear();
-			}
-			
-			} catch (SQLException e) {
-			System.err.println("Error retrieving column names");
-			e.printStackTrace();
-			}
-		return colInfo;
-	}*/
 	
 	/**
 	 * Get all the datatypes currently entered in the database.

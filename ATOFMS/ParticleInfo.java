@@ -45,10 +45,10 @@ package ATOFMS;
 
 import analysis.BinnedPeakList;
 import analysis.clustering.PeakList;
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
 
 /**
- * This holds a peaklist, an CreateATOFMSAtomFromDB, and a 
+ * This holds a peaklist, an ATOFMSAtomFromDB, and a 
  * binnedPeaklist.  Not all of them will be initialized depending
  * on which type of cursor your request.  
  * 
@@ -56,20 +56,20 @@ import atom.CreateATOFMSAtomFromDB;
  */
 public class ParticleInfo {
 	private PeakList peakList;
-	private CreateATOFMSAtomFromDB particleInfo;
+	private ATOFMSAtomFromDB particleInfo;
 	private BinnedPeakList binnedList;
 	private int ID;
 	
 	/**
 	 * @return Returns the particleInfo.
 	 */
-	public CreateATOFMSAtomFromDB getParticleInfo() {
+	public ATOFMSAtomFromDB getParticleInfo() {
 		return particleInfo;
 	}
 	/**
 	 * @param particleInfo The particleInfo to set.
 	 */
-	public void setParticleInfo(CreateATOFMSAtomFromDB particleInfo) {
+	public void setParticleInfo(ATOFMSAtomFromDB particleInfo) {
 		this.particleInfo = particleInfo;
 	}
 	/**

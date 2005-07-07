@@ -46,8 +46,10 @@ package database;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Vector;
 
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 import ATOFMS.Peak;
 
@@ -196,13 +198,13 @@ public interface InfoWarehouse {
 	public int getCollectionSize(int collectionID);
 	
 	/**
-	 * Returns an array list of CreateATOFMSAtomFromDB's describing
+	 * Returns an array list of ATOFMSAtomFromDB's describing
 	 * every particle descending from the given collection.
 	 * @param collectionID	The id of the collection you want
 	 * 						to find particles descended from
 	 * @return An array list of particle info.
 	 */
-	public ArrayList<CreateATOFMSAtomFromDB> getCollectionParticles(Collection collection);
+	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection);
 	
 	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);
 	
@@ -252,4 +254,8 @@ public interface InfoWarehouse {
 	
 	/* Used for testing random number seeding */
 	public double getNumber();
+	
+	public ArrayList<String> getColNames(String datatype, DynamicTable table);
+	
+	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleTable);
 }

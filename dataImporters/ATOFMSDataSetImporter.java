@@ -261,7 +261,7 @@ public class ATOFMSDataSetImporter {
 			parentID = ipd.getParentID();
 		
 		id = db.createEmptyCollectionAndDataset("ATOFMS",parentID,data[0],data[2],
-				"'" + massCalFile + "', '" + sizeCalFile + "', " + 
+				"'" + dSet + "', '" + massCalFile + "', '" + sizeCalFile + "', " + 
 				ATOFMSParticle.currPeakParams.minHeight + ", " + 
 				ATOFMSParticle.currPeakParams.minArea  + ", " + 
 				ATOFMSParticle.currPeakParams.minRelArea + ", " + 

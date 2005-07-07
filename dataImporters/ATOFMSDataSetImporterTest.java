@@ -50,7 +50,8 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 
 import database.CreateTestDatabase;
@@ -97,7 +98,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		//SQLServerDatabase.rebuildDatabase("TestDB");
 	
 		new CreateTestDatabase(); 
-		db = new SQLServerDatabase("localhost","1433","TestDB");
+		db = new SQLServerDatabase("TestDB");
 		
 		// create table with one entry.
 		table = new ParTableModel();
@@ -189,12 +190,12 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertTrue(db.getCollectionDescription(1).equals("onedescrip"));
 		assertTrue(db.getCollectionName(1).equals("One"));
 		
-		ArrayList<CreateATOFMSAtomFromDB> particles = 
+		ArrayList<GeneralAtomFromDB> particles = 
 			db.getCollectionParticles(db.getCollection(1));
 		
 		// Check the first and last particles to see if they have been
 		// imported properly.
-		CreateATOFMSAtomFromDB pInfo = particles.get(0);
+		ATOFMSAtomFromDB pInfo = particles.get(0).toATOFMSAtom();
 		
 		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
 		assertTrue(pInfo.getFilename().equals("One"));
@@ -203,7 +204,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertTrue(pInfo.getScatDelay() == 0);
 		assertTrue(pInfo.getSize() == 0.1f);
 		
-		pInfo = particles.get(particles.size()-1);
+		pInfo = particles.get(particles.size()-1).toATOFMSAtom();
 		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
 		assertTrue(pInfo.getFilename().equals("Five"));
 		assertTrue(pInfo.getAtomID() == 5);

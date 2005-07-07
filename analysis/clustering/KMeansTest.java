@@ -91,7 +91,7 @@ public class KMeansTest extends TestCase {
 		// TODO: commented this out. AR
 		//SQLServerDatabase.rebuildDatabase("TestDB");
 		new CreateTestDatabase();
-		db = new SQLServerDatabase("localhost","1433","TestDB");
+		db = new SQLServerDatabase("TestDB");
 		db.openConnection();
 		
         int cID = 1;

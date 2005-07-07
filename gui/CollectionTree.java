@@ -48,11 +48,13 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
 
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 import java.awt.Cursor;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Vector;
 
 import collection.*;
@@ -108,25 +110,17 @@ public class CollectionTree extends JPanel
         // Selection will display data in particles table - wire here.
         //System.out.println(node.getCollectionID());
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        ArrayList<CreateATOFMSAtomFromDB> particleInfo = db.getCollectionParticles(db.getCollection(node.getCollectionID()));
-        Vector<Object> nextRow = null;
+      
+        // fast code
+        ArrayList<String> colnames = db.getColNames(db.getCollection(node.getCollectionID()).getDatatype(), DynamicTable.AtomInfoDense);
+        parentFrame.changeParticleTable(colnames);
         Vector<Vector<Object>> particleTable = parentFrame.getData();
         particleTable.clear();
+        particleTable = db.updateParticleTable(db.getCollection(node.getCollectionID()), particleTable);
         
-        for (int i = 0; i < particleInfo.size(); i++)
-        {
-        	nextRow = new Vector<Object>(4);
-        	nextRow.add(new Integer(particleInfo.get(i).getAtomID()));
-        	nextRow.add(particleInfo.get(i).getFilename());
-        	nextRow.add(new Float(particleInfo.get(i).getSize()));
-        	nextRow.add(particleInfo.get(i).getDateString());
-        	particleTable.add(nextRow);
-        	
-        }
         parentFrame.getParticlesTable().tableChanged(new TableModelEvent(
         		parentFrame.getParticlesTable().getModel()));
         parentFrame.getParticlesTable().doLayout();
-        //parentFrame.getParticlesTable().changeSelection(0,0,false,false);
         parentFrame.validate();
         
         parentFrame.editText(MainFrame.DESCRIPTION,db.getCollectionDescription(node.getCollectionID()));

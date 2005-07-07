@@ -62,7 +62,8 @@ import ATOFMS.CalInfo;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import ATOFMS.PeakParams;
-import atom.CreateATOFMSAtomFromDB;
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 /**
  * @author andersbe
@@ -80,27 +81,8 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	protected void setUp()
 	{
-		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
-		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");
-			
-		} // end catch
-		
-		con = null;
-		
-		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
-		} catch (Exception e) {
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		
-		//TODO: commented this out. AR
-		//SQLServerDatabase.rebuildDatabase("TestDB");	 
-		new CreateTestDatabase();
-		db = new SQLServerDatabase("localhost","1433","TestDB");
-
+		new CreateTestDatabase(); 		
+		db = new SQLServerDatabase("TestDB");
 	}
 	
 	protected void tearDown()
@@ -109,11 +91,9 @@ public class SQLServerDatabaseTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			con.close();
-			con = DriverManager.getConnection(
-					"jdbc:microsoft:sqlserver://" +
-					"localhost:1433;TestDB;SelectMethod=cursor;",
-					"SpASMS","finally");
+			db = new SQLServerDatabase("");
+			db.openConnection();
+			con = db.getCon();
 			//con.createStatement().executeUpdate("DROP DATABASE TestDB");
 			con.close();
 		} catch (SQLException e) {
@@ -586,14 +566,15 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.openConnection();
 		
 		//we know the particle info from inserting it	
-		ArrayList<CreateATOFMSAtomFromDB> actual = db.getCollectionParticles(db.getCollection(1));
-		assertEquals(actual.size(), 5);
+		ArrayList<GeneralAtomFromDB> general = db.getCollectionParticles(db.getCollection(1));
 		
-		assertEquals(actual.get(0).getAtomID(), 1);
-//		assertEquals(actual.get(0).getLaserPower(), 1);  not retrieved in method
-		assertEquals(actual.get(0).getSize(), (float)0.1);
-//		assertEquals(actual.get(0).getScatDelay(), 1);	not retrieved in method
-		assertEquals(actual.get(0).getFilename(), "One");
+		assertEquals(general.size(), 5);
+		ATOFMSAtomFromDB actual = general.get(0).toATOFMSAtom();
+		assertEquals(actual.getAtomID(), 1);
+//		assertEquals(actual.getLaserPower(), 1);  not retrieved in method
+		assertEquals(actual.getSize(), (float)0.1);
+//		assertEquals(actualgetScatDelay(), 1);	not retrieved in method
+		assertEquals(actual.getFilename(), "One");
 			
 		db.closeConnection();
 	}
@@ -795,8 +776,8 @@ public class SQLServerDatabaseTest extends TestCase {
 		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
 		
 		ParticleInfo temp = new ParticleInfo();
-		CreateATOFMSAtomFromDB tempPI = 
-			new CreateATOFMSAtomFromDB(
+		ATOFMSAtomFromDB tempPI = 
+			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
 					new Date("9/2/2003 5:30:38 PM"));
 		//int aID, String fname, int sDelay, float lPower, Date tStamp

@@ -110,6 +110,9 @@ public class MainFrame extends JFrame implements ActionListener,
 	private PeaksChart peaksChart;
 	private int lastAtomID;
 	
+	private JTabbedPane rightPane;
+	private JScrollPane particlePane;
+	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
 	 */
@@ -501,79 +504,31 @@ public class MainFrame extends JFrame implements ActionListener,
 		leftPane.setMinimumSize(new Dimension(128,64));
 		
 		// Add a JTabbedPane to the split pane.
-		JTabbedPane rightPane = new JTabbedPane();
+		rightPane = new JTabbedPane();
 		
-		//Add a dummy table to the Particle Pane.
-		Vector<String> columns = new Vector<String>(4);
-		columns.add("Particle ID");
-		columns.add("Filename");
-		columns.add("Size");
-		columns.add("Time");
+		Vector<String> columns = new Vector<String>(1);
+		columns.add("Click on a collection to see information.");
+			
 		data = new Vector<Vector<Object>>(1000);
-		Vector<Object> row = new Vector<Object>(4);
-		row.add(new Integer(0));
-		row.add("");
-		row.add(new Integer(0));
+		Vector<Object> row = new Vector<Object>(1);
 		row.add("");
 		data.add(row);
 		
-		particlesTable = new JTable(/*new AtomTableModel(db,0)*/data,columns);
+		particlesTable = new JTable(data, columns);
+		
 		particlesTable.setDefaultEditor(Object.class, null);
 		ListSelectionModel lModel = 
 			particlesTable.getSelectionModel();
 		lModel.setSelectionMode(
 				ListSelectionModel.SINGLE_SELECTION);
 		lModel.addListSelectionListener(this);
-
-
-		//TODO:  Instead of using the default table model,
-		// implement a subclass of AbstractTableModel that goes
-		// directly to the database to get rows/columns
-
-		JScrollPane particlePane = 
+		
+		particlePane = 
 			new JScrollPane(particlesTable);
+		rightPane.addTab("Particle List", null, particlePane,
+				null);
 		
-//		peaksText = new JTextArea("Peaks:");
-//		peaksText.setEditable(false);
-//		peaksText.setPreferredSize(new Dimension(150, 450));
-		
-		/*JScrollPane peaksPane = new JScrollPane(peaksText);
-		
-		JPanel partInfoPane = new JPanel();
-		SpringLayout partInfoLayout = new SpringLayout();
-		partInfoPane.setLayout(partInfoLayout);
-		partInfoPane.add(particlePane);
-		partInfoPane.add(peaksPane);
-		//partInfoLayout.putConstraint(
-		//		SpringLayout.NORTH,	particlePane, 0,
-		//		SpringLayout.NORTH, partInfoPane);
-		//partInfoLayout.putConstraint(
-		//		SpringLayout.SOUTH,	particlePane, 0,
-		//		SpringLayout.SOUTH, partInfoPane);
-		//partInfoLayout.putConstraint(
-		//		SpringLayout.WEST, particlePane, 0,
-		//		SpringLayout.EAST, partInfoPane);
-		partInfoLayout.putConstraint(
-				SpringLayout.WEST, peaksPane, 5, 
-				SpringLayout.EAST, particlePane);
-	//	partInfoLayout.putConstraint(
-		//		SpringLayout.EAST, peaksText,0,
-		//		SpringLayout.WEST, partInfoPane);
-		//partInfoLayout.putConstraint(
-		//		SpringLayout.SOUTH, peaksText,0,
-		//		SpringLayout.SOUTH, partInfoPane);
-		//partInfoLayout.putConstraint(
-		//		SpringLayout.NORTH, peaksText, 0,
-		//		SpringLayout.NORTH, partInfoPane);*/
-		rightPane.addTab(
-				"Particle List", 
-				null, particlePane, null);
-		
-		//text version of peak data
-//		JComponent panel2 = makeTextPanel(
-//				peaksText);
-		
-		
+
 		//graphic version of peak data
 		JComponent panel2a = new JPanel(new GridLayout(1,1));
 		peaksChart = new PeaksChart();
@@ -591,16 +546,38 @@ public class MainFrame extends JFrame implements ActionListener,
 		JScrollPane collectionPane = new JScrollPane(infoPanel);
 		rightPane.addTab("Collection Information", 
 				null, collectionPane, null);
-		
-		/*JComponent panel4 = makeTextPanel(
-				new JTextArea("Subcollection information here."));
-		JScrollPane subcollectionPane = new JScrollPane(panel4);
-		rightPane.addTab("Subcollections", null, subcollectionPane, null);
-		*/
 		// Create and add the split pane.
 		splitPane = 
 			new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPane, rightPane);
 		add(splitPane);
+	}
+	
+	public void changeParticleTable(ArrayList<String> fieldNames) {
+			
+		Vector<Object> columns = new Vector<Object>(fieldNames.size());
+		for (int i = 0; i < fieldNames.size(); i++) 
+			columns.add(fieldNames.get(i));
+				
+		data = new Vector<Vector<Object>>(1000);
+		Vector<Object> row = new Vector<Object>(fieldNames.size());
+		for (int i = 0; i < fieldNames.size(); i++) 
+			row.add("");
+		
+		data.add(row);
+
+		particlesTable = new JTable(data, columns);
+
+		rightPane.remove(0);
+		rightPane.insertTab("Particle List", null, new JScrollPane(particlesTable), null, 0);
+		rightPane.setSelectedIndex(0);
+		rightPane.validate();
+		
+		particlesTable.setDefaultEditor(Object.class, null);
+		ListSelectionModel lModel = 
+			particlesTable.getSelectionModel();
+		lModel.setSelectionMode(
+				ListSelectionModel.SINGLE_SELECTION);
+		lModel.addListSelectionListener(this);
 	}
 	
 	
@@ -669,7 +646,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 		
 		//Open database connection:
-		db = new SQLServerDatabase("localhost","1433","SpASMSdb");
+		db = new SQLServerDatabase("SpASMSdb");
 		db.openConnection();
 
 		//Schedule a job for the event-dispatching thread:
@@ -713,9 +690,13 @@ public class MainFrame extends JFrame implements ActionListener,
 		if (row != -1)
 		{
 			int atomID = ((Integer) 
-					particlesTable.getValueAt(row, 0))
-					.intValue();
-			String filename = (String)particlesTable.getValueAt(row,1);
+					particlesTable.getValueAt(row, 0)).intValue();
+			
+			// If collection isn't ATOFMS, don't display anything.
+			if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
+				return;
+			
+			String filename = (String)particlesTable.getValueAt(row,5);
 			
 			if (atomID != lastAtomID && atomID >= 0)
 			{
