@@ -232,7 +232,20 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		{
 			Object source = e.getSource();
 			if (source == okButton) {
-				new EnchiladaDataSetImporter(eTableModel);	
+				EnchiladaDataSetImporter edsi =
+					new EnchiladaDataSetImporter(eTableModel);
+				if (edsi.exceptionsExist()){
+					//get the messages from edsi, display them appropriately
+					ArrayList<String[]> messageList = edsi.getErrors();
+					//display multiple exceptions in same dialog
+					messageList.add(0, new String[]{"The following errors were",
+							" reported during importation: "});
+					for (String[] message : messageList){
+						for(int i=0; i<message.length; i++)
+							System.out.print(message[i]);
+					}
+					ExceptionDialog edialog = new ExceptionDialog(this, messageList);
+					}
 				dispose();
 			}
 			else if (source == cancelButton)
@@ -257,13 +270,16 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 							Connection con = db.getCon();
 							DynamicTableGenerator newType = new DynamicTableGenerator(file, con);
 							newType.createTables();
+							//TODO: check for format, SQL errors in creation for GUI?
 							typelist.append(typeName + "\n");
 						}
 						
 						
 					} catch (FileNotFoundException e1) {
-						System.err.println("Problems creating new datatype.");
-						e1.printStackTrace();
+						ExceptionDialog edialog = new ExceptionDialog(this,
+								"Problems creating new datatype from " + fileName);
+						//System.err.println("Problems creating new datatype.");
+						//e1.printStackTrace();
 					}					
 				}
 			}

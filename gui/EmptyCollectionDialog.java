@@ -59,6 +59,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JTextField nameField;
 	private JTextField commentField;
 	private JTextField datatypeField;
+	private int collectionID;
 	
 	public EmptyCollectionDialog (JFrame parent) {
 		super (parent,"Empty Collection", true);
@@ -103,14 +104,25 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		setVisible(true);	
 	}
 	
+	/**
+	 * Accessor method.
+	 * 
+	 * @return	collectionID for new empty collection
+	 */
+	public int getCollectionID(){
+		
+		return collectionID;
+		
+	}
+	
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		if (source == okButton) {
 			SQLServerDatabase db = new SQLServerDatabase("localhost","1433","SpASMSdb");
 			db.openConnection();
-			int test = db.createEmptyCollection(datatypeField.getText(), 0,nameField.getText(),commentField.getText(),"");
+			collectionID = db.createEmptyCollection(datatypeField.getText(), 0,nameField.getText(),commentField.getText(),"");
 			db.closeConnection();
-			System.out.println("Empty Collection ID: " + test);
+			System.out.println("Empty Collection ID: " + collectionID);
 			dispose();
 		}			
 		else  

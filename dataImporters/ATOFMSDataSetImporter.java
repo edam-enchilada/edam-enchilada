@@ -82,6 +82,7 @@ public class ATOFMSDataSetImporter {
 	private ParTableModel table;
 	private Window mainFrame;
 	private ImportParsDialog ipd;
+	private boolean parent;
 	
 	//Table values - used repeatedly.
 	private int rowCount;
@@ -134,7 +135,9 @@ public class ATOFMSDataSetImporter {
 	 * datasets row by row.
 	 */
 	public void collectTableInfo() {
+		
 		rowCount = table.getRowCount()-1;
+		totalInBatch = rowCount;
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
 			try {
@@ -146,6 +149,7 @@ public class ATOFMSDataSetImporter {
 				area = ((Integer)table.getValueAt(i,5)).intValue();
 				relArea = ((Float)table.getValueAt(i,6)).floatValue();
 				autoCal = ((Boolean)table.getValueAt(i,7)).booleanValue();
+				positionInBatch = i + 1;
 				// Call relevant methods
 				processDataSet(i);
 				readParFileAndCreateEmptyCollection();
@@ -249,7 +253,14 @@ public class ATOFMSDataSetImporter {
 		else bool = 0;
 		String dSet = parFile.toString();
 		dSet = dSet.substring(dSet.lastIndexOf(File.separator)+1, dSet.lastIndexOf("."));
-		id = db.createEmptyCollectionAndDataset("ATOFMS",0,data[0],data[2],
+		
+		//if datasets are imported into a parent collection
+		//pass parent's id in as second parameter, else parentID is root (0)
+		int parentID = 0;
+		if (ipd.parentExists())
+			parentID = ipd.getParentID();
+		
+		id = db.createEmptyCollectionAndDataset("ATOFMS",parentID,data[0],data[2],
 				"'" + massCalFile + "', '" + sizeCalFile + "', " + 
 				ATOFMSParticle.currPeakParams.minHeight + ", " + 
 				ATOFMSParticle.currPeakParams.minArea  + ", " + 

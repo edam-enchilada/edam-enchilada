@@ -34,6 +34,8 @@ public class EnchiladaDataSetImporter{
 	private String atomInfoDense;
 	private ArrayList<String> atomInfoSparse;
 	private StringTokenizer tokenizer;
+	private boolean exceptions;
+	private ArrayList<String[]> exceptionMessages;
 	
 	/**
 	 * Constructor sets initial variable values, calls methods to collect files'
@@ -50,6 +52,8 @@ public class EnchiladaDataSetImporter{
 		nextFile = "";
 		db = MainFrame.db;
 		atomID = -99;
+		exceptions = false;
+		exceptionMessages = new ArrayList<String[]>();
 		
 		ArrayList<String> fileNames = collectTableInfo(eTable);
 		
@@ -60,16 +64,20 @@ public class EnchiladaDataSetImporter{
 			try {
 				scan = new Scanner(file);
 				String firstLine = scan.nextLine();
+				System.out.println(firstLine);//debugging
 				
 				if (firstLine.equalsIgnoreCase("BEGIN")){
 					datatype = scan.nextLine();
 					
 					if (db.containsDatatype(datatype))
 						importData();
-					else 
-						System.err.println("Database does not contains datatype "
-								+ datatype);
-					//TODO change into gui warning
+					else{
+						//System.err.println("Database does not contains datatype "
+						//	+ datatype);
+						exceptions = true;
+						exceptionMessages.add(new String[]{"Database does not contain datatype ",
+							datatype, ".  Please import a new MetaData file."});
+						}
 				}
 				
 				//there shouldn't be anything except "BEGIN" unless the previous
@@ -79,27 +87,43 @@ public class EnchiladaDataSetImporter{
 					//test to see if the filename of this file is same as nextFile
 					//and the name of the last file is the file that is pointed to
 					if (! nextFile.equals(file.getName())
-					 	|| ! lastFile.equals(firstLine))
-						//TODO: turn into a GUI warning
-						System.err.println("Incorrect file order.");
+					 	|| ! lastFile.equals(firstLine)){
+						
+						exceptions = true;
+						exceptionMessages.add(new String[]{"Incorrect file order."});
+						
+					}
 					
 					//test to see if the first line of this file is the same as
 					//the last filename
-					else if (! datatype.equals(scan.nextLine()))
-						//TODO: change into gui
-						System.err.println("Datatypes in continuing files should match");
+					else if (! datatype.equals(scan.nextLine())){
+						
+						exceptions = true;
+						exceptionMessages.add(new String[]{"Datatypes in continuing",
+								" files should match."});
+						
+					}
 				
 					else 
 						importData();
 					
 				}
+				//if the first line isn't "BEGIN" but collectionContinues is false
+				else{
+					
+					exceptions = true;
+					exceptionMessages.add(new String[]{"Error importing the .ed file ",
+							file.getName(), ".  Please check the imporation order and the file format." });
+					
+				}
 				
 			} catch (FileNotFoundException e) {
-				//TODO change into gui warning
-				System.err.println("File " + fileNames.get(i) + " not found.");
-				e.printStackTrace();
+				
+				exceptions = true;
+				exceptionMessages.add(new String[]{"File ", fileNames.get(i),
+						" not found."});
 			}
-			
+
 		}
 		
 	}
@@ -126,9 +150,13 @@ public class EnchiladaDataSetImporter{
 			if (ext.equals(".ed"))
 				tableInfo.add((String)table.getValueAt(i,1));
 			else
-				System.err.println("Incorrect file extension for file " + name);
-				//TODO change into gui warning
-			
+			{
+				
+				exceptions = true;
+				exceptionMessages.add(new String[]{"Incorrect file extension for file ",
+						name});
+				
+			}
 		}
 		return tableInfo;
 	}
@@ -146,9 +174,10 @@ public class EnchiladaDataSetImporter{
 		
 		while (scan.hasNext()){
 			
-			//for the case where the line starts with '*' (new dataset)
+
 			first = scan.next();
-			//System.out.println("first is " + first);
+			System.out.println("first is " + first);
+			//for the case where the line starts with '*' (new dataset)
 			if (first.length() == 1){
 				
 				//if there's already an atom's worth of info waiting, insert it
@@ -196,17 +225,25 @@ public class EnchiladaDataSetImporter{
 				restOfLine = chop(scan.nextLine());
 				//System.out.println(restOfLine);
 					
-				//if this line comes before any ** lines, atomInfoSparse won't
-				//be instantiated yet, so we catch the nullpointer and tell
-				//the user about the corrupt data file
+				//if this line comes before /any/ ** lines, atomInfoSparse won't
+				//be instantiated yet, so the info is entered under a new atomID
+				//(that atom will have no dense info)  (is this how we want to handle it?
 				try{
 					//insert the rest of the line's info into atomInfoSparse
 					atomInfoSparse.add(restOfLine);
 				}
 				catch (NullPointerException e){
-					//TODO: change into a GUI warning
-					System.err.println("Corrupted .ed file, sparse data listed "
-							+ "before dense data in " + file.getName());
+					
+					atomID = db.getNextID();
+					atomInfoSparse = new ArrayList<String>();
+					atomInfoSparse.add(restOfLine);
+					exceptions = true;
+					exceptionMessages.add(new String[]{"Incorrect format for .ed file ",
+							file.getName(), ".  This resulted in atom ", 
+							Integer.toString(atomID), " being created with sparse info only",
+							" and may have affected the rest of the data."});
+					//System.err.println("Corrupted .ed file, sparse data listed "
+					//		+ "before dense data in " + file.getName());
 				}
 				
 			}
@@ -243,9 +280,12 @@ public class EnchiladaDataSetImporter{
 			//IDs to negative values, so the scanner skips until it hits a new
 			//dataset
 			else{
-				//TODO: change into gui?  how do we handle corrupted files?
-				System.err.println("Incorrect .ed file format for file " 
-						+ file.getName());
+				//how do we handle corrupted files?
+				//System.err.println("Incorrect .ed file format for file " 
+					//	+ file.getName());
+				exceptions = true;
+				exceptionMessages.add(new String[]{"Incorrect .ed file format for file ",
+						file.getName(), ".  Data may have been corrupted on entry to database."});
 				collectionContinues = false;
 				if (atomID >= 0)
 					db.insertParticle(atomInfoDense, 
@@ -279,10 +319,18 @@ public class EnchiladaDataSetImporter{
 		line = line.trim();
 		tokenizer = new StringTokenizer(line, "'");
 		String datasetName = tokenizer.nextToken();
-		//System.out.println(datasetName);
-		//needs to be +2 to account for both opening and closing apostrophes
-		String data = line.substring(datasetName.length() + 2, line.length());
-		//System.out.println("Pre-chop data: " + data);
+		//System.out.println(datasetName);//debugging
+		String data = "";
+		try{
+			//needs to be +2 to account for both opening and closing apostrophes
+			data = line.substring(datasetName.length() + 2, line.length());
+		}
+		catch(StringIndexOutOfBoundsException e){
+			exceptions = true;
+			exceptionMessages.add(new String[]{"Incorrect .ed file format in file ",
+					file.getName()});
+		}
+		//System.out.println("Pre-chop data: " + data); //debugging
 		data = chop(data);
 		//System.out.println(data); //debugging
 		String comment = ""; //what do we want to put in here??
@@ -341,5 +389,27 @@ public class EnchiladaDataSetImporter{
 		}
 		
 	}
+	
+	/**
+	 * Accessor method to determine whether the import suffered any exceptions.
+	 * 
+	 * @return - True if there were no exceptions.
+	 */
+	public boolean exceptionsExist(){
+		
+		return exceptions;
 
+	}
+
+	/**
+	 * Accessor method to get the list of exceptions that occurred during the 
+	 * import process.
+	 * 
+	 * @return	ArrayList<String[]> of exception messages.
+	 */
+	public ArrayList<String[]> getErrors(){
+		
+		return exceptionMessages;
+		
+	}
 }

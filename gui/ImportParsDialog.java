@@ -62,11 +62,16 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	
 	private JButton okButton;
 	private JButton cancelButton;
+	private JRadioButton parentButton;
+	private JLabel parentLabel;
 	private ParTableModel pTableModel;
 	private JProgressBar progressBar;
 	private int dataSetCount;
 	private static Window parent = null;
 	private boolean exceptions = false;
+	private boolean importedTogether = false;
+	private int parentID = 0; //default parent collection is root
+	
 	/**
 	 * Extends JDialog to form a modal dialogue box for importing 
 	 * par files.  
@@ -97,6 +102,15 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(this);
 		
+		//add an option to import all the datasets into one parent collection
+		parentButton = new JRadioButton(
+				"Create a parent collection for all incoming datasets.",
+				false);
+		parentButton.setMnemonic(KeyEvent.VK_P);
+		parentButton.addActionListener(this);
+		
+		parentLabel = new JLabel();
+		
 		scrollPane.setPreferredSize(new Dimension(795,500));
 		
 		JPanel listPane = new JPanel();
@@ -112,11 +126,13 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
 		buttonPane.setBorder(BorderFactory.createEmptyBorder(0,10,10,10));
 		
+		buttonPane.add(parentButton);
+		buttonPane.add(parentLabel);
 		buttonPane.add(Box.createHorizontalGlue());
 		buttonPane.add(okButton);
 		buttonPane.add(Box.createRigidArea(new Dimension(10,0)));
 		buttonPane.add(cancelButton);
-		
+				
 		add(listPane, BorderLayout.CENTER);
 		add(buttonPane, BorderLayout.SOUTH);
 		
@@ -129,7 +145,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 
 	private JTable getParTable()
 	{
-		pTableModel = new ParTableModel(8);
+		pTableModel = new ParTableModel();
 		JTable pTable = new JTable(pTableModel);		
 		TableColumn[] tableColumns = new TableColumn[7];
 		for (int i = 0; i < 7; i++)
@@ -168,8 +184,40 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				}
 			exceptions = false;
 		}
+		else if (source == parentButton){
+			//pop up a "create new collections" dialog box
+			EmptyCollectionDialog ecd = new EmptyCollectionDialog((JFrame)parent);
+			parentID = ecd.getCollectionID();
+			//show the name of the collection you're importing into, somehow?
+			parentLabel.setText("Importing into collection # " + parentID);
+			importedTogether = true;
+		}
 		else if (source == cancelButton)
 			dispose();
+	}
+	
+	/**
+	 * Method to determine whether the datasets are being imported together into
+	 * a single parent collection.
+	 * 
+	 * @return True if datasets are being imported together.
+	 */
+	public boolean parentExists(){
+		
+		return importedTogether;
+		
+	}
+	
+	/**
+	 * Accessor method to obtain the parent collection's ID for the datasets being
+	 * imported.
+	 * 
+	 * @return	parentID
+	 */
+	public int getParentID(){
+		
+		return parentID;
+		
 	}
 	
 	public void displayException(String[] message) {

@@ -100,7 +100,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		db = new SQLServerDatabase("localhost","1433","TestDB");
 		
 		// create table with one entry.
-		table = new ParTableModel(8);
+		table = new ParTableModel();
 		// TODO: insert dummy row.
 		table.setValueAt("testRow/b.par", 1, 1);
 		table.setValueAt("testRow/cal.cal", 1, 2);
