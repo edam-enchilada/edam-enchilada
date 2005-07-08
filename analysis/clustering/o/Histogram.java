@@ -86,15 +86,15 @@ public class Histogram {
 	}
 	
 
-	// XXX: sometimes returns null and sometimes returns an empty list.
-	//aklsdfjkajsdkfjkasjdkfjaks
+
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		List<SplitRule> rules = new LinkedList<SplitRule>();
 		
 		List<Float> areas = getSplitPoints(confidencePercent);
 		
 		if (areas == null) {
-			return null;
+			//XXX: is returning an empty list the right thing to do?
+			return rules;
 		} else {
 			Iterator<Float> i = areas.iterator();
 			float thisArea;

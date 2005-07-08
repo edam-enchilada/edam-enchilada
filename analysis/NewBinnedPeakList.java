@@ -51,7 +51,7 @@ import java.util.ArrayList;
  * from a regular peaklist, as well as methods for adding values
  * with no checks.
  */
-public class BinnedPeakList {
+public class NewBinnedPeakList {
 
 	private ArrayList<Integer> locations;
 	private ArrayList<Float> areas;
@@ -64,7 +64,7 @@ public class BinnedPeakList {
 	 * A constructor for the peaklist, initializes the underlying
 	 * ArrayLists to a size of 20.
 	 */
-	public BinnedPeakList()
+	public NewBinnedPeakList()
 	{
 		locations = new ArrayList<Integer>(20);
 		areas = new ArrayList<Float>(20);
@@ -102,7 +102,7 @@ public class BinnedPeakList {
 	}
 	
 	// TODO: Update this to the real thing
-	public float getDistance(BinnedPeakList toList, DistanceMetric dMetric)
+	public float getDistance(NewBinnedPeakList toList, DistanceMetric dMetric)
 	{
 //		TODO: Make this more graceful
 		
@@ -118,8 +118,8 @@ public class BinnedPeakList {
 			longerLists[i] = 0;
 		}
 		float distance = 0;
-		BinnedPeakList longer;
-		BinnedPeakList shorter;
+		NewBinnedPeakList longer;
+		NewBinnedPeakList shorter;
 		resetPosition();
 		toList.resetPosition();
 		if (length() < toList.length())
@@ -315,7 +315,7 @@ public class BinnedPeakList {
 	
 	/**
 	 * This skips all the checks of add().  Do not use this unless
-	 * you are copying from another list: not taking care to make
+	 * you are copying from another list, not taking care to make
 	 * sure that you are not adding duplicate locations can result
 	 * in undesired behavior!!!!
 	 * @param location	The location of the peak
@@ -399,7 +399,7 @@ public class BinnedPeakList {
 		return largestArea;
 	}
 	
-	public void addAnotherParticle(BinnedPeakList peaks) {
+	public void addAnotherParticle(NewBinnedPeakList peaks) {
 		BinnedPeak peak = null;
 		for (int i = 0; i < peaks.length(); i++) {
 			peak = new BinnedPeak(peaks.locations.get(i).intValue(), 

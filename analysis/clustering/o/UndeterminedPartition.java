@@ -46,6 +46,9 @@ public class UndeterminedPartition implements Partition {
 		for (int i = 0; i < 4; i++) {
 			nb.printDimension(i);
 		}
+		/*
+		 * end for debugging.
+		 */
 		
 		SplitRule r = nb.getBestSplit(95);
 		if (r == null) {
