@@ -45,6 +45,7 @@ import java.util.Iterator;
 
 /**
  * @author andersbe
+ * @author smitht
  *
  * An implementation of a sparse array, this class is essentially
  * a peak list where every location is an integer value (rounded 
@@ -74,8 +75,8 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 	public float getMagnitude(DistanceMetric dMetric)
 	{
 		float magnitude = 0;
-		
-		resetPosition();
+
+		Iterator<BinnedPeak> i = iterator();
 		//if (list.length() == 0)
 		//{
 		//	BinnedPeakList returnThis = new BinnedPeakList();
@@ -83,22 +84,21 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		//	return returnThis;
 		//}
 		if (dMetric == DistanceMetric.CITY_BLOCK)
-			for (int i = 0; i < length(); i++)
+			while (i.hasNext())
 			{
-				magnitude += getNextLocationAndArea().area;
+				magnitude += i.next().area;
 			}
 		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 		         dMetric == DistanceMetric.DOT_PRODUCT)
 		{
 			float currentArea;
-			for (int i = 0; i < length(); i++)
+			while (i.hasNext())
 			{
-				currentArea = getNextLocationAndArea().area;
+				currentArea = i.next().area;
 				magnitude += currentArea*currentArea;
 			}
 			magnitude = (float) Math.sqrt(magnitude);
 		}
-		resetPosition();
 		return magnitude;
 	}
 	
@@ -109,10 +109,7 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		
 		//This seems to take a 2 seconds longer?
 		//Arrays.fill(longerLists, 0.0f);
-		
-		resetPosition();
-		toList.resetPosition();
-		
+
 	    // longerLists keeps track of which peak locations have nonzero areas
 		for (int i = 0; i < DOUBLE_MAX; i++)
 		{
@@ -121,8 +118,7 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		float distance = 0;
 		NewBinnedPeakList longer;
 		NewBinnedPeakList shorter;
-		resetPosition();
-		toList.resetPosition();
+
 		if (length() < toList.length())
 		{
 			shorter = this;
@@ -134,11 +130,14 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 			shorter = toList;
 		}
 		
-		BinnedPeak temp;
+		Iterator<BinnedPeak> longIter = longer.iterator();
+		Iterator<BinnedPeak> shortIter = shorter.iterator();
 		
-		for (int i = 0; i < longer.length(); i++)
+		BinnedPeak temp;
+
+		while (longIter.hasNext()) 
 		{
-			temp = longer.getNextLocationAndArea();
+			temp = longIter.next();
 			longerLists[temp.location + MAX_LOCATION] = temp.area;
 			//Do we need this?: - nope
 			//bCheckedLocs[temp.location + MAX_LOCATION] = true;
@@ -158,12 +157,10 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 			}
 		}	
 		
-		shorter.resetPosition();
-		longer.resetPosition();
 		float eucTemp = 0;
-		for (int i =  0; i < shorter.length(); i++)
+		while (shortIter.hasNext())
 		{
-			temp = shorter.getNextLocationAndArea();
+			temp = shortIter.next();
 			if (longerLists[temp.location+MAX_LOCATION] != 0)
 			{
 				if (dMetric == DistanceMetric.CITY_BLOCK)
@@ -316,7 +313,7 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 	
 	/**
 	 * This skips all the checks of add().  Do not use this unless
-	 * you are copying from another list, not taking care to make
+	 * you are copying from another list: not taking care to make
 	 * sure that you are not adding duplicate locations can result
 	 * in undesired behavior!!!!
 	 * @param location	The location of the peak
@@ -365,15 +362,12 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		System.out.println("printing peak list");
 		boolean exception = false;
 		int counter = 0;
-		resetPosition();
+		Iterator<BinnedPeak> i = iterator();
 		BinnedPeak p;
-		while (!exception) {
-			try {
-				p = getNextLocationAndArea();
-				System.out.println(p.location + ", " + p.area);
-			}catch (Exception e) {exception = true;}
+		while (i.hasNext()) {
+			p = i.next();
+			System.out.println(p.location + ", " + p.area);
 		}
-		resetPosition();
 	}
 	
 	public int getLastLocation() {
@@ -409,6 +403,10 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	public Iterator<BinnedPeak> iterator() {
+		return new Iter(this);
+	}
+	
 	public class Iter implements Iterator<BinnedPeak> {
 		private int position = -1;
 		private NewBinnedPeakList bpl;
@@ -434,9 +432,5 @@ public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
-	}
-
-	public Iterator<BinnedPeak> iterator() {
-		return new Iter(this);
 	}
 }
