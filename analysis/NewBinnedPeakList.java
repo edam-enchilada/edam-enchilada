@@ -40,6 +40,7 @@
 package analysis;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 
 /**
@@ -51,7 +52,7 @@ import java.util.ArrayList;
  * from a regular peaklist, as well as methods for adding values
  * with no checks.
  */
-public class NewBinnedPeakList {
+public class NewBinnedPeakList implements Iterable<BinnedPeak> {
 
 	private ArrayList<Integer> locations;
 	private ArrayList<Float> areas;
@@ -406,5 +407,36 @@ public class NewBinnedPeakList {
 					peaks.areas.get(i).floatValue());
 			add(peak.location, peak.area);
 		}
+	}
+	
+	public class Iter implements Iterator<BinnedPeak> {
+		private int position = -1;
+		private NewBinnedPeakList bpl;
+		
+		public Iter(NewBinnedPeakList bpl) {
+			this.bpl = bpl;
+		}
+
+		public boolean hasNext() {
+			if (position + 1 < bpl.length()) {
+				return true;
+			}
+			return false;
+		}
+
+		public BinnedPeak next() {
+			position++;
+			
+			return new BinnedPeak(bpl.locations.get(position),
+					bpl.areas.get(position));
+		}
+
+		public void remove() {
+			throw new Error("Not implemented!");
+		}
+	}
+
+	public Iterator<BinnedPeak> iterator() {
+		return new Iter(this);
 	}
 }

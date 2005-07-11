@@ -1,5 +1,7 @@
 package analysis;
 
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 
 public class NewBinnedPeakListTest extends TestCase {
@@ -74,18 +76,60 @@ public class NewBinnedPeakListTest extends TestCase {
 		// the new version shouldn't need this.
 	}
 
-	public void testGetNextLocationAndArea() {
-		// this probably will work differently.  but it's this for now.
+	public void testGetNextStuff() {
 		a.resetPosition();
+		Iterator<BinnedPeak> iter = a.iterator();
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+
+		
+		a.resetPosition();
+		iter = b.iterator();
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(a.getNextLocationAndArea(),
+				iter.next());
+		
 		b.resetPosition();
-		assertBinnedPeakEquals(a.getNextLocationAndArea(),
-				b.getNextLocationAndArea());
-		assertBinnedPeakEquals(a.getNextLocationAndArea(),
-				b.getNextLocationAndArea());
-		assertBinnedPeakEquals(a.getNextLocationAndArea(),
-				b.getNextLocationAndArea());
-		assertBinnedPeakEquals(a.getNextLocationAndArea(),
-				b.getNextLocationAndArea());
+		iter = a.iterator();
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+
+		b.resetPosition();
+		iter = b.iterator();
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+		assertBinnedPeakEquals(b.getNextLocationAndArea(),
+				iter.next());
+
+		iter = a.iterator();
+		Iterator<BinnedPeak> i2 = b.iterator();
+		while (iter.hasNext()) {
+			assertEquals(iter.hasNext(), i2.hasNext());
+			assertBinnedPeakEquals(iter.next(), i2.next());
+		}
+		assertEquals(iter.hasNext(), i2.hasNext());
+	
 	}
 
 	public void testDivideAreasBy() {
@@ -113,12 +157,14 @@ public class NewBinnedPeakListTest extends TestCase {
 	}
 
 	public void assertBPLEquals(BinnedPeakList foo, NewBinnedPeakList bar) {
-		foo.resetPosition();
-		bar.resetPosition();
-		for (int i = 0; i < foo.length(); i++) {
-			assertBinnedPeakEquals(foo.getNextLocationAndArea(),
-					bar.getNextLocationAndArea());
+		Iterator<BinnedPeak> i = foo.iterator();
+		Iterator<BinnedPeak> iter = bar.iterator();
+		while (i.hasNext()) {
+			assertTrue(iter.hasNext());
+			assertBinnedPeakEquals(i.next(),
+					iter.next());
 		}
+		assertFalse(iter.hasNext());
 	}
 	
 	public void assertBinnedPeakEquals(BinnedPeak u, BinnedPeak v) {

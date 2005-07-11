@@ -46,6 +46,7 @@ package analysis.clustering;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 //import java.util.Arrays;
 
 import database.CollectionCursor;
@@ -107,11 +108,11 @@ public abstract class Cluster extends CollectionDivider {
 			PrintWriter out)
 	{
 		out.println("Location:\tArea:");
-		inputList.resetPosition();
+		Iterator<BinnedPeak> iter = inputList.iterator();
 		BinnedPeak tempPeak;
-		for (int i = 0; i < inputList.length(); i++)
+		while (iter.hasNext())
 		{
-			tempPeak = inputList.getNextLocationAndArea();
+			tempPeak = iter.next();
 			out.println(tempPeak.location + "\t" + tempPeak.area);
 		}
 	}
@@ -130,10 +131,9 @@ public abstract class Cluster extends CollectionDivider {
 		float magnitude = list.getMagnitude(distanceMetric);
 		BinnedPeakList returnList = new BinnedPeakList();
 		BinnedPeak temp;
-		list.resetPosition();
-		for (int i = 0; i < list.length(); i++)
-		{
-			temp = list.getNextLocationAndArea();
+		Iterator<BinnedPeak> iter = list.iterator();
+		while (iter.hasNext()) {
+			temp = iter.next();
 			if ((float)(temp.area / magnitude) != 0.0f)
 				returnList.addNoChecks(temp.location, 
 						temp.area / magnitude);
@@ -155,8 +155,6 @@ public abstract class Cluster extends CollectionDivider {
 		ArrayList<Integer> checkedLocations = new ArrayList<Integer>();
 		double distance = 0;
 		BinnedPeakList longer, shorter;
-		list1.resetPosition();
-		list2.resetPosition();
 		if (list1.length() < list2.length())
 		{
 			shorter = list1;
@@ -169,9 +167,10 @@ public abstract class Cluster extends CollectionDivider {
 		}
 		BinnedPeak temp;
 		double shorterTemp;
-		for (int i = 0; i < longer.length(); i++)
+		Iterator<BinnedPeak> longIter = longer.iterator();
+		while (longIter.hasNext())
 		{
-			temp = longer.getNextLocationAndArea();
+			temp = longIter.next();
 			checkedLocations.add(new Integer(temp.location));
 			if (distanceMetric == DistanceMetric.CITY_BLOCK)
 				distance += Math.abs(temp.area - 
@@ -186,10 +185,11 @@ public abstract class Cluster extends CollectionDivider {
 				distance = -1.0f;
 		}
 		boolean alreadyChecked = false;
-		for (int i = 0; i < shorter.length(); i++)
+		Iterator<BinnedPeak> shortIter = shorter.iterator();
+		while (shortIter.hasNext())
 		{
 			alreadyChecked = false;
-			temp = shorter.getNextLocationAndArea();
+			temp = shortIter.next();
 			double longerTemp;
 			for (Integer loc : checkedLocations)
 				if (temp.location == loc.intValue())

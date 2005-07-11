@@ -24,9 +24,9 @@ public class NumberBox {
 
 	private void histAtom(BinnedPeakList bpl) {
 		BinnedPeak p;
-		bpl.resetPosition();
-		for (int i = 0; i < bpl.length(); i++) {
-			p = bpl.getNextLocationAndArea();
+		Iterator<BinnedPeak> i = bpl.iterator();
+		while (i.hasNext()) {
+			p = i.next();
 			if (histograms[p.location + MAX_LOCATION] == null) {
 				histograms[p.location + MAX_LOCATION] 
 				           = new Histogram((float) stats.stdDev(p.location),

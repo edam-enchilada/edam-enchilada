@@ -51,12 +51,10 @@ public class StatSummary {
 	}
 	
 	public void addAtom(BinnedPeakList atom) {
-		BinnedPeak p;
-		atom.resetPosition();
+		Iterator<BinnedPeak> i = atom.iterator();
 		count++;
-		for (int i = 0; i < atom.length(); i++) {
-			p = atom.getNextLocationAndArea();
-			addPeak(p);
+		while (i.hasNext()) {
+			addPeak(i.next());
 		}
 	}
 	

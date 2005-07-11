@@ -46,6 +46,7 @@ package analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * @author andersbe
@@ -81,15 +82,15 @@ public class MedianFinder {
 		for (int i = 0; i < particles.size(); i++)
 		{
 			tempPL = particles.get(i);
-			tempPL.resetPosition();
-			for (int j = 0; j < tempPL.length(); j++)
+			Iterator<BinnedPeak> j = tempPL.iterator();
+
+			while (j.hasNext())
 			{
-				BinnedPeak peak = tempPL.getNextLocationAndArea();
+				BinnedPeak peak = j.next();
 				sortedList[MAX_LOCATION+peak.location][i] = 
 					peak.area;
 				locationsUsed[MAX_LOCATION+peak.location] = true;
 			}
-			tempPL.resetPosition();
 		}
 	}
 	
@@ -205,7 +206,6 @@ public class MedianFinder {
 	{
 		// Get the median and calculate the starting magnitude
 		BinnedPeakList median = getMedian();
-		median.resetPosition();
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
 		
 		/*assert(magnitude <= 1.001f) : "Median was larger than 1: " +
