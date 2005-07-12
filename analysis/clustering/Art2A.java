@@ -45,6 +45,7 @@
 package analysis.clustering;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import ATOFMS.ParticleInfo;
 import analysis.*;
@@ -93,16 +94,15 @@ public class Art2A extends Cluster
 	{
 		BinnedPeakList returnList = new BinnedPeakList();
 		
-		addedParticle.resetPosition();
-		centroid.resetPosition();
 		BinnedPeak addedPeak;
 		// keep track of locations that are in both lists so we don't 
 		// redo them.
+		Iterator<BinnedPeak> iter = addedParticle.iterator();
 		ArrayList<Integer> locationsGrabbed = new ArrayList<Integer>();
 		float centroidArea;
-		for (int i = 0; i < addedParticle.length(); i++)
+		while (iter.hasNext())
 		{
-			addedPeak = addedParticle.getNextLocationAndArea();
+			addedPeak = iter.next();
 			centroidArea = centroid.getAreaAt(addedPeak.location);
 			locationsGrabbed.add(new Integer(addedPeak.location));
 			
@@ -114,9 +114,11 @@ public class Art2A extends Cluster
 		BinnedPeak centroidPeak;
 		float addedArea;
 		boolean alreadyAdded;
-		for (int i = 0; i < centroid.length(); i++)
+		
+		iter = centroid.iterator(); // iterator is now over CENTROID
+		while (iter.hasNext())
 		{
-			centroidPeak = centroid.getNextLocationAndArea();
+			centroidPeak = iter.next();
 			alreadyAdded = false;
 			for (int j = 0; j < locationsGrabbed.size(); j++)
 				if (centroidPeak.location == 

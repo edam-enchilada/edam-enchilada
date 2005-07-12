@@ -39,11 +39,12 @@
 
 package analysis;
 
-import java.util.ArrayList;
+import java.util.*;
 
 
 /**
  * @author andersbe
+ * @author smitht
  *
  * An implementation of a sparse array, this class is essentially
  * a peak list where every location is an integer value (rounded 
@@ -51,30 +52,27 @@ import java.util.ArrayList;
  * from a regular peaklist, as well as methods for adding values
  * with no checks.
  */
-public class BinnedPeakList {
-
-	private ArrayList<Integer> locations;
-	private ArrayList<Float> areas;
-	int position = -1;
+public class BinnedPeakList implements Iterable<BinnedPeak> {
+	private SortedMap<Integer, Float> peaks;
 
 	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private static float[] longerLists = new float[MAX_LOCATION * 2];
+
 	/**
 	 * A constructor for the peaklist, initializes the underlying
 	 * ArrayLists to a size of 20.
 	 */
 	public BinnedPeakList()
 	{
-		locations = new ArrayList<Integer>(20);
-		areas = new ArrayList<Float>(20);
+		peaks = new TreeMap<Integer, Float>();
 	}
 	
 	public float getMagnitude(DistanceMetric dMetric)
 	{
 		float magnitude = 0;
-		
-		resetPosition();
+
+		Iterator<BinnedPeak> i = iterator();
 		//if (list.length() == 0)
 		//{
 		//	BinnedPeakList returnThis = new BinnedPeakList();
@@ -82,36 +80,33 @@ public class BinnedPeakList {
 		//	return returnThis;
 		//}
 		if (dMetric == DistanceMetric.CITY_BLOCK)
-			for (int i = 0; i < length(); i++)
+			while (i.hasNext())
 			{
-				magnitude += getNextLocationAndArea().area;
+				magnitude += i.next().area;
 			}
 		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 		         dMetric == DistanceMetric.DOT_PRODUCT)
 		{
 			float currentArea;
-			for (int i = 0; i < length(); i++)
+			while (i.hasNext())
 			{
-				currentArea = getNextLocationAndArea().area;
+				currentArea = i.next().area;
 				magnitude += currentArea*currentArea;
 			}
 			magnitude = (float) Math.sqrt(magnitude);
 		}
-		resetPosition();
 		return magnitude;
 	}
 	
 	// TODO: Update this to the real thing
+	// TODO: change this to take advantage of sorted iteration.
 	public float getDistance(BinnedPeakList toList, DistanceMetric dMetric)
 	{
 //		TODO: Make this more graceful
 		
 		//This seems to take a 2 seconds longer?
 		//Arrays.fill(longerLists, 0.0f);
-		
-		resetPosition();
-		toList.resetPosition();
-		
+
 	    // longerLists keeps track of which peak locations have nonzero areas
 		for (int i = 0; i < DOUBLE_MAX; i++)
 		{
@@ -120,8 +115,7 @@ public class BinnedPeakList {
 		float distance = 0;
 		BinnedPeakList longer;
 		BinnedPeakList shorter;
-		resetPosition();
-		toList.resetPosition();
+
 		if (length() < toList.length())
 		{
 			shorter = this;
@@ -133,11 +127,14 @@ public class BinnedPeakList {
 			shorter = toList;
 		}
 		
-		BinnedPeak temp;
+		Iterator<BinnedPeak> longIter = longer.iterator();
+		Iterator<BinnedPeak> shortIter = shorter.iterator();
 		
-		for (int i = 0; i < longer.length(); i++)
+		BinnedPeak temp;
+
+		while (longIter.hasNext()) 
 		{
-			temp = longer.getNextLocationAndArea();
+			temp = longIter.next();
 			longerLists[temp.location + MAX_LOCATION] = temp.area;
 			//Do we need this?: - nope
 			//bCheckedLocs[temp.location + MAX_LOCATION] = true;
@@ -157,12 +154,10 @@ public class BinnedPeakList {
 			}
 		}	
 		
-		shorter.resetPosition();
-		longer.resetPosition();
 		float eucTemp = 0;
-		for (int i =  0; i < shorter.length(); i++)
+		while (shortIter.hasNext())
 		{
-			temp = shorter.getNextLocationAndArea();
+			temp = shortIter.next();
 			if (longerLists[temp.location+MAX_LOCATION] != 0)
 			{
 				if (dMetric == DistanceMetric.CITY_BLOCK)
@@ -248,13 +243,12 @@ public class BinnedPeakList {
 	 */
 	public float getAreaAt(int location)
 	{
-		Integer temp = null;
-		for (int i = 0; i < locations.size(); i++)
-		{
-			if (locations.get(i).intValue() == location)
-				return areas.get(i).floatValue();
+		Float area = peaks.get(location);
+		if (area == null) {
+			return 0;
+		} else {
+			return area;
 		}
-		return 0;
 	}
 	
 	/**
@@ -275,8 +269,6 @@ public class BinnedPeakList {
 	{
 		assert(location < MAX_LOCATION && location > - MAX_LOCATION) :
 			"Location to add is out of bounds" + location;
-		float temp = 0;
-		boolean exists = false;
 		int locationInt;
 		
 		// If the location is positive or zero, then add 0.5 to round.
@@ -286,21 +278,21 @@ public class BinnedPeakList {
 		else
 			locationInt = (int) ((float) location - 0.5);
 		
-		for (int i = 0; i < locations.size(); i++)
+		if (peaks.containsKey(locationInt))
 		{
-			if(locations.get(i).intValue() == locationInt)
-			{
-				temp = areas.get(i).floatValue() + area;
-				areas.set(i,new Float(temp));
-				exists = true;
-				return;
-			}
+			peaks.put(locationInt, peaks.get(locationInt) + area);
+		} else {
+			peaks.put(locationInt, area);
 		}
-		if (!exists)
-		{
-			locations.add(new Integer(locationInt));
-			areas.add(new Float(area));
-		}
+	}
+	
+	/**
+	 * Adds a BinnedPeak, with the same checks as add(float, float).
+	 * Equivalent to add(bp.location, bp.area).
+	 * @param bp the BinnedPeak to add.
+	 */
+	public void add(BinnedPeak bp) {
+		add((float) bp.location, bp.area);
 	}
 	
 	/**
@@ -310,12 +302,12 @@ public class BinnedPeakList {
 	 */
 	public int length()
 	{
-		return locations.size();
+		return peaks.size();
 	}
 	
 	/**
 	 * This skips all the checks of add().  Do not use this unless
-	 * you are copying from another list, not taking care to make
+	 * you are copying from another list: not taking care to make
 	 * sure that you are not adding duplicate locations can result
 	 * in undesired behavior!!!!
 	 * @param location	The location of the peak
@@ -326,85 +318,71 @@ public class BinnedPeakList {
 		assert(location < MAX_LOCATION && location > - MAX_LOCATION) : 
 			"location is out of bounds: " + location;
 		//peaks.add(new BinnedPeak(location,area));
-		locations.add(new Integer(location));
-		areas.add(new Float(area));
-	}
-	
-	/**
-	 * Reset this peaklist to the beginning for the 
-	 * getNextLocationAndArea function.
-	 *
-	 */
-	public void resetPosition() 
-	{
-		position = -1;
-	}
-	
-	/**
-	 * Returns a BinnedPeak representing the next peak in the list.
-	 * @return the next peak.
-	 */
-	public BinnedPeak getNextLocationAndArea()
-	{
-		position++;
-		return new BinnedPeak(locations.get(position).intValue(), 
-				areas.get(position).floatValue());
-		//return peaks.get(position);
-		
+		peaks.put(location, area);
 	}
 	
 	public void divideAreasBy(int divisor) {
-		for (int i = 0; i < areas.size(); i++)
-		{
-			areas.set(i, new Float(areas.get(i).floatValue() / divisor));
+		// TODO: Map.Entry.setValue()
+		Map.Entry<Integer,Float> e;
+		Iterator<Map.Entry<Integer,Float>> i = peaks.entrySet().iterator();
+		
+		while (i.hasNext()) {
+			e = i.next();
+			e.setValue(e.getValue() / divisor);
 		}
 	}
 		
 	public void printPeakList() {
 		System.out.println("printing peak list");
-		boolean exception = false;
-		int counter = 0;
-		resetPosition();
+		Iterator<BinnedPeak> i = iterator();
 		BinnedPeak p;
-		while (!exception) {
-			try {
-				p = getNextLocationAndArea();
-				System.out.println(p.location + ", " + p.area);
-			}catch (Exception e) {exception = true;}
+		while (i.hasNext()) {
+			p = i.next();
+			System.out.println(p.location + ", " + p.area);
 		}
-		resetPosition();
 	}
 	
 	public int getLastLocation() {
-		int lastLoc = -30000;
-		for (int i = 0; i < locations.size(); i++) 
-			if (locations.get(i).intValue() > lastLoc)
-				lastLoc = locations.get(i).intValue();
-		return lastLoc;
+		return peaks.lastKey();
 	}
 	
 	public int getFirstLocation() {
-		int firstLoc = 30000;
-		for (int i = 0; i < locations.size(); i++) 
-			if (locations.get(i).intValue() < firstLoc)
-				firstLoc = locations.get(i).intValue();
-		return firstLoc;
+		return peaks.firstKey();
 	}
 	
 	public float getLargestArea() {
-		float largestArea = Float.NEGATIVE_INFINITY;
-		for (int i = 0; i < locations.size(); i++) 
-			if (areas.get(i).floatValue() > largestArea)
-				largestArea = areas.get(i).floatValue();
-		return largestArea;
+		return Collections.max(peaks.values());
 	}
 	
-	public void addAnotherParticle(BinnedPeakList peaks) {
-		BinnedPeak peak = null;
-		for (int i = 0; i < peaks.length(); i++) {
-			peak = new BinnedPeak(peaks.locations.get(i).intValue(), 
-					peaks.areas.get(i).floatValue());
-			add(peak.location, peak.area);
+	public void addAnotherParticle(BinnedPeakList other) {
+		Iterator<BinnedPeak> i = other.iterator();
+		while (i.hasNext()) {
+			add(i.next());
+		}
+	}
+	
+	public Iterator<BinnedPeak> iterator() {
+		return new Iter(this);
+	}
+	
+	public class Iter implements Iterator<BinnedPeak> {
+		private Iterator<Map.Entry<Integer,Float>> entries;
+		
+		public Iter(BinnedPeakList bpl) {
+			this.entries = bpl.peaks.entrySet().iterator();
+		}
+
+		public boolean hasNext() {
+			return entries.hasNext();
+		}
+
+		public BinnedPeak next() {
+			Map.Entry<Integer,Float> e = entries.next();
+			return new BinnedPeak(e.getKey(), e.getValue());
+		}
+
+		public void remove() {
+			throw new Error("Not implemented!");
 		}
 	}
 }

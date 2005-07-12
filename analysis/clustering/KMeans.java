@@ -48,6 +48,7 @@
 package analysis.clustering;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
@@ -100,6 +101,7 @@ public class KMeans extends ClusterK
 		int atomID;
 		BinnedPeakList thisBinnedPeakList;
 		BinnedPeak addedPeak;
+		Iterator<BinnedPeak> j;
 		
 		// newList will contain the new binned peak list for the moved centroid.
 		BinnedPeakList newList = new BinnedPeakList();
@@ -110,12 +112,13 @@ public class KMeans extends ClusterK
 			atomID = particlesInCentroid.get(i).intValue();
 			thisBinnedPeakList = curs.getPeakListfromAtomID(atomID);
 			thisBinnedPeakList = normalize(thisBinnedPeakList);
-			thisBinnedPeakList.resetPosition();
+			
+			j = thisBinnedPeakList.iterator();
 			// For every location in the binned list, add that area to the new list.
-			for (int j = 0; j < thisBinnedPeakList.length(); j++)
+			while (j.hasNext())
 			{
 				addedPeak = 
-					thisBinnedPeakList.getNextLocationAndArea();
+					j.next();
 				newList.add(addedPeak.location, addedPeak.area);
 			}
 		}

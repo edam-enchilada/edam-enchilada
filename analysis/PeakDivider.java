@@ -43,6 +43,8 @@
  */
 package analysis;
 
+import java.util.Iterator;
+
 import ATOFMS.ParticleInfo;
 import database.InfoWarehouse;
 
@@ -96,23 +98,24 @@ public class PeakDivider extends CollectionDivider {
 	public int divide() {
 		BinnedPeakList thisParticleList;
 		ParticleInfo thisParticle;
+		Iterator<BinnedPeak> mustContain;
 		boolean match = true;
 		while (curs.next())
 		{
 			match = true;
 			thisParticle = curs.getCurrent();
 			thisParticleList = thisParticle.getBinnedList();
-			int temp = thisParticle.getParticleInfo().getAtomID();
+			int atomID = thisParticle.getParticleInfo().getAtomID();
 			for (int i = 0; i < peaks.length(); i++)
 			{
-				peaks.resetPosition();
+				mustContain = peaks.iterator();
 				if (thisParticleList.getAreaAt(
-						peaks.getNextLocationAndArea().location) 
+						mustContain.next().location) 
 						== 0)
 					match = false;
 			}
 			if (match)
-				putInHostSubCollection(temp);
+				putInHostSubCollection(atomID);
 		}
 		return newHostID;
 	}
