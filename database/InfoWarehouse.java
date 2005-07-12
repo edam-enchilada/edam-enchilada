@@ -46,6 +46,7 @@ package database;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import atom.ATOFMSAtomFromDB;
@@ -258,4 +259,10 @@ public interface InfoWarehouse {
 	public ArrayList<String> getColNames(String datatype, DynamicTable table);
 	
 	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleTable);
+	
+	public int saveMap(String name, Vector<int[]> mapRanges);
+	public Hashtable<Integer, String> getValueMaps();
+	public Vector<int[]> getValueMapRanges();
+	
+	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
 }

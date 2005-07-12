@@ -584,11 +584,12 @@ public class SQLServerDatabaseTest extends TestCase {
 		try {
 			con.close();
 			db.closeConnection();
-			
-			assertTrue(SQLServerDatabase.rebuildDatabase("TestDB"));		
-			
+			assertTrue(SQLServerDatabase.rebuildDatabase("TestDB"));			
 			db.openConnection();
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;SpASMSdb;SelectMethod=cursor;","SpASMS","finally");	
+			
+			SQLServerDatabase mainDB = new SQLServerDatabase();
+			mainDB.openConnection();
+			con = mainDB.getCon();
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
 			boolean foundDatabase = false;
@@ -597,6 +598,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					foundDatabase = true;
 			assertTrue(foundDatabase);
 			stmt.close();
+			mainDB.closeConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			fail();
@@ -607,7 +609,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testIsPresent() {
 		db.openConnection();
-		assertTrue(SQLServerDatabase.isPresent("localhost","1433","TestDB"));
+		assertTrue(SQLServerDatabase.isPresent("TestDB"));
 		db.closeConnection();
 	}
 	

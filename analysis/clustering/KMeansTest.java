@@ -72,24 +72,7 @@ public class KMeansTest extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
-		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");
-			
-		} // end catch
-		
-		Connection con = null;
-		
-		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
-		} catch (Exception e) {
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		
-		// TODO: commented this out. AR
-		//SQLServerDatabase.rebuildDatabase("TestDB");
+        
 		new CreateTestDatabase();
 		db = new SQLServerDatabase("TestDB");
 		db.openConnection();

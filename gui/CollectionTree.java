@@ -52,7 +52,7 @@ import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
 
 import java.awt.Cursor;
-import java.awt.GridLayout;
+import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
@@ -80,24 +80,25 @@ public class CollectionTree extends JPanel
 	private InfoWarehouse db;
 	
 	private MainFrame parentFrame = null;
-	public CollectionTree(InfoWarehouse database, MainFrame pFrame) {
-	
-        super(new GridLayout(1,0));
+	public CollectionTree(InfoWarehouse database, MainFrame pFrame, boolean forSynchronized) {
+        super(new BorderLayout());
+        
+        String treeTitle = forSynchronized ? "Synchronized Time Series" : "Collections";
+        int selectionMode = forSynchronized ? TreeSelectionModel.SINGLE_TREE_SELECTION 
+        									: TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION;
         db = database;
         
         //Create a tree that allows one selection at a time.
-        tree = new JTree(new CollectionModel(db));
+        tree = new JTree(new CollectionModel(db, forSynchronized));
         tree.setRootVisible(false); // hides the root.
         tree.setShowsRootHandles(true); // shows +/- expand handles on 
         								// root level nodes
-        tree.getSelectionModel().setSelectionMode
-                (TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(selectionMode);
         tree.addTreeSelectionListener(this);
         parentFrame = pFrame;
         
-        
-        JScrollPane pane = new JScrollPane(tree);
-        add(pane);
+        add(new JLabel(treeTitle, SwingConstants.CENTER), BorderLayout.NORTH);
+        add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
 	
     
@@ -107,6 +108,9 @@ public class CollectionTree extends JPanel
         Collection node = 
         	(Collection)tree.getLastSelectedPathComponent();
         if (node == null) return;
+    	
+        parentFrame.clearOtherTreeSelections(this);
+    	
         // Selection will display data in particles table - wire here.
         //System.out.println(node.getCollectionID());
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -117,7 +121,7 @@ public class CollectionTree extends JPanel
         Vector<Vector<Object>> particleTable = parentFrame.getData();
         particleTable.clear();
         particleTable = db.updateParticleTable(db.getCollection(node.getCollectionID()), particleTable);
-        
+	        
         parentFrame.getParticlesTable().tableChanged(new TableModelEvent(
         		parentFrame.getParticlesTable().getModel()));
         parentFrame.getParticlesTable().doLayout();
@@ -127,6 +131,10 @@ public class CollectionTree extends JPanel
         parentFrame.setCursor(Cursor.getPredefinedCursor
                 (Cursor.DEFAULT_CURSOR));
     }
+    
+    public void clearSelection() {
+    	tree.clearSelection();
+    }
 
     public void updateTree()
     {
@@ -134,7 +142,21 @@ public class CollectionTree extends JPanel
     			(Collection) tree.getModel().getRoot());
     }
     
+    public Collection[] getSelectedCollections() {
+    	TreePath[] tps = tree.getSelectionPaths();
+    	if (tps != null) {
+	    	Collection[] selected = new Collection[tps.length];
+	    	for (int i = 0; i < tps.length; i++)
+	    		selected[i] =  (Collection) tps[i].getLastPathComponent();
+	    	
+	    	return selected;
+    	} else 
+    		return null;
+    }
+    
     public Collection getSelectedCollection(){
-    	return (Collection) tree.getSelectionPath().getLastPathComponent();
+    	TreePath tp = tree.getSelectionPath();
+    	
+    	return tp == null ? null : (Collection) tp.getLastPathComponent();
     }
 }

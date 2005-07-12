@@ -60,14 +60,14 @@ public class CreateTestDatabase {
         con = tempDB.getCon();
         SQLServerDatabase.rebuildDatabase("TestDB");
     		
-    		try {
-    			assert (con.createStatement() != null): "con should not be null";
-    		} catch (SQLException e1) {
-    			// TODO Auto-generated catch block
-    			e1.printStackTrace();
-    		}
-    		
-    		generateDynamicTables();
+		try {
+			assert (con.createStatement() != null): "con should not be null";
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		generateDynamicTables();
     		
 	    try {
 			Statement stmt = con.createStatement();
@@ -147,7 +147,7 @@ public class CreateTestDatabase {
 					"INSERT INTO ATOFMSDataSetInfo VALUES(1,'One','aFile','anotherFile',12,20,0.005,1)");
 					stmt.executeUpdate(
 							"USE TestDB\n" +
-							"INSERT INTO DataType2DataSetInfo VALUES(1,'9/2/2003 5:30:38 PM',100)");	
+							"INSERT INTO Datatype2DataSetInfo VALUES(1,'9/2/2003 5:30:38 PM',100)");	
 
 			stmt.executeUpdate(
 					"USE TestDB\n" +
@@ -226,24 +226,24 @@ public class CreateTestDatabase {
 		tempDB.closeConnection();
 	}
 	
-	public void generateDynamicTables() {
+	private void generateDynamicTables() {
 		try {
 			Statement stmt = con.createStatement();
 			
 			stmt.executeUpdate(
 					"Use TestDB " + 
-			"INSERT INTO MetaData VALUES ('DataType2','[DataSetID]','INT',1,0,1)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Time]','DATETIME',0,0,2)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Number]','INT',0,0,3)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[AtomID]','INT',1,1,1)\n" );
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Size]','REAL',0,1,2)\n" );
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Magnitude]','REAL',0,1,3)\n" );
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[AtomID]','INT',1,2,1)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Delay]','INT',1,2,2)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('DataType2','[Valid]','BIT',0,2,3)\n");
-			stmt.executeUpdate("CREATE TABLE DataType2DataSetInfo ([DataSetID] INT, [Time] DATETIME, [Number] INT,  PRIMARY KEY ([DataSetID]))\n" );
-			stmt.executeUpdate("CREATE TABLE DataType2AtomInfoDense ([AtomID] INT, [Size] REAL, [Magnitude] REAL,  PRIMARY KEY ([AtomID]))\n" );
-			stmt.executeUpdate("CREATE TABLE DataType2AtomInfoSparse ([AtomID] INT, [Delay] INT, [Valid] BIT, PRIMARY KEY ([AtomID], [Delay]))");
+			"INSERT INTO MetaData VALUES ('Datatype2','[DataSetID]','INT',1,0,1)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Time]','DATETIME',0,0,2)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Number]','INT',0,0,3)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[AtomID]','INT',1,1,1)\n" );
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Size]','REAL',0,1,2)\n" );
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Magnitude]','REAL',0,1,3)\n" );
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[AtomID]','INT',1,2,1)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Delay]','INT',1,2,2)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('Datatype2','[Valid]','BIT',0,2,3)\n");
+			stmt.executeUpdate("CREATE TABLE Datatype2DataSetInfo ([DataSetID] INT, [Time] DATETIME, [Number] INT,  PRIMARY KEY ([DataSetID]))\n" );
+			stmt.executeUpdate("CREATE TABLE Datatype2AtomInfoDense ([AtomID] INT, [Size] REAL, [Magnitude] REAL,  PRIMARY KEY ([AtomID]))\n" );
+			stmt.executeUpdate("CREATE TABLE Datatype2AtomInfoSparse ([AtomID] INT, [Delay] INT, [Valid] BIT, PRIMARY KEY ([AtomID], [Delay]))");
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

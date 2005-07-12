@@ -48,6 +48,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -84,16 +85,13 @@ public class SQLServerDatabase implements InfoWarehouse
 	private String tempdir = System.getenv("TEMP");
 	private Statement batchStatement;
 	
-	
-	/* Constructors */
-	
 	public SQLServerDatabase()
 	{
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
 		
-		File f = new File("dbconfig.ini");
+		File f = new File("config.ini");
 		try {
 			Scanner scan = new Scanner(f);
 			while (scan.hasNext()) {
@@ -103,7 +101,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					scan.nextLine();
 				
 				if (tag.equalsIgnoreCase("db_url:")) { url = val; }
-				else if (tag.equalsIgnoreCase("port:")) { port = val; }
+				else if (tag.equalsIgnoreCase("db_port:")) { port = val; }
 			}
 			scan.close();
 		} catch (FileNotFoundException e) { 
@@ -117,13 +115,11 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		database = dbName;
 	}
-	
-	/* Open, Close, and test for existence */
-	
+
 	/**
 	 * Determine if the database is actually present (returns true if it is).
 	 */
-	public static boolean isPresent(String url, String port, String dbName) {
+	public static boolean isPresent(String dbName) {
 
 		boolean foundDatabase = false;
 		try {
@@ -591,24 +587,31 @@ public class SQLServerDatabase implements InfoWarehouse
 						  datasetID + ", " + 
 						  nextID + ")");
 
-			// TODO: Greg's dealing with bulk inserts from a remote computer.
-			String tempFilename = tempdir + "\\bulkfile.txt";
-			PrintWriter bulkFile = null;
-			try {
-				bulkFile = new PrintWriter(new FileWriter(tempFilename));
-			} catch (IOException e) {
-				System.err.println("Trouble creating " + tempFilename);
-				e.printStackTrace();
+			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
+
+			// Only bulk insert if client and server are on the same machine...
+			if (database.equals("localhost")) {
+				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+				}
+
+				for (int j = 0; j < sparse.size(); j++)
+					bulkFile.println(nextID + "," + sparse.get(j));
+	
+				bulkFile.close();
+				stmt.addBatch("BULK INSERT " + tableName + "\n" +
+						      "FROM '" + tempFilename + "'\n" +
+							  "WITH (FIELDTERMINATOR=',')");
+			} else {
+				for (int j = 0; j < sparse.size(); j++)
+					stmt.addBatch("INSERT INTO " + tableName +  
+							      " VALUES (" + nextID + "," + sparse.get(j) + ")");
 			}
-
-			String curSparse;
-			for (int j = 0; j < sparse.size(); j++)
-				bulkFile.println(nextID + "," + sparse.get(j));
-
-			bulkFile.close();
-			stmt.addBatch("BULK INSERT " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + "\n" +
-					      "FROM '" + tempFilename + "'\n" +
-						  "WITH (FIELDTERMINATOR=',')");
 			
 			stmt.executeBatch();
 			stmt.close();
@@ -1069,7 +1072,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		StringBuilder queryString =
 		    new StringBuilder(collections.size()*10+500);
 		queryString.append(
-		        "SELECT DISTINCT ChildId\n" +
+		        "SELECT DISTINCT ChildID\n" +
 		        "FROM CollectionRelationships\n" +
 		        "WHERE ParentID IN ("
 		);
@@ -1408,6 +1411,11 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo) {
 		particleInfo.clear();
+		int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
+		// This isn't a registered datatype... oops
+		if (numberColumns == 0)
+			return null;
+		
 		try {
 			InstancedResultSet irs = getAllAtomsRS(collection);
 			
@@ -1421,7 +1429,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					irs.instance + ".AtomID\n" +
 					"ORDER BY #TempParticles" + irs.instance + 
 					".AtomID");
-			int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
+			
 			while(rs.next())
 			{
 				Vector<Object> vtemp = new Vector<Object>(numberColumns);
@@ -1520,13 +1528,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			
-			ResultSet rs = stmt.executeQuery("SELECT COUNT (AtomID) FROM AtomMembership");
-			
-			if (rs.next())
-				if (rs.getInt(1) == 0)
-					return 0;
-			
-			rs = stmt.executeQuery("SELECT MAX (AtomID) FROM AtomMembership");
+			ResultSet rs = stmt.executeQuery("SELECT MAX (AtomID) FROM AtomMembership");
 			
 			int nextID;
 			if(rs.next())
@@ -2650,7 +2652,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @return arraylist of column names.
 	 */
 	public ArrayList<String> getColNames(String datatype, DynamicTable table) {
-		ArrayList<String> colNames = new ArrayList<String>();	
+		ArrayList<String> colNames = new ArrayList<String>();
+		
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
@@ -2668,6 +2671,125 @@ public class SQLServerDatabase implements InfoWarehouse
 		return colNames;
 	}
 	
+	public int saveMap(String name, Vector<int[]> mapRanges) {
+		int valueMapID = -1;
+		
+		try{
+			Statement stmt = con.createStatement();		
+			ResultSet rs 
+				= stmt.executeQuery("SET NOCOUNT ON " +
+						"INSERT ValueMaps (Name) Values('" + name.replace("'", "''") + "') " +
+						"SELECT @@identity " +
+						"SET NOCOUNT OFF");
+			rs.next();
+			valueMapID = rs.getInt(1);
+			rs.close();
+			
+			for (int i = 0; i < mapRanges.size(); i++) {
+				int[] range = mapRanges.get(i);
+			
+				stmt.execute(
+						"INSERT ValueMapRanges (ValueMapID, Value, Low, High) " +
+						"VALUES ("+valueMapID+","+range[0]+","+range[1]+","+range[2]+")");
+			}
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL Exception inserting new value map range.");
+			System.err.println("Error inserting new value map range");
+			e.printStackTrace();
+		}
+		return valueMapID;
+	}
+	
+	public Hashtable<Integer, String> getValueMaps() {
+		Hashtable<Integer, String> valueMaps = new Hashtable<Integer, String>();
+		
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT ValueMapID, Name from ValueMaps");
+			
+			while (rs.next())
+				valueMaps.put(rs.getInt("ValueMapID"), rs.getString("Name"));
+			rs.close();
+		}
+		catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving value vaps");
+			System.err.println("Error getting value maps from database.");
+			e.printStackTrace();
+		}
+		
+		return valueMaps;
+	}
+	
+	public Vector<int[]> getValueMapRanges() {
+		Vector<int[]> valueMapRanges = new Vector<int[]>();
+		
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs 
+				= stmt.executeQuery("SELECT ValueMapID, Value, Low, High " +
+									"FROM ValueMapRanges " +
+									"ORDER BY ValueMapID, Low ");
+			
+			while (rs.next())
+				valueMapRanges.add(new int[] {rs.getInt("ValueMapID"), rs.getInt("Value"), rs.getInt("Low"), rs.getInt("High") });
+			rs.close();
+		}
+		catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving value map ranges");
+			System.err.println("Error getting value map ranges from database.");
+			e.printStackTrace();
+		}
+		
+		return valueMapRanges;
+	}
+	
+	public int applyMap(String mapName, Vector<int[]> map, Collection collection) {
+		int oldCollectionID = collection.getCollectionID();
+		String colName = this.getCollectionName(oldCollectionID);
+		String dataType = collection.getDatatype();
+		
+		int newCollectionID = createEmptyCollection(dataType, oldCollectionID, colName + " - " + mapName, "", "");
+		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
+		
+		int nextAtomID = getNextID();
+		String mapStatement = "CASE";
+		for (int i = 0; i < map.size(); i++) {
+			int[] curMap = map.get(i);
+			mapStatement += " WHEN T.Value >= " + curMap[1] + " AND T.Value < " + curMap[2] + " THEN " + curMap[0];
+		}
+		mapStatement += " ELSE NULL END";
+		
+		String query = 
+			"DECLARE @atoms TABLE ( " +
+			"   NewAtomID int IDENTITY(" + nextAtomID + ",1), " +
+			"   OldAtomID int " +
+			") " +
+			
+			" insert @atoms (OldAtomID) " +
+			" select AtomID from AtomMembership where CollectionID = " + oldCollectionID +
+			
+			" insert AtomMembership (CollectionID, AtomID) " +
+			" select " + newCollectionID + ", NewAtomID" +
+			" from @atoms A" +
+
+			" insert " + tableName + " (AtomID, Time, Value) " +
+			" select A.NewAtomID, T.Time, " + mapStatement + " as Value" +
+			" from " + tableName + " T " +
+		    " join @atoms A on (A.OldAtomID = T.AtomID)";
+
+		System.out.println(query);
+		
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute(query);
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL exception creating new mapped collection");
+			System.err.println("Error creating new mapped collection.");
+			e.printStackTrace();
+		}
+		
+		return newCollectionID;
+	}
 	/**
 	 * Get all the datatypes currently entered in the database.
 	 * 

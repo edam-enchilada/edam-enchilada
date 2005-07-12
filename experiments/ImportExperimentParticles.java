@@ -23,7 +23,7 @@ public class ImportExperimentParticles {
 		ArrayList<Integer>  indices = new ArrayList<Integer>(2000);
 		
 		//Open database connection:
-		db = new SQLServerDatabase("SpASMSdb");
+		db = new SQLServerDatabase();
 		db.openConnection();
 		
 		

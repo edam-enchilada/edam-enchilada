@@ -59,14 +59,17 @@ import javax.swing.event.EventListenerList;
 public class CollectionModel implements TreeModel {
 
 	private InfoWarehouse db = null;
+	private boolean forSynchronized;
 	
 	private EventListenerList listenerList;
 	/**
 	 * 
 	 */
-	public CollectionModel(InfoWarehouse database) {
+	public CollectionModel(InfoWarehouse database, boolean sync) {
 		super();
 		db = database;
+		forSynchronized = sync;
+		
 		listenerList = new EventListenerList();
 	}
 
@@ -74,16 +77,23 @@ public class CollectionModel implements TreeModel {
 	 * @see javax.swing.tree.TreeModel#getRoot()
 	 */
 	public Object getRoot() {
-		return new Collection("root", 0, db);
+		if (forSynchronized)
+			return new Collection("root-synchronized", 1, db);
+		else
+			return new Collection("root", 0, db);
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
 	 */
-	public Object getChild(Object parent, int index) {
-		return new Collection(((Collection)parent).getDatatype(), ((Collection)parent).getSubCollectionIDs().
-				get(index).intValue(), db);
-
+	public Object getChild(Object parent, int index) { 
+		String parentDataType = ((Collection)parent).getDatatype();
+		int collectionID = ((Collection)parent).getSubCollectionIDs().get(index).intValue();
+		
+		if (parentDataType.contains("root"))
+			return db.getCollection(collectionID);
+		else	
+			return new Collection(parentDataType, collectionID, db);
 	}
 
 	/* (non-Javadoc)
