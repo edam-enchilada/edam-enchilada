@@ -158,16 +158,24 @@ public class NewBinnedPeakListTest extends TestCase {
 	}
 
 	public void assertBPLEquals(BinnedPeakList foo, NewBinnedPeakList bar) {
-		Iterator<BinnedPeak> i = foo.iterator();
-		
-		TreeSet<BinnedPeak> temp = new TreeSet<BinnedPeak>
+		TreeSet<BinnedPeak> temp1 = new TreeSet<BinnedPeak>
 				(new LocationComparator());
-		while (i.hasNext()) {
-			temp.add(i.next());
-		}
+		TreeSet<BinnedPeak> temp2 = new TreeSet<BinnedPeak>
+				(new LocationComparator());
 		
-		i = temp.iterator();
+		Iterator<BinnedPeak> i = foo.iterator();
+		while (i.hasNext()) {
+			temp1.add(i.next());
+		}
+		i = temp1.iterator();
+		
 		Iterator<BinnedPeak> iter = bar.iterator();
+		while (iter.hasNext()) {
+			temp2.add(iter.next());
+		}
+		iter = temp2.iterator();
+		
+		
 		while (i.hasNext()) {
 			assertTrue(iter.hasNext());
 			assertBinnedPeakEquals(i.next(),
