@@ -746,8 +746,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				getImmediateSubCollections(collection);
 			for (int i = 0; i < subChildren.size(); i++)
 			{
-				moveCollection(parentCollection,
-						getCollection(subChildren.get(i).intValue()));
+				moveCollection(getCollection(subChildren.get(i).intValue()), 
+						parentCollection);
 			}
 			
 			// Find all the Atoms of this collection and move them to 
