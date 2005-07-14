@@ -93,7 +93,6 @@ public class Histogram {
 		List<Float> areas = getSplitPoints(confidencePercent);
 		
 		if (areas == null) {
-			//XXX: is returning an empty list the right thing to do?
 			return rules;
 		} else {
 			Iterator<Float> i = areas.iterator();
@@ -115,7 +114,7 @@ public class Histogram {
 		SplitRule temp;
 		Iterator<SplitRule> i;
 		
-		if (goodRules == null) {
+		if (goodRules == null || goodRules.size() == 0) {
 			return null;
 		} else {
 			i = goodRules.iterator();
@@ -145,7 +144,7 @@ public class Histogram {
 		if (printSplits) {
 			System.out.println("Valid splits at:");
 			List<SplitRule> rules = getSplitRules(95);
-			if (rules == null) {
+			if (rules.size() == 0) {
 				System.out.println("*NONE*");
 			} else {
 				for (SplitRule rule : rules) {

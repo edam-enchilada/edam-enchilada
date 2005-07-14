@@ -3,22 +3,13 @@
  */
 package analysis.clustering.o;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 
 /**
  * @author smitht
  *
  */
-public class CheatingPartition implements Partition {
-	private Partition parent;
-	private Partition left;
-	private Partition right;
+public class CheatingPartition extends Partition {
 	private SplitRule rule;
 	private CollectionDivider collectionSource;
 	private boolean branched;
@@ -84,43 +75,18 @@ public class CheatingPartition implements Partition {
 		return null;
 	}
 	
-	public Partition getLeftChild() {
-		return left;
-	}
-
 	public void setLeftChild(Partition left) {
 		this.left = left;
-	}
-
-	public Partition getRightChild() {
-		return right;
 	}
 
 	public void setRightChild(Partition right) {
 		this.right = right;
 	}
 
-	public CollectionDivider getCollectionSource() {
-		return collectionSource;
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
-	public void setCollectionSource(CollectionDivider collectionSource) {
-		this.collectionSource = collectionSource;
-	}
-
-	public void setParent(Partition parent) {
-		this.parent = parent;
-	}
-
-	public boolean transmogrifyChild(Partition oldChild, Partition newChild) {
-		if (left == oldChild) {
-			left = newChild;
-			return true;
-		} else if (right == oldChild) {
-			right = newChild;
-			return true;
-		} else {
-			return false;
-		}
-	}
 }

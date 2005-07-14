@@ -7,25 +7,59 @@ package analysis.clustering.o;
  */
 
 
-import java.util.List;
-import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 
-public interface Partition {
-	public CollectionDivider getCollectionSource();
-	public void setCollectionSource(CollectionDivider collectionSource);
+public abstract class Partition {
+	protected Partition parent;
+	protected Partition left;
+	protected Partition right;
+	protected CollectionDivider collectionSource;
 	
-	public Partition getParent();
-	public Partition getLeftChild();
-	public Partition getRightChild();
+	public abstract int split(DataWithSummary atoms);
+	public abstract String toString();
 	
-	public void setParent(Partition parent);
+	public CollectionDivider getCollectionSource() {
+		if (collectionSource != null) {
+			return collectionSource;
+		} else if (parent != null) {
+			return parent.getCollectionSource();
+		} else {
+			throw new Error("Can't find a collection source!");
+		}
+	}
 	
-	public boolean transmogrifyChild(Partition oldChild, Partition newChild);
+	public void setCollectionSource(CollectionDivider collectionSource) {
+		this.collectionSource = collectionSource;
+	}
 	
-//	public int classify(BinnedPeakList bpl);
-	// i don't know how that's going to work...
-	public int split(DataWithSummary atoms);
-	public String rulesUp();
-	public String rulesDown();
+	public boolean transmogrifyChild(Partition oldChild, Partition newChild) {
+		if (left == oldChild) {
+			left = newChild;
+			return true;
+		} else if (right == oldChild) {
+			right = newChild;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+	public Partition getLeftChild() {
+		return left;
+	}
+	
+	public Partition getRightChild() {
+		return right;
+	}
+	
+	public Partition getParent() {
+		return parent;
+	}
+
+	public void setParent(Partition parent) {
+		this.parent = parent;
+	}
+
+
 }
