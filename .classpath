@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="analysis/clustering/o/OCluster.java|analysis/clustering/o/CheatingPartition.java|analysis/clustering/o/UndeterminedPartition.java|analysis/clustering/o/" kind="src" path=""/>
+	<classpathentry kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry sourcepath="ECLIPSE_HOME/plugins/org.eclipse.jdt.source_3.1.0/src/org.junit_3.8.1/junitsrc.zip" kind="var" path="JUNIT_HOME/junit.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files/Microsoft SQL Server 2000 Driver for JDBC/lib/msbase.jar"/>

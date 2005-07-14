@@ -27,32 +27,38 @@ public class StatSummary {
 	public StatSummary(Collection<BinnedPeakList> atoms) {
 		sumsq = new double[DOUBLE_MAX];
 		sum = new double[DOUBLE_MAX];
-		add(atoms);
+		addAll(atoms);
 	}
 	
+	public StatSummary() {
+		sumsq = new double[DOUBLE_MAX];
+		sum = new double[DOUBLE_MAX];
+	}
 	
 	/*
 	 * Methods for Adding More Atoms or Statistics
 	 */
-	
-	public void add(Collection<BinnedPeakList> atoms) {
+	public void addAll(Collection<BinnedPeakList> atoms) {
 		Iterator<BinnedPeakList> j = atoms.iterator();
 			
 		while (j.hasNext()) {
-			add(j.next());
+			addAtom(j.next());
 		}
 	}
 	
-	public void add(BinnedPeakList atom) {
-		BinnedPeak p;
+	public void addAll(DataWithSummary atoms) {
+		addStats(atoms.getStats());
+	}
+	
+	public void addAtom(BinnedPeakList atom) {
+		Iterator<BinnedPeak> i = atom.iterator();
 		count++;
-		for (int i = 0; i < atom.length(); i++) {
-			p = atom.getNextLocationAndArea();
-			sumsq[p.location + MAX_LOCATION] += p.area;
+		while (i.hasNext()) {
+			addPeak(i.next());
 		}
 	}
 	
-	public void add(double[] sum, double[] sumsq, int count) {
+	public void addStats(double[] sum, double[] sumsq, int count) {
 		for (int i = 0; i < DOUBLE_MAX; i++) {
 			this.sum[i] += sum[i];
 			this.sumsq[i] += sumsq[i];
@@ -60,18 +66,20 @@ public class StatSummary {
 		this.count += count;
 	}
 	
-	public void add(StatSummary that) {
-		this.add(that.sum, that.sumsq, that.count);
+	public void addStats(StatSummary that) {
+		this.addStats(that.sum, that.sumsq, that.count);
 	}
 	
-	public void add(int location, double area) {
+	/*
+	 * Can't increment count!  So you have to do that yourself!
+	 */
+	private void addPeak(int location, double area) {
 		sum[location + MAX_LOCATION] += area;
-		sumsq[location + MAX_LOCATION] += Math.pow(area, 2);
-		count++;
+		sumsq[location + MAX_LOCATION] += Math.pow(area, 2.0);
 	}
 	
-	public void add(BinnedPeak p) {
-		add(p.location, p.area);
+	private void addPeak(BinnedPeak p) {
+		addPeak(p.location, p.area);
 	}
 	
 	
@@ -99,5 +107,10 @@ public class StatSummary {
 	
 	public int count() {
 		return count;
+	}
+	
+	public String toString(int dim) {
+		return "Dimension " + dim + " has mean ht. " + mean(dim) 
+			+ ", std.dev " + stdDev(dim);
 	}
 }

@@ -20,6 +20,9 @@ public class Histogram {
 		this.dimension = dimension;
 	}
 
+	public void addPeak(float area) {
+		histogram.addPeak(area);
+	}
 	
 	private int findAllValleys() {
 		LinkedList<Integer> extremaLocations = new LinkedList<Integer>();
@@ -82,27 +85,73 @@ public class Histogram {
 		}
 	}
 	
-//	private float targetChiSquared(int confidencePercent) {
-//		return splitPoints.percentToChiSquared(confidencePercent);
-//	}
-	
+
+
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		List<SplitRule> rules = new LinkedList<SplitRule>();
-		List<Float> areas = getSplitPoints(confidencePercent);
-		Iterator<Float> i = areas.iterator();
-		float thisArea;
 		
-		while (i.hasNext()) {
-			thisArea = i.next();
-			// goodness is the opposite of the density of this bin.
-			rules.add(new SplitRule(dimension, thisArea,
-					0 - histogram.get(thisArea)));
+		List<Float> areas = getSplitPoints(confidencePercent);
+		
+		if (areas == null) {
+			return rules;
+		} else {
+			Iterator<Float> i = areas.iterator();
+			float thisArea;
+			
+			while (i.hasNext()) {
+				thisArea = i.next();
+				// goodness is the opposite of the density of this bin.
+				rules.add(new SplitRule(dimension, thisArea,
+						0 - histogram.get(thisArea)));
+			}
+			return rules;
 		}
-		return rules;
 	}
 	
-	public void addPeak(float area) {
-		histogram.addPeak(area);
+	public SplitRule getBestSplit(int confidencePercent) {
+		List<SplitRule> goodRules = getSplitRules(confidencePercent);
+		SplitRule best = null;
+		SplitRule temp;
+		Iterator<SplitRule> i;
+		
+		if (goodRules == null || goodRules.size() == 0) {
+			return null;
+		} else {
+			i = goodRules.iterator();
+			
+			while (i.hasNext()) {
+				if (best == null) {
+					best = i.next();
+				} else {
+					temp = i.next();
+					if (best.goodness < temp.goodness) {
+						best = temp;
+					}
+				}
+			}
+			return best;
+		}
+	}
+	
+	public void printHistogram(boolean printSplits) {
+		System.out.println("Histogram for Dimension " + dimension);
+		System.out.println("Pk.Area\tCount");
+		for (int i = 0; i < histogram.size(); i++) {
+			System.out.println(histogram.getIndexMiddle(i) + "\t"
+					+ histogram.get(i));
+		}
+		
+		if (printSplits) {
+			System.out.println("Valid splits at:");
+			List<SplitRule> rules = getSplitRules(95);
+			if (rules.size() == 0) {
+				System.out.println("*NONE*");
+			} else {
+				for (SplitRule rule : rules) {
+					System.out.println(rule.area);
+				}
+			}
+		}
 	}
 
 	/**

@@ -5,95 +5,71 @@ package analysis.clustering.o;
 
 import java.util.List;
 
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 
 /**
  * @author smitht
  *
  */
-public class UndeterminedPartition implements Partition {
-	private Partition parent;
-	private Partition left;
-	private Partition right;
-	private List<BinnedPeakList> dataBuffer;
-	private List<Histogram> histograms;
+public class UndeterminedPartition extends Partition {
+	private NumberBox nb;
 	private CollectionDivider collectionSource;
-	
-	private float[] sum;
-	private float[] sumsq;
-	private int count;
+	private DataWithSummary collectedData = new DataWithSummary();
 
-	private static final int MAX_LOCATION = 2500;
-	private static int DOUBLE_MAX = MAX_LOCATION * 2;
-
-	public UndeterminedPartition(Partition par) {
-		parent = par;
+	public UndeterminedPartition(Partition parent) {
+		this.parent = parent;
+		nb = new NumberBox(2500);
 	}
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#getParent()
-	 */
-	public Partition getParent() {
-		return parent;
-	}
-
-	public Partition getLeftChild() {
-		return null;
-	}
-	public Partition getRightChild() {
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#classify(analysis.BinnedPeakList)
-	 */
-//	public int classify(BinnedPeakList bpl) {
-//		// TODO Auto-generated method stub
-//		return 0;
-//	}
 
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
-		for (int j = 0; j < DOUBLE_MAX; j++) {
-			this.sum[j] += sum[j];
-			this.sumsq[j] += sumsq[j];
+	public int split(DataWithSummary data) {
+		nb.addAll(data);
+		
+		/*
+		 * FOR DEBUGGING (with iris data set) ONLY
+		 */
+		System.out.println("***************************************");
+		for (int i = 0; i < 4; i++) {
+			nb.printDimension(i);
 		}
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#rulesUp()
-	 */
-	public String rulesUp() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#rulesDown()
-	 */
-	public String rulesDown() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private void addAtom(BinnedPeakList l) {
-		BinnedPeak peak;
-		for (int i = 0; i < l.length(); i++) {
-			peak = l.getNextLocationAndArea();
-			histograms.get(peak.location).addPeak(peak.area);
+		/*
+		 * end for debugging.
+		 */
+		
+		SplitRule rule = nb.getBestSplit(95);
+		// no good split
+		if (rule == null) {
+			if (nb.getBestSplit(90) != null) {
+				// "ambiguous"
+				collectedData.addAll(data);
+				return collectedData.size();
+			} else {
+				// frozen!
+				parent.transmogrifyChild(this, new FrozenPartition(parent));
+				return 0;
+			}
+		} else {
+			// successful split!
+			
+			// the parents of these new undetermineds will be reset by the
+			// constructor of the branchpartition.
+			left = new UndeterminedPartition(parent);
+			right = new UndeterminedPartition(parent);
+			BranchPartition newBranch = new BranchPartition(this, rule);
+			parent.transmogrifyChild(this, newBranch);
+			collectedData.addAll(data);
+			
+			List<DataWithSummary> l = rule.splitAtoms(collectedData);
+			collectedData = null;
+			
+			int n = left.split(l.remove(0)); 
+			return n + right.split(l.remove(0));
 		}
 	}
-	
-	public CollectionDivider getCollectionSource() {
-		return collectionSource;
+
+	public String toString() {
+		return "Undetermined partition.";
 	}
-	public void setCollectionSource(CollectionDivider collectionSource) {
-		this.collectionSource = collectionSource;
-	}
-	
 }

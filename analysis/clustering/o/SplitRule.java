@@ -21,11 +21,11 @@ public class SplitRule extends BinnedPeak {
 		return area > atom.getAreaAt(location);
 	}
 	
-	public List<List<BinnedPeakList>> splitAtoms(List<BinnedPeakList> atoms) {
-		List<List<BinnedPeakList>> bucket;
-		bucket = new ArrayList<List<BinnedPeakList>>(2);
-		bucket.add(new LinkedList<BinnedPeakList>());
-		bucket.add(new LinkedList<BinnedPeakList>());
+	public List<DataWithSummary> splitAtoms(List<BinnedPeakList> atoms) {
+		List<DataWithSummary> bucket;
+		bucket = new ArrayList<DataWithSummary>(2);
+		bucket.add(new DataWithSummary());
+		bucket.add(new DataWithSummary());
 		BinnedPeakList atom;
 		
 		Iterator<BinnedPeakList> i = atoms.iterator();

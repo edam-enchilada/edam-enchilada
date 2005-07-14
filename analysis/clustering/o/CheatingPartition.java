@@ -3,22 +3,13 @@
  */
 package analysis.clustering.o;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 
 /**
  * @author smitht
  *
  */
-public class CheatingPartition implements Partition {
-	private Partition parent;
-	private Partition left;
-	private Partition right;
+public class CheatingPartition extends Partition {
 	private SplitRule rule;
 	private CollectionDivider collectionSource;
 	private boolean branched;
@@ -64,33 +55,10 @@ public class CheatingPartition implements Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#split(java.util.List)
 	 */
-	public int split(List<BinnedPeakList> atoms, float[] sum, float[] sumsq) {
-		for (int j = 0; j < DOUBLE_MAX; j++) {
-			this.sum[j] += sum[j];
-			this.sumsq[j] += sumsq[j];
-		}
-
-		Iterator<BinnedPeakList> i = atoms.iterator();
-
-		while (i.hasNext()) {
-			recordAtom(i.next());
-		}
+	public int split(DataWithSummary atoms) {
 		return 0;
 	}
 
-	private void recordAtom(BinnedPeakList bpl) {
-		BinnedPeak p;
-		for (int i = 0; i < bpl.length(); i++) {
-			p = bpl.getNextLocationAndArea();
-			if (histograms[p.location + MAX_LOCATION] == null) {
-				histograms[p.location + MAX_LOCATION] 
-				           = new Histogram(stdDev(p.location),
-				        		   count, p.location);
-			}
-			histograms[p.location + MAX_LOCATION].addPeak(p.area);
-		}
-	}
-	
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#rulesUp()
 	 */
@@ -107,41 +75,18 @@ public class CheatingPartition implements Partition {
 		return null;
 	}
 	
-	private List<List<BinnedPeakList>> applyrule(List<BinnedPeakList> data) {
-		//List<List<BinnedPeakList>> divided = new ArrayList();
-		// TODO put actual logic here
-		return null;
-	}
-
-	public Partition getLeftChild() {
-		return left;
-	}
-
 	public void setLeftChild(Partition left) {
 		this.left = left;
-	}
-
-	public Partition getRightChild() {
-		return right;
 	}
 
 	public void setRightChild(Partition right) {
 		this.right = right;
 	}
 
-	public CollectionDivider getCollectionSource() {
-		return collectionSource;
-	}
-
-	public void setCollectionSource(CollectionDivider collectionSource) {
-		this.collectionSource = collectionSource;
-	}
-	
-	public float stdDev(int dim) {
-		return (float) Math.sqrt((sumsq[dim + MAX_LOCATION] 
-		                                - (Math.pow(sum[dim + MAX_LOCATION],2)
-		                                		/count))
-		                          /count);
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
