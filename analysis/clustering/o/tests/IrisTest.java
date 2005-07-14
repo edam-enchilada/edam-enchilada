@@ -2,95 +2,37 @@ package analysis.clustering.o.tests;
 
 import junit.framework.TestCase;
 import analysis.BinnedPeakList;
-import analysis.CollectionDivider;
 import analysis.clustering.o.*;
 
-public class IrisTest extends TestCase implements Partition {
+public class IrisTest extends TestCase {
 	Partition root;
 	DataWithSummary irises;
 
 	protected void setUp() throws Exception {
 		super.setUp();
 		irisize();
-		root = new UndeterminedPartition(this);
-	}
-
-	public void testGetLeftChild() {
-	}
-
-	public void testGetRightChild() {
+		root = new RootPartition(null);
 	}
 
 	public void testSplit() {
 		assertNotNull(irises);
 		root.split(irises);
 		
+		
 		assertNotNull(root);
-		assertNotNull(root.getLeftChild());
-		assertNotNull(root.getRightChild());
-		System.out.println("Root: <" + root.toString() + ">");
-		System.out.println("Left child: <" + root.getLeftChild().toString()
+		// left child is the first "real" partition
+
+		Partition subroot = root.getLeftChild();
+		assertNotNull(subroot);
+		assertNotNull(subroot.getRightChild());
+		assertNotNull(subroot.getLeftChild());
+		System.out.println("Root: <" + subroot.toString() + ">");
+		System.out.println("Left child: <" + subroot.getLeftChild().toString()
 				+ ">");
-		System.out.println("Right child: <" + root.getRightChild().toString()
+		System.out.println("Right child: <" + subroot.getRightChild().toString()
 				+ ">");
 	}
 
-	
-	
-	
-	
-	public CollectionDivider getCollectionSource() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Partition getLeftChild() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Partition getParent() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Partition getRightChild() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String rulesDown() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String rulesUp() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void setCollectionSource(CollectionDivider collectionSource) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void setParent(Partition parent) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public int split(DataWithSummary atoms) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	public boolean transmogrifyChild(Partition oldChild, Partition newChild) {
-		if (root == oldChild) {
-			root = newChild;
-			return true;
-		}
-		return false;
-	}
 
 	private Float[][] irisData = {
 			{5.1f,3.5f,1.4f,0.2f},
