@@ -28,7 +28,7 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 	private int selectedRow, selectedColumn;
 	
 	public MapValuesWindow(MainFrame parentFrame, InfoWarehouse db, Collection collection) {
-		super("Set up Value Maps for: " + db.getCollectionName(collection.getCollectionID()));
+		super("Set up Value Maps for: " + collection.getName());
 		
 		// Only Time Series should be mapped... (for now)
 		assert(collection.getDatatype().equals("TimeSeries"));
@@ -154,7 +154,7 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 		int index = mapList.getSelectedIndex();
 		
 		if (!e.getValueIsAdjusting() && index > -1) {
-			int newMapID = savedMapData.getSelectedID(index);
+			int newMapID = savedMapData.getIDAt(index);
 			mapRangesDataModel.setCurrentMapID(newMapID);
 			mapRangesTable.revalidate();
 		}
@@ -166,6 +166,7 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 		
 		if (source == applyValueMap) {
 			db.applyMap("Map: ", mapRangesDataModel.getCurrentMap(), collection);
+			parentFrame.updateSynchronizedTree(collection.getCollectionID());
 			setVisible(false);
 			dispose();
 		} else if (source == cancel) {
@@ -228,7 +229,7 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 			fireIntervalAdded(this, ids.size(), ids.size());
 		}
 		
-		public int getSelectedID(int index) {
+		public int getIDAt(int index) {
 			return ids.get(index);
 		}
 	};
