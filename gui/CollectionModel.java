@@ -90,9 +90,11 @@ public class CollectionModel implements TreeModel {
 		String parentDataType = ((Collection)parent).getDatatype();
 		int collectionID = ((Collection)parent).getSubCollectionIDs().get(index).intValue();
 		
+		// Make sure children have correct datatype...
+		// Should only share from parent nodes that aren't root
 		if (parentDataType.contains("root"))
 			return db.getCollection(collectionID);
-		else	
+		else
 			return new Collection(parentDataType, collectionID, db);
 	}
 
@@ -111,7 +113,7 @@ public class CollectionModel implements TreeModel {
 	 * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
 	 */
 	public boolean isLeaf(Object node) {
-		return false;
+		return getChildCount(node) == 0;
 	}
 
 	/* (non-Javadoc)

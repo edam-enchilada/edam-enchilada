@@ -55,6 +55,7 @@ import java.awt.Cursor;
 import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Vector;
 
 import collection.*;
@@ -97,6 +98,10 @@ public class CollectionTree extends JPanel
         tree.addTreeSelectionListener(this);
         parentFrame = pFrame;
         
+        DefaultTreeCellRenderer r = new DefaultTreeCellRenderer();
+        r.setLeafIcon(r.getClosedIcon());
+        tree.setCellRenderer(r);
+        
         add(new JLabel(treeTitle, SwingConstants.CENTER), BorderLayout.NORTH);
         add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
@@ -114,13 +119,14 @@ public class CollectionTree extends JPanel
         // Selection will display data in particles table - wire here.
         //System.out.println(node.getCollectionID());
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      
+       
+        Collection collection = db.getCollection(node.getCollectionID());
+        
         // fast code
-        ArrayList<String> colnames = db.getColNames(db.getCollection(node.getCollectionID()).getDatatype(), DynamicTable.AtomInfoDense);
-        parentFrame.changeParticleTable(colnames);
+        parentFrame.changeParticleTable(this, collection);
         Vector<Vector<Object>> particleTable = parentFrame.getData();
         particleTable.clear();
-        particleTable = db.updateParticleTable(db.getCollection(node.getCollectionID()), particleTable);
+        particleTable = db.updateParticleTable(collection, particleTable);
 	        
         parentFrame.getParticlesTable().tableChanged(new TableModelEvent(
         		parentFrame.getParticlesTable().getModel()));
@@ -135,7 +141,11 @@ public class CollectionTree extends JPanel
     public void clearSelection() {
     	tree.clearSelection();
     }
-
+    
+    public void expandToFind(int collectionID) {
+    	Collection rootNode = (Collection) tree.getModel().getRoot();
+    }
+    
     public void updateTree()
     {
     	((CollectionModel)tree.getModel()).fireTreeStructureChanged(
