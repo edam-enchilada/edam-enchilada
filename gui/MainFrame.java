@@ -65,8 +65,7 @@ import database.*;
  * thrown/caught etc, that the application makes it back to a 
  * workable state.
  */
-public class MainFrame extends JFrame implements ActionListener, 
-	ListSelectionListener
+public class MainFrame extends JFrame implements ActionListener
 {
 	public static final int DESCRIPTION = 3;
 	private JToolBar buttonPanel;
@@ -105,8 +104,9 @@ public class MainFrame extends JFrame implements ActionListener,
 	public static SQLServerDatabase db;
 	private JComponent infoPanel;
 	
-	private JTabbedPane rightPane;
-	private JScrollPane particlePane;
+	private JTabbedPane collectionViewPanel;
+	private JPanel particlePanel;
+	private JScrollPane particleTablePane;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -196,13 +196,13 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		else if (source == exportParsButton || source == MSAexportItem)
 		{
-			collectionPane.getSelectedCollection().exportToPar();
+			getSelectedCollection().exportToPar();
 		}
 		
 		else if (source == deleteAdoptItem)
 		{
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.orphanAndAdopt(collectionPane.getSelectedCollection());
+			db.orphanAndAdopt(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			collectionPane.updateTree();
 			validate();
@@ -211,7 +211,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		else if (source == recursiveDeleteItem)
 		{
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.recursiveDelete(collectionPane.getSelectedCollection());
+			db.recursiveDelete(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			collectionPane.updateTree();
 			validate();
@@ -221,30 +221,30 @@ public class MainFrame extends JFrame implements ActionListener,
 		{
 			cutBool = false;
 			copyID = 
-				collectionPane.getSelectedCollection().getCollectionID();
+				getSelectedCollection().getCollectionID();
 		}
 		
 		else if (source == cutItem)
 		{
 			cutBool = true;
 			copyID = 
-				collectionPane.getSelectedCollection().getCollectionID();
+				getSelectedCollection().getCollectionID();
 		}
 		
 		else if (source == pasteItem)
 		{
 			if (copyID != 
-				collectionPane.getSelectedCollection().getCollectionID())
+				getSelectedCollection().getCollectionID())
 			{
 				if (cutBool == false)
 				{
 					db.copyCollection(db.getCollection(copyID), 
-							collectionPane.getSelectedCollection());
+							getSelectedCollection());
 				}
 				else
 				{
 					db.moveCollection(db.getCollection(copyID), 
-							collectionPane.getSelectedCollection());
+							getSelectedCollection());
 					
 				}
 				collectionPane.updateTree();
@@ -280,17 +280,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 		else if(source == analyzeParticleButton) 
 		{
-			int[] selectedRows = particlesTable.getSelectedRows();
-			
-			for (int row : selectedRows) {
-				ParticleAnalyzeWindow pw = new ParticleAnalyzeWindow(db, particlesTable, row);
-				pw.setVisible(true);
-			}
-			
-		/*	// If collection isn't ATOFMS, don't display anything.
-			if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
-				return;
-		*/
+			showAnalyzeParticleWindow();
 		}
 		else if (source == aggregateButton)
 		{
@@ -308,6 +298,23 @@ public class MainFrame extends JFrame implements ActionListener,
 				MapValuesWindow bw = new MapValuesWindow(this, db, selectedCollection);
 				bw.setVisible(true);
 			}
+		}
+	}
+	
+	private Collection getSelectedCollection() {
+		Collection c = collectionPane.getSelectedCollection();
+		if (c != null)
+			return c;
+		else
+			return synchronizedPane.getSelectedCollection();
+	}
+	
+	private void showAnalyzeParticleWindow() {
+		int[] selectedRows = particlesTable.getSelectedRows();
+		
+		for (int row : selectedRows) {
+			ParticleAnalyzeWindow pw = new ParticleAnalyzeWindow(db, particlesTable, row);
+			pw.setVisible(true);
 		}
 	}
 	
@@ -478,7 +485,7 @@ public class MainFrame extends JFrame implements ActionListener,
 	private void setupSplitPane()
 	{
 		// Add a JTabbedPane to the split pane.
-		rightPane = new JTabbedPane();
+		collectionViewPanel = new JTabbedPane();
 		
 		Vector<String> columns = new Vector<String>(1);
 		columns.add("Click on a collection to see information.");
@@ -490,34 +497,26 @@ public class MainFrame extends JFrame implements ActionListener,
 		
 		particlesTable = new JTable(data, columns);
 		
-		particlesTable.setDefaultEditor(Object.class, null);
-		ListSelectionModel lModel = 
-			particlesTable.getSelectionModel();
-		lModel.setSelectionMode(
-				ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		lModel.addListSelectionListener(this);
-		
 		analyzeParticleButton = new JButton("Analyze Particle");
 		analyzeParticleButton.setEnabled(false);
 		analyzeParticleButton.addActionListener(this);
 		
-		particlePane = 
-			new JScrollPane(particlesTable);
-		JPanel fullParticlePane = new JPanel(new BorderLayout());
-		JPanel partOpsPane = new JPanel();
+		particlePanel = new JPanel(new BorderLayout());
+		particleTablePane = new JScrollPane(particlesTable);
+		JPanel partOpsPane = new JPanel(new FlowLayout());
 		partOpsPane.add(analyzeParticleButton, BorderLayout.CENTER);
 		
-		fullParticlePane.add(particlePane, BorderLayout.CENTER);
-		fullParticlePane.add(partOpsPane, BorderLayout.SOUTH);
+		particlePanel.add(particleTablePane, BorderLayout.CENTER);
+		particlePanel.add(partOpsPane, BorderLayout.SOUTH);
 		
-		rightPane.addTab("Particle List", null, fullParticlePane,
+		collectionViewPanel.addTab("Particle List", null, particlePanel,
 				null);
 		
 		//rightPane.addTab("Spectrum Viewer Text", null, panel2, null);
 		descriptionTA = new JTextArea("Description here");
 		infoPanel = makeTextPanel(descriptionTA);
 		JScrollPane collInfoPane = new JScrollPane(infoPanel);
-		rightPane.addTab("Collection Information", 
+		collectionViewPanel.addTab("Collection Information", 
 				null, collInfoPane, null);
 		// Create and add the split panes.
 		
@@ -542,37 +541,87 @@ public class MainFrame extends JFrame implements ActionListener,
 		leftPane.setDividerLocation(200);
 		
 		mainSplitPane = 
-			new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPane, rightPane);
+			new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPane, collectionViewPanel);
 		add(mainSplitPane);
 		
 		aggregateButton.addActionListener(this);
 		mapValuesButton.addActionListener(this);
 	}
 	
-	public void changeParticleTable(ArrayList<String> fieldNames) {
-			
-		Vector<Object> columns = new Vector<Object>(fieldNames.size());
-		for (int i = 0; i < fieldNames.size(); i++) 
-			columns.add(fieldNames.get(i));
+	public void changeParticleTable(CollectionTree source, Collection collection) {
+		int dividerLocation = mainSplitPane.getDividerLocation();
+		
+		if (source == collectionPane)
+			setupRightWindowForCollection(collection);
+		else if (source == synchronizedPane)
+			setupRightWindowForSynchronization(collection);
+		
+		// Bah. Java can't just remember this... need to remind it.
+		mainSplitPane.setDividerLocation(dividerLocation);
+	}
+
+	private void setupRightWindowForCollection(Collection collection) {
+		mainSplitPane.setBottomComponent(collectionViewPanel);
+		
+        String dataType = collection.getDatatype();
+        ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
+        
+		Vector<Object> columns = new Vector<Object>(colnames.size());
+		for (int i = 0; i < colnames.size(); i++) 
+			columns.add(colnames.get(i));
 				
 		data = new Vector<Vector<Object>>(1000);
-		Vector<Object> row = new Vector<Object>(fieldNames.size());
-		for (int i = 0; i < fieldNames.size(); i++) 
+		Vector<Object> row = new Vector<Object>(colnames.size());
+		for (int i = 0; i < colnames.size(); i++) 
 			row.add("");
 		
 		data.add(row);
 
 		particlesTable = new JTable(data, columns);
-
-		particlePane.setViewportView(particlesTable);
 		particlesTable.setDefaultEditor(Object.class, null);
-		ListSelectionModel lModel = 
-			particlesTable.getSelectionModel();
-		lModel.setSelectionMode(
-				ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		lModel.addListSelectionListener(this);
+		
+		if (dataType.equals("ATOFMS")) {
+			particleTablePane.setViewportView(particlesTable);
+			 
+			particlesTable.setEnabled(true);
+			ListSelectionModel lModel = 
+				particlesTable.getSelectionModel();
+			
+			lModel.setSelectionMode(
+					ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			lModel.addListSelectionListener(new ListSelectionListener() {
+				public void valueChanged(ListSelectionEvent arg0) {		
+					/*	// If collection isn't ATOFMS, don't display anything.
+					if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
+						return;
+				*/
+					int row = particlesTable.getSelectedRow();
+					
+					analyzeParticleButton.setEnabled(row != -1);
+				}
+			});		
+			
+			particlesTable.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent e) {
+					if (e.getClickCount() > 1)
+						showAnalyzeParticleWindow();
+				}
+			});
+
+			collectionViewPanel.setComponentAt(0, particlePanel);
+			collectionViewPanel.repaint();
+		} else {
+			particlesTable.setEnabled(false);
+			
+			// Change to just show table (no button)...
+			collectionViewPanel.setComponentAt(0, new JScrollPane(particlesTable));
+		}
 	}
+
 	
+	private void setupRightWindowForSynchronization(Collection collection) {
+		mainSplitPane.setBottomComponent(new SyncAnalyzePanel(this, db, collection));
+	}
 	
 	/**
 	 * The makeTextpanel method makes a text panel that can be added to any 
@@ -653,23 +702,15 @@ public class MainFrame extends JFrame implements ActionListener,
 		return infoPanel;
 	}
 	
+	public void updateSynchronizedTree(int collectionID) {
+		synchronizedPane.updateTree();
+		synchronizedPane.expandToFind(collectionID);
+	}
+	
 	public void clearOtherTreeSelections(CollectionTree colTree) {
 		if (colTree == collectionPane)
 			synchronizedPane.clearSelection();
 		else if (colTree == synchronizedPane)
 			collectionPane.clearSelection();
-	}
-	
-	/* (non-Javadoc)
-	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
-	 */
-	/**
-	 * Updates with peaklist information for the selected 
-	 * atom
-	 */
-	public void valueChanged(ListSelectionEvent arg0) {
-		int row = particlesTable.getSelectedRow();
-		
-		analyzeParticleButton.setEnabled(row != -1);
 	}
 }
