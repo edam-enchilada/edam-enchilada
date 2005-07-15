@@ -70,6 +70,9 @@ public class Collection {
 	private InfoWarehouse db = null;
 	private String datatype;
 	private String namingField;
+	private AggregationOptions aggregationOptions;
+	
+	private ArrayList<Integer> cachedSubCollections = null;
 	
 	public Collection (String type, int cID, InfoWarehouse database)
 	{
@@ -82,8 +85,18 @@ public class Collection {
 	
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
-		ArrayList<Integer> subCollections = db.getImmediateSubCollections(this);
-		return subCollections;
+		if (cachedSubCollections == null)
+			cachedSubCollections = db.getImmediateSubCollections(this);
+		
+		return cachedSubCollections;
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof Collection) {
+			return ((Collection) o).collectionID == collectionID;
+		}
+		
+		return false;
 	}
 	
 	public int getCollectionID()
@@ -95,9 +108,16 @@ public class Collection {
 		return datatype;
 	}
 	
+	public String getName() {
+		if (name == null)
+			name = db.getCollectionName(collectionID);
+		
+		return name;
+	}
+	
 	public String toString()
 	{
-		return db.getCollectionName(collectionID).trim();
+		return getName().trim();
 	}
 	
 	public ArrayList<Integer> getParticleIDs()
@@ -111,6 +131,14 @@ public class Collection {
 		
 		
 		return null;
+	}
+	
+	public void setAggregationOptions(AggregationOptions ao) {
+		aggregationOptions = ao;
+	}
+	
+	public AggregationOptions getAggregationOptions() { 
+		return aggregationOptions;
 	}
 	
 	//TODO:  Need a progress bar here.
