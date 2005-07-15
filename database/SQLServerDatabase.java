@@ -47,6 +47,7 @@ package database;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -58,6 +59,7 @@ import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import analysis.BinnedPeakList;
 import analysis.clustering.PeakList;
+import collection.*;
 import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
 
@@ -65,8 +67,6 @@ import gui.*;
 
 import java.io.*;
 import java.util.Scanner;
-
-import collection.Collection;
 
 
 
@@ -403,14 +403,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		try { 
 			Statement stmt = con.createStatement();
-			
-			ResultSet rs = stmt.executeQuery("SELECT ParentID\n" +
-											 "FROM CollectionRelationships\n" +
-											 "WHERE ChildID = " + collection.getCollectionID());
-			rs.next();
-			int fromParentID = rs.getInt(1);
-			
-			
 			stmt.executeUpdate("UPDATE CollectionRelationships\n" +
 							   "SET ParentID = " + 
 							   Integer.toString(toCollection.getCollectionID()) + "\n" +
@@ -705,28 +697,21 @@ public class SQLServerDatabase implements InfoWarehouse
 	public boolean orphanAndAdopt(Collection collection)
 	{
 		try {
-			Statement stmt = con.createStatement();
-			// Figure out who the parent of this collection is
-			ResultSet rs = stmt.executeQuery("SELECT ParentID\n" +
-					"FROM CollectionRelationships\n" + 
-					"WHERE ChildID = " + 
-					collection.getCollectionID());
-			// If there is no entry in the table for this collectionID,
-			// it doesn't exist, so return false
-			if(!rs.next())
-				return false;
-			
 			// parentID is now set to the parent of the current 
 			// collection
-			int parentID = rs.getInt("ParentID");
-			
-			if (parentID == 0)
+			int parentID = getParentCollectionID(collection.getCollectionID());
+			if (parentID == -1)
+				return false;
+			else if (parentID < 2)
 			{
 				new ExceptionDialog("Cannot perform this operation on root level collections.");
 				System.err.println("Cannot perform this operation " +
 						"on root level collections.");
 				return false;
 			}
+			
+			Statement stmt = con.createStatement();
+			
 			// Get rid of the current collection in 
 			// CollectionRelationships 
 			stmt.execute("DELETE FROM CollectionRelationships\n" + 
@@ -1264,6 +1249,86 @@ public class SQLServerDatabase implements InfoWarehouse
 		return results;
 	}
 	
+	public int getParentCollectionID(int collectionID) {
+		int parentID = -1;
+		try {
+			Statement stmt = con.createStatement();
+			
+			ResultSet rs = stmt.executeQuery("SELECT ParentID\n" +
+					"FROM CollectionRelationships\n" + 
+					"WHERE ChildID = " + collectionID);
+			
+			// If there is no entry in the table for this collectionID,
+			// it doesn't exist, so return false
+			if(rs.next())
+				parentID = rs.getInt("ParentID");
+			
+			rs.close();
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL Exception retrieving parentID of the collection.");
+			System.err.println("Error retrieving parentID of the collection.");
+			e.printStackTrace();
+		}
+		
+		return parentID;
+	}
+	
+	public int getParentCollectionID(int collectionID, int levelsDeep) {
+		Vector<Integer> parentList = new Vector<Integer>();
+		
+		while (collectionID > -1) {
+			collectionID = getParentCollectionID(collectionID);
+			parentList.add(collectionID);
+		}
+		
+		int index = parentList.size() - levelsDeep - 1;
+		if (index < 0)
+			index = 0;
+		
+		return parentList.get(index);
+	}
+	
+	public Set<Integer> getAllCollectionsInTree(int collectionID) {
+		int rootCollectionID = getParentCollectionID(collectionID, 2);
+		
+		// Then return all its descendants
+		return getAllDescendantCollections(rootCollectionID, false);
+	}
+	/**
+	 * Returns all collectionIDs beneath the given collection, optionally including it.
+	 */
+	
+	public Set<Integer> getAllDescendantCollections(int collectionID, boolean includeTopLevel) {
+
+	    // Construct a set of all collections that descend from this one,
+	    // including this one.
+	    ArrayList<Integer> lookUpNext = new ArrayList<Integer>();
+	    boolean status = lookUpNext.add(new Integer(collectionID));
+	    assert status : "lookUpNext queue full";
+	    
+	    Set<Integer> descCollections = new HashSet<Integer>();
+	    if (includeTopLevel)
+	    	descCollections.add(new Integer(collectionID));
+	    
+	    // As long as there is at least one collection to lookup, find
+	    // all subchildren for all of these collections. Add them to the
+	    // set of all collections we have visited and plan to visit
+	    // then next time (if we haven't). (This is essentially a breadth
+	    // first search on the graph of collection relationships).
+	    while (!lookUpNext.isEmpty()) {
+	        ArrayList<Integer> subChildren =
+	            getImmediateSubCollections(lookUpNext);
+	        lookUpNext.clear();
+	        for (Integer col : subChildren)
+	            if (!descCollections.contains(col)) {
+	                descCollections.add(col);
+	                lookUpNext.add(col);
+	            }
+	    }
+	    
+	    return descCollections;
+	}
+	
 	/**
 	 * recursion for getting all the atoms.
 	 * @param collection
@@ -1273,30 +1338,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		Statement stmt = null;
 		try {
-
-		    // Construct a set of all collections that descend from this one,
-		    // including this one.
-		    ArrayList<Integer> lookUpNext = new ArrayList<Integer>();
-		    boolean status = lookUpNext.add(new Integer(collection.getCollectionID()));
-		    assert status : "lookUpNext queue full";
-		    Set<Integer> descCollections = new HashSet<Integer>();
-		    descCollections.add(new Integer(collection.getCollectionID()));
-		    
-		    // As long as there is at least one collection to lookup, find
-		    // all subchildren for all of these collections. Add them to the
-		    // set of all collections we have visited and plan to visit
-		    // then next time (if we haven't). (This is essentially a breadth
-		    // first search on the graph of collection relationships).
-		    while (!lookUpNext.isEmpty()) {
-		        ArrayList<Integer> subChildren =
-		            getImmediateSubCollections(lookUpNext);
-		        lookUpNext.clear();
-		        for (Integer col : subChildren)
-		            if (!descCollections.contains(col)) {
-		                descCollections.add(col);
-		                lookUpNext.add(col);
-		            }
-		    }
+			Set<Integer> descCollections = getAllDescendantCollections(collection.getCollectionID(), true);
 		    
 		    // Now that we have all the collectionIDs that descend from the one
 		    // given, need to query database for all atomIDs that connect to
@@ -2745,7 +2787,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection) {
 		int oldCollectionID = collection.getCollectionID();
-		String colName = this.getCollectionName(oldCollectionID);
+		String colName = collection.getName();
 		String dataType = collection.getDatatype();
 		
 		int newCollectionID = createEmptyCollection(dataType, oldCollectionID, colName + " - " + mapName, "", "");
@@ -2790,6 +2832,162 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		return newCollectionID;
 	}
+	
+	public int createAggregateTimeSeries(String syncRootName, Collection[] collections, String timeBasisSQLstring, boolean baseOnCollection) {
+		String timeBasisSetupStr = baseOnCollection ? ""                 : timeBasisSQLstring;
+		String timeBasisQueryStr = baseOnCollection ? timeBasisSQLstring : "@timeBasis";
+				
+		int rootCollectionID = createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
+		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries");
+				
+		for (int i = 0; i < collections.length; i++) {
+			String sql = null;
+			
+			Collection curColl = collections[i];
+			int collectionID = curColl.getCollectionID();
+			String name = curColl.getName();
+			AggregationOptions options = curColl.getAggregationOptions();
+			if (options == null)
+				curColl.setAggregationOptions(options = new AggregationOptions());
+			
+			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, name, "", "");
+			if (curColl.getDatatype().equals("ATOFMS")) {
+				int[] mzValues = getValidMZValuesForCollection(curColl);
+				
+				if (mzValues == null) {
+					new ExceptionDialog("Error! Collection doesn't have any peak data to aggregate!");
+					System.err.println("Collection doesn't have any peak data to aggregate!");
+					
+					return -1;
+				} else {
+					int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
+					
+					sql = "declare @collectionToPeakLocMap table ( PeakLocation int, CollectionID int ) \n";
+					
+					for (int j = 0; j < mzValues.length; j++) {
+						int mzVal = mzValues[j];
+						
+						int mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzVal + "", "", "");
+						sql += "insert @collectionToPeakLocMap (PeakLocation, CollectionID) values (" + mzVal + ", " + mzCollectionID + ") \n";
+					}
+				}
+			}
+			
+			int nextAtomID = getNextID();
+			
+			sql += timeBasisSetupStr;
+			sql += 
+				"DECLARE @atoms TABLE ( \n" +
+				"   NewAtomID int IDENTITY(" + nextAtomID + ",1), \n" +
+				"   CollectionID int, \n" +
+				"   Time, \n" +
+				"   Value \n" +
+				") \n" +
+				
+				"insert @atoms (CollectionID, Time, Value) \n" +
+				"select PLM.CollectionID, BasisTimeStart, SUM(PeakHeight) AS PeakHeight \n" +
+				"from ATOFMSAtomInfoDense AID \n" +
+				"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
+				"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+				"join (" + timeBasisQueryStr + ") TB  \n" +
+				"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
+				"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
+				"join @collectionToPeakLocMap PLM on (PLM.PeakLocation = cast(round(AIS.PeakLocation, 0) as int)) \n" +
+				"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
+				"group by PLM.CollectionID, cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
+				"order by cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
+				
+				"insert AtomMembership (CollectionID, AtomID) \n" +
+				"select CollectionID, NewAtomID from @atoms \n" +
+
+				"insert " + tableName + " (AtomID, Time, Value) \n" +
+				"select NewAtomID, Time, Value from @atoms";
+			
+			System.out.println(sql);
+		}
+		
+		return rootCollectionID;
+	}
+	
+	public String getTimeBasisSQLString(int collectionID) {
+		String timeSubstr = 
+			"   select distinct Time \n" +
+			"   from ATOFMSAtomInfoDense AID \n" +
+			"   join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			"   where CollectionID = " + collectionID;
+		
+		return "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
+			   "from (\n" + timeSubstr + "\n) T1 " +
+			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
+			   "group by T1.Time \n" +
+			   "union \n" +
+			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
+			   "from ATOFMSAtomInfoDense AID \n" +
+			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			   "where CollectionID = " + collectionID;
+	}
+	
+	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) ";
+		while (start.before(end)) {
+			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values (" + dateFormat.format(start) + ", " + dateFormat.format(end) + " )";
+			start.add(Calendar.DATE,   interval.get(Calendar.DATE));
+			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
+			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+		}
+		
+		return sql;
+	}
+	
+	private int[] getValidMZValuesForCollection(Collection collection) {
+		int collectionID = collection.getCollectionID();
+		AggregationOptions options = collection.getAggregationOptions();
+		
+		String sql = "select distinct cast(round(PeakLocation, 0) as int) as RoundedPeakLocation " +
+					 "from ATOFMSAtomInfoDense AID " +
+					 "join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) " +
+					 "join AtomMembership AM on (AIS.AtomID = AM.AtomID) " +
+					 "where AM.CollectionID = " + collectionID + 
+					 " and abs(PeakLocation - round(PeakLocation, 0)) < " + options.peakTolerance;
+		
+		if (options.mzValues != null && options.mzValues.length > 0) {
+			// Blecch... java should be able to do this itself...
+			// Oh well, build a comma-delimited string from an int array
+			StringBuffer valuesString = new StringBuffer();
+			for (int i = 0; i < options.mzValues.length; i++) {
+				if (i > 0)
+					valuesString.append(",");
+				valuesString.append(options.mzValues[i]);
+			}
+		
+			sql += "--and round(PeakLocation, 0) in ( " + valuesString.toString()  + " ) ";
+		}
+		
+		System.out.println(sql + "\n\n");
+		
+		try {
+			ArrayList<Integer> tempValues = new ArrayList<Integer>();
+			
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(sql);
+			
+			while (rs.next())
+				tempValues.add(rs.getInt("RoundedPeakLocation"));
+			rs.close();
+			
+			return options.getMZValueArray(tempValues);
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL exception creating finding M/Z values within collection");
+			System.err.println("Error creating finding M/Z values within collection.");
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 	/**
 	 * Get all the datatypes currently entered in the database.
 	 * 

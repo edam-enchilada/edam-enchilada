@@ -45,8 +45,10 @@
 package database;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.Vector;
 
 import atom.ATOFMSAtomFromDB;
@@ -207,6 +209,12 @@ public interface InfoWarehouse {
 	 */
 	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection);
 	
+	public int getParentCollectionID(int collectionID, int levelsDeep);
+	
+	public Set<Integer> getAllCollectionsInTree(int collectionID);
+	
+	public Set<Integer> getAllDescendantCollections(int collectionID, boolean includeTopLevel);
+	
 	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);
 	
 	public String getCollectionComment(int collectionID);
@@ -265,4 +273,9 @@ public interface InfoWarehouse {
 	public Vector<int[]> getValueMapRanges();
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
+	
+	public int createAggregateTimeSeries(String syncRootName, Collection[] collections, 
+			String timeBasisSQLstring, boolean baseOnCollection);
+	public String getTimeBasisSQLString(int collectionID);
+	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval);
 }
