@@ -590,7 +590,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
 
 			// Only bulk insert if client and server are on the same machine...
-			if (database.equals("localhost")) {
+			if (url.equals("localhost")) {
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
 				PrintWriter bulkFile = null;
 				try {
