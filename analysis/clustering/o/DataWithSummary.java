@@ -6,38 +6,32 @@ import java.util.Collection;
 import analysis.BinnedPeakList;
 
 
-// should this actually extend StatSummary and have-a ArrayList?
-// nah, too many methods i'd have to deal with overriding and stuff.
-// But should it just be its own thing?
-public class DataWithSummary extends ArrayList<BinnedPeakList> {
+public class DataWithSummary {
+	private ArrayList<BinnedPeakList> atoms;
 	private StatSummary stats;
 	
 	public DataWithSummary() {
 		stats = new StatSummary();
+		atoms = new ArrayList<BinnedPeakList>();
 	}
 
-	/* (non-Javadoc)
-	 * @see java.util.ArrayList#add(E)
-	 */
-	@Override
 	public boolean add(BinnedPeakList atom) {
 		stats.addAtom(atom);
-		// TODO Auto-generated method stub
-		return super.add(atom);
+		return atoms.add(atom);
 	}
 
-	/* (non-Javadoc)
-	 * @see java.util.ArrayList#addAll(java.util.Collection)
-	 */
-	@Override
-	public boolean addAll(Collection<? extends BinnedPeakList> atoms) {
-		stats.addAll((Collection<BinnedPeakList>) atoms);
-		return super.addAll(atoms);
+
+	public boolean addAll(Collection<BinnedPeakList> BPLs) {
+		stats.addAll((Collection<BinnedPeakList>) BPLs);
+		// XXX: it might be a lot lot faster to just keep track of the
+		// arraylist that the atoms were stored in, rather than copying
+		// all of them over into this one's arraylist.
+		return atoms.addAll(BPLs);
 	}
 	
-	public boolean add(DataWithSummary that) {
+	public boolean addAll(DataWithSummary that) {
 		stats.addStats(that.stats);
-		return super.addAll(that);
+		return atoms.addAll(that.atoms);
 	}
 	
 	public float stdDev(int dimension) {
@@ -46,5 +40,13 @@ public class DataWithSummary extends ArrayList<BinnedPeakList> {
 	
 	public StatSummary getStats() {
 		return stats;
+	}
+	
+	public ArrayList<BinnedPeakList> getAtoms() {
+		return atoms;
+	}
+	
+	public int size() {
+		return atoms.size();
 	}
 }

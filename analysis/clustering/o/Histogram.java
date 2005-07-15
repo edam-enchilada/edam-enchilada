@@ -9,6 +9,7 @@ public class Histogram {
 	private int dimension;
 	
 	public Histogram(float stdDev, int count) {
+		// try different width!!
 		// "Scott's normal reference rule"
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
@@ -134,6 +135,8 @@ public class Histogram {
 	}
 	
 	public void printHistogram(boolean printSplits) {
+		//TODO: add count of added peaks, and let the number of implicit 0's
+		// be figured out.
 		System.out.println("Histogram for Dimension " + dimension);
 		System.out.println("Pk.Area\tCount");
 		for (int i = 0; i < histogram.size(); i++) {

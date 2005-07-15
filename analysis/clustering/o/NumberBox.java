@@ -58,12 +58,12 @@ public class NumberBox {
 	 */
 	public boolean addAll(DataWithSummary that) {
 		if (stats == null) {
-			stats = new StatSummary(that);
+			stats = new StatSummary(that.getAtoms());
 		} else {
 			stats.addAll(that);
 		}
 		// TODO: maybe resize histograms.
-		histAtoms(that);
+		histAtoms(that.getAtoms());
 		return false;
 	}
 	public boolean addAll(Collection<BinnedPeakList> atoms) {
@@ -95,6 +95,7 @@ public class NumberBox {
 	
 	public void printDimension(int dim) {
 		System.out.println("Trying to print stats for dim " + dim);
+		System.out.println("Total particles: " + stats.count());
 		if (dim < MAX_LOCATION && dim > - MAX_LOCATION) {
 			System.out.println(stats.toString(dim));
 			histograms[dim + MAX_LOCATION].printHistogram(true);

@@ -43,7 +43,7 @@ public class UndeterminedPartition extends Partition {
 		if (rule == null) {
 			if (nb.getBestSplit(90) != null) {
 				// "ambiguous"
-				collectedData.addAll(data);
+				collectedData.addAll(data.getAtoms());
 				return collectedData.size();
 			} else {
 				// frozen!
