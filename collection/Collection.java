@@ -66,10 +66,9 @@ import ATOFMS.ATOFMSParticle;
  */
 public class Collection {
 	private int collectionID;
-	private String name, comment;
+	private String cachedName, cachedComment;
 	private InfoWarehouse db = null;
 	private String datatype;
-	private String namingField;
 	private AggregationOptions aggregationOptions;
 	
 	private ArrayList<Integer> cachedSubCollections = null;
@@ -79,8 +78,6 @@ public class Collection {
 		collectionID = cID;
 		datatype = type;
 		db = database;
-		name = db.getCollectionName(collectionID);
-		comment = db.getCollectionComment(collectionID);
 	}
 	
 	public ArrayList<Integer> getSubCollectionIDs()
@@ -109,10 +106,17 @@ public class Collection {
 	}
 	
 	public String getName() {
-		if (name == null)
-			name = db.getCollectionName(collectionID);
+		if (cachedName == null)
+			cachedName = db.getCollectionName(collectionID);
 		
-		return name;
+		return cachedName;
+	}
+	
+	public String getComment() {
+		if (cachedComment == null)
+			cachedComment = db.getCollectionComment(collectionID);
+		
+		return cachedComment;
 	}
 	
 	public String toString()
@@ -144,6 +148,7 @@ public class Collection {
 	//TODO:  Need a progress bar here.
 	public boolean exportToPar()
 	{
+		String name = getName();
 		File parFile = new File(name + ".par");
 		File setFile = new File(name + ".set");
 		System.out.println(parFile.getAbsolutePath());
@@ -155,7 +160,7 @@ public class Collection {
 			out.println("ATOFMS data set parameters");
 			out.println(name);
 			out.println(dFormat.format(date));
-			out.println(comment);
+			out.println(getComment());
 			out.close();
 			
 			int particleCount = 1;
