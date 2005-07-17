@@ -19,20 +19,28 @@ public class SyncAnalyzePanel extends JPanel {
 	
 	private Integer[] collectionIDs;
 	
-	public SyncAnalyzePanel(MainFrame parentFrame, InfoWarehouse db, Collection collection) {
+	public SyncAnalyzePanel(MainFrame parentFrame, InfoWarehouse db, CollectionTree tree, Collection collection) {
 		super(new BorderLayout());
 		
 		this.parentFrame = parentFrame;
 		this.db = db;
 		this.collection = collection;
 		
-		Set<Integer> allCollectionIDs = db.getAllCollectionsInTree(collection.getCollectionID());
+		ArrayList<Collection> allCollectionsInTree = tree.getCollectionsInTreeOrderFromRoot(1, collection);
+		ArrayList<Integer> collectionIDs = new ArrayList<Integer>();
 
-		collectionIDs = new Integer[allCollectionIDs.size()];
-		collectionIDs = allCollectionIDs.toArray(collectionIDs);
-		String[] collectionNames = new String[collectionIDs.length];
-		for (int i = 0; i < collectionIDs.length; i++)
-			collectionNames[i] = db.getCollectionName(collectionIDs[i]);
+		for (int i = 0; i < allCollectionsInTree.size(); i++)
+			collectionIDs.add(allCollectionsInTree.get(i).getCollectionID());
+		
+		collectionIDs = db.getCollectionIDsWithAtoms(collectionIDs, false);
+		
+		String[] collectionNames = new String[collectionIDs.size()];
+		
+		int index = 0;
+		for (int i = 0; i < allCollectionsInTree.size(); i++) {
+			if (collectionIDs.contains(allCollectionsInTree.get(i).getCollectionID()))
+				collectionNames[index++] = allCollectionsInTree.get(i).getName();
+		}
 		
 		JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
 		JPanel sequenceSel = new JPanel(new GridLayout(1, 2, 5, 5));

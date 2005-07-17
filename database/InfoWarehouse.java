@@ -200,6 +200,8 @@ public interface InfoWarehouse {
 	 */
 	public int getCollectionSize(int collectionID);
 	
+	public ArrayList<Integer> getCollectionIDsWithAtoms(ArrayList<Integer> collectionIDs, boolean includeChildren);
+	
 	/**
 	 * Returns an array list of ATOFMSAtomFromDB's describing
 	 * every particle descending from the given collection.
@@ -208,11 +210,7 @@ public interface InfoWarehouse {
 	 * @return An array list of particle info.
 	 */
 	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection);
-	
-	public int getParentCollectionID(int collectionID, int levelsDeep);
-	
-	public Set<Integer> getAllCollectionsInTree(int collectionID);
-	
+
 	public Set<Integer> getAllDescendantCollections(int collectionID, boolean includeTopLevel);
 	
 	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);

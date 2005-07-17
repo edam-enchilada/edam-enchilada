@@ -1186,7 +1186,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			return null;
 		}
 	}
-	
+		
 	/**
 	 * gets the collection size
 	 */
@@ -1220,6 +1220,45 @@ public class SQLServerDatabase implements InfoWarehouse
 			e.printStackTrace();
 		}
 		return returnThis;
+	}
+	
+	public ArrayList<Integer> getCollectionIDsWithAtoms(ArrayList<Integer> collectionIDs, boolean includeChildren) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+	
+		if (includeChildren) {
+			// This is *really* slow... oh well. 
+			for (int i = 0; i < collectionIDs.size(); i++)
+				if (getCollectionSize(collectionIDs.get(i)) > 0)
+					ret.add(collectionIDs.get(i));
+		} else {
+			try {
+				ResultSet rs = con.createStatement().
+					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + joinArrayList(collectionIDs, ",") + ")");
+				
+				while (rs.next())
+					ret.add(rs.getInt("CollectionID"));
+				rs.close();
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving collections with atoms.");
+				System.err.println("Error retrieving collections with atoms.");
+				e.printStackTrace();
+			}
+		}
+		
+		return ret;
+	}
+	
+	private String joinArrayList(ArrayList a, String delimiter) {
+		// Blecch... java should be able to do this itself...
+		
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < a.size(); i++) {
+			if (i > 0)
+				sb.append(",");
+			sb.append(a.get(i));
+		}
+		
+		return sb.toString();
 	}
 	
 	/**
@@ -1273,27 +1312,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		return parentID;
 	}
 	
-	public int getParentCollectionID(int collectionID, int levelsDeep) {
-		Vector<Integer> parentList = new Vector<Integer>();
-		
-		while (collectionID > -1) {
-			collectionID = getParentCollectionID(collectionID);
-			parentList.add(collectionID);
-		}
-		
-		int index = parentList.size() - levelsDeep - 1;
-		if (index < 0)
-			index = 0;
-		
-		return parentList.get(index);
-	}
-	
-	public Set<Integer> getAllCollectionsInTree(int collectionID) {
-		int rootCollectionID = getParentCollectionID(collectionID, 2);
-		
-		// Then return all its descendants
-		return getAllDescendantCollections(rootCollectionID, false);
-	}
 	/**
 	 * Returns all collectionIDs beneath the given collection, optionally including it.
 	 */
@@ -2996,7 +3014,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				valuesString.append(options.mzValues[i]);
 			}
 		
-			sql += "--and round(PeakLocation, 0) in ( " + valuesString.toString()  + " ) ";
+			sql += "and round(PeakLocation, 0) in ( " + valuesString.toString()  + " ) ";
 		}
 		
 		try {

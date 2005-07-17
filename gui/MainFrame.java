@@ -620,7 +620,7 @@ public class MainFrame extends JFrame implements ActionListener
 
 	
 	private void setupRightWindowForSynchronization(Collection collection) {
-		mainSplitPane.setBottomComponent(new SyncAnalyzePanel(this, db, collection));
+		mainSplitPane.setBottomComponent(new SyncAnalyzePanel(this, db, synchronizedPane, collection));
 	}
 	
 	/**
