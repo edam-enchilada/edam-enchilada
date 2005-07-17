@@ -28,7 +28,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	private Collection[] collections;
 	
 	private JPanel centerPanel; 
-	
+
 	public AggregateWindow(MainFrame parentFrame, InfoWarehouse db, Collection[] collections) {
 		super("Aggregate Collections");
 		
@@ -135,12 +135,12 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		
 		JPanel ret;
 		
+		AggregationOptions options = collection.getAggregationOptions();
+		if (options == null)
+			collection.setAggregationOptions(options = new AggregationOptions());
+		
 		if (collection.getDatatype().equals("ATOFMS")) {
-			AggregationOptions options = collection.getAggregationOptions();
-			if (options == null)
-				collection.setAggregationOptions(options = new AggregationOptions());
-			
-			ret = getATOFMSPanel(options);
+			ret = getATOFMSPanel(collection);
 		} else {
 			ret = new JPanel(); // Blank if unknown collection type...
 		}
@@ -150,7 +150,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		return ret;
 	}
 	
-	private JPanel getATOFMSPanel(final AggregationOptions options) {
+	private JPanel getATOFMSPanel(Collection collection) {
+		final AggregationOptions options = collection.getAggregationOptions();
 		final JTextField peakTolerance = new JTextField(4);
 		peakTolerance.setText(String.valueOf(options.peakTolerance));
 		peakTolerance.setEditable(false);
@@ -200,23 +201,25 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    combWithAverage.setSelected(options.combMethod == AggregationOptions.CombiningMethod.AVERAGE);
 
 	    JCheckBox partCount = new JCheckBox();
-	    partCount.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				options.produceParticleCountTS = ((JCheckBox) e.getSource()).isSelected();
+	    partCount.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent evt) {
+				System.out.println(evt.getStateChange() == ItemEvent.SELECTED);
+				options.produceParticleCountTS = (evt.getStateChange() == ItemEvent.SELECTED);
 			}
 		});
 	    partCount.setSelected(options.produceParticleCountTS);
 		
-	    final JTextField mzValues = new JTextField(100);
+	    JTextField mzValues = new JTextField(100);
 	    mzValues.setText(options.mzString);
 	    mzValues.addFocusListener(new FocusListener() {
 	    	private String savedText;
 	    	
 	    	public void focusGained(FocusEvent evt) {
-	    		savedText = mzValues.getText();
+	    		savedText = ((JTextField) evt.getSource()).getText();
 	    	}
 	    	
 	    	public void focusLost(FocusEvent evt) {
+	    		JTextField mzValues = ((JTextField) evt.getSource());
 	    		String newText = mzValues.getText();
 	    		
 	    		try {
@@ -241,7 +244,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		partCountPanel.add(new JLabel("<html>Produce particle-count <br>time series</html>"), BorderLayout.CENTER);
 		
 		JPanel bottomHalf = addComponent(new JPanel(), mainPanel);
-		bottomHalf = addComponent(new JLabel("Collection Options"), bottomHalf);
+		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName()), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JLabel("Peak Tolerance:  "), bottomHalf);
 		bottomHalf = addComponent(tolerancePanel, bottomHalf);
@@ -273,15 +276,17 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		Object source = e.getSource();
 		
 		if (source == createSeries) {
-			String newSeriesName = 
-				(String)JOptionPane.showInputDialog(
-                    this,
-                    "Enter a name for this aggregate group: ",
-                    "Name the aggregate group...",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    null,
-                    "");
+			String newSeriesName = descriptionField.getText().trim();
+			
+			if (newSeriesName.equals("")) {
+    			JOptionPane.showMessageDialog(
+    					this, 
+    					"Please fill out description field before aggregating.", 
+    					"No Description", 
+    					JOptionPane.ERROR_MESSAGE);
+    			
+    			return;
+			}
 			
 			String timeBasisSQLStr = null;
 			boolean baseSequenceOnCollection = selSeqRadio.isSelected(); 
