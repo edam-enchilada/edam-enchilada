@@ -77,6 +77,7 @@ public class CollectionTree extends JPanel
 	implements TreeSelectionListener 
 { 
 	private JTree tree; //Collection tree
+	private CollectionModel treeModel;
 
 	private InfoWarehouse db;
 	
@@ -90,7 +91,7 @@ public class CollectionTree extends JPanel
         db = database;
         
         //Create a tree that allows one selection at a time.
-        tree = new JTree(new CollectionModel(db, forSynchronized));
+        tree = new JTree(treeModel = new CollectionModel(db, forSynchronized));
         tree.setRootVisible(false); // hides the root.
         tree.setShowsRootHandles(true); // shows +/- expand handles on 
         								// root level nodes
@@ -143,13 +144,66 @@ public class CollectionTree extends JPanel
     }
     
     public void expandToFind(int collectionID) {
-    	Collection rootNode = (Collection) tree.getModel().getRoot();
+    	Collection rootNode = (Collection) treeModel.getRoot();
     }
     
     public void updateTree()
     {
-    	((CollectionModel)tree.getModel()).fireTreeStructureChanged(
-    			(Collection) tree.getModel().getRoot());
+    	treeModel.fireTreeStructureChanged((Collection) treeModel.getRoot());
+    }
+    
+    public ArrayList<Collection> getCollectionsInTreeOrderFromRoot(int depthToStart, Collection collection) {
+    	Collection[] collectionList = getCollectionsUpFrom(collection);
+    	
+    	ArrayList<Collection> collections = new ArrayList<Collection>();
+    	
+    	return getCollectionsInTreeOrderFromRootRec("", collectionList[depthToStart], collections, true);
+    }
+    
+    private ArrayList<Collection> getCollectionsInTreeOrderFromRootRec(String prefixSoFar, 
+    		Collection rootNode, ArrayList<Collection> curCollectionList, boolean isRoot) {
+
+    	String newPrefix = "";
+    	
+    	if (!isRoot) {
+	    	newPrefix = (prefixSoFar == "") ? rootNode.getName() : 
+	    									  prefixSoFar + " : " + rootNode.getName();
+	    	
+	    	curCollectionList.add(new Collection(newPrefix, rootNode.getDatatype(), rootNode.getCollectionID(), db));
+    	}
+    	
+    	for (int i = 0; i < treeModel.getChildCount(rootNode); i++) {
+    		Collection node = (Collection) treeModel.getChild(rootNode, i);
+    		
+    		getCollectionsInTreeOrderFromRootRec(newPrefix, node, curCollectionList, false);
+    	}
+    	
+    	return curCollectionList;
+    }
+    
+    
+    public Collection[] getCollectionsUpFrom(Collection collection) {
+    	return getCollectionsUpFromRec(1, (Collection) treeModel.getRoot(), collection);
+    }
+
+    private Collection[] getCollectionsUpFromRec(int depth, Collection curNode, Collection collectionToFind) {
+    	Collection[] foundList = null;
+    	
+		if (curNode.equals(collectionToFind)) 
+			foundList = new Collection[depth];
+		
+    	for (int i = 0; foundList == null && i < treeModel.getChildCount(curNode); i++) {
+    		Collection childNode = (Collection) treeModel.getChild(curNode, i);
+    		foundList = getCollectionsUpFromRec(depth + 1, childNode, collectionToFind);
+    	}
+    	
+		if (foundList != null) {
+			foundList[depth - 1] = curNode;
+			return foundList;
+		}
+		
+    	return null;
+    	
     }
     
     public Collection[] getSelectedCollections() {

@@ -57,24 +57,34 @@ import java.util.ArrayList;
 
 import atom.ATOFMSAtomFromDB;
 
-import ATOFMS.ATOFMSParticle;
-
 
 /**
+ * @author gregc
  * @author andersbe
  *
  */
 public class Collection {
 	private int collectionID;
+	private Collection parentCollection;
+	
 	private String cachedName, cachedComment;
 	private InfoWarehouse db = null;
 	private String datatype;
 	private AggregationOptions aggregationOptions;
 	
-	private ArrayList<Integer> cachedSubCollections = null;
+	private ArrayList<Integer> cachedSubCollectionIDs = null;
+	private Collection[] cachedSubCollections;
 	
-	public Collection (String type, int cID, InfoWarehouse database)
+	public Collection(String type, int cID, InfoWarehouse database)
 	{
+		collectionID = cID;
+		datatype = type;
+		db = database;
+	}
+	
+	public Collection(String name, String type, int cID, InfoWarehouse database)
+	{
+		cachedName = name;
 		collectionID = cID;
 		datatype = type;
 		db = database;
@@ -82,10 +92,10 @@ public class Collection {
 	
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
-		if (cachedSubCollections == null)
-			cachedSubCollections = db.getImmediateSubCollections(this);
+		if (cachedSubCollectionIDs == null)
+			cachedSubCollectionIDs = db.getImmediateSubCollections(this);
 		
-		return cachedSubCollections;
+		return cachedSubCollectionIDs;
 	}
 	
 	public boolean equals(Object o) {
@@ -94,6 +104,36 @@ public class Collection {
 		}
 		
 		return false;
+	}
+	
+	public Collection getChildAt(int index) {
+		ArrayList<Integer> subCollectionIDs = getSubCollectionIDs();
+		
+		if (cachedSubCollections == null)
+			cachedSubCollections = new Collection[subCollectionIDs.size()];
+		
+		if (cachedSubCollections[index] == null) {
+			int collectionID = subCollectionIDs.get(index).intValue();
+			
+			// Make sure children have correct datatype...
+			// Should only share from parent nodes that aren't root
+			if (datatype.contains("root"))
+				cachedSubCollections[index] = db.getCollection(collectionID);
+			else
+				cachedSubCollections[index] = new Collection(datatype, collectionID, db);
+			
+			cachedSubCollections[index].setParentCollection(this);
+		}
+		
+		return cachedSubCollections[index];
+	}
+	
+	public Collection getParentCollection() {
+		return parentCollection;
+	}
+	
+	public void setParentCollection(Collection c) {
+		parentCollection = c;
 	}
 	
 	public int getCollectionID()
@@ -127,14 +167,6 @@ public class Collection {
 	public ArrayList<Integer> getParticleIDs()
 	{
 		return db.getAllDescendedAtoms(this);
-	}
-	
-	public ArrayList<ATOFMSParticle> getParticles()
-	{
-		ArrayList<Integer> atomIDs = db.getAllDescendedAtoms(this);
-		
-		
-		return null;
 	}
 	
 	public void setAggregationOptions(AggregationOptions ao) {

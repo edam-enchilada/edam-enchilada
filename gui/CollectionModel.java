@@ -57,7 +57,7 @@ import javax.swing.event.EventListenerList;
  *
  */
 public class CollectionModel implements TreeModel {
-
+	private Collection root = null;
 	private InfoWarehouse db = null;
 	private boolean forSynchronized;
 	
@@ -77,25 +77,21 @@ public class CollectionModel implements TreeModel {
 	 * @see javax.swing.tree.TreeModel#getRoot()
 	 */
 	public Object getRoot() {
-		if (forSynchronized)
-			return new Collection("root-synchronized", 1, db);
-		else
-			return new Collection("root", 0, db);
+		if (root == null) {
+			if (forSynchronized)
+				root = new Collection("root-synchronized", 1, db);
+			else
+				root = new Collection("root", 0, db);
+		}
+		
+		return root;
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
 	 */
 	public Object getChild(Object parent, int index) { 
-		String parentDataType = ((Collection)parent).getDatatype();
-		int collectionID = ((Collection)parent).getSubCollectionIDs().get(index).intValue();
-		
-		// Make sure children have correct datatype...
-		// Should only share from parent nodes that aren't root
-		if (parentDataType.contains("root"))
-			return db.getCollection(collectionID);
-		else
-			return new Collection(parentDataType, collectionID, db);
+		return ((Collection) parent).getChildAt(index);
 	}
 
 	/* (non-Javadoc)
