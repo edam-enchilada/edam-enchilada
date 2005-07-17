@@ -2845,21 +2845,24 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			Collection curColl = collections[i];
 			int collectionID = curColl.getCollectionID();
-			String name = curColl.getName();
+			String collectionName = curColl.getName();
 			AggregationOptions options = curColl.getAggregationOptions();
 			if (options == null)
 				curColl.setAggregationOptions(options = new AggregationOptions());
 			
-			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, name, "", "");
 			if (curColl.getDatatype().equals("ATOFMS")) {
 				int[] mzValues = getValidMZValuesForCollection(curColl);
 				
 				if (mzValues == null) {
-					new ExceptionDialog("Error! Collection doesn't have any peak data to aggregate!");
-					System.err.println("Collection doesn't have any peak data to aggregate!");
+					new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+					System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 					
 					return -1;
+				} else if (mzValues.length == 0) {
+					new ExceptionDialog("Note: Collection: " +collectionName + " doesn't have any peak data to aggregate!");
+					System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				} else {
+					int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 					int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
 					
 					sql = "declare @collectionToPeakLocMap table ( PeakLocation int, CollectionID int ) \n";
@@ -2870,40 +2873,70 @@ public class SQLServerDatabase implements InfoWarehouse
 						int mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzVal + "", "", "");
 						sql += "insert @collectionToPeakLocMap (PeakLocation, CollectionID) values (" + mzVal + ", " + mzCollectionID + ") \n";
 					}
+					
+					int nextAtomID = getNextID();
+					String groupMethod = (options.combMethod == AggregationOptions.CombiningMethod.SUM) ? "SUM" : "AVG";
+					
+					sql += timeBasisSetupStr;
+					sql += 
+						"DECLARE @atoms TABLE ( \n" +
+						"   NewAtomID int IDENTITY(" + nextAtomID + ",1), \n" +
+						"   CollectionID int, \n" +
+						"   Time DateTime, \n" +
+						"   Value real \n" +
+						") \n\n" +
+						
+						"insert @atoms (CollectionID, Time, Value) \n" +
+						"select PLM.CollectionID, BasisTimeStart, " + groupMethod + "(PeakHeight) AS PeakHeight \n" +
+						"from ATOFMSAtomInfoDense AID \n" +
+						"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
+						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+						"join (" + timeBasisQueryStr + ") TB  \n" +
+						"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
+						"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
+						"join @collectionToPeakLocMap PLM on (PLM.PeakLocation = cast(round(AIS.PeakLocation, 0) as int)) \n" +
+						"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
+						"group by PLM.CollectionID, cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
+						"order by cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n\n";
+						
+						if (options.produceParticleCountTS) {
+							int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
+							
+							sql +=
+								"insert @atoms (CollectionID, Time, Value) \n" +
+								"select " + combinedCollectionID + ", BasisTimeStart, " + groupMethod + "(PeakHeight) AS PeakHeight \n" +
+								"from ATOFMSAtomInfoDense AID \n" +
+								"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
+								"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+								"join (" + timeBasisQueryStr + ") TB  \n" +
+								"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
+								"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
+								"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
+								"group by BasisTimeStart \n" +
+								"order by BasisTimeStart \n\n";
+						}
+						
+						sql += 
+							"insert AtomMembership (CollectionID, AtomID) \n" +
+							"select CollectionID, NewAtomID from @atoms \n\n" +
+		
+							"insert " + tableName + " (AtomID, Time, Value) \n" +
+							"select NewAtomID, Time, Value from @atoms";
+						
+					System.out.println(sql);					
 				}
 			}
 			
-			int nextAtomID = getNextID();
-			
-			sql += timeBasisSetupStr;
-			sql += 
-				"DECLARE @atoms TABLE ( \n" +
-				"   NewAtomID int IDENTITY(" + nextAtomID + ",1), \n" +
-				"   CollectionID int, \n" +
-				"   Time, \n" +
-				"   Value \n" +
-				") \n" +
-				
-				"insert @atoms (CollectionID, Time, Value) \n" +
-				"select PLM.CollectionID, BasisTimeStart, SUM(PeakHeight) AS PeakHeight \n" +
-				"from ATOFMSAtomInfoDense AID \n" +
-				"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
-				"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-				"join (" + timeBasisQueryStr + ") TB  \n" +
-				"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
-				"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
-				"join @collectionToPeakLocMap PLM on (PLM.PeakLocation = cast(round(AIS.PeakLocation, 0) as int)) \n" +
-				"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
-				"group by PLM.CollectionID, cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
-				"order by cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
-				
-				"insert AtomMembership (CollectionID, AtomID) \n" +
-				"select CollectionID, NewAtomID from @atoms \n" +
-
-				"insert " + tableName + " (AtomID, Time, Value) \n" +
-				"select NewAtomID, Time, Value from @atoms";
-			
-			System.out.println(sql);
+			if (sql != null) {
+				try {
+					Statement stmt = con.createStatement();
+					stmt.execute(sql);
+				} catch (SQLException e) {
+					new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
+					System.err.println("SQL exception aggregating collection: " + collectionName);
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		return rootCollectionID;
@@ -2965,8 +2998,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 			sql += "--and round(PeakLocation, 0) in ( " + valuesString.toString()  + " ) ";
 		}
-		
-		System.out.println(sql + "\n\n");
 		
 		try {
 			ArrayList<Integer> tempValues = new ArrayList<Integer>();
