@@ -590,6 +590,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				} catch (IOException e) {
 					System.err.println("Trouble creating " + tempFilename);
 					e.printStackTrace();
+					// XXX: do something else here
 				}
 
 				for (int j = 0; j < sparse.size(); j++)
@@ -1097,8 +1098,9 @@ public class SQLServerDatabase implements InfoWarehouse
 	public Collection getCollection(int collectionID) {
 		boolean isPresent = false;
 		String datatype = "";
+		Statement stmt;
 		try {
-			Statement stmt = con.createStatement();
+			stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT CollectionID FROM Collections");
 			while (rs.next()) {
 				if (rs.getInt(1) == collectionID) {
@@ -1108,22 +1110,23 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			
 			if (isPresent) {
-			rs = stmt.executeQuery("SELECT Datatype FROM Collections WHERE CollectionID = " + collectionID);
-			rs.next();
-			datatype = rs.getString(1);
+				rs = stmt.executeQuery("SELECT Datatype FROM Collections WHERE CollectionID = " + collectionID);
+				rs.next();
+				datatype = rs.getString(1);
 			}
 			else {
 				new ExceptionDialog(new String[]{"Error retrieving collection for collectionID ",
 						Integer.toString(collectionID)});
 				System.err.println("collectionID not created yet!!");
 			}
-		
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog(new String[]{"SQL Exception retrieving collection for collectionID ",
 					Integer.toString(collectionID)});
 			System.err.println("error creating collection");
 			e.printStackTrace();
 		}
+
 		return new Collection(datatype,collectionID,this);
 	}
 	

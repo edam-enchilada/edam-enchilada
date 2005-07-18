@@ -69,6 +69,8 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import collection.Collection;
+
 
 /**
  * @author ritza
@@ -310,6 +312,8 @@ public class ATOFMSDataSetImporter {
 							String name = parent.getName();
 							name = parent.toString()+ File.separator + name + ".set";
 							
+							Collection destination = db.getCollection(id[0]);
+							ATOFMSParticle currentParticle;
 							
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
 							StringTokenizer token;
@@ -325,10 +329,12 @@ public class ATOFMSDataSetImporter {
 								
 								read = new ReadSpec(particleFileName);
 								
+								// TODO: test this stuff
+								currentParticle = read.getParticle();
 								db.insertParticle(
-										read.getParticle().particleInfoDenseString(),
-										read.getParticle().particleInfoSparseString(),
-										db.getCollection(id[0]),id[1],nextID);
+										currentParticle.particleInfoDenseString(),
+										currentParticle.particleInfoSparseString(),
+										destination,id[1],nextID);
 								nextID++;
 								particleNum++;
 								//doDisplay++;
