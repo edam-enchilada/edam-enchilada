@@ -845,27 +845,34 @@ public class SQLServerDatabase implements InfoWarehouse
 					 "		FROM AtomMembership\n" +
 					 "		)\n" +
 					 "	)\n");
+		
+		String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
+		String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
 
 		// it is ok to call atominfo tables here because datatype is
 		// set from recursiveDelete() above.
-		stmt.execute("DELETE FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + "\n" +
+		// note: Sparse table may not necessarily exist. So check first.
+		stmt.execute("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
+				"BEGIN \n" +
+				"DELETE FROM " + sparseTableName + "\n" +
 				 "WHERE AtomID IN\n" +
 				 "	(\n" +
 				 "	SELECT AtomID\n" +
-				 "	FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + "\n" +
-				 "	WHERE " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + ".AtomID <> ALL\n" +
+				 "	FROM " + sparseTableName + "\n" +
+				 "	WHERE " + sparseTableName + ".AtomID <> ALL\n" +
 				 "		(\n" +
 				 "		SELECT AtomID\n" +
 				 "		FROM AtomMembership\n" +
 				 "		)\n" +
-				 "	)\n");
+				 "	)\n" +
+				 "END \n");
 		
-		stmt.execute("DELETE FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,datatype) +
+		stmt.execute("DELETE FROM " + denseTableName +
 				 " \n WHERE AtomID IN\n" +
 				 "	(\n" +
 				 "	SELECT AtomID\n" +
-				 "	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,datatype) +
-				 " \n WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,datatype) + ".AtomID <> ALL\n" +
+				 "	FROM " + denseTableName +
+				 " \n WHERE " + denseTableName + ".AtomID <> ALL\n" +
 				 "		(\n" +
 				 "		SELECT AtomID\n" +
 				 "		FROM AtomMembership\n" +
@@ -2805,10 +2812,9 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection) {
 		int oldCollectionID = collection.getCollectionID();
-		String colName = collection.getName();
 		String dataType = collection.getDatatype();
 		
-		int newCollectionID = createEmptyCollection(dataType, oldCollectionID, colName + " - " + mapName, "", "");
+		int newCollectionID = createEmptyCollection(dataType, oldCollectionID, mapName, "", "");
 		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
 		
 		int nextAtomID = getNextID();
