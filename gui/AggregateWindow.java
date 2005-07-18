@@ -6,19 +6,17 @@ import database.InfoWarehouse;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.*;
-import java.text.*;
 import java.util.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
-import javax.swing.text.*;
 
 public class AggregateWindow extends JFrame implements ActionListener, ListSelectionListener {
 	private MainFrame parentFrame;
 	private JButton createSeries, cancel;
-	private JTextField descriptionField, startTime, endTime, interval;
+	private JTextField descriptionField;
+	private TimePanel startTime, endTime, intervalPeriod;
 	private JList collectionsList;
 	private CollectionListModel collectionListModel;
 	private JRadioButton selSeqRadio, timesRadio; 
@@ -39,7 +37,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		cachedCollectionPanels = new Hashtable<Collection, JPanel>();
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
-		setSize(500, 510);
+		setSize(500, 540);
 		setResizable(false);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -47,13 +45,19 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		
 		JPanel topPanel = setupTopPanel(collections);
+		JPanel timePanel = setupTimePanel();
 		
 		JPanel buttonPanel = new JPanel(new FlowLayout());
 		buttonPanel.add(createSeries = new JButton("Create Series"));
 		buttonPanel.add(cancel = new JButton("Cancel"));
 		
+		JPanel bottomPanel = new JPanel(new BorderLayout());
+		bottomPanel.add(timePanel, BorderLayout.CENTER);
+		bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
+		
 		mainPanel.add(topPanel, BorderLayout.CENTER);
-		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+		mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+		
 		add(mainPanel);
 		
 		createSeries.addActionListener(this);
@@ -82,53 +86,40 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	}
 	
 	private JPanel setupLeftPanel() {
-		SpringLayout leftPanelLayout = new SpringLayout();
-		JPanel leftPanel = new JPanel(leftPanelLayout);
-		
-		JPanel collectionsPanel = new JPanel(new BorderLayout());
+		JPanel leftPanel = new JPanel(new BorderLayout());
 		JScrollPane collections = new JScrollPane(collectionsList);
 		collectionsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		collections.setPreferredSize(new Dimension(230, 170));
+		collections.setPreferredSize(new Dimension(230, 190));
 		
-		collectionsPanel.add(new JLabel("Collections:"), BorderLayout.NORTH);
-		collectionsPanel.add(collections);
+		leftPanel.add(new JLabel("Collections:"), BorderLayout.NORTH);
+		leftPanel.add(collections);
 		
+		return leftPanel;
+	}
+	
+	private JPanel setupTimePanel() {
+		JPanel bottomPanel = new JPanel(new BorderLayout());
+		bottomPanel.setBorder(new EmptyBorder(10, 5, 5, 0));
+
 		JLabel timeBasis = new JLabel("Time Basis:");
 	    ButtonGroup group = new ButtonGroup();
 	    group.add(selSeqRadio = new JRadioButton("Selected Sequence"));
 	    group.add(timesRadio = new JRadioButton("Times"));
 	    selSeqRadio.setSelected(true);
 	    
-	    JPanel timesPanel = new JPanel(new GridLayout(3, 2, 0, 5));
-	    timesPanel.add(new JLabel("Start Time:"));
-	    timesPanel.add(startTime = new JTextField(8));
-	    timesPanel.add(new JLabel("End Time:"));
-	    timesPanel.add(endTime = new JTextField(8));
-	    timesPanel.add(new JLabel("Interval:"));
-	    timesPanel.add(interval = new JTextField(8));
-	    
-		leftPanel.add(collectionsPanel);
-		leftPanel.add(timeBasis);
-		leftPanel.add(selSeqRadio);
-		leftPanel.add(timesRadio);
-		leftPanel.add(timesPanel);
-
-		leftPanelLayout.putConstraint(SpringLayout.NORTH, collectionsPanel, 10, 
-				SpringLayout.NORTH, leftPanel);
-		leftPanelLayout.putConstraint(SpringLayout.NORTH, timeBasis, 40,
-				SpringLayout.SOUTH, collectionsPanel);
-		leftPanelLayout.putConstraint(SpringLayout.NORTH, selSeqRadio, 0,
-				SpringLayout.SOUTH, timeBasis);
-		leftPanelLayout.putConstraint(SpringLayout.NORTH, timesRadio, 0,
-				SpringLayout.SOUTH, selSeqRadio);
-		leftPanelLayout.putConstraint(SpringLayout.NORTH, timesPanel, 5,
-				SpringLayout.SOUTH, timesRadio);
-		leftPanelLayout.putConstraint(SpringLayout.WEST, timesPanel, 15,
-				SpringLayout.WEST, timesRadio);
-				
-		return leftPanel;
+	    JPanel timesPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+	    timesPanel.add(startTime = new TimePanel("Start Time:", false));
+	    timesPanel.add(endTime = new TimePanel("End Time:", false));
+	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", true));
+	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
+	   
+		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
+		bottomHalf = addComponent(selSeqRadio, bottomHalf);
+		bottomHalf = addComponent(timesRadio, bottomHalf);
+		bottomHalf = addComponent(timesPanel, bottomHalf);
+		
+	    return bottomPanel;
 	}
-	
 	private JPanel getPanelForCollection(Collection collection) {
 		if (cachedCollectionPanels.containsKey(collection))
 			return cachedCollectionPanels.get(collection);
@@ -294,12 +285,13 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
 				timeBasisSQLStr = db.getTimeBasisSQLString(selectedCollection.getCollectionID());
 			} else {
-				GregorianCalendar start = new GregorianCalendar();
-				GregorianCalendar end = new GregorianCalendar();
-				GregorianCalendar interval = new GregorianCalendar();
+				GregorianCalendar start = startTime.getDate();
+				GregorianCalendar end = endTime.getDate();
+				GregorianCalendar interval = intervalPeriod.getDate();
+
 				timeBasisSQLStr = db.getTimeBasisSQLString(start, end, interval);
 			}
-				
+
 			int collectionID = db.createAggregateTimeSeries(newSeriesName, collections, timeBasisSQLStr, baseSequenceOnCollection);
 			parentFrame.updateSynchronizedTree(collectionID);
 			setVisible(false);
@@ -339,4 +331,84 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			return collections[index];
 		}
 	};
+	
+	public class TimePanel extends JPanel implements ActionListener {
+		private JComboBox day, month, year, hour, minute, second;
+		
+		public TimePanel(String name, boolean isInterval) {
+			setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
+			
+			JLabel label = new JLabel(name);
+			hour   = getComboBox(isInterval ? 0 : 1, 24, false);
+			minute = getComboBox(0, 59, true);
+			second = getComboBox(0, 59, true);
+
+			label.setPreferredSize(new Dimension(70, 20));
+			hour.setPreferredSize(new Dimension(40, 20));
+			minute.setPreferredSize(new Dimension(40, 20));
+			second.setPreferredSize(new Dimension(40, 20));
+			
+			add(label);
+			
+			add(hour);
+			add(new JLabel(":"));
+			add(minute);
+			add(new JLabel(":"));
+			add(second);
+			
+			if (!isInterval) {
+				day    = getComboBox(1, 31, false);
+				month  = getComboBox(1, 12, false);
+				year   = getComboBox(2000, 2005, false);
+				day.setPreferredSize(new Dimension(40, 20));
+				month.setPreferredSize(new Dimension(40, 20));
+				year.setPreferredSize(new Dimension(60, 20));
+				
+				add(new JLabel("   "));
+				
+				add(month);
+				add(new JLabel("\\"));
+				add(day);
+				add(new JLabel("\\"));
+				add(year);
+				
+				day.addActionListener(this);
+				month.addActionListener(this);
+				year.addActionListener(this);
+			}
+			
+			hour.addActionListener(this);
+			minute.addActionListener(this);
+			second.addActionListener(this);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			timesRadio.setSelected(true);
+		}
+		
+		private JComboBox getComboBox(int start, int end, boolean padZero) {
+			String[] ret = new String[end - start + 1];
+			for (int i = 0; i < ret.length; i++) {
+				int num = start + i;
+				String prefix = (padZero && num < 10) ? "0" : "";
+				
+				ret[i] = prefix + String.valueOf(start + i);
+			}
+			
+			return new JComboBox(ret);
+		}
+		
+		private int getIntVal(JComboBox box) {
+			if (box != null)
+				return Integer.parseInt((String) box.getSelectedItem());
+			else
+				return 0;
+		}
+		
+		public GregorianCalendar getDate() {
+			return new GregorianCalendar(
+					getIntVal(year), getIntVal(month) - 1, getIntVal(day),
+					getIntVal(hour), getIntVal(minute),	getIntVal(second));
+		}
+	}
 }

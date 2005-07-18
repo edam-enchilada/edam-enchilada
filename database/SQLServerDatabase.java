@@ -2858,8 +2858,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	public int createAggregateTimeSeries(String syncRootName, Collection[] collections, String timeBasisSQLstring, boolean baseOnCollection) {
-		String timeBasisSetupStr = baseOnCollection ? ""                 : timeBasisSQLstring;
-		String timeBasisQueryStr = baseOnCollection ? timeBasisSQLstring : "@timeBasis";
+		String timeBasisSetupStr = baseOnCollection ? ""                             : timeBasisSQLstring ;
+		String timeBasisQueryStr = baseOnCollection ? "(" + timeBasisSQLstring + ")" : "@timeBasis";
 				
 		int rootCollectionID = createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
 		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries");
@@ -2915,7 +2915,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"from ATOFMSAtomInfoDense AID \n" +
 						"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
 						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-						"join (" + timeBasisQueryStr + ") TB  \n" +
+						"join " + timeBasisQueryStr + " TB  \n" +
 						"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
 						"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
 						"join @collectionToPeakLocMap PLM on (PLM.PeakLocation = cast(round(AIS.PeakLocation, 0) as int)) \n" +
@@ -2932,7 +2932,7 @@ public class SQLServerDatabase implements InfoWarehouse
 								"from ATOFMSAtomInfoDense AID \n" +
 								"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
 								"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-								"join (" + timeBasisQueryStr + ") TB  \n" +
+								"join " + timeBasisQueryStr + " TB  \n" +
 								"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
 								"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
 								"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
@@ -2987,13 +2987,24 @@ public class SQLServerDatabase implements InfoWarehouse
 	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		
-		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) ";
+		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) \n";
+		java.util.Date startTime, endTime;
+
 		while (start.before(end)) {
-			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values (" + dateFormat.format(start) + ", " + dateFormat.format(end) + " )";
-			start.add(Calendar.DATE,   interval.get(Calendar.DATE));
+			startTime = start.getTime();
+			
+			//start.add(Calendar.DATE,   interval.get(Calendar.DATE));
 			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
 			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
 			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+			
+			if (!start.before(end))
+				start = end;
+			
+			endTime = start.getTime();
+			
+			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values ('" + 
+						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
 		}
 		
 		return sql;
