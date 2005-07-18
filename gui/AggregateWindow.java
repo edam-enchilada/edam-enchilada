@@ -203,7 +203,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    JCheckBox partCount = new JCheckBox();
 	    partCount.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent evt) {
-				System.out.println(evt.getStateChange() == ItemEvent.SELECTED);
 				options.produceParticleCountTS = (evt.getStateChange() == ItemEvent.SELECTED);
 			}
 		});
@@ -244,7 +243,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		partCountPanel.add(new JLabel("<html>Produce particle-count <br>time series</html>"), BorderLayout.CENTER);
 		
 		JPanel bottomHalf = addComponent(new JPanel(), mainPanel);
-		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName()), bottomHalf);
+		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName() + ":"), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JLabel("Peak Tolerance:  "), bottomHalf);
 		bottomHalf = addComponent(tolerancePanel, bottomHalf);

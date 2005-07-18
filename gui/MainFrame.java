@@ -49,6 +49,7 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
 
 import collection.*;
 
@@ -95,6 +96,8 @@ public class MainFrame extends JFrame implements ActionListener
 	private CollectionTree synchronizedPane;
 	private JTextArea descriptionTA;
 
+	private CollectionTree selectedCollectionTree = null;
+	
 	private int copyID = -1;
 	private boolean cutBool = false;
 
@@ -204,7 +207,7 @@ public class MainFrame extends JFrame implements ActionListener
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.orphanAndAdopt(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			collectionPane.updateTree();
+	        selectedCollectionTree.updateTree();
 			validate();
 		}
 		
@@ -213,7 +216,7 @@ public class MainFrame extends JFrame implements ActionListener
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.recursiveDelete(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			collectionPane.updateTree();
+	        selectedCollectionTree.updateTree();
 			validate();
 		}
 		
@@ -546,21 +549,43 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		aggregateButton.addActionListener(this);
 		mapValuesButton.addActionListener(this);
+		aggregateButton.setEnabled(false);
+		mapValuesButton.setEnabled(false);
 	}
 	
-	public void changeParticleTable(CollectionTree source, Collection collection) {
+	public void collectionSelected(CollectionTree colTree, Collection collection) {
+		if (selectedCollectionTree != null && colTree != selectedCollectionTree)
+			selectedCollectionTree.clearSelection();
+		
+		selectedCollectionTree = colTree;
+		
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
 		int dividerLocation = mainSplitPane.getDividerLocation();
+		boolean panelChanged = false;
 		
-		if (source == collectionPane)
-			setupRightWindowForCollection(collection);
-		else if (source == synchronizedPane)
-			setupRightWindowForSynchronization(collection);
+		if (colTree == collectionPane) {
+			panelChanged = setupRightWindowForCollection(collection);
+			aggregateButton.setEnabled(collection.containsData());
+			mapValuesButton.setEnabled(false);
+		} else if (colTree == synchronizedPane) {
+			panelChanged = setupRightWindowForSynchronization(collection);
+			mapValuesButton.setEnabled(collection.containsData());
+			aggregateButton.setEnabled(false);
+		}
 		
-		// Bah. Java can't just remember this... need to remind it.
-		mainSplitPane.setDividerLocation(dividerLocation);
+		if (panelChanged) {
+			// Bah. Java can't just remember this... need to remind it.
+			mainSplitPane.setDividerLocation(dividerLocation);
+			
+	        validate();
+		}
+		
+        editText(MainFrame.DESCRIPTION, collection.getDescription());
+        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 	}
 
-	private void setupRightWindowForCollection(Collection collection) {
+	private boolean setupRightWindowForCollection(Collection collection) {
 		mainSplitPane.setBottomComponent(collectionViewPanel);
 		
         String dataType = collection.getDatatype();
@@ -616,11 +641,30 @@ public class MainFrame extends JFrame implements ActionListener
 			// Change to just show table (no button)...
 			collectionViewPanel.setComponentAt(0, new JScrollPane(particlesTable));
 		}
+		
+		data.clear();
+		data = db.updateParticleTable(collection, data);
+	    
+		particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+        particlesTable.doLayout();
+		
+		return true;
 	}
 
-	
-	private void setupRightWindowForSynchronization(Collection collection) {
+	private boolean setupRightWindowForSynchronization(Collection collection) {
+		Component rightWindow = mainSplitPane.getBottomComponent();
+		
+		if (rightWindow instanceof SyncAnalyzePanel) {
+			SyncAnalyzePanel sap = (SyncAnalyzePanel) rightWindow;
+			
+			if (sap.containsCollection(collection)) { 
+				sap.selectCollection(collection);
+				return false;
+			}
+		}
+			
 		mainSplitPane.setBottomComponent(new SyncAnalyzePanel(this, db, synchronizedPane, collection));
+		return true;
 	}
 	
 	/**
@@ -654,6 +698,20 @@ public class MainFrame extends JFrame implements ActionListener
 			descriptionTA.replaceRange(text, 0,docLength);*/
 		}
 	}
+
+	public void updateSynchronizedTree(int collectionID) {
+		synchronizedPane.updateTree();
+		synchronizedPane.expandToFind(collectionID);
+	}
+	
+	public void updateAnalyzePanel(Collection c) {
+		Component rightWindow = mainSplitPane.getBottomComponent();
+		
+		if (rightWindow instanceof SyncAnalyzePanel) {
+			SyncAnalyzePanel sap = (SyncAnalyzePanel) rightWindow;
+			sap.updateModels(c);
+		}
+	}
 	
 	public static void main(String[] args) {
 
@@ -678,39 +736,8 @@ public class MainFrame extends JFrame implements ActionListener
 		//creating and showing this application's GUI.
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				MainFrame mFrame = new MainFrame();
+				new MainFrame();
 			}
 		});
-	}
-	
-	/**
-	 * @return Returns the data.
-	 */
-	public Vector<Vector<Object>> getData() 
-	{
-		return data;
-	}
-
-	/**
-	 * @return Returns the particlesTable.
-	 */
-	public JTable getParticlesTable() {
-		return particlesTable;
-	}
-	
-	public JComponent getInfoPanel() {
-		return infoPanel;
-	}
-	
-	public void updateSynchronizedTree(int collectionID) {
-		synchronizedPane.updateTree();
-		synchronizedPane.expandToFind(collectionID);
-	}
-	
-	public void clearOtherTreeSelections(CollectionTree colTree) {
-		if (colTree == collectionPane)
-			synchronizedPane.clearSelection();
-		else if (colTree == synchronizedPane)
-			collectionPane.clearSelection();
-	}
+	}	
 }

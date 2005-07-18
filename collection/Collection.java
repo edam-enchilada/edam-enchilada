@@ -67,13 +67,14 @@ public class Collection {
 	private int collectionID;
 	private Collection parentCollection;
 	
-	private String cachedName, cachedComment;
 	private InfoWarehouse db = null;
 	private String datatype;
 	private AggregationOptions aggregationOptions;
-	
+
+	private String cachedName, cachedComment, cachedDescription;
 	private ArrayList<Integer> cachedSubCollectionIDs = null;
 	private Collection[] cachedSubCollections;
+	private int cachedContainsData = -1;
 	
 	public Collection(String type, int cID, InfoWarehouse database)
 	{
@@ -145,6 +146,17 @@ public class Collection {
 		return datatype;
 	}
 	
+	public boolean containsData() {
+		if (cachedContainsData == -1) {
+			ArrayList<Integer> tmp = new ArrayList<Integer>();
+			tmp.add(collectionID);
+			
+			cachedContainsData = db.getCollectionIDsWithAtoms(tmp, false).size();
+		}
+	
+		return cachedContainsData > 0;
+	}
+	
 	public String getName() {
 		if (cachedName == null)
 			cachedName = db.getCollectionName(collectionID);
@@ -157,6 +169,13 @@ public class Collection {
 			cachedComment = db.getCollectionComment(collectionID);
 		
 		return cachedComment;
+	}
+	
+	public String getDescription() {
+		if (cachedDescription == null)
+			cachedDescription = db.getCollectionDescription(collectionID);
+		
+		return cachedDescription;
 	}
 	
 	public String toString()

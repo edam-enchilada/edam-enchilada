@@ -165,8 +165,14 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 		Object source = e.getSource();
 		
 		if (source == applyValueMap) {
-			db.applyMap("Map: ", mapRangesDataModel.getCurrentMap(), collection);
+			String selectedName = (String) savedMapData.getElementAt(mapList.getSelectedIndex());
+			
+			if (selectedName == null)
+				selectedName = "Unnamed map";
+			
+			db.applyMap("Map: \"" + selectedName + "\"", mapRangesDataModel.getCurrentMap(), collection);
 			parentFrame.updateSynchronizedTree(collection.getCollectionID());
+			parentFrame.updateAnalyzePanel(collection);
 			setVisible(false);
 			dispose();
 		} else if (source == cancel) {
@@ -221,7 +227,14 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 		}
 		
 		public int getSize() { return names.size(); }
-		public Object getElementAt(int index) { return " " + names.get(index); }
+		
+		public Object getElementAt(int index) {
+			if (index >= 0 && index < names.size())
+				return " " + names.get(index);
+			else
+				return null;
+		}
+		
 		public void addMap(int mapID, String name) {
 			ids.add(mapID);
 			names.add(name);

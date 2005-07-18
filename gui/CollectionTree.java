@@ -115,28 +115,7 @@ public class CollectionTree extends JPanel
         	(Collection)tree.getLastSelectedPathComponent();
         if (node == null) return;
     	
-        parentFrame.clearOtherTreeSelections(this);
-    	
-        // Selection will display data in particles table - wire here.
-        //System.out.println(node.getCollectionID());
-        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-       
-        Collection collection = db.getCollection(node.getCollectionID());
-        
-        // fast code
-        parentFrame.changeParticleTable(this, collection);
-        Vector<Vector<Object>> particleTable = parentFrame.getData();
-        particleTable.clear();
-        particleTable = db.updateParticleTable(collection, particleTable);
-	        
-        parentFrame.getParticlesTable().tableChanged(new TableModelEvent(
-        		parentFrame.getParticlesTable().getModel()));
-        parentFrame.getParticlesTable().doLayout();
-        parentFrame.validate();
-        
-        parentFrame.editText(MainFrame.DESCRIPTION,db.getCollectionDescription(node.getCollectionID()));
-        parentFrame.setCursor(Cursor.getPredefinedCursor
-                (Cursor.DEFAULT_CURSOR));
+        parentFrame.collectionSelected(this, node);
     }
     
     public void clearSelection() {
@@ -197,12 +176,10 @@ public class CollectionTree extends JPanel
     		foundList = getCollectionsUpFromRec(depth + 1, childNode, collectionToFind);
     	}
     	
-		if (foundList != null) {
+		if (foundList != null)
 			foundList[depth - 1] = curNode;
-			return foundList;
-		}
 		
-    	return null;
+    	return foundList;
     	
     }
     
