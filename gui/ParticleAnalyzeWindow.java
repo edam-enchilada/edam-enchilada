@@ -107,7 +107,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * @param chart
 	 */
 	public ParticleAnalyzeWindow(SQLServerDatabase db, JTable dt, int curRow) {
-		super("Analyze Particle - AtomID: " + dt.getValueAt(curRow, 0));
+		super();
 
 		setSize(800, 600);
 		setLocation(10, 10);
@@ -303,8 +303,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		int atomID = ((Integer) 
 				particlesTable.getValueAt(curRow, 0)).intValue();
 
-		String filename = (String)particlesTable.getValueAt(curRow, 5);
+		setTitle("Analyze Particle - AtomID: " + atomID);
 		
+		String filename = (String)particlesTable.getValueAt(curRow, 5);
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -317,7 +318,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		}
 		
 		System.out.println(peakString);
-		//peaksText.setText(peakString);
 		setPeaks(peaks, atomID, filename);		
 	}
 	
