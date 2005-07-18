@@ -155,6 +155,9 @@ public class CollectionModel implements TreeModel {
 
 	protected void fireTreeStructureChanged(Collection oldRoot)
 	{
+		// Erase cached tree...
+		root = null;
+		
 		TreeModelEvent e = new TreeModelEvent(this, new Object[] {oldRoot});
 		// from javadocs for listenerlist
 	     // Guaranteed to return a non-null array
