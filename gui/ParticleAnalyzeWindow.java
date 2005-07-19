@@ -122,7 +122,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		JPanel mainPanel = new JPanel(new BorderLayout());
 
 		// sets up chart
-		chart = new chartlib.Chart(2);
+		chart = new chartlib.Chart(2, false);
 		chart.setHasKey(false);
 		chart.setTitle("Positive and negative peak values");
 		chart.setTitleX(0,"Positive mass-to-charge ratios");

@@ -61,7 +61,7 @@ public class Chart extends JPanel
 	private Dataset[] datasets; 
 	private String title;
 	private int numCharts;
-	
+	private boolean combineCharts;
 	
 	//graphical elements
 	private ChartTitle titleLabel;
@@ -112,9 +112,10 @@ public class Chart extends JPanel
 	 * Creates a dataset with multiple chart areas, stacked vertically.
 	 * @param numAreas The number of chart areas.
 	 */ 
-	public Chart( int numAreas )
+	public Chart( int numAreas, boolean combineArea )
 	{
 		numCharts = numAreas;
+		combineCharts = combineArea;
 		title = "New Chart";
 		hasKey = true;
 		datasets = new Dataset[numAreas];
@@ -247,7 +248,10 @@ public class Chart extends JPanel
 	 */
 	public Dataset getDataset(int index)
 	{
-		return chartAreas[index].getDataset();
+		if (combineCharts)
+			return chartAreas[0].getDataset(index);
+		else
+			return chartAreas[index].getDataset(0);
 	}
 	
 	/**
@@ -318,7 +322,11 @@ public class Chart extends JPanel
 	 */
 	public void setDataset(int index, Dataset ds )
 	{
-			datasets[index] = ds;
+		datasets[index] = ds;
+		
+		if (combineCharts)
+			chartAreas[0].setDataset(index, ds);
+		else
 			chartAreas[index].setDataset(ds);
 			//repaint();
 	}
@@ -343,7 +351,11 @@ public class Chart extends JPanel
 		if (xmax == CURRENT_VALUE) xmax = chartAreas[index].getXmax();
 		if (ymin == CURRENT_VALUE) ymin = chartAreas[index].getYmin();
 		if (ymax == CURRENT_VALUE) ymax = chartAreas[index].getYmax();
-		chartAreas[index].setAxisBounds(xmin, xmax, ymin, ymax );
+		
+		if (combineCharts)
+			chartAreas[0].setAxisBounds(index, xmin, xmax, ymin, ymax);
+		else
+			chartAreas[index].setAxisBounds(0, xmin, xmax, ymin, ymax);
 	}
 	
 	/**
@@ -467,8 +479,8 @@ public class Chart extends JPanel
 	 */
 	public void setTitleX(String titleX)
 	{
-		for(int count=0; count < numCharts; count++)
-			chartAreas[count].setTitleX(titleX);
+		for(int count = 0; count < datasets.length; count++)
+			setTitleX(count, titleX);
 	}
 	
 	/**
@@ -478,7 +490,10 @@ public class Chart extends JPanel
 	 */
 	public void setTitleX(int index, String titleX)
 	{
-		chartAreas[index].setTitleX(titleX);
+		if (combineCharts)
+			chartAreas[0].setTitleX(titleX);
+		else
+			chartAreas[index].setTitleX(titleX);
 	}
 	
 	
@@ -489,8 +504,8 @@ public class Chart extends JPanel
 	 */
 	public void setTitleY(String titleY)
 	{
-		for(int count = 0; count < chartAreas.length; count++)
-			chartAreas[count].setTitleY(titleY);
+		for(int count = 0; count < datasets.length; count++)
+			setTitleY(count, titleY);
 	}
 	
 	
@@ -501,7 +516,10 @@ public class Chart extends JPanel
 	 */
 	public void setTitleY(int index, String titleY)
 	{
-		chartAreas[index].setTitleY(titleY);
+		if (combineCharts)
+			chartAreas[0].setTitleY(index, titleY);
+		else
+			chartAreas[index].setTitleY(0, titleY);
 	}
 	
 	
@@ -511,8 +529,8 @@ public class Chart extends JPanel
 	 */
 	public void setBarWidth(int width )
 	{
-		for(int count = 0; count < chartAreas.length; count++)
-			chartAreas[count].setBarWidth(width);
+		for(int count = 0; count < datasets.length; count++)
+			setBarWidth(count, width);
 	}
 	
 	/**
@@ -522,7 +540,10 @@ public class Chart extends JPanel
 	 */
 	public void setBarWidth(int index, int width)
 	{
-		chartAreas[index].setBarWidth(width);
+		if (combineCharts)
+			chartAreas[0].setBarWidth(index, width);
+		else
+			chartAreas[index].setBarWidth(0, width);
 	}
 	
 	/**
@@ -533,9 +554,8 @@ public class Chart extends JPanel
 	 */
 	public void setColor(Color c)
 	{
-		for(int count = 0; count < chartAreas.length; count++){
-			setColor(count ,c);
-		}
+		for(int count = 0; count < datasets.length; count++)
+			setColor(count, c);
 	}
 	
 	/**
@@ -545,7 +565,11 @@ public class Chart extends JPanel
 	 */
 	public void setColor(int index, Color c)
 	{
-		chartAreas[index].setColor(c);
+		if (combineCharts)
+			chartAreas[0].setColor(index, c);
+		else
+			chartAreas[index].setColor(0, c);
+
 		key.setColor(index, c);
 	}
 	
@@ -558,7 +582,10 @@ public class Chart extends JPanel
 	 */
 	public void setDataDisplayType(int index, boolean showBars, boolean showLines)
 	{
-		chartAreas[index].setDataDisplayType(showBars, showLines);
+		if (combineCharts)
+			chartAreas[0].setDataDisplayType(index, showBars, showLines);
+		else
+			chartAreas[index].setDataDisplayType(0, showBars, showLines);
 	}
 	
 	/**
@@ -569,8 +596,8 @@ public class Chart extends JPanel
 	 */
 	public void setDataDisplayType(boolean showBars, boolean showLines)
 	{
-		for(int count = 0; count < chartAreas.length; count++)
-			chartAreas[count].setDataDisplayType(showBars, showLines);
+		for(int count = 0; count < datasets.length; count++)
+			setDataDisplayType(count, showBars, showLines);
 	}
 	
 	/**
@@ -583,7 +610,8 @@ public class Chart extends JPanel
 	 */
 	public void setHitDetectCoords(int index, double[] xCoords)
 	{
-		chartAreas[index].setHitDetectCoords(xCoords);
+		if (index == 0)
+			chartAreas[0].setHitDetectCoords(xCoords);
 	}
 	
 	
@@ -616,9 +644,13 @@ public class Chart extends JPanel
 		for(int count = 0; count < chartAreas.length; count++)
 			packData(count, packX, packY);
 	}
+	
 	public void packData(int index, boolean packX, boolean packY)
 	{
-		chartAreas[index].pack(packX, packY);
+		if (combineCharts)
+			chartAreas[0].pack(index, packX, packY);
+		else
+			chartAreas[index].pack(0, packX, packY);
 	}
 	
 	/**
@@ -666,24 +698,32 @@ public class Chart extends JPanel
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
 		
-		
-		
-		chartAreas = new ChartArea[numCharts];
-		for(int count = 0; count < numCharts; count++)
-		{
-		
-			if(datasets[count] != null)
-			{	
-				chartAreas[count] = new ChartArea(datasets[count]);
-			}
-			else
+		if (combineCharts) {
+			Dataset ds1 = datasets.length > 0 ? datasets[0] : null;
+			Dataset ds2 = datasets.length > 1 ? datasets[1] : null;
+			
+			chartAreas = new ChartArea[1];
+			chartAreas[0] = new ChartArea(ds1, ds2);
+			chartPanel.add(chartAreas[0]);
+		} else {
+			chartAreas = new ChartArea[numCharts];
+			for(int count = 0; count < numCharts; count++)
 			{
-				chartAreas[count] = new ChartArea();
+			
+				if(datasets[count] != null)
+				{	
+					chartAreas[count] = new ChartArea(datasets[count]);
+				}
+				else
+				{
+					chartAreas[count] = new ChartArea();
+				}
+			
+				//chartAreas[count].setPreferredSize(new Dimension(500,500));
+				chartPanel.add(chartAreas[count]);
 			}
-		
-			//chartAreas[count].setPreferredSize(new Dimension(500,500));
-			chartPanel.add(chartAreas[count]);
 		}
+		
 		ckPanel.add(chartPanel);
 		
 		

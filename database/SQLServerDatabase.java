@@ -2953,9 +2953,7 @@ public class SQLServerDatabase implements InfoWarehouse
 							"select CollectionID, NewAtomID from @atoms \n\n" +
 		
 							"insert " + tableName + " (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from @atoms";
-						
-					System.out.println(sql);					
+							"select NewAtomID, Time, Value from @atoms";				
 				}
 			}
 			
@@ -3060,6 +3058,71 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 		return null;
+	}
+	
+	
+	public Hashtable<java.util.Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
+			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs) {
+		
+		ArrayList<String> columnsToReturn = new ArrayList<String>();
+		columnsToReturn.add("Ts1Value");
+		
+		String atomSelStr = "select CollectionID, Time, Value from " +
+							getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + 
+							" D join AtomMembership M on (D.AtomID = M.AtomID)";
+
+		String selectStr = "select T1.Time as Time";
+		String tableJoinStr = "from (" + atomSelStr + ") T1 \n";
+		String collCondStr = "where T1.CollectionID = " + seq1.getCollectionID() + " \n";
+		String condStr = ", %s as %s";
+		
+		if (seq2 != null) {
+			tableJoinStr += "join (" + atomSelStr + ") T2 on (T2.Time = T1.Time) \n";
+			collCondStr += "and T2.CollectionID = " + seq2.getCollectionID() + " \n";
+			columnsToReturn.add("Ts2Value");
+		}
+		
+		if (conditionStrs.size() > 0) {
+			condStr = ", case when (";
+		
+			for (int i = 0; i < conditionStrs.size(); i++) {
+				tableJoinStr += "join (" + atomSelStr + ") C" + i + " on (C" + i + ".Time = T1.Time) \n";
+				selectStr += ", C" + i + ".Value as C" + i + "Value";
+				collCondStr += "and C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + " \n";
+				condStr += conditionStrs.get(i);
+				columnsToReturn.add("C" + i + "Value");
+			}
+			
+			condStr += ") then %s else -99 end as %s";
+		}
+		
+		selectStr += String.format(condStr, "T1.Value", "Ts1Value");
+		
+		if (seq2 != null)
+			selectStr += String.format(condStr, "T2.Value", "Ts2Value");
+		
+		String sqlStr = selectStr + " \n" + tableJoinStr + collCondStr;
+		
+		Hashtable<java.util.Date, double[]> retData = new Hashtable<java.util.Date, double[]>();
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(sqlStr);
+
+			while (rs.next()) {
+				double[] retValues = new double[columnsToReturn.size()];
+				for (int i = 0; i < retValues.length; i++)
+					retValues[i] = rs.getDouble(columnsToReturn.get(i));
+				
+				retData.put(rs.getTimestamp("Time"), retValues);	
+			}
+			rs.close();
+		} catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving time series data.");
+			System.err.println("Error time series data.");
+			e.printStackTrace();
+		}
+		
+		return retData;
 	}
 	
 	/**

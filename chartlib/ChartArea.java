@@ -55,9 +55,9 @@ import java.util.Iterator;
 public class ChartArea extends JComponent {
 	
 	private GraphAxis xAxis;
-	private GraphAxis yAxis;
-	private Dataset dataset;
-	private Color color;
+	private GraphAxis yAxis, yAxis2;
+	private Dataset dataset1, dataset2;
+	private Color color, color2;
 	private double[] bars = null; //the data bars.  used for hit detection.
 	
 	//spacers between axes and edges to allow for tick mark labels and axis titles.
@@ -65,6 +65,7 @@ public class ChartArea extends JComponent {
 	private static final int V_AXIS_PADDING = 50;
 	private static final int H_TITLE_PADDING = 20;
 	private static final int V_TITLE_PADDING = 20;
+	private static final int RIGHT_HAND_V_TITLE_PADDING = 5;
 	private static final int RIGHT_PADDING = 15;
 	private static final int TOP_PADDING = 15;
 	
@@ -74,17 +75,17 @@ public class ChartArea extends JComponent {
 	
 	
 	//variable values of display elements
-	private int barWidth = 5;  //how wide each bar is, in pixels
+	private int barWidth = 5, barWidth2 = 5;  //how wide each bar is, in pixels
 	private int dotWidth = 0;	//how big dots are in line graphs, in pixels
-	private double xmin, xmax, ymin, ymax;  //bounds of the axes
+	private double xmin, xmax, ymin, ymax, ymin2 = -1, ymax2 = -1;  //bounds of the axes
 	private double bigTicksX = 0, bigTicksY = 0; //big ticks are multiples of these
 	private int smallTicksX = 1, smallTicksY = 1; //number of small ticks between each big tick
-	private String titleX, titleY;
+	private String titleX, titleY, titleY2;
 	private int numSmartTicksX = -1;	//if negative, set ticks by using multiples of a number.
 	private int numSmartTicksY = -1;						// if positive, always have this many ticks.
 	
-	private boolean showBars = true;
-	private boolean showLines = false;
+	private boolean showBars = true, showBars2 = true;
+	private boolean showLines = false, showLines2 = false;
 	
 	
 	/**
@@ -117,8 +118,6 @@ public class ChartArea extends JComponent {
 		titleX = "X Axis";
 		titleY = "Y Axis";
 		
-		dataset = null;
-		
 		createAxes();
 	}
 	
@@ -136,20 +135,44 @@ public class ChartArea extends JComponent {
 		bigTicksY = 0;
 		color = Chart.DATA_COLORS[0];
 		
-		
-		dataset = ds;
+		dataset1 = ds;
 		
 		pack();
+	}
+	
+	public ChartArea(Dataset dataset1, Dataset dataset2) {
+		titleX = "X Axis";
+		titleY = "Y Axis";
+		bigTicksX = 0;
+		bigTicksY = 0;
+		color = Chart.DATA_COLORS[0];
+
+		this.dataset1 = dataset1;
+		this.dataset2 = dataset2;
 		
+		pack();
 	}
 	
 	/**
 	 * Sets a new dataset to be displayed.  Does not alter any other values.
 	 * @param ds The new dataset to be displayed.
 	 */
-	public void setDataset(Dataset ds)
+	public void setDataset(Dataset ds) {
+		setDataset(0, ds);
+	}
+	
+	/**
+	 * Sets a new dataset to be displayed.  Does not alter any other values.
+	 * @param ds The new dataset to be displayed.
+	 * @param index The index of the dataset in this area
+	 */
+	public void setDataset(int index, Dataset ds)
 	{
-		dataset = ds;
+		if (index == 0)
+			dataset1 = ds;
+		else
+			dataset2 = ds;
+		
 		//generateAxisLimits();
 		createAxes();
 		repaint();
@@ -224,7 +247,7 @@ public class ChartArea extends JComponent {
 	 * @param ymin Minimum of Y axis.
 	 * @param ymax Maximum of Y axis.
 	 */
-	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax)
+	public void setAxisBounds(int index, double xmin, double xmax, double ymin, double ymax)
 	throws IllegalArgumentException
 	{
 		//check for errors
@@ -233,9 +256,15 @@ public class ChartArea extends JComponent {
 		
 		
 		this.xmin = xmin;
-		this.ymin = ymin;
 		this.xmax = xmax;
-		this.ymax = ymax;
+		
+		if (index == 0) {
+			this.ymin = ymin;
+			this.ymax = ymax;
+		} else {
+			this.ymin2 = ymin;
+			this.ymax2 = ymax;
+		}
 		
 		createAxes();
 		repaint();
@@ -249,6 +278,7 @@ public class ChartArea extends JComponent {
 	public void setTitleX(String titleX)
 	{
 		this.titleX = titleX;
+		
 		repaint();
 	}
 	
@@ -256,9 +286,13 @@ public class ChartArea extends JComponent {
 	 * Sets a new title for the Y axis.
 	 * @param titleY New Y axis title.
 	 */
-	public void setTitleY(String titleY)
+	public void setTitleY(int index, String titleY)
 	{
-		this.titleY = titleY;
+		if (index == 0)
+			this.titleY = titleY;
+		else
+			this.titleY2 = titleY;
+		
 		repaint();
 	}
 	
@@ -266,9 +300,13 @@ public class ChartArea extends JComponent {
 	 * Sets the width of the bars of the graph in pixels.
 	 * @param width New width for graph bars, in pixels.
 	 */
-	public void setBarWidth(int width)
+	public void setBarWidth(int index, int width)
 	{
-		barWidth = width;
+		if (index == 0)
+			this.barWidth = width;
+		else
+			this.barWidth2 = width;
+
 		repaint();
 	}
 	
@@ -278,9 +316,13 @@ public class ChartArea extends JComponent {
 	/**
 	 * Sets a new color for the data.
 	 */
-	public void setColor(Color c)
+	public void setColor(int index, Color c)
 	{
-		color = c;
+		if (index == 0)
+			color = c;
+		else
+			color2 = c;
+		
 		repaint();
 	}
 	
@@ -290,10 +332,15 @@ public class ChartArea extends JComponent {
 	 * @param showBars If true, chart will display data in bars.
 	 * @param showLines If true, chart will dislay data in lines.
 	 */
-	public void setDataDisplayType(boolean showBars, boolean showLines)
+	public void setDataDisplayType(int index, boolean showBars, boolean showLines)
 	{
-		this.showBars = showBars;
-		this.showLines = showLines;
+		if (index == 0) {
+			this.showBars = showBars;
+			this.showLines = showLines;
+		} else {
+			this.showBars2 = showBars;
+			this.showLines2 = showLines;
+		}
 		//bars = null;
 		repaint();
 	}
@@ -341,15 +388,23 @@ public class ChartArea extends JComponent {
 	/**
 	 * @return Returns the color.
 	 */
-	public Color getColor() {
-		return color;
+	public Color getColor(int index) {
+		return index == 0 ? color : color2;
+	}
+	
+	/**
+	 * @return YAxis, depending on index
+	 */
+	
+	public GraphAxis getYAxis(int index) {
+		return index == 0 ? yAxis : yAxis2;
 	}
 	
 	/**
 	 * @return Returns the dataset.
 	 */
-	public Dataset getDataset() {
-		return dataset;
+	public Dataset getDataset(int index) {
+		return index == 0 ? dataset1 : dataset2;
 	}
 	
 	/**
@@ -518,7 +573,8 @@ public class ChartArea extends JComponent {
 	 */
 	public void pack()
 	{
-		pack(true, true);
+		pack(0, true, true);
+		pack(1, true, true);
 	}
 	
 	/**
@@ -529,14 +585,15 @@ public class ChartArea extends JComponent {
 	 * @param packX Whether to change the x axis.
 	 * @param packY Whether to change the y axis.
 	 */
-	public void pack(boolean packX, boolean packY)
+	public void pack(int index, boolean packX, boolean packY)
 	{
+		Dataset dataset = getDataset(index);
+		
 		//empty dataset: do nothing
-		if(dataset == null || dataset.size() == 0 
-				|| (packX == false && packY == false))
+		if (dataset == null || dataset.size() == 0 || (packX == false && packY == false))
 			return;
 		
-		java.util.Iterator i = dataset.iterator();
+		java.util.Iterator iterator = dataset.iterator();
 		//these duplicate variables prevent changing the globals
 		// unless we really want to.
 		double xmin, ymin, xmax, ymax;	
@@ -548,9 +605,9 @@ public class ChartArea extends JComponent {
 		//this loop finds the minimum and maximum values for x and y
 		//when x is also to be packed
 		if(packX == true)
-			while( i.hasNext() )
+			while(iterator.hasNext() )
 			{
-				dp = (DataPoint)(i.next());
+				dp = (DataPoint)(iterator.next());
 				if(dp.y < ymin) ymin = dp.y;
 				if(dp.y > ymax) ymax = dp.y;
 				if(dp.x < xmin) xmin = dp.x;
@@ -560,9 +617,9 @@ public class ChartArea extends JComponent {
 		else
 		{
 			size = 0;
-			while( i.hasNext() )
+			while(iterator.hasNext() )
 			{
-				dp = (DataPoint)(i.next());
+				dp = (DataPoint)(iterator.next());
 				if(dp.x > this.xmin && dp.x < this.xmax)
 				{
 					if(dp.y < ymin) ymin = dp.y;
@@ -574,39 +631,40 @@ public class ChartArea extends JComponent {
 		}
 		
 		
+		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
+		
 		//one element:
 		if(size == 1)
 		{
-			if(packX)
-			{
-				this.xmin = xmin - xmin / 2;
-				this.xmax = xmax + xmax / 2;
-			}
-			if(packY)
-			{
-				this.ymin = 0;
-				this.ymax = ymax + ymax / 10;
-			}
+			newXmin = xmin - xmin / 2;
+			newXmax = xmax + xmax / 2;
+			newYmin = 0;
+			newYmax = ymax + ymax / 10;
 		}
 		
 //		adds some extra space on the edges
 		else
 		{
-			if(packX)
-			{
-				xmin -= (xmax - xmin) / 10;
-				xmax += (xmax - xmin) / 10;
-				this.xmin = xmin;
-				this.xmax = xmax;
-			}
-			if(packY)
-			{
-				ymin -= (ymax - ymin ) / 10;
-				ymax += (ymax - ymin ) /10;
-				this.ymin = ymin;
-				this.ymax = ymax;
+			newXmin = xmin - ((xmax - xmin) / 10);
+			newXmax = xmax + ((xmax - xmin) / 10);
+			newYmin = ymin - ((ymax - ymin) / 10);
+			newYmax = ymax + ((ymax - ymin ) /10);
+		}
+		
+		if (packX) {
+			this.xmin = newXmin;
+			this.xmax = newXmax;
+		}
+		if (packY) {
+			if (index == 0) {
+				this.ymin = newYmin;
+				this.ymax = newYmax;
+			} else {
+				this.ymin2 = newYmin;
+				this.ymax2 = newYmax;
 			}
 		}
+			
 		createAxes();
 		repaint();
 	}
@@ -621,10 +679,16 @@ public class ChartArea extends JComponent {
 	{
 		Dimension size = getSize();
 		Insets insets = getInsets();
+		
+		int width = size.width - V_AXIS_PADDING - V_TITLE_PADDING - RIGHT_PADDING
+		- insets.left - insets.right;
+		
+		if (dataset2 != null)
+			width -= V_AXIS_PADDING;
+		
 		return new Rectangle(V_AXIS_PADDING + V_TITLE_PADDING + insets.left,
 				TOP_PADDING + insets.top,
-				size.width - V_AXIS_PADDING - V_TITLE_PADDING - RIGHT_PADDING
-					- insets.left - insets.right,
+				width,
 				size.height - H_AXIS_PADDING - H_TITLE_PADDING - TOP_PADDING
 					- insets.top - insets.bottom);
 	}
@@ -648,7 +712,6 @@ public class ChartArea extends JComponent {
 			bigTicksY = (ymax - ymin) / numSmartTicksY;
 		}
 
-		
 		if(bigTicksX == 0 || xmin >= xmax)
 			xAxis = new GraphAxis(xmin, xmax);
 		else
@@ -659,9 +722,16 @@ public class ChartArea extends JComponent {
 		else
 			yAxis = new GraphAxis(ymin, ymax, bigTicksY, smallTicksY);
 		
+		if (ymin2 != -1 && ymax2 != -1) {			
+			if(numSmartTicksY <= 0 || ymin2 >= ymax2)
+				yAxis2 = new GraphAxis(ymin2, ymax2);
+			else
+				yAxis2 = new GraphAxis(ymin2, ymax2, (ymax2 - ymin2) / numSmartTicksY, smallTicksY);
+			
+			yAxis2.setTitle(titleY2);
+		}
 		
 		xAxis.setTitle(titleX);
-
 		yAxis.setTitle(titleY);
 	}
 	
@@ -684,26 +754,36 @@ public class ChartArea extends JComponent {
 		// stroke styles, so we change the Graphics into one.
 		Graphics2D g2d = (Graphics2D)g.create();
 		
-
-		if(dataset != null)
+		drawAxisLineX(g2d);
+		drawAxisTicksX(g2d);
+		drawAxisTitleX(g2d);
+		
+		if(dataset1 != null)
 		{
-			if(showBars) drawDataBars(g2d, dataset);
-			//if(showLines) drawDataLines(g2d, dataset);
-			if(showLines) 
-			{
-				drawDataLinesSmart(g2d, dataset);
-				//else drawDataLines(g2d, dataset);
-			}
+			if(showBars)  drawDataBars(0, g2d, dataset1);
+			if(showLines) drawDataLinesSmart(0, g2d, dataset1);
+			
+			if (dataset2 == null)
+				g2d.setColor(Color.BLACK);
+			
+			drawAxisTitleY(g2d, 0);
+			drawAxisLineY(g2d, 0);
+			drawAxisTicksY(g2d, 0);
 		}
 		
-		drawAxisLineX(g2d);
-		drawAxisLineY(g2d);
+		if (dataset2 != null)
+		{
+			if(showBars2)  drawDataBars(1, g2d, dataset2);
+			if(showLines2) drawDataLinesSmart(1, g2d, dataset2);
+
+			drawAxisTitleY(g2d, 1);
+			drawAxisLineY(g2d, 1);
+			drawAxisTicksY(g2d, 1);
+		}
 		
-		drawAxisTicksX(g2d);
-		drawAxisTicksY(g2d);
 		
-		drawAxisTitleX(g2d);
-		drawAxisTitleY(g2d);
+		
+		
 		
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
@@ -719,8 +799,9 @@ public class ChartArea extends JComponent {
 	 * @param ds
 	 */
 	
-	private void drawDataLinesSmart(Graphics2D g2d, Dataset ds)
+	private void drawDataLinesSmart(int index, Graphics2D g2d, Dataset ds)
 	{
+		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
 		
 		DataPoint curPoint; //holder for data retrieved from dataset
@@ -733,7 +814,7 @@ public class ChartArea extends JComponent {
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
-		g2d.setColor(color);
+		g2d.setColor(getColor(index));
 		g2d.clip(dataArea);	//constrains drawing to the data area
 		g2d.setStroke(new BasicStroke(2));
 		
@@ -749,7 +830,7 @@ public class ChartArea extends JComponent {
 			//find screen coordinates of point
 			xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width);
 			yCoord = (int) (dataArea.y + dataArea.height 
-					- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+					- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
 			
 			if(xCoord < dataArea.x) continue;
 			
@@ -856,13 +937,13 @@ public class ChartArea extends JComponent {
 	 * @param g2d The Graphics context.
 	 * @param ds The dataset to draw.
 	 */
-	private void drawDataBars(Graphics2D g2d, Dataset ds)
+	private void drawDataBars(int index, Graphics2D g2d, Dataset ds)
 	{
+		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
 
 		DataPoint curPoint;
 		Rectangle bar;
-		int index = 0;
 		int width = barWidth;
 		double xCoord;
 		double height;
@@ -882,7 +963,7 @@ public class ChartArea extends JComponent {
 				xCoord = dataArea.x + xCoord * (dataArea.width);
 				
 				//height of the bar - clipped to top or bottom if out of bounds
-				height = yAxis.relativePosition(curPoint.y);
+				height = actualYAxis.relativePosition(curPoint.y);
 				if(height < 0)
 					height = dataArea.y + dataArea.height;
 				else if(height > 1)
@@ -902,7 +983,7 @@ public class ChartArea extends JComponent {
 				
 				
 				//fills in bar
-				g2d.setColor(color);				
+				g2d.setColor(getColor(index));				
 				g2d.fill(bar);
 				
 				//draws border around bar
@@ -914,7 +995,6 @@ public class ChartArea extends JComponent {
 				//puts a null bar in the array to hold its place
 				//barsTemp[index] = null;
 			}
-			index++;
 		}
 		//saves in global array
 		//bars = new Rectangle[index];
@@ -943,20 +1023,21 @@ public class ChartArea extends JComponent {
 	 * Draws the Y axis line without tick marks.
 	 * @param g2d The graphics context.
 	 */ 
-	private void drawAxisLineY(Graphics2D g2d)
+	private void drawAxisLineY(Graphics2D g2d, int index)
 	{
 		
 		Dimension size = getSize();
 		Rectangle dataArea = getDataAreaBounds();
 		
 		//Y Axis line
+		g2d.setPaint(Color.BLACK);
 		g2d.setStroke(new BasicStroke(2));
-		g2d.draw(new Line2D.Double(dataArea.x, dataArea.y,
-				dataArea.x, dataArea.y + dataArea.height));
-		
-		
-		
-		
+		if (index == 0)
+			g2d.draw(new Line2D.Double(dataArea.x, dataArea.y,
+					dataArea.x, dataArea.y + dataArea.height));
+		else
+			g2d.draw(new Line2D.Double(dataArea.x + dataArea.width, dataArea.y,
+					dataArea.x + dataArea.width, dataArea.y + dataArea.height));
 	}
 	
 	
@@ -977,19 +1058,23 @@ public class ChartArea extends JComponent {
 		g2d.drawString(xAxis.getTitle(), xCoord, size.height - getInsets().bottom - 3);
 	}
 	
-	private void drawAxisTitleY(Graphics2D g2d)
+	private void drawAxisTitleY(Graphics2D g2d, int index)
 	{
+		GraphAxis actualYAxis = getYAxis(index);
+		
 //		y axis title - rotated so as to read vertically
 		Rectangle dataArea = getDataAreaBounds();
 		int yCoord = dataArea.y + dataArea.height / 2;
-		int xCoord = V_TITLE_PADDING -getInsets().left -2;
+		int xCoord = V_TITLE_PADDING - getInsets().left - 4;
+		if (index == 1)
+			xCoord = getSize().width - getInsets().right - 4;
 		
 		java.awt.font.GlyphVector vector; //the visual representation of the string.
-		vector = g2d.getFont().createGlyphVector(g2d.getFontRenderContext(),yAxis.getTitle());
+		vector = g2d.getFont().createGlyphVector(g2d.getFontRenderContext(), actualYAxis.getTitle());
 		yCoord = yCoord + vector.getOutline().getBounds().width / 2;
 		
 		g2d.rotate(- Math.PI/2, xCoord, yCoord);
-		g2d.drawString(yAxis.getTitle(), xCoord, yCoord);
+		g2d.drawString(actualYAxis.getTitle(), xCoord, yCoord);
 		g2d.rotate(Math.PI/2, xCoord, yCoord);
 	}
 	
@@ -1016,7 +1101,7 @@ public class ChartArea extends JComponent {
 		{
 			tickValue = xBigTicks[count];
 			if(tickValue >= 0 && tickValue <= 1)
-				drawTick(g2d,tickValue,true,true);
+				drawTick(g2d,tickValue,true,true,false);
 			
 			
 			//label on each big tick, rounded to nearest hundredth
@@ -1040,20 +1125,22 @@ public class ChartArea extends JComponent {
 		{
 			tickValue = xSmallTicks[count];
 			if(tickValue >= 0 && tickValue <= 1)
-				drawTick(g2d,tickValue,true,false);
+				drawTick(g2d,tickValue,true,false,false);
 			count++;
 			
 		}
 	}
 	
-	private void drawAxisTicksY(Graphics2D g2d)
+	private void drawAxisTicksY(Graphics2D g2d, int index)
 	{
+		GraphAxis realYAxis = getYAxis(index);
+		
 		Dimension size = getSize();
 		Rectangle dataArea = getDataAreaBounds();
 		
 		//an arrays of the ticks, as proportions of the axis length
-		double[] yBigTicks = yAxis.getBigTicksRel();
-		double[] yBigTicksLabels = yAxis.getBigTicksVals();
+		double[] yBigTicks = realYAxis.getBigTicksRel();
+		double[] yBigTicksLabels = realYAxis.getBigTicksVals();
 		if(yBigTicks.length == 0 || yBigTicksLabels.length == 0)
 			return;
 		
@@ -1067,13 +1154,14 @@ public class ChartArea extends JComponent {
 		{
 			tickValue = yBigTicks[count];
 			if(tickValue >= 0 && tickValue <= 1)
-				drawTick(g2d,tickValue,false,true);
+				drawTick(g2d,tickValue,false,true, (index == 0));
 			
+			int tickX = (index == 0) ? V_TITLE_PADDING : dataArea.x + dataArea.width + RIGHT_HAND_V_TITLE_PADDING;
 			
 			label = Double.toString((double)(Math.round(yBigTicksLabels[count] * 100))/100);
-			//label = Integer.toString((int)(yBigTicksLabels[count]));
+
 			g2d.drawString(label, 
-					V_TITLE_PADDING,
+					tickX,
 					(int)(dataArea.y + dataArea.height 
 							- tickValue * (dataArea.height) + 4));
 			count++;
@@ -1081,7 +1169,7 @@ public class ChartArea extends JComponent {
 		
 		
 		// y axis small ticks
-		double[] ySmallTicks = yAxis.getSmallTicks();
+		double[] ySmallTicks = realYAxis.getSmallTicks();
 		count = 0;
 		tickValue = ySmallTicks[0];
 		
@@ -1089,7 +1177,7 @@ public class ChartArea extends JComponent {
 		{
 			tickValue = ySmallTicks[count];
 			if(tickValue >= 0 && tickValue <= 1)
-				drawTick(g2d,tickValue,false,false);
+				drawTick(g2d,tickValue,false,false, (index == 0));
 			count++;
 			
 		}
@@ -1104,8 +1192,9 @@ public class ChartArea extends JComponent {
 	 * between 0 and 1.
 	 * @param xAxis True to draw on X axis, false to draw on Y axis.
 	 * @param big True to draw big tick, false to draw small tick.
+	 * @param leftSide True if drawing left-side ticks, false for right side... only applicable to y axis
 	 */
-	private void drawTick(Graphics2D g2d, double relPos, boolean xAxis, boolean big)
+	private void drawTick(Graphics2D g2d, double relPos, boolean xAxis, boolean big, boolean leftSide)
 	{
 		Dimension size = this.getSize();
 		Rectangle dataArea = getDataAreaBounds();
@@ -1133,12 +1222,13 @@ public class ChartArea extends JComponent {
 		//for y axis
 		else
 		{
+			int xCoord = leftSide ? dataArea.x : (dataArea.x + dataArea.width - tickSize);
 			
 			double yCoord = dataArea.y + dataArea.height - relPos * (dataArea.height);
 			g2d.draw(new Line2D.Double(
-					dataArea.x,
+					xCoord,
 					yCoord,
-					dataArea.x + tickSize,
+					xCoord + tickSize,
 					yCoord));
 		}
 	}

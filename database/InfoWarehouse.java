@@ -276,4 +276,7 @@ public interface InfoWarehouse {
 			String timeBasisSQLstring, boolean baseOnCollection);
 	public String getTimeBasisSQLString(int collectionID);
 	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval);
+	
+	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
+			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
 }
