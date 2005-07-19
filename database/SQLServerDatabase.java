@@ -69,6 +69,11 @@ import java.io.*;
 import java.util.Scanner;
 
 
+/* 
+ * Maybe a good way to refactor this file is to separate out methods that
+ * are used by importers from those used by clustering code, and so on.
+ * It might work well, or it might not...
+ */
 
 /**
  * @author andersbe

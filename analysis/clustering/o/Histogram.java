@@ -7,6 +7,17 @@ public class Histogram {
 	private float binWidth;
 	private ValleyList splitPoints;
 	private int dimension;
+	private int count;
+	
+	
+	/*
+	 * We need to get Histograms to work with the dual nominal/weird nature
+	 * of the ATOFMS data.
+	 * 
+	 * A split at 0 should be considered when there is a large number of peaks
+	 * above the sensitivity value (which we don't even use yet).  Maybe?
+	 * Aaaaaugh.  It's really hard to tell what to dooo!
+	 */
 	
 	public Histogram(float stdDev, int count) {
 		// try different width!!
@@ -14,6 +25,7 @@ public class Histogram {
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
+		this.count = 0; // yes, really not the count paramenter.
 	}
 	
 	public Histogram(float stdDev, int count, int dimension) {
@@ -23,6 +35,11 @@ public class Histogram {
 
 	public void addPeak(float area) {
 		histogram.addPeak(area);
+		count++;
+	}
+	
+	public void addImplicit(int totalCount) {
+		
 	}
 	
 	private int findAllValleys() {
@@ -72,40 +89,24 @@ public class Histogram {
 		return splitPoints.numValleys();
 	}
 	
-	public List<Float> getSplitPoints(int confidencePercent) {
-		LinkedList<Float> splits = new LinkedList<Float>();
+	public List<SplitRule> getSplitRules(int confidencePercent) {
+		LinkedList<SplitRule> splits = new LinkedList<SplitRule>();
 		if (findAllValleys() > 0) {
 			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {
-				splits.add(histogram.getIndexMiddle(
-						splitPoints.getValley(i).location));
+				splits.add(
+						new SplitRule(
+								dimension,
+								histogram.getIndexMiddle(
+										splitPoints.getValley(i).location),
+								// goodness:
+								// some would say, should be negative density.
+								splitPoints.chiSquared(i)));
+									
 			}
 			return splits;
 		} else {
 			return null;
-		}
-	}
-	
-
-
-	public List<SplitRule> getSplitRules(int confidencePercent) {
-		List<SplitRule> rules = new LinkedList<SplitRule>();
-		
-		List<Float> areas = getSplitPoints(confidencePercent);
-		
-		if (areas == null) {
-			return rules;
-		} else {
-			Iterator<Float> i = areas.iterator();
-			float thisArea;
-			
-			while (i.hasNext()) {
-				thisArea = i.next();
-				// goodness is the opposite of the density of this bin.
-				rules.add(new SplitRule(dimension, thisArea,
-						0 - histogram.get(thisArea)));
-			}
-			return rules;
 		}
 	}
 	

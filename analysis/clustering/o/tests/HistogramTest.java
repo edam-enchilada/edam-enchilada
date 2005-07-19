@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import analysis.clustering.o.Histogram;
+import analysis.clustering.o.SplitRule;
 
 import junit.framework.TestCase;
 
@@ -43,13 +44,13 @@ public class HistogramTest extends TestCase {
 	}
 
 	public void testGetSplitPoints() {
-		List<Float> splitPoints = hist.getSplitPoints(90);
+		List<SplitRule> splitRules = hist.getSplitRules(90);
 		
-		if (splitPoints == null) {
+		if (splitRules == null) {
 			fail("Iris data has one split point, not zero.");
 		} else {
 			// the split point should be greater than 0.5 and less than 1.
-			assertEquals(0.75f, splitPoints.get(0), 0.24f);
+			assertEquals(0.75f, splitRules.get(0).area, 0.24f);
 		}
 	}
 	
