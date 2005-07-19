@@ -610,8 +610,8 @@ public class Chart extends JPanel
 	 */
 	public void setHitDetectCoords(int index, double[] xCoords)
 	{
-		if (index == 0)
-			chartAreas[0].setHitDetectCoords(xCoords);
+		if (index < chartAreas.length)
+			chartAreas[index].setHitDetectCoords(xCoords);
 	}
 	
 	
