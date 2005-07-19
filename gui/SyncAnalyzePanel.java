@@ -205,7 +205,7 @@ public class SyncAnalyzePanel extends JPanel {
 				chart.setColor(i, i == 0 ? Color.red : Color.blue);
 				chart.setAxisBounds(i, -10, secondsFromStart + 10, 0, maxValue[i]);
 				chart.setDataset(i, datasets[i]);
-				chart.setDataDisplayType(false, true);
+				chart.setDataDisplayType((datasets[i].size() == 1), true);
 			}
 
 			chart.setNumTicks(10,10, 1,1);
@@ -226,7 +226,7 @@ public class SyncAnalyzePanel extends JPanel {
 				compChart.setColor(0, Color.green);
 				compChart.setAxisBounds(0, -10, secondsFromStart + 10, 0, maxValue[i]);
 				compChart.setDataset(0, datasets[i]);
-				compChart.setDataDisplayType(false, true);		
+				compChart.setDataDisplayType((datasets[i].size() == 1), true);		
 				compChart.setNumTicks(10,10, 1,1);
 				compChart.setBarWidth(3);
 
