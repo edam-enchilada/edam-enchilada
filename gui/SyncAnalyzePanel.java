@@ -1,12 +1,13 @@
 package gui;
 
-import ATOFMS.Peak;
 import chartlib.*;
 import collection.Collection;
 import database.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
+import java.text.*;
 import java.util.*;
 
 import javax.swing.*;
@@ -69,7 +70,32 @@ public class SyncAnalyzePanel extends JPanel {
 		
 		exportToCSV.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
-				setupBottomPane();
+				Hashtable<Date, double[]> data = setupBottomPane();
+				ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
+				Collections.sort(dateSet);
+				
+				try {
+					JFileChooser fc = new JFileChooser("Choose Output File");
+					int result = fc.showSaveDialog(null);
+					if (result == JFileChooser.APPROVE_OPTION) {
+						SimpleDateFormat dformat = new SimpleDateFormat("M/d/yyyy hh:mm:ss a");
+						File f = fc.getSelectedFile();
+						PrintWriter fWriter = new PrintWriter(f);
+						
+						for (Date d : dateSet)
+						{
+							double[] values = data.get(d);
+							fWriter.print(dformat.format(d));
+							for (int i = 0; i < values.length; i++)
+								fWriter.print(", " + values[i]);
+							fWriter.println();
+						}
+						fWriter.close();
+					}
+				} catch (FileNotFoundException e) {
+					System.err.println("Error! File not found!");
+					e.printStackTrace();
+				}
 			}
 		});
 		
@@ -124,7 +150,7 @@ public class SyncAnalyzePanel extends JPanel {
 	}
 
 	
-	public void setupBottomPane() {		
+	public Hashtable<Date, double[]> setupBottomPane() {		
 		JPanel panePanel = new JPanel(new BorderLayout());
 		bottomPane.setViewportView(panePanel);
 		
@@ -165,14 +191,12 @@ public class SyncAnalyzePanel extends JPanel {
 			for (int i = 0; i < numSets; i++)
 				datasets[i] = new Dataset();
 			
-			Set<Date> keySet = data.keySet();
-			Date[] dateSet = new Date[keySet.size()];
-			keySet.toArray(dateSet);
-			Arrays.sort(dateSet);
+			ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
+			Collections.sort(dateSet);
 
 			double secondsFromStart = 0;
 			double maxValue[] = new double[numSets];
-			long startTime = dateSet[0].getTime();
+			long startTime = dateSet.get(0).getTime();
 			for (Date d : dateSet)
 			{
 				secondsFromStart = (d.getTime() - startTime) / 1000.0;
@@ -240,6 +264,8 @@ public class SyncAnalyzePanel extends JPanel {
 			textPanel.add(new JLabel("No data matches query"));
 			panePanel.add(textPanel, BorderLayout.CENTER);
 		}
+		
+		return data;
 	}
 	
 	private JPanel addComponent(JComponent newComponent, JPanel parent) {
