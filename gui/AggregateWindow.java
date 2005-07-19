@@ -247,7 +247,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomHalf = addComponent(partCountPanel, bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JLabel("Produce time series"), bottomHalf);
-		bottomHalf = addComponent(new JLabel("for m/z values:"), bottomHalf);
+		bottomHalf = addComponent(new JLabel("for m/z values (leave blank for all):"), bottomHalf);
 		bottomHalf = addComponent(mzValues, bottomHalf);
 		
 		return mainPanel;
@@ -266,7 +266,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		Object source = e.getSource();
 		
 		if (source == createSeries) {
-			String newSeriesName = descriptionField.getText().trim();
+			String newSeriesName = descriptionField.getText().trim().replace("'", "''");
 			
 			if (newSeriesName.equals("")) {
     			JOptionPane.showMessageDialog(
