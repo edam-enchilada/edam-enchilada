@@ -753,6 +753,7 @@ public class ChartArea extends JComponent {
 		//Graphics2D has useful functions like transforms and
 		// stroke styles, so we change the Graphics into one.
 		Graphics2D g2d = (Graphics2D)g.create();
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
 		drawAxisLineX(g2d);
 		drawAxisTicksX(g2d);
@@ -804,62 +805,45 @@ public class ChartArea extends JComponent {
 		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
 		
-		DataPoint curPoint; //holder for data retrieved from dataset
-		int pixindex = dataArea.x;	//what pixel we are on
-		int xCoord, yCoord;	//coordinates of point to draw
-		
-		//	previous point - connect line from it to current point.
-		int prevX=Integer.MIN_VALUE, prevY = Integer.MIN_VALUE;
-		int maxYCoord = Integer.MAX_VALUE;
-		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(getColor(index));
 		g2d.clip(dataArea);	//constrains drawing to the data area
-		g2d.setStroke(new BasicStroke(2));
+		g2d.setStroke(new BasicStroke(1.5f));
 		
-		//	loops through all data points
-		//GeneralPath gp = new GeneralPath();
-		Iterator i = ds.iterator();
-		while(i.hasNext() && pixindex < dataArea.x + dataArea.width)
+		double[] coords = new double[dataArea.width];
+		
+		//	loops through all data points building array of points to draw
+		Iterator iterator = ds.iterator();
+		while(iterator.hasNext())
 		{
+			DataPoint curPoint = (DataPoint) iterator.next();
 			
-			
-			curPoint = (DataPoint)i.next();
-			
-			//find screen coordinates of point
-			xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x) * dataArea.width);
-			yCoord = (int) (dataArea.y + dataArea.height 
+			int xCoord = (int) (xAxis.relativePosition(curPoint.x) * dataArea.width);
+			double yCoord = (dataArea.y + dataArea.height 
 					- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
 			
-			if(xCoord < dataArea.x) continue;
-			
-			//new pixel
-			if(xCoord > pixindex)
-			{
-				//draw
-				if(prevY != Integer.MIN_VALUE)
-				{
-					g2d.draw(new Line2D.Double(prevX, prevY, pixindex, maxYCoord));
-				}
-				
-				//reset for next pixel
-				prevX = pixindex;
-				prevY = maxYCoord;
-				maxYCoord = yCoord;
-				pixindex = xCoord;
-				//break;
+			if (yCoord > 0 && yCoord < dataArea.height && xCoord >= 0 && xCoord < dataArea.width) {
+				if (coords[xCoord] == 0 || yCoord < coords[xCoord])
+					coords[xCoord] = yCoord;
 			}
-			//same pixel
-			else
-			{
-				if(maxYCoord > yCoord) maxYCoord = yCoord;
-			}
-			
-			
-			
 		}
-		//g2d.draw(gp);
+		
+		// Then draws them:
+		int lastX = -1;
+		double lastY = 0;
+		for (int i = 0; i < coords.length; i++) {
+			if (coords[i] == 0)
+				continue;
+			
+			int xPos = dataArea.x + i;
+			
+			if (lastX != -1)
+				g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xPos, coords[i]));
+			
+			lastX = xPos;
+			lastY = coords[i];
+		}
 		
 		//cleanup
 		g2d.setClip(oldClip);
