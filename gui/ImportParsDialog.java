@@ -186,11 +186,17 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		}
 		else if (source == parentButton){
 			//pop up a "create new collections" dialog box
-			EmptyCollectionDialog ecd = new EmptyCollectionDialog((JFrame)parent);
+			EmptyCollectionDialog ecd = 
+				new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
 			parentID = ecd.getCollectionID();
-			//show the name of the collection you're importing into, somehow?
-			parentLabel.setText("Importing into collection # " + parentID);
-			importedTogether = true;
+			
+			if (parentID == -1) {
+				parentButton.setSelected(false);
+			} else {
+				//show the name of the collection you're importing into, somehow?
+				parentLabel.setText("Importing into collection # " + parentID);
+				importedTogether = true;
+			}
 		}
 		else if (source == cancelButton)
 			dispose();
