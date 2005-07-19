@@ -291,10 +291,13 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 				if (row[1] < value && row[2] > value) {
 					values.remove(i);
 					values.insertElementAt(new int[] { row[0], row[1], value }, i);
-					values.insertElementAt(new int[] { row[0], value, row[2] }, i + 1);
+					values.insertElementAt(new int[] { row[0], value, row[2] }, ++i);
 
 					currentMapID = -1;
 					mapList.clearSelection();
+					
+					for (; i < values.size(); i++)
+						values.get(i)[0] = values.get(i)[0] + 1;
 					
 					return;
 				}
@@ -312,6 +315,10 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 				values.get(row + 1)[1] = values.get(row)[1];
 				
 			values.remove(row);
+
+			for (int i = row; i < values.size(); i++)
+				values.get(i)[0] = values.get(i)[0] - 1;
+			
 			mapList.clearSelection();
 		}
 		
@@ -331,7 +338,7 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 		public int getColumnCount() { return 3; }
 		public int getRowCount() { return values == null ? 0 : values.size(); }
 		
-		public boolean isCellEditable(int row, int column) { return column == 0; }
+		public boolean isCellEditable(int row, int column) { return false; }
 		
 		public Object getValueAt(int row, int column) {
 			int curVal = values.get(row)[column];
