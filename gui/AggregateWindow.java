@@ -264,10 +264,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
-		
 		if (source == createSeries) {
-			String newSeriesName = descriptionField.getText().trim().replace("'", "''");
-			
+			String newSeriesName = descriptionField.getText().trim().replace("'", "''");			
 			if (newSeriesName.equals("")) {
     			JOptionPane.showMessageDialog(
     					this, 

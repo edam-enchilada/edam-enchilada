@@ -90,8 +90,6 @@ public abstract class ClusterK extends Cluster {
 	private JLabel errorLabel;
 	private JFrame container;
 	
-
-	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
 	 * @param cID - collection ID
@@ -119,7 +117,7 @@ public abstract class ClusterK extends Cluster {
 	 * Divide refines the centroids if needed and calls the clustering method.
 	 * In the end, it finalizes the clusters by calling a method to report 
 	 * the centroids.
-	 * TODO:  The max number of subsamples clustered when we reifine centroids is 
+	 * TODO:  The max number of subsamples clustered when we refine centroids is 
 	 * 50.  We need a way to either validate this or a way to change it from the
 	 * application.  
 	 * 

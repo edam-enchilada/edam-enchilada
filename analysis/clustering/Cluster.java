@@ -66,7 +66,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	
-	DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
+	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private float[] longerLists = new float[MAX_LOCATION * 2];

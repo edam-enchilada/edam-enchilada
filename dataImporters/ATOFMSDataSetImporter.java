@@ -321,6 +321,7 @@ public class ATOFMSDataSetImporter {
 							particleNum = 0;
 							//int doDisplay = 4;
 							int nextID = db.getNextID();
+							Collection curCollection = db.getCollection(id[0]);
 							while (readSet.ready()) { // repeat until end of file.
 								token = new StringTokenizer(readSet.readLine(), ",");
 								token.nextToken();
@@ -332,6 +333,7 @@ public class ATOFMSDataSetImporter {
 								// TODO: test this stuff
 								currentParticle = read.getParticle();
 								db.insertParticle(
+
 										currentParticle.particleInfoDenseString(),
 										currentParticle.particleInfoSparseString(),
 										destination,id[1],nextID);

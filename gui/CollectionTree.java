@@ -114,8 +114,8 @@ public class CollectionTree extends JPanel
         Collection node = 
         	(Collection)tree.getLastSelectedPathComponent();
         if (node == null) return;
-    	
         parentFrame.collectionSelected(this, node);
+
     }
     
     public void clearSelection() {

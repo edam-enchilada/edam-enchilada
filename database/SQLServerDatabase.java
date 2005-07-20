@@ -1965,7 +1965,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			db.openConnection();
 			con = db.getCon();
 			Statement stmt = con.createStatement();
-			
 			// See if database exists. If it does, drop it.
 			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
 			boolean foundDatabase = false;
@@ -1986,7 +1985,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			if (db != null)
 				db.closeConnection();
 		}
-
 		// Run all the queries in the SQLServerRebuildDatabase.txt file, which
 		// inserts all of the necessary tables.
 		try {
@@ -1994,7 +1992,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			db.database = dbName;
 			db.openConnection();
 			con = db.getCon();
-
 			in = new Scanner(new File("database//SQLServerRebuildDatabase.txt"));
 			String query = "";
 			StringTokenizer token;
@@ -2017,10 +2014,56 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 	        
 		} catch (IOException e) {
-			new ExceptionDialog("Error rebuilding SQL Server database.");
-			System.out.println("Error in handling SQLServerDatabaseGenerate.txt.");		
-			e.printStackTrace();
-			return false;
+			// HACK; CHANGE THIS EVENTUALLY! TODO
+			db = new SQLServerDatabase();
+			db.database = dbName;
+			db.openConnection();
+			con = db.getCon();
+			String q = "CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))" +
+" INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')" +
+" INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')" +
+" CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))" +
+" CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))" +
+" CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)" +
+" CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[DataSetID]', '1', 1, 0, 1)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[DataSet]', 'VARCHAR(8000)', 0, 0, 2)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[MassCalFile]','VARCHAR(8000)',0, 0, 3)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[SizeCalFile]','VARCHAR(8000)',0, 0, 4)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[MinHeight]','INT',0,0,5)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[MinArea]','INT',0,0,6)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[MinRelArea]','REAL',0,0,7)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[Autocal]','BIT',0,0,8)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]', 'INT',1, 1,1)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[Time]','DATETIME',0,1,2)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[LaserPower]','REAL',0,1,3)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[Size]','REAL',0,1,4)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[ScatDelay]','INT',0,1,5)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[OrigFilename]','VARCHAR(8000)',0,1,6)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]','INT',1, 2, 1)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[PeakLocation]','REAL',1,2,2)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[PeakArea]','INT',0,2,3)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[RelPeakArea]','REAL',0,2,4)" +
+" INSERT INTO MetaData VALUES ('ATOFMS','[PeakHeight]','INT',0,2,5)" +
+" INSERT INTO MetaData VALUES ('TimeSeries','[DataSetID]','INT',1,0,1)" +
+" INSERT INTO MetaData VALUES ('TimeSeries','[AtomID]','INT',1,1,1)" +
+" INSERT INTO MetaData VALUES ('TimeSeries','[Time]','DATETIME',0,1,2)" +
+" INSERT INTO MetaData VALUES ('TimeSeries','[Value]','REAL',0,1,3)" +
+" CREATE TABLE ATOFMSDataSetInfo ([DataSetID] INT, [DataSet] VARCHAR(8000), [MassCalFile] VARCHAR(8000), [SizeCalFile] VARCHAR(8000), [MinHeight] INT, [MinArea] INT, [MinRelArea] REAL, [Autocal] BIT,  PRIMARY KEY ([DataSetID]))" +
+" CREATE TABLE ATOFMSAtomInfoDense ([AtomID] INT, [Time] DATETIME, [LaserPower] REAL, [Size] REAL, [ScatDelay] INT, [OrigFilename] VARCHAR(8000),  PRIMARY KEY ([AtomID]))" +
+" CREATE TABLE ATOFMSAtomInfoSparse ([AtomID] INT, [PeakLocation] REAL, [PeakArea] INT, [RelPeakArea] REAL, [PeakHeight] INT, PRIMARY KEY ([AtomID], [PeakLocation]))" +
+" CREATE TABLE TimeSeriesDataSetInfo([DataSetID] INT, OrigCollectionID INT NULL, [IsSynchronized] bit, PRIMARY KEY ([DataSetID]))" +
+" CREATE TABLE TimeSeriesAtomInfoDense([AtomID] INT, [Time] DATETIME, [Value] REAL, PRIMARY KEY ([AtomID]))" +
+" CREATE TABLE ValueMaps(ValueMapID INT PRIMARY KEY IDENTITY, Name VARCHAR(100))" +
+" CREATE TABLE ValueMapRanges(ValueMapID INT, Value INT, Low INT, High INT, FOREIGN KEY (ValueMapID) REFERENCES ValueMaps(ValueMapID))";
+			try {
+				con.createStatement().executeUpdate(q);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				new ExceptionDialog("NOPE, THis Didn't Work");
+				e1.printStackTrace();
+			}
+			return true;
 		} catch (SQLException e) {
 			new ExceptionDialog("Error rebuilding SQL Server database.");
 			System.err.println("Error in adding tables to database.");

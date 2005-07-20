@@ -222,13 +222,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		if (dMetric == DistanceMetric.DOT_PRODUCT)
 		    distance = 1-distance;
 
-		assert distance < 2.01 :
-		    "Distance should be <= 2.0, actually is " + distance +"\n" 
-		    + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
-		    + getMagnitude(dMetric) + "\n" ;
+		//assert distance < 2.01 :
+		 //   "Distance should be <= 2.0, actually is " + distance +"\n" 
+		  //  + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
+		   // + getMagnitude(dMetric) + "\n" ;
+		
 		if (distance > 2) {
 			//System.out.println("Rounding off " + distance +
-			//		"to 2.0");
+			//		" to 2.0");
 			distance = 2.0f;
 		}
 		
