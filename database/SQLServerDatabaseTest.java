@@ -83,6 +83,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	{
 		new CreateTestDatabase(); 		
 		db = new SQLServerDatabase("TestDB");
+
 	}
 	
 	protected void tearDown()

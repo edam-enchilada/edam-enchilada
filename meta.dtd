@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse+)>
+	<!-- The metadata element MUST have a datatype associated with it -->
+	<!ATTLIST metadata datatype CDATA #REQUIRED>
+	
+<!ELEMENT datasetinfo (field*)>
+
+<!ELEMENT atominfodense (field*)>
+
+<!ELEMENT atominfosparse (field*)>
+	<!-- In case more than one AIS table is required, each must have a name/number. -->
+	<!ATTLIST atominfosparse table CDATA #REQUIRED>
+	
+<!ELEMENT field (#PCDATA)>
+	<!-- Attributes are the type of data in that field, and whether or not it is
+	a primary key - used for the AIS table(s).  -->
+	<!ATTLIST field 
+					type CDATA #REQUIRED
+			  		primaryKey (true | false) "false"
+	>

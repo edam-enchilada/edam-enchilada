@@ -1,133 +1,67 @@
 package dataImporters;
 
 import gui.EnchiladaDataTableModel;
-import gui.MainFrame;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.StringTokenizer;
+import java.util.TreeMap;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import database.SQLServerDatabase;
 
 /**
- * Class to import data from EnchiladaData format (.ed) files chosen by the
- * user in the gui table (EnchiladaDataTableModel).
  * 
  * @author steinbel
- *	6.30.05
+ *
+ * Handles importation of .ed files.
  */
 
-public class EnchiladaDataSetImporter{
+public class EnchiladaDataSetImporter extends DefaultHandler {
 	
-	private boolean collectionContinues;
+	private SQLServerDatabase db;
+	private Connection con;
+	private Statement stmt;
+	private String datatype;
+	private boolean inDataSetInfo = false;
+	private boolean inAtomInfoDense = false;
+	private boolean inAtomInfoSparse = false;
+	private String dataSetName;
+	private String sparseName;
+	private int atomID;
+	private String DSIparams;
+	private String AIDparams;
 	private int collectionID;
 	private int datasetID;
-	private File file;
-	private Scanner scan;
-	private String datatype;
-	private String lastFile;
-	private String nextFile;
-	private SQLServerDatabase db;
-	private int atomID;
-	private String atomInfoDense;
-	private ArrayList<String> atomInfoSparse;
-	private StringTokenizer tokenizer;
-	private boolean exceptions;
-	private ArrayList<String[]> exceptionMessages;
+	private TreeMap<String, ArrayList<String>> AISinfo;
+	private static final String quote = "'";
 	
-	/**
-	 * Constructor sets initial variable values, calls methods to collect files'
-	 * names from the table passed in and import the data from those files to 
-	 * the database.
-	 * 
-	 * @param eTable	The EnchiladadataTableModel holding the filenames. 
-	 */
-	public EnchiladaDataSetImporter(EnchiladaDataTableModel eTable){
+	
+	public EnchiladaDataSetImporter(SQLServerDatabase sqlsdb){
 		
-		collectionContinues = false;
-		scan = null;
-		datatype = "";
-		nextFile = "";
-		db = MainFrame.db;
-		atomID = -99;
-		exceptions = false;
-		exceptionMessages = new ArrayList<String[]>();
-		
-		ArrayList<String> fileNames = collectTableInfo(eTable);
-		
-		for (int i=0; i<fileNames.size(); i++){
-			file = new File(fileNames.get(i));
-			//System.out.println(fileNames.get(i));//debugging
-			
-			try {
-				scan = new Scanner(file);
-				String firstLine = scan.nextLine();
-				System.out.println(firstLine);//debugging
-				
-				if (firstLine.equalsIgnoreCase("BEGIN")){
-					datatype = scan.nextLine();
-					
-					if (db.containsDatatype(datatype))
-						importData();
-					else{
-						//System.err.println("Database does not contains datatype "
-						//	+ datatype);
-						exceptions = true;
-						exceptionMessages.add(new String[]{"Database does not contain datatype ",
-							datatype, ".  Please import a new MetaData file."});
-						}
-				}
-				
-				//there shouldn't be anything except "BEGIN" unless the previous
-				//file tagged for it
-				else if (collectionContinues){
-					
-					//test to see if the filename of this file is same as nextFile
-					//and the name of the last file is the file that is pointed to
-					if (! nextFile.equals(file.getName())
-					 	|| ! lastFile.equals(firstLine)){
-						
-						exceptions = true;
-						exceptionMessages.add(new String[]{"Incorrect file order."});
-						
-					}
-					
-					//test to see if the first line of this file is the same as
-					//the last filename
-					else if (! datatype.equals(scan.nextLine())){
-						
-						exceptions = true;
-						exceptionMessages.add(new String[]{"Datatypes in continuing",
-								" files should match."});
-						
-					}
-				
-					else 
-						importData();
-					
-				}
-				//if the first line isn't "BEGIN" but collectionContinues is false
-				else{
-					
-					exceptions = true;
-					exceptionMessages.add(new String[]{"Error importing the .ed file ",
-							file.getName(), ".  Please check the imporation order and the file format." });
-					
-				}
-				
-			} catch (FileNotFoundException e) {
-				
-				exceptions = true;
-				exceptionMessages.add(new String[]{"File ", fileNames.get(i),
-						" not found."});
-			}
-
+		db = sqlsdb;
+		con = db.getCon();
+		try {
+			stmt = con.createStatement();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			System.err.println("SQL problems creating statement.");
+			e.printStackTrace();
 		}
 		
 	}
-
+	
 	/**
 	 * Collect the filenames from the gui table, check each one to make sure it
 	 * has the correct extension (.ed).
@@ -135,7 +69,7 @@ public class EnchiladaDataSetImporter{
 	 * @param table	The EnchiladaDataTableModel to get names from.
 	 * @return ArrayList<String>	The filenames contained in the table.
 	 */
-	private ArrayList<String> collectTableInfo(EnchiladaDataTableModel table) {
+	public ArrayList<String> collectTableInfo(EnchiladaDataTableModel table) {
 		
 		ArrayList<String> tableInfo = new ArrayList<String>();
 		int rowCount = table.getRowCount()-1;
@@ -150,266 +84,250 @@ public class EnchiladaDataSetImporter{
 			if (ext.equals(".ed"))
 				tableInfo.add((String)table.getValueAt(i,1));
 			else
-			{
-				
-				exceptions = true;
-				exceptionMessages.add(new String[]{"Incorrect file extension for file ",
-						name});
-				
-			}
+				System.err.println("Incorrect file extension for file " + name);
 		}
 		return tableInfo;
 	}
 	
 	/**
-	 * Reads in the current file held by the class variable 'file,' creates
-	 * new collections as necessary, inserts atom information into the database.
-	 *
+	 * Takes in a list of filenames and imports each file in turn.
+	 * 
+	 * @param fileNames
 	 */
-	private void importData() {
+	public void importFiles(ArrayList<String> fileNames){
 		
-		String first;
-		String restOfLine;
-		String readyToInsert;
+		//make the DTD
+		File file = new File(fileNames.get(0));
+		String path = file.getAbsolutePath();
+		int length = file.getName().length();
+		path = path.substring(0, path.length()-length );
+		FileMaker maker = new FileMaker(path, "enchilada");
+		if (maker.fileCreated())
+			maker.setEnchiladaContents();
 		
-		while (scan.hasNext()){
+		for (String eachFile : fileNames)
+			read(eachFile);
+		
+		maker.deleteTemps();
+		
+	}
+	
+	/**
+	 * Given a .ed filename, sets up to parse that xml file and stores the 
+	 * information in the relevant tables in the database..  
+	 * Helper function for importFiles().
+	 * 
+	 * @param fileName - the xml (.ed) file to read
+	 */
+	private void read(String fileName){
+	
+		SAXParserFactory factory = SAXParserFactory.newInstance();
+		//validate the XML to make sure it's all nice and legal
+		factory.setValidating(true);
+		
+		EnchiladaDataSetImporter handler = this;
+		
+		try {
+			SAXParser parser = factory.newSAXParser();
+			parser.parse(fileName, handler);
 			
+		} catch (ParserConfigurationException e) {
+			// TODO make GUI
+			System.err.println("Parser Configuration error.");
+			e.printStackTrace();
+		}
+		/*
+		 * below code is from the Java tutorial on XML:
+		 * @see http://java.sun.com/xml/jaxp/dist/1.1/docs/tutorial/sax/6_val.html
+		 */
+		catch (SAXParseException spe){
+			//error generated by the parser
+			System.out.println("\n** Parsing error, line " +
+					spe.getLineNumber() + ", uri " +
+					spe.getSystemId());
+			System.out.println("    " + spe.getMessage());
+			
+			//Unpack the delivered exception to get the exception it contains
+			Exception x = spe;
+			if (spe.getException() != null)
+				x = spe.getException();
+			x.printStackTrace();
+		}
+		catch (SAXException e) {
+			// TODO make GUI
+			System.err.println("SAX exception.  Incorrect file format.");
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO make GUI
+			System.err.println("IO Exception.");
+			e.printStackTrace();
+		}
+	
+	}
 
-			first = scan.next();
-			System.out.println("first is " + first);
-			//for the case where the line starts with '*' (new dataset)
-			if (first.length() == 1){
-				
-				//if there's already an atom's worth of info waiting, insert it
-				if (atomID >= 0){
-					db.insertParticle(atomInfoDense, atomInfoSparse, 
-							db.getCollection(collectionID), datasetID,
-							db.getNextID());
-					//System.out.println("Current collectionID, datasetID and atomID "
-							//+ collectionID + " " + datasetID + " " + atomID);
-					atomID = -77;
-				}
-				
-				restOfLine = scan.nextLine();
-				//System.out.println(restOfLine);
-				int[] IDs = createEmptyCollection(restOfLine);
-				collectionID = IDs[0];
-				datasetID = IDs[1];
-				
+
+	/**
+	 * Called each time a starting element in encountered, this method sets
+	 * boolean tags for which tables the information belongs to and what they are
+	 * named.
+	 */
+	 public void startElement(String namespaceURI,
+            	String lName, // local name
+             String qName, // qualified name
+             Attributes attrs)
+	 throws SAXException {
+
+			String eName = lName; // element name
+			if ("".equals(eName)) 
+				eName = qName; // namespaceAware = false
+			
+			//System.out.println(eName);//debugging
+			
+			//handle different tags
+			if (eName.equals("enchiladadata"))
+				datatype = attrs.getValue(0);
+			else if (eName.equals("datasetinfo")){
+				inDataSetInfo = true;
+				dataSetName = attrs.getValue(0);
+				DSIparams="";
 			}
-			//for ** case (AtomInfoDense)
-			else if (first.length() == 2){
-				
-				//if there's already an atom's worth of info waiting, insert it
-				if (atomID >= 0){
-					db.insertParticle(atomInfoDense, atomInfoSparse, 
-							db.getCollection(collectionID), datasetID,
-							db.getNextID());
-					//System.out.println("Current collectionID, datasetID and atomID "
-							//+ collectionID + " " + datasetID + " " + atomID);
-				}
-				
-				restOfLine = chop(scan.nextLine());
-				//System.out.println(restOfLine);				
-				//store the rest of the line's info in atomInfoDense
-				atomInfoDense = restOfLine;
-				//get an atomID to use til scan hits another atominfodense line
+			else if (eName.equals("atominfodense")){
+				inAtomInfoDense = true;
 				atomID = db.getNextID();
-				//reset atominfosparse
-				atomInfoSparse = new ArrayList<String>();
+				AIDparams="";
 				
-			}
-			//for *** case (AtomInfoSparse)
-			else if (first.length() == 3){
+				//set up to receive sparse info
+				AISinfo = new TreeMap<String, ArrayList<String>>();
 				
-				restOfLine = chop(scan.nextLine());
-				//System.out.println(restOfLine);
-					
-				//if this line comes before /any/ ** lines, atomInfoSparse won't
-				//be instantiated yet, so the info is entered under a new atomID
-				//(that atom will have no dense info)  (is this how we want to handle it?
-				try{
-					//insert the rest of the line's info into atomInfoSparse
-					atomInfoSparse.add(restOfLine);
+				//if this is the first particle, create a new dataset & collection
+				if (!DSIparams.equals("")){
+					String comment = ""; //what do we really want here?
+					int[] collectionInfo = db.createEmptyCollectionAndDataset(
+												datatype,
+												0,
+												dataSetName,
+												comment,
+												DSIparams);
+					collectionID = collectionInfo[0];
+					datasetID = collectionInfo[1];
+					DSIparams = ""; //reset this
 				}
-				catch (NullPointerException e){
-					
-					atomID = db.getNextID();
-					atomInfoSparse = new ArrayList<String>();
-					atomInfoSparse.add(restOfLine);
-					exceptions = true;
-					exceptionMessages.add(new String[]{"Incorrect format for .ed file ",
-							file.getName(), ".  This resulted in atom ", 
-							Integer.toString(atomID), " being created with sparse info only",
-							" and may have affected the rest of the data."});
-					//System.err.println("Corrupted .ed file, sparse data listed "
-					//		+ "before dense data in " + file.getName());
-				}
+			}
+			else if (eName.equals("atominfosparse")){
+				inAtomInfoSparse = true;
+				sparseName = "AtomInfoSparse" + attrs.getValue(0);
 				
-			}
-			//for ^^^^^^^^ case (line before end of file)
-			else if (first.length() == 8){
+				//check if this flavor of AIS has an entry in AISinfo yet,
+				//create one if necessary
+				if (!AISinfo.containsKey(sparseName))
+					AISinfo.put(sparseName, new ArrayList<String>());
 				
-				//check if dataset continues
-				String last = scan.next();
-				//System.out.println(last);
-				if (! last.equalsIgnoreCase("END")){
-					
-					nextFile = last;
-					lastFile = file.getName();
-					collectionContinues = true;
-					
-				}
-				else{
-					
-					collectionContinues = false;
-					//push the last atom's info into the database
-					if (atomID >= 0)
-						db.insertParticle(atomInfoDense, 
-								atomInfoSparse, 
-								db.getCollection(collectionID), 
-								datasetID, 
-								atomID);
-					collectionID = -1;
-					datasetID = -1;
-					atomID = -11;
-				}
-					
+				//initialize AISparams string
+				AISinfo.get(sparseName).add("");
 			}
-			//if file format is incorrect, insert any remaining atoms and set
-			//IDs to negative values, so the scanner skips until it hits a new
-			//dataset
-			else{
-				//how do we handle corrupted files?
-				//System.err.println("Incorrect .ed file format for file " 
-					//	+ file.getName());
-				exceptions = true;
-				exceptionMessages.add(new String[]{"Incorrect .ed file format for file ",
-						file.getName(), ".  Data may have been corrupted on entry to database."});
-				collectionContinues = false;
-				if (atomID >= 0)
-					db.insertParticle(atomInfoDense, 
-							atomInfoSparse, 
-							db.getCollection(collectionID), 
-							datasetID, 
-							atomID);
-				collectionID = -1;
-				datasetID = -1;
-				atomID = -11;
-			}
-			
-		}
-		
-		scan.close();
-		
-	}
-
-	/**
-	 * Creates a new empty collection and a new dataset in the database.
-	 * 
-	 * @param line	The line of the .ed file containing information about
-	 * 				the new dataset.
-	 * @return	int[] collectionInfo where collectionInfo[0] is the collectionID
-	 * 								 and collectionInfo[1] is the datasetID
-	 */
-	private int[] createEmptyCollection(String line) {
-		
-		int[] collectionInfo;
-		//skip the space after the star
-		line = line.trim();
-		tokenizer = new StringTokenizer(line, "'");
-		String datasetName = tokenizer.nextToken();
-		//System.out.println(datasetName);//debugging
-		String data = "";
-		try{
-			//needs to be +2 to account for both opening and closing apostrophes
-			data = line.substring(datasetName.length() + 2, line.length());
-		}
-		catch(StringIndexOutOfBoundsException e){
-			exceptions = true;
-			exceptionMessages.add(new String[]{"Incorrect .ed file format in file ",
-					file.getName()});
-		}
-		//System.out.println("Pre-chop data: " + data); //debugging
-		data = chop(data);
-		//System.out.println(data); //debugging
-		String comment = ""; //what do we want to put in here??
-		collectionInfo = db.createEmptyCollectionAndDataset(datatype, 
-				0, datasetName, comment, data);
-		
-		return collectionInfo;
-		
-	}
+		 
+	 }
 	
-	/**
-	 * A helper method to turn space-delimited strings into comma-delimited 
-	 * strings suitable for feeding to SQLServerDatabase.insertParticle();
-	 * 
-	 * @param whole	The string to be chopped up.
-	 * @return	String	The initial string with commas instead of spaces between
-	 * 					values.
-	 */
-	private String chop(String whole){
-		
-		if (!whole.contains(" "))
-			return whole;
-		else{
-			
-			String firstChar = whole.substring(0,1);
-			String firstSplit, remaining;
-			int splitPoint;
-			
-			if (firstChar.equals(" ")){
-				
-				whole = whole.trim();
-				firstChar = whole.substring(0,1);
-			
-			}
-			//to preserve apostrophe-delimited strings with multiple words
-			if (firstChar.equals("'")){
-				
-				splitPoint = whole.indexOf("'", 1) + 1;
-				firstSplit = whole.substring(0, splitPoint);
-				remaining = whole.substring(splitPoint, whole.length());
-			
-			}
-			else{
-				
-				tokenizer = new StringTokenizer(whole);
-				firstSplit = tokenizer.nextToken();
-				splitPoint = firstSplit.length();
-				if (!whole.contains(" "))
-					return whole;
-				else
-					remaining = whole.substring(splitPoint+1, whole.length());
-			
-			}
-			
-			return firstSplit + "," + chop(remaining);
-		}
-		
-	}
-	
-	/**
-	 * Accessor method to determine whether the import suffered any exceptions.
-	 * 
-	 * @return - True if there were no exceptions.
-	 */
-	public boolean exceptionsExist(){
-		
-		return exceptions;
+	 /**
+	  * This method resets flags and names when exiting different elements.
+	  */
+	 public void endElement(String namespaceURI,
+             String sName, // simple name
+             String qName  // qualified name
+             )throws SAXException{
+		 
+		 //at the end of the document, push all the information to the database
+		 if (qName.equals("enchiladadata")){
+			 try {
+					stmt.executeBatch();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		 }
+		 else if (qName.equals("datasetinfo")){
+			 inDataSetInfo = false;
+			 dataSetName = null;
+		 }
+		 else if (qName.equals("atominfodense")){
+			 inAtomInfoDense = false;
+			 db.insertParticle(AIDparams, AISinfo, db.getCollection(collectionID), 
+					 collectionID, atomID);
+		 }
+		 else if (qName.equals("atominfosparse")){
+			 inAtomInfoSparse = false;
+			 sparseName = null;
+		 }
+	 }
+	 
+	 /**
+	  * Handles the incoming data by inserting it into the correct tables in the
+	  * database according to the boolean flags set by the element tags.
+	  */
+	 public void characters(char[] buf, int offset, int len)
+	 	throws SAXException{
+		 
+		 String data = new String(buf, offset, len);
+		 //System.out.println(data);//debugging
+		 
+		 /*
+		  * @non-Javadoc
+		  * Because the parser checks to make sure the elements are in order,
+		  * we can check in reverse-heirarchical order to reduce if statements.
+		  */
 
-	}
+		 //if it's a sparse info field, add it to the last sparse entry for this
+		 //sparse table
+		 if (inAtomInfoSparse){
+			 ArrayList<String> list = AISinfo.get(sparseName);
+			 String AISparams = list.get(list.size()-1);
+			 AISparams = intersperse(data, AISparams);
+			 //replace old with new
+			 list.remove(list.size()-1);
+			 list.add(AISparams);
+			 //System.out.println("AISparams: " + AISparams);//debugging
+		 }
+		 else if (inAtomInfoDense){
+			 AIDparams = intersperse(data, AIDparams);
+			 //System.out.println("AIDparams: " + AIDparams);//debugging
+		 }
+		 else if (inDataSetInfo){
+			 DSIparams = intersperse(data, DSIparams);
+			 //System.out.println("DSIparams: " + DSIparams);//debugging
+		 }
+	 }
+	 
+	 /**
+	  * Creates a comma-separated string (with all string surrounded by 
+	  * single quotes) from an existing string and an addition.
+	  * 
+	  * @param add		The string to add onto the end of params.
+	  * @param params	The existing string.
+	  * @return	The comma-separated string.
+	  */
+	 private String intersperse(String add, String params){
+		 
+		 //separate out the numbers from the real men!
+		 try{
+			 Float number = new Float(add);
+				
+			 if (params.equals(""))
+			 	params = add;
+			 else
+			 	params = params + "," + add;
+			 
+		 }
+		 //if not a number, surround in single quotes
+		 catch (NumberFormatException e){
+				
+			 if (params.equals(""))
+			 	params = quote + add + quote;
+			 else
+			 	params = params + "," + quote + add + quote;
+			 
+		 }
 
-	/**
-	 * Accessor method to get the list of exceptions that occurred during the 
-	 * import process.
-	 * 
-	 * @return	ArrayList<String[]> of exception messages.
-	 */
-	public ArrayList<String[]> getErrors(){
-		
-		return exceptionMessages;
-		
-	}
+		 return params;
+
+	 }
 }

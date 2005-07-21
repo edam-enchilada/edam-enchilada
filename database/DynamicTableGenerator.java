@@ -1,279 +1,358 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is EDAM Enchilada's DynamicTableGenerator class.
- *
- * The Initial Developer of the Original Code is
- * The EDAM Project at Carleton College.
- * Portions created by the Initial Developer are Copyright (C) 2005
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- * Ben J Anderson andersbe@gmail.com
- * David R Musicant dmusican@carleton.edu
- * Anna Ritz ritza@carleton.edu
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
 package database;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Scanner;
+import java.util.HashMap;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import dataImporters.FileMaker;
 
 /**
- * 
  * @author ritza
+ * @author steinbel
  * 
- * DynamicTableGenerator class has the ability to read a ".md" file and 
- * generate the corresponding dynamic tables.  It also inserts information
- * into the MetaData table.
+ * DynamicTableGenerator acts as an importer for .md files, creating appropriate
+ * dynamic tables in the database and inserting relevant information into the
+ * MetaData table.
  *
  */
-public class DynamicTableGenerator {
+public class DynamicTableGenerator extends DefaultHandler {
 	
+	private String datatype;
+	private boolean datasetinfo;
+	private boolean atominfodense;
+	private boolean atominfosparse;
+		//the extra bit of name to be appended to 
+		//"AtomInfoSparse" to distinguish one AIS table from another
+	private HashMap<Integer, String> sparseNames = new HashMap<Integer,String>(); 
+	private int sparseCounter = DynamicTable.AtomInfoSparse.ordinal();
+	private String fieldType;
+	private int primaryKey;
+	private int columnCounter = 0;
 	private Connection con;
+	private ResultSet rs;
 	private Statement stmt;
 	
-	private Scanner scanner = null;
-	private final String DELIMITER = "^^^^^^^^";
-	
-	private String datatype = null;	
-	String primaryKey;
-	
-	public DynamicTableGenerator(File file, Connection connection) {
-		
+	/**
+	 * Constructor requires a connection to the SQLServer database.
+	 * @param connection
+	 */
+	public DynamicTableGenerator(Connection connection){
+		con = connection;
 		try {
-			con = connection;
-			assert (con.createStatement() != null) : "connection shouldn't be null";
 			stmt = con.createStatement();
 		} catch (SQLException e) {
-			System.err.println("Error creating statement.");
+			// TODO Make GUI
+			System.err.println("SQL Exception creating statement.");
 			e.printStackTrace();
 		}
 		
-		try {
-			scanner = new Scanner(file);
-		} catch (FileNotFoundException e) {
-			System.err.println(file + " is not found.");
-			e.printStackTrace();
-		}		
-		assert(scanner != null) : "Error generating scanner.";
-		
-		datatype = scanner.nextLine();
-		scanner.next();
 	}
-	
 	/**
-	 * method to see if a set of dynamic tables exist for this datatype
-	 * @return true if they exist.
-	 */
-	public boolean tableExists() {
-		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM MetaData");
-			while (rs.next()) {
-				if (datatype.equals(rs.getString(1))) {
-					//System.out.println("tables exist");
-					return true;
-				}
-			}
-			return false;
-		} 
-		catch (SQLException e) { 
-			System.err.println("Exception testing table for existence.");
-			e.printStackTrace();
-			return false;
-		} 
-	}
-	
-	public String getDatatype() {
-		return datatype;
-	}
-
-	/**
-	 * This method iterates through the file and inserts the columns into
-	 * the MetaData table.  it then uses the MetaData table to create the
-	 * three dynamic tables.
+	 * Given a .md filename, sets up to parse that xml file and stores the 
+	 * information in the MetaData table in the database.  
+	 * Helper function for createTables().
 	 * 
-	 *Note, there were problems with fields named Size and Time, etc.
-	 *I bracket every field name to prevent this.
-	 *
-	 *@return field that will be used for naming purposes.
+	 * @param fileName - the xml (.md) file to read
 	 */
-	public String createTables() {
-		String namingField = "";
-		ResultSet rs;
-		int counter = 0;
-		System.out.println("Executing the following statements:");
-		String tempStr,metaString = null;
-		// Insert columns and types into MetaData table first.
-		try {			
-			// set DataSetInfo statement.
-			tempStr = scanner.next();
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[DataSetID]', 'INT', 1," + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")");
-			counter++;
-			while (!tempStr.equals(DELIMITER)) {
-				metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
-				tempStr = scanner.next().toUpperCase();
-				assert (!tempStr.equals(DELIMITER)) : "No Column Type found.";
-				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)',0, " + DynamicTable.DataSetInfo.ordinal() + ", " + counter + ")";				
-				else 
-					metaString += tempStr + "',0," + DynamicTable.DataSetInfo.ordinal() + "," + counter + ")"; 
-				counter++;
-				System.out.println(metaString);
-				stmt.addBatch(metaString);
-				tempStr = scanner.next();
-			}
-			counter = 0;
-						
-			// set AtomInfoDense statement
-			tempStr = scanner.next();
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT',1, " + DynamicTable.AtomInfoDense.ordinal() + ", " + counter + ")");
-			counter++;
-			while (!tempStr.equals(DELIMITER)) {
-				metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
-				tempStr = scanner.next().toUpperCase();
-				assert (!tempStr.equals(DELIMITER)) : "No Column Type found.";
-				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)',0," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")";
-				else 
-					metaString += tempStr + "',0," + DynamicTable.AtomInfoDense.ordinal() + "," + counter + ")"; 
-				counter++;
-				System.out.println(metaString);
-				stmt.addBatch(metaString);
-				tempStr = scanner.next();
-			}
-			counter = 0;
+	private void read(String fileName){
+		SAXParserFactory factory = SAXParserFactory.newInstance();
+		//validate the XML to make sure it's all nice and legal
+		factory.setValidating(true);
+		
+		DynamicTableGenerator handler = this;
+		
+		try {
+			SAXParser parser = factory.newSAXParser();
+			parser.parse(fileName, handler);
 			
-			// set AtomInfoSparse statement				
-			stmt.addBatch("INSERT INTO MetaData VALUES ('" + datatype + "', '[AtomID]', 'INT', 1," + DynamicTable.AtomInfoSparse.ordinal() + ", " + counter + ")");
-			counter++;
-			while (scanner.hasNext()) {
-				tempStr = scanner.next();
-				assert (!tempStr.equals(DELIMITER)) : "Too many tables specified.";
-				int primary = 0;
-				if (tempStr.equals("P")) {
-					tempStr = scanner.next();
-					primary = 1;
-				}
-					metaString = "INSERT INTO MetaData VALUES ('" + datatype + "','[" + tempStr + "]','";
-				assert (scanner.hasNext()) : "No Column Type Found.";
-				tempStr = scanner.next().toUpperCase();
-				if (tempStr.equals("VARCHAR")) 
-					metaString += tempStr + "(8000)'," + primary + ", " + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")";
-				else 
-					metaString += tempStr + "'," + primary + ", " + DynamicTable.AtomInfoSparse.ordinal() + "," + counter + ")"; 
-				counter++;
-				System.out.println(metaString);
-				stmt.addBatch(metaString);
-			}
-			stmt.executeBatch();
-		} catch (NullPointerException e) {
-			System.err.println("Improper file format");
+		} catch (ParserConfigurationException e) {
+			// TODO make GUI
+			System.err.println("Parser Configuration error.");
 			e.printStackTrace();
-		}  catch (SQLException e) {
-			System.err.println("Error inserting rows into MetaDatatable");
+		}
+		/*
+		 * below code is from the Java tutorial on XML:
+		 * @see http://java.sun.com/xml/jaxp/dist/1.1/docs/tutorial/sax/6_val.html
+		 */
+		catch (SAXParseException spe){
+			//error generated by the parser
+			System.out.println("\n** Parsing error, line " +
+					spe.getLineNumber() + ", uri " +
+					spe.getSystemId());
+			System.out.println("    " + spe.getMessage());
+			
+			//Unpack the delivered exception to get the exception it contains
+			Exception x = spe;
+			if (spe.getException() != null)
+				x = spe.getException();
+			x.printStackTrace();
+		}
+		catch (SAXException e) {
+			// TODO make GUI
+			System.err.println("SAX exception.  Incorrect file format.");
 			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO make GUI
+			System.err.println("IO Exception.");
+			e.printStackTrace();
+		}
+	}
+		
+	/**
+	 * Use CDATA as column names in the MetaData table.
+	 */
+	public void characters(char[] buf, int offset, int len)
+	  throws SAXException {
+		
+		int table;
+		if (datasetinfo)
+			table = DynamicTable.DataSetInfo.ordinal();
+		else if (atominfodense)
+			table = DynamicTable.AtomInfoDense.ordinal();
+		//the only possible remaining option, since the XML is validated
+		else{
+			table = sparseCounter;
+		}
+		String s = new String(buf, offset, len);
+		String statement = "INSERT INTO MetaData VALUES ('" + datatype +
+			"','[" + s + "]','" + fieldType + "'," + primaryKey + ","
+			+ table +"," + columnCounter + ")";
+		columnCounter++;
+		System.out.println(statement);
+		try {
+			stmt.addBatch(statement);
+		} catch (SQLException e) {
+			// TODO make GUI
+			System.err.println("SQL Exception inserting values into MetaData.");
+			e.printStackTrace();
+		}
+	}
+
+	 /**
+	  * Called each time an element's start tag is encountered, this method
+	  * reads the tag and takes appropriate action.
+	  */
+	 public void startElement(String namespaceURI,
+               	String lName, // local name
+                String qName, // qualified name
+                Attributes attrs)
+	 throws SAXException {
+	    
+		String statement = "";
+		String eName = lName; // element name
+		if ("".equals(eName)) 
+			eName = qName; // namespaceAware = false
+		
+		//different cases for different elements
+		if (eName.equals("metadata"))
+			datatype = attrs.getValue(0);
+		
+		else if (eName.equals("datasetinfo")){
+			datasetinfo = true;
+			//record DataSetID as the primary key of type INT for the DataSetInfo table
+			statement = "INSERT INTO MetaData VALUES ('" + datatype +
+				"','[DataSetID]','INT',1," + DynamicTable.DataSetInfo.ordinal()
+				+ "," + columnCounter + ")";
+			columnCounter++;
 		}
 		
-		// Create tables based on columns in MetaData table.
-		String tableStr = null;
-		Scanner wordScanner;
-		try {
-			
-			// Create DataSetInfo table
-
-			tableStr = "CREATE TABLE " + datatype + "DataSetInfo (";	
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
-					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
-					DynamicTable.DataSetInfo.ordinal() + "ORDER BY ColumnOrder");
-			String pText = "PRIMARY KEY(";
-			while (rs.next()) {
-				if (rs.getBoolean(3)) {
-					pText += rs.getString(1) + ", ";
-				}
-				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
-			}
-			tableStr += pText.substring(0,pText.length()-2) + "))";
-			System.out.println(tableStr);
-			stmt.execute(tableStr);
-			
-			// Create AtomInfoDense table
-			tableStr = "CREATE TABLE " + datatype + "AtomInfoDense (";		
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
-					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
-					DynamicTable.AtomInfoDense.ordinal() + "ORDER BY ColumnOrder");
-			pText = "PRIMARY KEY(";
-			while (rs.next()) {
-				if (rs.getBoolean(3)) {
-					pText += rs.getString(1) + ", ";
-				}
-				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
-			}
-			tableStr += pText.substring(0,pText.length()-2) + "))";
-			System.out.println(tableStr);
-			stmt.execute(tableStr);
-			
-			// Create AtomInfoSparse table
-			tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse (";
-			rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
-					"WHERE Datatype = '" + datatype + "' AND TableID = " + 
-					DynamicTable.AtomInfoSparse.ordinal() + "ORDER BY ColumnOrder");
-			pText = "PRIMARY KEY (";
-			while (rs.next()) {
-				if (rs.getBoolean(3)) {
-					pText += rs.getString(1) + ", ";
-				}
-				tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
-			}
-			tableStr += pText.substring(0,pText.length()-2) + "))";
-			System.out.println(tableStr);
-			stmt.execute(tableStr);
-			rs.close();
-		} catch (SQLException e) {
-			System.err.println("Error creating dynamic tables");
-			e.printStackTrace();
+		else if (eName.equals("atominfodense")){
+			atominfodense = true;
+			//record AtomID as the primary key of type INT for the AtomInfoDense table
+			statement = "INSERT INTO MetaData VALUES ('" + datatype +
+				"','[AtomID]','INT',1," + DynamicTable.AtomInfoDense.ordinal()
+				+ "," + columnCounter + ")";
+			columnCounter++;
 		}
-		assert (namingField.length() != 0) : "Naming field not specified.";
-		return namingField;
-	}
+		
+		else if (eName.equals("atominfosparse")){
+			atominfosparse = true;
+			//record AtomID as a primary key of type INT for each AtomInfoSparse table
+			statement = "INSERT INTO MetaData VALUES ('" + datatype +
+				"','[AtomID]','INT',1," + sparseCounter + "," + columnCounter + ")";
+			columnCounter++;
+			sparseNames.put(sparseCounter, attrs.getValue(0));
+		}
+		else if (eName.equals("field")){
+			fieldType = attrs.getValue("type").toUpperCase();
+			if (fieldType.equals("VARCHAR"))
+				fieldType = "VARCHAR(8000)";
+			if (attrs.getValue("primaryKey").equals("true"))
+				primaryKey = 1;
+			else primaryKey = 0;
+		}
+		if (!statement.equals("")){
+			System.out.println(statement);
+			try {
+				stmt.addBatch(statement);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				System.err.println("Error inserting values into MetaData table");
+				e.printStackTrace();
+			}
+		}
+	 }
+	 
+	 /**
+	  * This method is called whenever the ending tag of an element is found,
+	  * and deals appropriately with such tags.
+	  */
+	 public void endElement(String namespaceURI,
+             String sName, // simple name
+             String qName  // qualified name
+             )throws SAXException{
+		 
+		 //at the end of the document, push all the information to the database
+		 if (qName.equals("metadata")){
+			 try {
+					stmt.executeBatch();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		 }
+		 else if (qName.equals("datasetinfo")){
+			 datasetinfo = false;
+			 columnCounter = 0;
+		 }
+		 else if (qName.equals("atominfodense")){
+			 atominfodense = false;
+			 columnCounter = 0;
+		 }
+		 else if (qName.equals("atominfosparse")){
+			 atominfosparse = false;
+			 columnCounter = 0;
+			 sparseCounter ++;
+		 }
+		 else if (qName.equals("field")){
+			 primaryKey = 0;
+			 fieldType = "";
+		 }		 
+	 }
+	 
+	 /**
+	  * Reads the .md file passed in, stores relevant information in the
+	  * MetaData table and creates other appropriate tables.
+	  * 
+	  * @param file	The .md (xml) file to be read.
+	  * @return	The new datatype's name.
+	  */
+	 public String createTables(String file){
+		 
+		 //create a meta.dtd file in a temporary directory
+		 File md = new File(file);
+		 String shortName = md.getName();
+		 String path = file.substring(0, (file.length()-shortName.length()) );
+		 FileMaker maker = new FileMaker(path, "meta");
+		 if (maker.fileCreated())
+			 maker.setMetaContents();
+		 
+		 //read file and put info into MetaData
+		 read(file);
+		 
+		 //remove temporary file and directory
+		 maker.deleteTemps();
+		 
+		 String tableStr;
+		 
+		 /*
+		  * The code for creating these tables is from Anna's original importer.
+		  * I only adapted the AtomInfoSparse code to handle multiple AIS tables.
+		  * - Leah
+		  */
+		 //Create DataSetInfo table
+		 tableStr = "CREATE TABLE " + datatype + "DataSetInfo (";	
+		 try {
+			 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
+					 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
+					 DynamicTable.DataSetInfo.ordinal() + "ORDER BY ColumnOrder");
+			 String pText = "PRIMARY KEY(";
+			 while (rs.next()) {
+				 if (rs.getBoolean(3)) {
+					 pText += rs.getString(1) + ", ";
+				 }
+				 tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
+			 }
+			 tableStr += pText.substring(0,pText.length()-2) + "))";
+			 System.out.println(tableStr);
+			 stmt.execute(tableStr);
 	
-	public static void main(String[] args) {
-		SQLServerDatabase db = new SQLServerDatabase();
-		db.openConnection();
-		Connection con = db.getCon();
-		//SQLServerDatabase.rebuildDatabase("SpASMSdb");
-		DynamicTableGenerator d = new DynamicTableGenerator(new File("ATOFMS.md"), con);
-		if (!d.tableExists())
-			d.createTables();
-		db.closeConnection();
-	}
-}
+			 //Create AtomInfoDense table
+			 tableStr = "CREATE TABLE " + datatype + "AtomInfoDense (";		
+			 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
+					 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
+					 DynamicTable.AtomInfoDense.ordinal() + "ORDER BY ColumnOrder");
+			 pText = "PRIMARY KEY(";
+			 while (rs.next()) {
+				 if (rs.getBoolean(3)) {
+					 pText += rs.getString(1) + ", ";
+				 }
+				 tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
+			 }
+			 tableStr += pText.substring(0,pText.length()-2) + "))";
+			 System.out.println(tableStr);
+			 stmt.execute(tableStr);
+	
+			 //create as many AtomInfoSparse tables as were specified in the .md
+			 for (int i=DynamicTable.AtomInfoSparse.ordinal(); i< sparseCounter; i++){
+				 tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse" +
+				 sparseNames.get((Integer)i) +" (";
+				 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
+						 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
+						 i + "ORDER BY ColumnOrder");
+				 pText = "PRIMARY KEY (";
+				 while (rs.next()) {
+					 if (rs.getBoolean(3)) {
+						 pText += rs.getString(1) + ", ";
+					 }
+					 tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
+				 }
+				 tableStr += pText.substring(0,pText.length()-2) + "))";
+				 System.out.println(tableStr);
+				 stmt.execute(tableStr);	
+			 }
+	
+			 rs.close();
+	
+		 } catch (SQLException e) {
+			 System.err.println("SQL Exception creating tables.");
+			 // TODO make GUI
+			 e.printStackTrace();
+		 }
+		 
+		 return datatype;
+				
+	 }
+	 
+	
 
+		
+		//tester main
+		public static void main(String[] args){
+			
+			SQLServerDatabase.rebuildDatabase("SpASMSdb");
+			SQLServerDatabase db = new SQLServerDatabase();
+			db.openConnection();
+			Connection connect = db.getCon();
+			DynamicTableGenerator echo = new DynamicTableGenerator(connect);
+			System.out.println(echo.createTables(args[0]));
+
+			db.closeConnection();
+
+	
+		}
+	 
+}

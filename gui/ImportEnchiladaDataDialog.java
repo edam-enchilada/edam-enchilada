@@ -47,6 +47,7 @@
  */
 package gui;
 
+import dataImporters.OldImporter;
 import dataImporters.EnchiladaDataSetImporter;
 import database.DynamicTableGenerator;
 import database.SQLServerDatabase;
@@ -63,6 +64,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import javax.swing.BorderFactory;
@@ -232,7 +234,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		{
 			Object source = e.getSource();
 			if (source == okButton) {
-				EnchiladaDataSetImporter edsi =
+				/*EnchiladaDataSetImporter edsi =
 					new EnchiladaDataSetImporter(eTableModel);
 				if (edsi.exceptionsExist()){
 					//get the messages from edsi, display them appropriately
@@ -245,7 +247,10 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 							System.out.print(message[i]);
 					}
 					ExceptionDialog edialog = new ExceptionDialog(this, messageList);
-					}
+					}*/
+				EnchiladaDataSetImporter importer = new EnchiladaDataSetImporter(db);
+				ArrayList<String> files = importer.collectTableInfo(eTableModel);
+				importer.importFiles(files);
 				dispose();
 			}
 			else if (source == cancelButton)
@@ -259,21 +264,45 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 				if (fileName != null){
 					File file;
 					Scanner scan;
-					String typeName;
+					String typeName = "";
 					
 					try {
 						file = new File(fileName);
 						scan = new Scanner(file);
-						typeName = scan.nextLine();
+						//find the datatype information.  eeww.
+						boolean found = false;
+						while (!found){
+							String next = scan.next();
+							if (next.contains("datatype")){
+								//find the thingy
+								int marker = next.indexOf("=");
+								//increment & decrement to get around quotes
+								next = next.substring(marker+2, next.length()-2);
+								System.out.println(next);
+								typeName = next;
+								found = true;
+							}
+						}
+						
 						
 						if (!db.containsDatatype(typeName)){						
 							Connection con = db.getCon();
-							DynamicTableGenerator newType = new DynamicTableGenerator(file, con);
-							newType.createTables();
+							DynamicTableGenerator newType =
+								new DynamicTableGenerator(con);
+							
+							//OldDynamicTableGenerator newType = new OldDynamicTableGenerator(file, con);
+							
+							typeName = newType.createTables(fileName);
 							//TODO: check for format, SQL errors in creation for GUI?
 							typelist.append(typeName + "\n");
 						}
 						
+						//if the scanner couldn't find anything, the file's not
+						//in the right format
+					} catch (NoSuchElementException e1){
+						ExceptionDialog edialog = new ExceptionDialog(this,
+								"Please check .md file " + fileName + 
+								" for correct format.");
 						
 					} catch (FileNotFoundException e1) {
 						ExceptionDialog edialog = new ExceptionDialog(this,

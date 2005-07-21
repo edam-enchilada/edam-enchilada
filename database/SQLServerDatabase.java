@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.sql.*;
 
@@ -283,9 +284,11 @@ public class SQLServerDatabase implements InfoWarehouse
 			else
 				returnVals[1] = 0;
 			
-			stmt.executeUpdate("INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
-							   returnVals[1] + ", '" + datasetName + "', " + params + ")");
-			
+			String statement = "INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
+							   returnVals[1] + ", " + params + ")";
+			System.out.println(statement); //debugging
+			stmt.execute(statement);
+
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception creating the new dataset.");
@@ -625,6 +628,129 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return nextID;
 	}
+	
+	//TODO : Although this means we can import multiple AtomInfoSparse tables,
+	//		the rest of the program can't handle them.
+	/**
+	 * A method to insert particles in the database that allows for multiple
+	 * AtomInfoSparse tables.
+	 * 
+	 * @param dense	The dense info for this particle, in a comma-separated string.
+	 * @param sparseTables	The sparse info, each sparse table has its own entry 
+	 * 						in the map, key of its tablename.  Each ArrayList
+	 * 						represents one SparseInfo entry, with the data contained
+	 * 						in a comma-separated string.
+	 * @param collection The collection into which the particle is imported.
+	 * @param datasetID	 The dataset into which the particle is imported.
+	 * @param nextID The atomID for the particle being imported.
+	 * @return	the successfully inserted particle's ID (-1 on failure).
+	 */
+	public int insertParticle(String dense, 
+								TreeMap<String, ArrayList<String>> sparseTables,
+								Collection collection,
+								int datasetID, int nextID){
+		
+		System.out.println("Inserting new particle:");
+		
+		try {
+			Statement stmt = con.createStatement();
+			//System.out.println("Adding batches");
+			
+			String insert = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+			nextID + ", " + dense + ")";
+			System.out.println(insert); //debugging
+			stmt.addBatch(insert);
+			insert = "INSERT INTO AtomMembership" +
+			  "(CollectionID, AtomID)" +
+			  "VALUES (" +
+			  collection.getCollectionID() + ", " +
+			  nextID + ")";
+			System.out.println(insert); //debugging
+			stmt.addBatch(insert);
+			insert = "INSERT INTO DataSetMembers" +
+			  "(OrigDataSetID, AtomID)" +
+			  " VALUES (" +
+			  datasetID + ", " + 
+			  nextID + ")";
+			System.out.println(insert); //debugging
+			stmt.addBatch(insert);
+
+			// Only bulk insert if client and server are on the same machine...
+			if (url.equals("localhost")) {
+				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+					// XXX: do something else here
+				}
+				
+
+				while (!sparseTables.isEmpty()){
+					//the table name is the string the arraylists are mapped by
+					String tableName = collection.getDatatype() + sparseTables.firstKey();
+					
+					ArrayList<String> sparse = sparseTables.get(sparseTables.firstKey());
+					//insert all the strings in the arraylist
+					for (int j = 0; j < sparse.size(); j++)
+						bulkFile.println(nextID + "," + sparse.get(j));
+				
+					//remove that mapping
+					sparseTables.remove(sparseTables.firstKey());
+					
+					bulkFile.close();
+					stmt.addBatch("BULK INSERT " + tableName + "\n" +
+						      "FROM '" + tempFilename + "'\n" +
+							  "WITH (FIELDTERMINATOR=',')");
+				}
+				
+			//endif	
+			} else {
+			
+				//for each of the arraylists of strings in the map
+				String string;
+				while (!sparseTables.isEmpty()){
+					
+					//the table name is the string the arraylists are mapped by
+					//preceeded by the datatype name
+					String tableName = collection.getDatatype() + 
+											sparseTables.firstKey();
+					
+					ArrayList<String> sparse = 
+									sparseTables.get(sparseTables.firstKey());
+					//insert all the strings in the arraylist
+					for (int j = 0; j < sparse.size(); j++){
+						string = "INSERT INTO " + tableName + 
+								" VALUES (" + nextID + "," + sparse.get(j) + ")";
+						//System.out.println(string);	//debugging
+						stmt.addBatch(string);
+					}
+					
+					//remove that mapping
+					sparseTables.remove(sparseTables.firstKey());
+				}
+
+			}
+			
+			stmt.executeBatch();
+			stmt.close();
+			
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
+			System.err.println("Exception inserting particle.");
+			e.printStackTrace();
+			
+			return -1;
+		}
+		
+		return nextID;
+		
+	}
+								
+			
+								
 	
 	/**
 	 * Inserts particles.  Not used yet, but it was here.  

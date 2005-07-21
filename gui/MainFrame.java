@@ -739,5 +739,46 @@ public class MainFrame extends JFrame implements ActionListener
 				new MainFrame();
 			}
 		});
+	}
+	
+	/**
+	 * @return Returns the data.
+	 */
+	public Vector<Vector<Object>> getData() 
+	{
+		return data;
+	}
+
+	/**
+	 * @return Returns the particlesTable.
+	 */
+	public JTable getParticlesTable() {
+		return particlesTable;
+	}
+	
+	public JComponent getInfoPanel() {
+		return infoPanel;
+	}
+	
+	public void clearOtherTreeSelections(CollectionTree colTree) {
+		if (colTree == collectionPane)
+			synchronizedPane.clearSelection();
+		else if (colTree == synchronizedPane)
+			collectionPane.clearSelection();
+	}
+	
+	/* (non-Javadoc)
+	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
+	 */
+	/**
+	 * Updates with peaklist information for the selected 
+	 * atom
+	 */
+	public void valueChanged(ListSelectionEvent arg0) {
+		int row = particlesTable.getSelectedRow();
+
+		analyzeParticleButton.setEnabled(row != -1);
+
+	
 	}	
 }
