@@ -7,7 +7,7 @@ public class Histogram {
 	private float binWidth;
 	private ValleyList splitPoints;
 	private int dimension;
-	private int count;
+	private int zeroCount;
 	
 	
 	/*
@@ -29,7 +29,7 @@ public class Histogram {
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
-		this.count = 0; // yes, really not the count paramenter.
+		this.zeroCount = count;
 	}
 	
 	public Histogram(float stdDev, int count, int dimension) {
@@ -39,7 +39,6 @@ public class Histogram {
 
 	public void addPeak(float area) {
 		histogram.addPeak(area);
-		count++;
 	}
 	
 	public void addImplicit(int totalCount) {

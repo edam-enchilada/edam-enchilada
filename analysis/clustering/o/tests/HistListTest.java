@@ -11,29 +11,25 @@ public class HistListTest extends TestCase {
 		histogram = new HistList(1.0f);
 	}
 
-	/*
-	 * Class under test for void add(int, int)
-	 */
-	public void testAddintint() {
+	public void testZeroNiceness() {
 		histogram.clear();
-		histogram.add(100);
-		histogram.add(50);
-		histogram.incrementBy(5, 5);
+		histogram.addToParticleCount(100);
+		histogram.addPeak(0.5f);
+		histogram.addPeak(1.7f);
+		histogram.addPeak(2.3f);
+		histogram.addPeak(22.5f);
+		assertEquals(96, (int) histogram.get(0));
+	}
+	
+	public void testAdditivity() {
 
-		assertEquals(100, (int) histogram.get(0));
-		assertEquals( 50, (int) histogram.get(1));
-		assertEquals("Extra 0s should be added as spacers.",
-				       0, (int) histogram.get(2));
-		assertEquals(  5, (int) histogram.get(5));
-		assertEquals(  0, (int) histogram.get(15));
-		
-
-		
-		histogram.incrementBy(0, 1);
+		histogram.clear();
+		histogram.addPeak(0.5f);
+		histogram.addPeak(0.5f);
+		histogram.addPeak(1.5f);
 		assertEquals("Adding to a specific bin should be additive rather than"
 				+ "replacing the old contents of the bin.",
-				101, (int) histogram.get(0));
-
+				2, (int) histogram.get(0.5f));
 	}
 
 	public void testAddPeak() {
@@ -43,12 +39,12 @@ public class HistListTest extends TestCase {
 		histogram.addPeak(1.2f);
 		histogram.addPeak(12.1f);
 		
-		assertEquals(2, (int) histogram.get(0));
-		assertEquals(1, (int) histogram.get(1));
+		assertEquals(2, (int) histogram.get(1));
+		assertEquals(1, (int) histogram.get(2));
 		assertEquals("Adding spacers should still work",
-				0, (int) histogram.get(2));
-		assertEquals(0, (int) histogram.get(3));
-		assertEquals(1, (int) histogram.get(12));
+				0, (int) histogram.get(3));
+		assertEquals(0, (int) histogram.get(4));
+		assertEquals(1, (int) histogram.get(13));
 	}
 
 	public void testGet() {
