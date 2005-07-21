@@ -363,13 +363,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	}
 	
 	/**
-	 * A method to produce a normalized BinnedPeakList from a
-	 * non-normalized one.  Depending on which distance metric is
+	 * A method to normalize this BinnedPeakList.  Depending 
+	 * on which distance metric is
 	 * used, this method will adapt to produce a distance of one 
-	 * from <0,0,0,....,0> to the vector represented by the list
-	 * @param 	list A list to normalize
-	 * @return 	a new BinnedPeaklist that represents list 
-	 * 			normalized.
+	 * from <0,0,0,....,0> to the vector represented by the list.
+	 * @param 	dMetric the distance metric to use to measure length
 	 */
 	public void normalize(DistanceMetric dMetric)
 	{

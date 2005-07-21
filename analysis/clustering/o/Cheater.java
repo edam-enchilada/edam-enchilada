@@ -15,7 +15,6 @@ public class Cheater {
 	public static void main(String[] args) {
 		InfoWarehouse db = new SQLServerDatabase();
 		db.openConnection();
-		// TODO Auto-generated method stub
 		CollectionCursor curs = db.getBinnedCursor(db.getCollection(1));
 		
 		DataWithSummary data = new DataWithSummary();
@@ -27,10 +26,7 @@ public class Cheater {
 		
 		NumberBox n = new NumberBox(5000);
 		n.addAll(data);
-		
-		//tried: -99 -226
-		//graphed: 39, 27
-		
+				
 		n.printDimension(27);
 	}
 	

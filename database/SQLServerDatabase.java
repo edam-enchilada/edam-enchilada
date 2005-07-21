@@ -253,7 +253,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * createEmptyCollectionAndDataset is used for the initial 
 	 * importation of data.  It creates an empty collection
 	 * which can then be filled using insertATOFMSParticle, using the 
-	 * return values as parameters.  
+	 * return values as parameters.
+	 * 
+	 * Don't include the name of the dataset in the list of params -
+	 * it will be added by the method.
 	 * @param parent The ID of the parent to insert this collection at
 	 * (0 for root)
 	 * @param datatype
@@ -281,7 +284,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				returnVals[1] = 0;
 			
 			stmt.executeUpdate("INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
-							   returnVals[1] + ", " + params + ")");
+							   returnVals[1] + ", '" + datasetName + "', " + params + ")");
 			
 			stmt.close();
 		} catch (SQLException e) {

@@ -17,6 +17,10 @@ public class Histogram {
 	 * A split at 0 should be considered when there is a large number of peaks
 	 * above the sensitivity value (which we don't even use yet).  Maybe?
 	 * Aaaaaugh.  It's really hard to tell what to dooo!
+	 * 
+	 * Don't split if the number on one side is less than the Sensitivity.
+	 * 
+	 * Ask Dave what to do.
 	 */
 	
 	public Histogram(float stdDev, int count) {
@@ -39,7 +43,7 @@ public class Histogram {
 	}
 	
 	public void addImplicit(int totalCount) {
-		
+		// XXX this doesn't do anything yet!  oops!
 	}
 	
 	private int findAllValleys() {
