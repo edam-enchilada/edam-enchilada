@@ -59,7 +59,7 @@ import analysis.DistanceMetric;
 
 public class ClusterFeature {
 	private ArrayList<Integer> atomIDs;
-	private int count;
+	public int count;
 	private BinnedPeakList sums;
 	private BinnedPeakList squareSums;
 	public CFNode child = null;
@@ -85,7 +85,7 @@ public class ClusterFeature {
 	
 	// Updates the cf by adding a peaklist to it
 	public void updateCF(BinnedPeakList list, int atomID) {
-		list = normalize(list, DistanceMetric.CITY_BLOCK);
+		
 		count++;
 		sums.addAnotherParticle(list);
 		BinnedPeakList squares = new BinnedPeakList();
@@ -95,8 +95,8 @@ public class ClusterFeature {
 			peak = iterator.next();
 			squareSums.add(peak.location, peak.area*peak.area);
 		}
-		sums = normalize(sums, DistanceMetric.CITY_BLOCK);
-		squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
+		//sums = normalize(sums, DistanceMetric.CITY_BLOCK);
+		//squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
 		atomIDs.add(new Integer(atomID));
 	}
 	
@@ -117,8 +117,8 @@ public class ClusterFeature {
 			atomIDs.addAll(cfs.get(i).atomIDs);
 		}
 		// TODO: only normalize sums??
-		sums = normalize(sums, DistanceMetric.CITY_BLOCK);
-		squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
+		//sums = normalize(sums, DistanceMetric.CITY_BLOCK);
+		//squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
 		return true;
 	}
 	
@@ -182,30 +182,15 @@ public class ClusterFeature {
 		return atomIDs;
 	}
 	
-	/**
-	 * 
-	 * TAKEN FROM CLUSTER!! TODO TODO TODO
-	 * A method to produce a normalized BinnedPeakList from a
-	 * non-normalized one.  Depending on which distance metric is
-	 * used, this method will adapt to produce a distance of one 
-	 * from <0,0,0,....,0> to the vector represented by the list
-	 * @param 	list A list to normalize
-	 * @return 	a new BinnedPeaklist that represents list 
-	 * 			normalized.
-	 */
-	protected BinnedPeakList normalize(BinnedPeakList list, DistanceMetric distanceMetric)
-	{
-		float magnitude = list.getMagnitude(distanceMetric);
-		BinnedPeakList returnList = new BinnedPeakList();
-		BinnedPeak temp;
-		Iterator<BinnedPeak> iter = list.iterator();
-		while (iter.hasNext()) {
-			temp = iter.next();
-			if ((float)(temp.area / magnitude) != 0.0f)
-				returnList.addNoChecks(temp.location, 
-						temp.area / magnitude);
+	public BinnedPeakList getCentroid() {
+		BinnedPeakList list = new BinnedPeakList();
+		Iterator<BinnedPeak> iterator = sums.iterator();
+		while (iterator.hasNext()) {
+			BinnedPeak next = iterator.next();
+			list.addNoChecks(next.location, next.area / count);
 		}
-		return returnList;
+		list.normalize(DistanceMetric.CITY_BLOCK);
+		return list;
 	}
 
 }

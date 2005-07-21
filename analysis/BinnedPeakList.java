@@ -362,6 +362,28 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	/**
+	 * A method to produce a normalized BinnedPeakList from a
+	 * non-normalized one.  Depending on which distance metric is
+	 * used, this method will adapt to produce a distance of one 
+	 * from <0,0,0,....,0> to the vector represented by the list
+	 * @param 	list A list to normalize
+	 * @return 	a new BinnedPeaklist that represents list 
+	 * 			normalized.
+	 */
+	public void normalize(DistanceMetric dMetric)
+	{
+		float magnitude = getMagnitude(dMetric);
+		
+		Map.Entry<Integer,Float> entry;
+		Iterator<Map.Entry<Integer,Float>> iterator = peaks.entrySet().iterator();
+		
+		while (iterator.hasNext()) {
+			entry = iterator.next();
+			entry.setValue(entry.getValue() / magnitude);
+		}
+	}
+	
 	public Iterator<BinnedPeak> iterator() {
 		return new Iter(this);
 	}
@@ -385,5 +407,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
+	
 	}
 }

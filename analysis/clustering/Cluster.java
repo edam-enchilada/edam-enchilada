@@ -114,30 +114,6 @@ public abstract class Cluster extends CollectionDivider {
 			out.println(tempPeak.location + "\t" + tempPeak.area);
 		}
 	}
-	
-	/**
-	 * A method to produce a normalized BinnedPeakList from a
-	 * non-normalized one.  Depending on which distance metric is
-	 * used, this method will adapt to produce a distance of one 
-	 * from <0,0,0,....,0> to the vector represented by the list
-	 * @param 	list A list to normalize
-	 * @return 	a new BinnedPeaklist that represents list 
-	 * 			normalized.
-	 */
-	protected BinnedPeakList normalize(BinnedPeakList list)
-	{
-		float magnitude = list.getMagnitude(distanceMetric);
-		BinnedPeakList returnList = new BinnedPeakList();
-		BinnedPeak temp;
-		Iterator<BinnedPeak> iter = list.iterator();
-		while (iter.hasNext()) {
-			temp = iter.next();
-			if ((float)(temp.area / magnitude) != 0.0f)
-				returnList.addNoChecks(temp.location, 
-						temp.area / magnitude);
-		}
-		return returnList;
-	}
 		
 	/**
 	 * Returns the distance between the vectors represented by
@@ -240,7 +216,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the max distance (2.0)
 			// since that centroid would not be considered
 			nearestDistance = 3.0f;
@@ -298,7 +274,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the max distance (2.0)
 			// since that centroid would not be considered
 			nearestDistance = 3.0f;
@@ -372,7 +348,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the 
 			// vigilance since that centroid would not be 
 			// considered

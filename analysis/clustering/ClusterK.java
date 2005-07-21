@@ -340,8 +340,8 @@ public abstract class ClusterK extends Cluster {
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
 				curs.next();
-				centroidList.add(new Centroid(normalize(
-						curs.getCurrent().getBinnedList()),1));
+				curs.getCurrent().getBinnedList().normalize(distanceMetric);
+				centroidList.add(new Centroid(curs.getCurrent().getBinnedList(),1));
 			}
 			return centroidList;
 		}
@@ -374,7 +374,8 @@ public abstract class ClusterK extends Cluster {
 		    boolean status = curs.next();
 		    assert status : "Cursor is empty.";
 		    Centroid newCent = null; 
-		    newCent = new Centroid(normalize(curs.getCurrent().getBinnedList()),0);
+		    curs.getCurrent().getBinnedList().normalize(distanceMetric);
+		    newCent = new Centroid(curs.getCurrent().getBinnedList(),0);
 		  
 		    assert (newCent != null) : "Error adding centroid";
 		    centroidList.add(newCent);
@@ -386,7 +387,7 @@ public abstract class ClusterK extends Cluster {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
 						curs.getPeakListfromAtomID(thisParticleInfo.getID());
-						thisBinnedPeakList = normalize(thisBinnedPeakList);
+						thisBinnedPeakList.normalize(distanceMetric);
 					double nearestDistance = Double.MAX_VALUE;
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
@@ -433,7 +434,7 @@ public abstract class ClusterK extends Cluster {
 				ParticleInfo thisParticleInfo = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList =
 					curs.getPeakListfromAtomID(thisParticleInfo.getID());
-					thisBinnedPeakList = normalize(thisBinnedPeakList);
+					thisBinnedPeakList.normalize(distanceMetric);
 				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
