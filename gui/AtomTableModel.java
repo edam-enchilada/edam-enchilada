@@ -53,7 +53,7 @@ import database.InfoWarehouse;
 
 /**
  * This table model goes straight to the database to lookup 
- * particles.
+ * particles.  It is also never used?
  * 
  * TODO: Implement cacheing (and figure out how to spell it as a 
  * verb)
@@ -126,6 +126,10 @@ public class AtomTableModel extends AbstractTableModel {
 		}
 		else
 			return null;
+	}
+	
+	public void close() {
+		curs.close();
 	}
 
 }
