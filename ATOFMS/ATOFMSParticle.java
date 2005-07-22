@@ -44,10 +44,10 @@
  * 
  * Window - Preferences - Java - Code Style - Code Templates
  */
-package atom;
+package ATOFMS;
 
-import msanalyze.*;
 import java.util.ArrayList;
+import java.util.Date;
 
 
 /**
@@ -55,7 +55,7 @@ import java.util.ArrayList;
  * Specific to ATOFMS data.
  */
 
-public class ATOFMSParticle extends Particle {
+public class ATOFMSParticle {
 
 	private final int MAX_BIN_NUMBER;
 
@@ -64,13 +64,18 @@ public class ATOFMSParticle extends Particle {
 	public float laserPower;
 	public float digitRate;
 	public int scatDelay;
+	public float size;
+	public int[] posSpectrum;
+	public int[] negSpectrum;
+	protected ArrayList<Peak> peakList = null;
+	public int atomID;
 
 	public static PeakParams currPeakParams;
 	public static CalInfo currCalInfo;
 	
 	private double autoPosSlope, autoNegSlope, autoPosIntercept,
 		autoNegIntercept;
-	
+
 	public ATOFMSParticle()
 	{
 		super();
@@ -101,7 +106,7 @@ public class ATOFMSParticle extends Particle {
 		MAX_BIN_NUMBER = pSpect.length;
 		filename = fname;
 		time = timestr;
-		laserPower = lasPow;
+		laserPower = lasPow/1000;
 		if (currCalInfo.sizecal)
 		{
 			size = 
@@ -412,9 +417,18 @@ public class ATOFMSParticle extends Particle {
 		return spec;
 	}
 	
+	public String particleInfoDenseString() {
+		return "'" + time.substring(0, time.length() - 3) + "', " + 
+		laserPower + ", " + size + ", " + scatDelay + ", '" + filename + "'";
+	}
 	
-	public static void setDataSetInfo(PeakParams p, CalInfo c) {
-		currPeakParams = p;
-		currCalInfo = c;
+	public ArrayList<String> particleInfoSparseString() {
+		ArrayList<String> sparse = new ArrayList<String>();
+		getPeakList();
+		for (int i = 0; i < peakList.size(); i++) 
+			sparse.add(peakList.get(i).massToCharge + ", " + 
+					peakList.get(i).area + ", " + peakList.get(i).relArea + 
+					", " + peakList.get(i).height);
+		return sparse;	
 	}
 }

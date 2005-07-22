@@ -46,8 +46,9 @@
 package analysis;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Scanner;
+
+import collection.Collection;
 
 import database.CollectionCursor;
 import database.InfoWarehouse;
@@ -74,9 +75,9 @@ public abstract class CollectionDivider {
 	public static final int STORE_ON_FIRST_PASS = 1;
 
 	/**
-	 * The id of the collection you are dividing
+	 * The collection you are dividing
 	 */
-	protected int collectionID;
+	protected Collection collection;
 
 	/**
 	 * A pointer to an active InfoWarehouse
@@ -115,19 +116,19 @@ public abstract class CollectionDivider {
 	 * @param name		A name for the new host collection
 	 * @param comment	A comment for the collection
 	 */
-	public CollectionDivider(int cID, InfoWarehouse database, String name, String comment)
+	public CollectionDivider(int collectionID, InfoWarehouse database, String name, String comment)
 	{
 	    if (database == null)
 	        throw new IllegalArgumentException(
 	                "Parameter 'database' should not be null");
-	    
-		collectionID = cID;
-		
+	    	
 		db = database;
+		
+		collection = db.getCollection(collectionID);
 		
 		subCollectionIDs = new ArrayList<Integer>();
 		
-		newHostID = db.createEmptyCollection(collectionID, name, comment);
+		newHostID = db.createEmptyCollection(collection.getDatatype(), collection.getCollectionID(), name, comment,"");
 		
 		numSubCollections = 0;
 	}
@@ -157,9 +158,9 @@ public abstract class CollectionDivider {
 	{
 		int subCollectionID = 0;
 		numSubCollections++;
-		subCollectionID = db.createEmptyCollection(newHostID,
+		subCollectionID = db.createEmptyCollection(collection.getDatatype(), newHostID,
 				Integer.toString(numSubCollections), 
-				Integer.toString(numSubCollections));
+				Integer.toString(numSubCollections),"");
 		assert (subCollectionID != -1) : "Error creating empty subcollection";
 		subCollectionIDs.add(new Integer(subCollectionID));
 		return numSubCollections;
@@ -177,9 +178,9 @@ public abstract class CollectionDivider {
 	{
 		int subCollectionID = 0;
 		numSubCollections++;
-		subCollectionID = db.createEmptyCollection(newHostID,
+		subCollectionID = db.createEmptyCollection(collection.getDatatype(),newHostID,
 				name, 
-				comments);
+				comments,"");
 		assert (subCollectionID != -1) :"Error creating empty subcollection: " 
 			+ name + "Comments: " + comments;
 		subCollectionIDs.add(new Integer(subCollectionID));
@@ -203,8 +204,8 @@ public abstract class CollectionDivider {
 	 */
 	protected boolean putInSubCollection(int atomID, int target)
 	{		
-		if (db.checkAtomParent(atomID,collectionID))
-			return db.moveAtom(atomID, collectionID, subCollectionIDs.get(target-1).intValue());
+		if (db.checkAtomParent(atomID,collection.getCollectionID()))
+			return db.moveAtom(atomID, collection.getCollectionID(), subCollectionIDs.get(target-1).intValue());
 		else
 			return db.addAtom(atomID,subCollectionIDs.get(target-1).intValue());
 	}
@@ -245,12 +246,12 @@ public abstract class CollectionDivider {
 		if (atomIDsToDelete.length() > 0 &&
 				atomIDsToDelete.length() < 2000) {
 			atomIDsToDelete = atomIDsToDelete.substring(0,atomIDsToDelete.length()-1);
-			db.deleteAtomsBatch(atomIDsToDelete,collectionID);
+			db.deleteAtomsBatch(atomIDsToDelete,collection);
 		} else if (atomIDsToDelete.length() > 0 &&
 				atomIDsToDelete.length() >= 2000) {
 			Scanner atomIDs = new Scanner(atomIDsToDelete).useDelimiter(",");
 			while (atomIDs.hasNext()) {
-				db.deleteAtomBatch(atomIDs.nextInt(), collectionID);
+				db.deleteAtomBatch(atomIDs.nextInt(), collection);
 			}
 		}
 		db.executeBatch();
@@ -266,8 +267,8 @@ public abstract class CollectionDivider {
 	 */
 	protected boolean putInHostSubCollection(int atomID)
 	{
-		if (db.checkAtomParent(atomID, collectionID))
-			return db.moveAtom(atomID, collectionID, newHostID);
+		if (db.checkAtomParent(atomID, collection.getCollectionID()))
+			return db.moveAtom(atomID, collection.getCollectionID(), newHostID);
 		else
 			return db.addAtom(atomID, newHostID);
 	}

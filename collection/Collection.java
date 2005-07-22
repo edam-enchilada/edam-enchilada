@@ -45,7 +45,6 @@
 package collection;
 
 import database.*;
-import gui.ATOFMSParticleInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,29 +55,86 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import atom.ATOFMSParticle;
+import atom.ATOFMSAtomFromDB;
+
+
 /**
+ * @author gregc
  * @author andersbe
  *
  */
 public class Collection {
 	private int collectionID;
-	private String name, comment;
+	private Collection parentCollection;
+	
 	private InfoWarehouse db = null;
+	private String datatype;
+	private AggregationOptions aggregationOptions;
+
+	private String cachedName, cachedComment, cachedDescription;
+	private ArrayList<Integer> cachedSubCollectionIDs = null;
+	private Collection[] cachedSubCollections;
+	private int cachedContainsData = -1;
 	
-	
-	public Collection(int cID, InfoWarehouse database)
+	public Collection(String type, int cID, InfoWarehouse database)
 	{
 		collectionID = cID;
+		datatype = type;
 		db = database;
-		name = db.getCollectionName(cID);
-		comment = db.getCollectionComment(cID);
+	}
+	
+	public Collection(String name, String type, int cID, InfoWarehouse database)
+	{
+		cachedName = name;
+		collectionID = cID;
+		datatype = type;
+		db = database;
 	}
 	
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
-		ArrayList<Integer> subCollections = db.getImmediateSubCollections(collectionID);
-		return subCollections;
+		if (cachedSubCollectionIDs == null)
+			cachedSubCollectionIDs = db.getImmediateSubCollections(this);
+		
+		return cachedSubCollectionIDs;
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof Collection) {
+			return ((Collection) o).collectionID == collectionID;
+		}
+		
+		return false;
+	}
+	
+	public Collection getChildAt(int index) {
+		ArrayList<Integer> subCollectionIDs = getSubCollectionIDs();
+		
+		if (cachedSubCollections == null)
+			cachedSubCollections = new Collection[subCollectionIDs.size()];
+		
+		if (cachedSubCollections[index] == null) {
+			int collectionID = subCollectionIDs.get(index).intValue();
+			
+			// Make sure children have correct datatype...
+			// Should only share from parent nodes that aren't root
+			if (datatype.contains("root"))
+				cachedSubCollections[index] = db.getCollection(collectionID);
+			else
+				cachedSubCollections[index] = new Collection(datatype, collectionID, db);
+			
+			cachedSubCollections[index].setParentCollection(this);
+		}
+		
+		return cachedSubCollections[index];
+	}
+	
+	public Collection getParentCollection() {
+		return parentCollection;
+	}
+	
+	public void setParentCollection(Collection c) {
+		parentCollection = c;
 	}
 	
 	public int getCollectionID()
@@ -86,31 +142,68 @@ public class Collection {
 		return collectionID;
 	}
 	
+	public String getDatatype() {
+		return datatype;
+	}
+	
+	public boolean containsData() {
+		if (cachedContainsData == -1) {
+			ArrayList<Integer> tmp = new ArrayList<Integer>();
+			tmp.add(collectionID);
+			
+			cachedContainsData = db.getCollectionIDsWithAtoms(tmp, false).size();
+		}
+	
+		return cachedContainsData > 0;
+	}
+	
+	public String getName() {
+		if (cachedName == null)
+			cachedName = db.getCollectionName(collectionID);
+		
+		return cachedName;
+	}
+	
+	public String getComment() {
+		if (cachedComment == null)
+			cachedComment = db.getCollectionComment(collectionID);
+		
+		return cachedComment;
+	}
+	
+	public String getDescription() {
+		if (cachedDescription == null)
+			cachedDescription = db.getCollectionDescription(collectionID);
+		
+		return cachedDescription;
+	}
+	
 	public String toString()
 	{
-		return db.getCollectionName(collectionID).trim();
+		return getName().trim();
 	}
 	
 	public ArrayList<Integer> getParticleIDs()
 	{
-		return db.getAllDescendedAtoms(collectionID);
+		return db.getAllDescendedAtoms(this);
 	}
 	
-	public ArrayList<ATOFMSParticle> getParticles()
-	{
-		ArrayList<Integer> atomIDs = db.getAllDescendedAtoms(collectionID);
-		
-		
-		return null;
+	public void setAggregationOptions(AggregationOptions ao) {
+		aggregationOptions = ao;
+	}
+	
+	public AggregationOptions getAggregationOptions() { 
+		return aggregationOptions;
 	}
 	
 	//TODO:  Need a progress bar here.
 	public boolean exportToPar()
 	{
+		String name = getName();
 		File parFile = new File(name + ".par");
 		File setFile = new File(name + ".set");
 		System.out.println(parFile.getAbsolutePath());
-		java.util.Date date = db.exportToMSAnalyzeDatabase(collectionID, name, "MS-Analyze");
+		java.util.Date date = db.exportToMSAnalyzeDatabase(this, name, "MS-Analyze");
 		try {
 			DateFormat dFormat = 
 				new SimpleDateFormat("MM/dd/yyyy kk:mm:ss");
@@ -118,18 +211,18 @@ public class Collection {
 			out.println("ATOFMS data set parameters");
 			out.println(name);
 			out.println(dFormat.format(date));
-			out.println(comment);
+			out.println(getComment());
 			out.close();
 			
 			int particleCount = 1;
 			out = new PrintWriter(new FileOutputStream(setFile, false));
 
-			ATOFMSParticleInfo particle = null;
+			ATOFMSAtomFromDB particle = null;
 			// The Atom iterator is essentially a thin wrapper to a 
 			// Result set and thus you must call hasNext to get to the
 			// next element of the interator as it links to 
 			// ResultSet.next()
-			CollectionCursor curs = db.getParticleInfoOnlyCursor(collectionID);
+			CollectionCursor curs = db.getAtomInfoOnlyCursor(this);
 			
 			NumberFormat nFormat = NumberFormat.getNumberInstance();
 			nFormat.setMaximumFractionDigits(6);
@@ -150,7 +243,7 @@ public class Collection {
 			// scatter delay MSA produces for the same dataset
 				out.println(particleCount + ", " + 
 						particle.getFilename().substring(0,1) + 
-						File.separatorChar +
+						File.separator +
 						particle.getFilename() + 
 						", " + particle.getScatDelay() + 
 						", 65535, " +

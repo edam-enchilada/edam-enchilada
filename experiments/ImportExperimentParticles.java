@@ -7,8 +7,7 @@ package experiments;
 import java.util.*;
 
 import database.SQLServerDatabase;
-import msanalyze.*;
-import atom.*;
+import ATOFMS.*;
 
 /**
  * @author ritza
@@ -38,10 +37,12 @@ public class ImportExperimentParticles {
 		}
 		
 		int[] id = new int[2];
-		id = db.createEmptyCollectionAndDataset(0,"Amp: "+ amplitude,"7 different particles",
-				"Particles for Clustering\\040215a_33.cal",".noz file", 
-				ATOFMSParticle.currCalInfo,
-				ATOFMSParticle.currPeakParams);
+		id = db.createEmptyCollectionAndDataset("ATOFMS", 0,"Amp: "+ 
+				amplitude,"7 different particles",
+				"'Particles for Clustering\\040215a_33.cal', '.noz file', " +
+				ATOFMSParticle.currPeakParams.minHeight + ", " + 
+				ATOFMSParticle.currPeakParams.minArea + ", " + 
+				ATOFMSParticle.currPeakParams.minRelArea + ", 1"); 
 		
 		// Use the indices array to duplicate the number of each type of particle.
 		// Choose a random number of duplications.  
@@ -113,7 +114,8 @@ public class ImportExperimentParticles {
 					file = "i-040808160921-00310.amz";
 				}
 				readSpec = 	new ReadExpSpec("Particles for Clustering\\" + file); 
-				db.insertATOFMSParticle(readSpec.getParticle(),id[0],id[1],newAtomID++);
+				db.insertParticle(readSpec.getParticle().particleInfoDenseString(),
+						readSpec.getParticle().particleInfoSparseString(), db.getCollection(id[0]),id[1],newAtomID++);
 			}
 		}catch (Exception exception) {
 			System.out.println("Caught exception");

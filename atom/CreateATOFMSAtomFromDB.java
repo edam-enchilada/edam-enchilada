@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's ATOFMSParticleInfo class.
+ * The Original Code is EDAM Enchilada's CreateATOFMSAtomFromDB class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -41,15 +41,16 @@
 /*
  * Created on Aug 9, 2004
  */
-package gui;
+package atom;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
  * @author andersbe
  *
  */
-public class ATOFMSParticleInfo {
+public class CreateATOFMSAtomFromDB {
 
 	private String filename;
 	private Date timeStamp;
@@ -62,11 +63,10 @@ public class ATOFMSParticleInfo {
 	/**
 	 * 
 	 */
-	public ATOFMSParticleInfo() {
-		super();
+	public CreateATOFMSAtomFromDB() {
 	}
 	
-	public ATOFMSParticleInfo(int aID, String fname, int sDelay, float lPower, Date tStamp)
+	public CreateATOFMSAtomFromDB(int aID, String fname, int sDelay, float lPower, Date tStamp)
 	{
 		atomID = aID;
 		filename = fname;

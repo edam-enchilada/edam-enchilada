@@ -47,6 +47,7 @@ package analysis.clustering;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import ATOFMS.ParticleInfo;
 import analysis.*;
 
 import database.InfoWarehouse;
@@ -159,28 +160,14 @@ public class Art2A extends Cluster
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(collectionID));
+			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(collectionID));
+		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
 			return true;
 		default :
 			return false;
 		}
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.Cluster#setDistancMetric(int)
-	 */
-	public boolean setDistanceMetric(DistanceMetric method) 
-	{
-		distanceMetric = method;
-		if (method == DistanceMetric.CITY_BLOCK)
-			return true;
-		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
-			return true;
-		else
-			return false;
 	}
 	
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
@@ -212,8 +199,8 @@ public class Art2A extends Cluster
 				//		particleCount);
 				thisParticleInfo = curs.getCurrent();
 				thisBinnedPeakList = thisParticleInfo.getBinnedList();
-					thisBinnedPeakList = normalize(thisBinnedPeakList);
-			
+				thisBinnedPeakList.normalize(distanceMetric);
+				
 						
 				// no centroid will be found further than the vigilance
 				// since that centroid would not be considered
@@ -246,7 +233,7 @@ public class Art2A extends Cluster
 					temp.numMembers++;
 					temp.peaks = adjustByLearningRate(thisBinnedPeakList, 
 							centroidList.get(chosenCluster).peaks);
-					temp.peaks = normalize(temp.peaks);
+					temp.peaks.normalize(distanceMetric);
 				}// end if atom falls within existing cluster
 				
 				else

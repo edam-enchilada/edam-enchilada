@@ -45,6 +45,7 @@ package analysis;
 
 import java.util.Iterator;
 
+import ATOFMS.ParticleInfo;
 import database.InfoWarehouse;
 
 /**
@@ -82,7 +83,7 @@ public class PeakDivider extends CollectionDivider {
 	public boolean setCursorType(int type) {
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = db.getBinnedCursor(collectionID);
+			curs = db.getBinnedCursor(collection);
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
 			return false;

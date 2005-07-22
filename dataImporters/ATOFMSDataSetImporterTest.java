@@ -41,22 +41,23 @@
 /*
  * Created on Aug 25, 2004s
  */
-package msanalyze;
+package dataImporters;
 
 import java.awt.Window;
 import java.io.File;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.zip.DataFormatException;
 
 import javax.swing.JFrame;
+
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
+
 
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;
 import junit.framework.TestCase;
 
-import gui.ATOFMSParticleInfo;
 import gui.ImportParsDialog;
 import gui.ParTableModel;
 
@@ -78,11 +79,29 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	
 	protected void setUp()
 	{
-		new CreateTestDatabase(); 		
+		try {
+			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
+		} catch (Exception e) {
+			System.err.println("Failed to load current driver.");	
+		} 
+		
+		con = null;
+		
+		try {
+			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
+		} catch (Exception e) {
+			System.err.println("Failed to establish a connection to SQL Server");
+			System.err.println(e);
+		}
+		
+		//TODO: commented this out AR
+		//SQLServerDatabase.rebuildDatabase("TestDB");
+	
+		new CreateTestDatabase(); 
 		db = new SQLServerDatabase("TestDB");
 		
 		// create table with one entry.
-		table = new ParTableModel(8);
+		table = new ParTableModel();
 		// TODO: insert dummy row.
 		table.setValueAt("testRow/b.par", 1, 1);
 		table.setValueAt("testRow/cal.cal", 1, 2);
@@ -102,9 +121,10 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			System.runFinalization();
 			System.gc();
 			con.close();
-			db = new SQLServerDatabase("TestDB");
-			db.openConnection();
-			con = db.getCon();
+			con = DriverManager.getConnection(
+					"jdbc:microsoft:sqlserver://" +
+					"localhost:1433;TestDB;SelectMethod=cursor;",
+					"SpASMS","finally");
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
 			con.close();
 		} catch (SQLException e) {
@@ -170,12 +190,12 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertTrue(db.getCollectionDescription(1).equals("onedescrip"));
 		assertTrue(db.getCollectionName(1).equals("One"));
 		
-		ArrayList<ATOFMSParticleInfo> particles = 
-			db.getCollectionParticles(1);
+		ArrayList<GeneralAtomFromDB> particles = 
+			db.getCollectionParticles(db.getCollection(1));
 		
 		// Check the first and last particles to see if they have been
 		// imported properly.
-		ATOFMSParticleInfo pInfo = particles.get(0);
+		ATOFMSAtomFromDB pInfo = particles.get(0).toATOFMSAtom();
 		
 		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
 		assertTrue(pInfo.getFilename().equals("One"));
@@ -184,13 +204,13 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertTrue(pInfo.getScatDelay() == 0);
 		assertTrue(pInfo.getSize() == 0.1f);
 		
-		pInfo = particles.get(particles.size()-1);
+		pInfo = particles.get(particles.size()-1).toATOFMSAtom();
 		assertTrue(pInfo.getDateString().equals("09/02/2003 05:30:38 PM"));
-		assertTrue(pInfo.getFilename().equals("Three"));
-		assertTrue(pInfo.getAtomID() == 3);
+		assertTrue(pInfo.getFilename().equals("Five"));
+		assertTrue(pInfo.getAtomID() == 5);
 		assertTrue(pInfo.getLaserPower() == 0);
 		assertTrue(pInfo.getScatDelay() == 0);
-		assertTrue(pInfo.getSize() == 0.3f);
+		assertTrue(pInfo.getSize() == 0.5f);
 		db.closeConnection();	
 	}	
 }

@@ -9,8 +9,10 @@ package experiments;
 import java.util.ArrayList;
 import java.util.Random;
 
-import atom.ATOFMSParticle;
-import atom.Peak;
+import ATOFMS.ATOFMSParticle;
+import ATOFMS.Peak;
+
+
 
 /**
  * @author dmusican

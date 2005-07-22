@@ -19,6 +19,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * Greg Cipriano gregc@cs.wisc.edu
  * Jonathan Sulman sulmanj@carleton.edu
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -41,46 +42,51 @@
  */
 package gui;
 
-import javax.swing.*;
-
-import msanalyze.CalInfo;
-import msanalyze.ReadSpec;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
+import javax.swing.*;
+import javax.swing.table.*;
+
+import ATOFMS.ATOFMSParticle;
+import ATOFMS.CalInfo;
+import ATOFMS.Peak;
+import ATOFMS.ReadSpec;
 
 import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.ZoomableChart;
-import database.SQLServerDatabase;
-import atom.ATOFMSParticle;
-import atom.Peak;
 
-import java.awt.*;
-import java.awt.event.*;
+import database.SQLServerDatabase;
+
 
 /**
- * @author sulmanj
+ * @author gregc, sulmanj
  *
  * A chart specialized for this SpASMS.
  * Deals directly with Peak data.
  * Contains a JTable that displays the text of the peak data displayed in the
  * chart.
  */
-public class PeaksChart extends JPanel implements MouseMotionListener, ActionListener {
+public class ParticleAnalyzeWindow extends JFrame 
+implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	//GUI elements
 	private Chart chart;
 	private ZoomableChart zchart;
 	private JTable table; 
 	private JRadioButton peakButton, specButton;
+	private JButton nextButton, zoomOutButton, prevButton;
 	
 	//Data elements
-	private javax.swing.table.AbstractTableModel datamodel;
-	private ArrayList<atom.Peak> peaks;
+	private SQLServerDatabase db;
+	private JTable particlesTable;
+	private int curRow;
+	
+	private AbstractTableModel datamodel;
+	private ArrayList<ATOFMS.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
 	private ArrayList<Peak> negPeaks;
 	private Dataset posSpecDS, negSpecDS;
@@ -100,14 +106,23 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	 * Both begin empty.
 	 * @param chart
 	 */
-	public PeaksChart() {
+	public ParticleAnalyzeWindow(SQLServerDatabase db, JTable dt, int curRow) {
+		super();
+
+		setSize(800, 600);
+		setLocation(10, 10);
+		
+	    this.db = db;
+	    this.particlesTable = dt;
+	    this.curRow = curRow;
+	    
 		peaks = new ArrayList<Peak>();
 		atomFile = null;
 		
-		setLayout(new BorderLayout());
+		JPanel mainPanel = new JPanel(new BorderLayout());
 
-		//		sets up chart
-		chart = new chartlib.Chart(2);
+		// sets up chart
+		chart = new chartlib.Chart(2, false);
 		chart.setHasKey(false);
 		chart.setTitle("Positive and negative peak values");
 		chart.setTitleX(0,"Positive mass-to-charge ratios");
@@ -122,10 +137,22 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		
 		zchart = new ZoomableChart(chart);
 		zchart.addMouseMotionListener(this);
+		zchart.addMouseListener(this);
 		zchart.setFocusable(true);
 		zchart.setDefaultXmin(DEFAULT_XMIN);
 		zchart.setDefaultXmax(DEFAULT_XMAX);
-		add(zchart, BorderLayout.CENTER);
+		
+		JPanel centerPanel = new JPanel(new BorderLayout());
+		JPanel nextPrevPanel = new JPanel(new FlowLayout());
+		nextPrevPanel.add(prevButton = new JButton("Previous"));
+		prevButton.addActionListener(this);
+		nextPrevPanel.add(zoomOutButton = new JButton("Zoom Out"));
+		zoomOutButton.addActionListener(this);
+		nextPrevPanel.add(nextButton = new JButton("Next"));
+		nextButton.addActionListener(this);
+		centerPanel.add(zchart, BorderLayout.CENTER);
+		centerPanel.add(nextPrevPanel, BorderLayout.SOUTH);
+		mainPanel.add(centerPanel, BorderLayout.CENTER);
 		
 		//sets up table
 		datamodel = new PeaksTableModel();
@@ -137,28 +164,54 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		table.setRowSelectionAllowed(true);
 		table.setColumnSelectionAllowed(false);
 		
+		JPanel peaksPanel = new JPanel(new BorderLayout());
+		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
+		peaksPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+        
+		JPanel sigPanel = new JPanel(new BorderLayout());
+		String[] ions = { "NaO4", "Hg+", "CO2", "H2" };
+
+		JPanel signatures = new JPanel(new GridLayout(ions.length, 1));
+		for (String ion : ions) {
+			JPanel ionPanel = new JPanel(new BorderLayout());
+			JCheckBox box = new JCheckBox();
+			ionPanel.add(box, BorderLayout.WEST);
+			ionPanel.add(new JLabel(ion), BorderLayout.CENTER);
+			signatures.add(ionPanel);
+		}
+		
+		sigPanel.add(new JLabel("Signature", SwingConstants.CENTER), BorderLayout.NORTH);
+		sigPanel.add(new JScrollPane(signatures), BorderLayout.CENTER);
+		
+		JSplitPane controlPane
+			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, sigPanel);
 		JPanel rightPanel = new JPanel(new BorderLayout());
-		rightPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+		rightPanel.add(controlPane, BorderLayout.CENTER);
 		
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
-		
-		peakButton = new JRadioButton("Peaks");
-		peakButton.setActionCommand("peaks");
-		peakButton.addActionListener(this);
+
 		specButton = new JRadioButton("Spectrum");
 		specButton.setActionCommand("spectrum");
 		specButton.addActionListener(this);
-		bg.add(peakButton);
+		peakButton = new JRadioButton("Peaks");
+		peakButton.setActionCommand("peaks");
+		peakButton.addActionListener(this);
 		bg.add(specButton);
-		bg.setSelected(specButton.getModel(),true);
-		buttonPanel.add(peakButton);
+		bg.add(peakButton);
+		specButton.setSelected(true);
 		buttonPanel.add(specButton);
+		buttonPanel.add(peakButton);
 		
-		rightPanel.add(buttonPanel, BorderLayout.SOUTH);
+		JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
+		bottomPanel.add(buttonPanel);
+		bottomPanel.add(new JCheckBox("Label Peaks", true));
 		
-		add(rightPanel, BorderLayout.EAST);
-
+		rightPanel.add(bottomPanel, BorderLayout.SOUTH);
+		mainPanel.add(rightPanel, BorderLayout.EAST);
+		add(mainPanel);
+		
+		showGraph();
 	}
 
 	/**
@@ -222,17 +275,73 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	 * Returns the chart to its original zoom.
 	 *
 	 */
-	public void unZoom()
+	private void unZoom()
 	{
 		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX - 1);
+		zoomOutButton.setEnabled(false);
 //		chart.setAxisBounds(DEFAULT_XMIN,DEFAULT_XMAX, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
 //		//chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
 //		chart.packData(false, true);
 	}
+
 	
-	
-	
+	private void showPreviousParticle() {
+		if (curRow > 0)
+			curRow--;
 		
+		showGraph();
+	}
+	
+	private void showNextParticle() {
+		if (curRow < particlesTable.getRowCount() - 1)
+			curRow++;
+			
+		showGraph();
+	}
+	
+	private void showGraph() {
+		int atomID = ((Integer) 
+				particlesTable.getValueAt(curRow, 0)).intValue();
+
+		setTitle("Analyze Particle - AtomID: " + atomID);
+		
+		String filename = (String)particlesTable.getValueAt(curRow, 5);
+		String peakString = "Peaks:\n";
+		
+		System.out.println("AtomID = " + atomID);
+		ArrayList<Peak> peaks = db.getPeaks(db.getAtomDatatype(atomID), atomID);
+		
+		for (Peak p : peaks)
+		{
+			peakString += 
+				"\t" + p.toString() + "\n";
+		}
+		
+		System.out.println(peakString);
+		setPeaks(peaks, atomID, filename);		
+	}
+	
+	/**
+	 * When an arrow key is pressed, moves to
+	 * the next particle.
+	 */
+	public void keyPressed(KeyEvent e)
+	{
+		int key = e.getKeyCode();
+
+		if (key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN)
+			showNextParticle();
+		else if(key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP)
+			showPreviousParticle();
+		//Z unzooms the chart.
+		else if(key == KeyEvent.VK_Z)
+			unZoom();
+	}
+	
+	public void keyReleased(KeyEvent e){}
+	public void keyTyped(KeyEvent e){}
+	
+	
 	/**
 	 * Checks if the mouse is near a peak.  If so, highlights it
 	 * in the table.
@@ -282,6 +391,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		}
 	}
 	public void mouseDragged(MouseEvent e){}
+	public void mouseClicked(MouseEvent e) {}
+	public void mousePressed(MouseEvent e){}
+	public void mouseReleased(MouseEvent e) { zoomOutButton.setEnabled(true); }	
+	public void mouseExited(MouseEvent e) {}	
+	public void mouseEntered(MouseEvent e) {}	
 	
 	public void actionPerformed(ActionEvent e)
 	{
@@ -289,11 +403,18 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		{
 			return;
 		}
-		String command  = e.getActionCommand();
-		if(command.equals( "peaks" ))
+		
+		Object source = e.getSource();
+		if (source == peakButton)
 			displayPeaks();
-		else if(command.equals( "spectrum" ))
+		else if (source == specButton)
 			displaySpectrum();
+		else if (source == prevButton)
+			showPreviousParticle();
+		else if (source == nextButton)
+			showNextParticle();
+		else if (source == zoomOutButton)
+			unZoom();
 	}
 	
 	/**
@@ -304,13 +425,11 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		Dataset negDS = new Dataset(), posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
-			posDS.add(
-					new DataPoint(p.massToCharge, p.height));
+			posDS.add(new DataPoint(p.massToCharge, p.height));
 		}
 		for(Peak p : negPeaks)
 		{
-			negDS.add(
-					new DataPoint(-p.massToCharge, p.height));
+			negDS.add(new DataPoint(-p.massToCharge, p.height));
 		}
 
 		
@@ -329,6 +448,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		catch (Exception e)
 		{
 			System.err.println("Error loading spectrum");
+			e.printStackTrace();
 			posSpecDS = new Dataset();
 			negSpecDS = new Dataset();
 			//peakButton.setSelected(true);
@@ -343,7 +463,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	/**
 	 * Fetches the spectrum from the data file
 	 */
-	private void getSpectrum() throws SQLException, java.io.IOException, Exception
+	private void getSpectrum() throws SQLException, IOException, Exception
 	{
 		ResultSet rs;
 		int origDataSetID=0;
@@ -367,7 +487,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		try {
 			Statement stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT OrigDataSetID\n" +
-										"FROM OrigDataSets\n" +
+										"FROM DataSetMembers\n" +
 										"WHERE AtomID = " +
 										atomID);
 			rs.next();
@@ -386,7 +506,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 		try {
 			Statement stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT *\n" +
-					"FROM PeakCalibrationData\n" +
+					"FROM ATOFMSDataSetInfo\n" +
 					"WHERE DataSetID = " +
 					origDataSetID);
 			rs.next();
@@ -404,7 +524,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 			//create CalInfo object
 		try{
 			ATOFMSParticle.currCalInfo = new CalInfo(massCalFile, autocal);
-		} catch (java.io.IOException e)
+		} catch (IOException e)
 		{
 			//System.err.println("Exception opening calibration file");
 			JOptionPane.showMessageDialog(null,
@@ -453,7 +573,7 @@ public class PeaksChart extends JPanel implements MouseMotionListener, ActionLis
 	 * Handles the data for the table.
 	 * @author sulmanj
 	 */
-	private class PeaksTableModel extends javax.swing.table.AbstractTableModel
+	private class PeaksTableModel extends AbstractTableModel
 	{
 		/**
 		 * Comment for <code>serialVersionUID</code>

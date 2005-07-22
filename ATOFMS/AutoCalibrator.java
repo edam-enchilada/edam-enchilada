@@ -48,9 +48,7 @@
  * 
  * Window - Preferences - Java - Code Style - Code Templates
  */
-package msanalyze;
-
-import atom.*;
+package ATOFMS;
 
 /**
  * @author andersbe

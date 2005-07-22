@@ -58,8 +58,17 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JButton cancelButton;
 	private JTextField nameField;
 	private JTextField commentField;
+	private JTextField datatypeField;
+	private int collectionID = -1;
+	private String initialDatatype;
 	
-	public EmptyCollectionDialog (JFrame parent) {
+	public EmptyCollectionDialog(JFrame parent) {
+		this(parent, "", true);
+	}
+	
+	public EmptyCollectionDialog (JFrame parent, String datatype,
+			boolean datatypeEditable)
+	{
 		super (parent,"Empty Collection", true);
 		setDefaultLookAndFeelDecorated(true);
 		setSize(400,200);
@@ -77,6 +86,14 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		commentPanel.add(commentLabel);
 		commentPanel.add(commentField);
 		
+		JPanel datatypePanel = new JPanel();
+		JLabel datatypeLabel = new JLabel("Datatype: ");
+		datatypeField = new JTextField(25);
+		datatypeField.setText(datatype);
+		datatypeField.setEditable(datatypeEditable);
+		datatypePanel.add(datatypeLabel);
+		datatypePanel.add(datatypeField);
+		
 		JPanel buttonPanel = new JPanel();
 		okButton = new JButton("OK");
 		okButton.addActionListener(this);
@@ -88,6 +105,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		JPanel mainPanel = new JPanel();
 		mainPanel.add(namePanel);
 		mainPanel.add(commentPanel);
+		mainPanel.add(datatypePanel);
 		mainPanel.add(buttonPanel);
 		
 		add(mainPanel);
@@ -95,18 +113,29 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		setVisible(true);	
 	}
 	
+	/**
+	 * Accessor method.
+	 * 
+	 * @return	collectionID for new empty collection
+	 */
+	public int getCollectionID(){
+		
+		return collectionID;
+		
+	}
+	
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		if (source == okButton) {
 			SQLServerDatabase db = new SQLServerDatabase();
 			db.openConnection();
-			int test = db.createEmptyCollection(0,nameField.getText(),commentField.getText());
+			collectionID = db.createEmptyCollection(datatypeField.getText(), 0,nameField.getText(),commentField.getText(),"");
 			db.closeConnection();
-			System.out.println("Empty Collection ID: " + test);
+			System.out.println("Empty Collection ID: " + collectionID);
 			dispose();
 		}			
 		else  
 			dispose();
-}
+	}
 
 }

@@ -44,27 +44,22 @@
  */
 package analysis.clustering;
 
-import java.awt.FlowLayout;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
-import analysis.MedianFinder;
-import analysis.ParticleInfo;
 import analysis.SubSampleCursor;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
 import externalswing.SwingWorker;
-//import database.SQLServerDatabase;
 
 /**
  * An intermediate class to implement if you are using an 
@@ -95,8 +90,6 @@ public abstract class ClusterK extends Cluster {
 	private JLabel errorLabel;
 	private JFrame container;
 	
-
-	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
 	 * @param cID - collection ID
@@ -124,7 +117,7 @@ public abstract class ClusterK extends Cluster {
 	 * Divide refines the centroids if needed and calls the clustering method.
 	 * In the end, it finalizes the clusters by calling a method to report 
 	 * the centroids.
-	 * TODO:  The max number of subsamples clustered when we reifine centroids is 
+	 * TODO:  The max number of subsamples clustered when we refine centroids is 
 	 * 50.  We need a way to either validate this or a way to change it from the
 	 * application.  
 	 * 
@@ -146,7 +139,7 @@ public abstract class ClusterK extends Cluster {
 						sampleSize = numParticles/numSamples - 1;
 					db.seedRandom(90125);
 					CollectionCursor randCurs = 
-						db.getRandomizedCursor(collectionID);
+						db.getRandomizedCursor(db.getCollection(collectionID));
 					NonZeroCursor partCurs = null;
 					System.out.println("clustering subSamples:");
 					System.out.println("number of samples: " + numSamples);
@@ -270,35 +263,13 @@ public abstract class ClusterK extends Cluster {
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(collectionID));
+			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
 		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(collectionID));
+		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
 		return true;
 		default :
 			return false;
-		}
-	}
-	
-	/**
-	 * Sets the distance metric.  If using K-Means, the distance metric will always
-	 * be Euclidean Squared, since it is guaranteed to decrease.  If using K-Medians, the
-	 * distance metric will always be City Block, since it is guaranteed to decrease.
-	 * 
-	 * (non-Javadoc)
-	 * @see analysis.clustering.Cluster#setDistancMetric(int)
-	 */
-	public boolean setDistanceMetric(DistanceMetric method) {
-		distanceMetric = method;
-		if (method == DistanceMetric.CITY_BLOCK)
-			return true;
-		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
-			return true;
-		else if (method == DistanceMetric.DOT_PRODUCT)
-			return true;
-		else
-		{
-			throw new IllegalArgumentException("Illegal distance metric.");
 		}
 	}
 
@@ -347,8 +318,8 @@ public abstract class ClusterK extends Cluster {
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
 				curs.next();
-				centroidList.add(new Centroid(normalize(
-						curs.getCurrent().getBinnedList()),1));
+				curs.getCurrent().getBinnedList().normalize(distanceMetric);
+				centroidList.add(new Centroid(curs.getCurrent().getBinnedList(),1));
 			}
 			return centroidList;
 		}
@@ -381,7 +352,8 @@ public abstract class ClusterK extends Cluster {
 		    boolean status = curs.next();
 		    assert status : "Cursor is empty.";
 		    Centroid newCent = null; 
-		    newCent = new Centroid(normalize(curs.getCurrent().getBinnedList()),0);
+		    curs.getCurrent().getBinnedList().normalize(distanceMetric);
+		    newCent = new Centroid(curs.getCurrent().getBinnedList(),0);
 		  
 		    assert (newCent != null) : "Error adding centroid";
 		    centroidList.add(newCent);
@@ -393,7 +365,7 @@ public abstract class ClusterK extends Cluster {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
 						curs.getPeakListfromAtomID(thisParticleInfo.getID());
-						thisBinnedPeakList = normalize(thisBinnedPeakList);
+						thisBinnedPeakList.normalize(distanceMetric);
 					double nearestDistance = Double.MAX_VALUE;
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
@@ -440,7 +412,7 @@ public abstract class ClusterK extends Cluster {
 				ParticleInfo thisParticleInfo = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList =
 					curs.getPeakListfromAtomID(thisParticleInfo.getID());
-					thisBinnedPeakList = normalize(thisBinnedPeakList);
+					thisBinnedPeakList.normalize(distanceMetric);
 				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)

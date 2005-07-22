@@ -97,4 +97,12 @@ public class ValleyList extends ArrayList<Extremum> {
 							/expected);
 	}
 	
+	public float chiSquared(int valIndex) {
+		List<Extremum> val = getValleyNeighborhood(valIndex);
+		
+		float before = chiSquared(val.get(0), val.get(1));
+		float after = chiSquared(val.get(2), val.get(1));
+		
+		return before < after ? before : after; // the lesser of the two
+	}
 }

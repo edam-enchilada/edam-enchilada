@@ -1,9 +1,9 @@
 #Fat Jar Configuration File
-#Tue Jun 21 08:32:51 CDT 2005
+#Mon Jul 18 11:50:20 CDT 2005
 onejar.license.required=true
 manifest.classpath=
 onejar.checkbox=false
-jarname=edam-enchilada_fat.jar
+jarname=FatJar1.jar
 manifest.mergeall=true
 manifest.mainclass=gui.MainFrame
 manifest.file=<createnew>

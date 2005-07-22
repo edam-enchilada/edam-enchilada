@@ -41,6 +41,10 @@ public class SplitRule extends BinnedPeak {
 		return bucket;
 	}
 	
+	public List<DataWithSummary> splitAtoms(DataWithSummary atoms) {
+		return splitAtoms(atoms.getAtoms());
+	}
+	
 	public String toString() {
 		return "Split along dimension " + location + " at value " + area +
 			" (goodness " + goodness + ")";

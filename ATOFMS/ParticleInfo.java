@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's Particle class.
+ * The Original Code is EDAM Enchilada's ParticleInfo class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -39,41 +39,69 @@
 
 
 /*
- * Created on Jul 15, 2004
+ * Created on Aug 20, 2004
  */
-package atom;
-import java.util.ArrayList;
+package ATOFMS;
 
-
+import analysis.BinnedPeakList;
+import analysis.clustering.PeakList;
+import atom.ATOFMSAtomFromDB;
 
 /**
- * @author ritza
+ * This holds a peaklist, an ATOFMSAtomFromDB, and a 
+ * binnedPeaklist.  Not all of them will be initialized depending
+ * on which type of cursor your request.  
+ * 
+ * @author andersbe
  */
-public class Particle implements AtomicAnalysisUnit {
-
-	/**
-	 * Stores the size of the particle, according to its size calibration
-	 * file.  Defaults to zero if no size calibration file is loaded.  
-	 */
-	public float size;
+public class ParticleInfo {
+	private PeakList peakList;
+	private ATOFMSAtomFromDB particleInfo;
+	private BinnedPeakList binnedList;
+	private int ID;
 	
 	/**
-	 * The particle contains a posSpectrum and a negSpectrum, and the data
-	 * is stored as an array of ints.  The data consists of the height of each
-	 * bin.
+	 * @return Returns the particleInfo.
 	 */
-	public int[] posSpectrum;
-	public int[] negSpectrum;
-	
+	public ATOFMSAtomFromDB getParticleInfo() {
+		return particleInfo;
+	}
 	/**
-	 * The list of peaks for the particle is stored in an ArrayList.
+	 * @param particleInfo The particleInfo to set.
 	 */
-	protected ArrayList<Peak> peakList;
-		
+	public void setParticleInfo(ATOFMSAtomFromDB particleInfo) {
+		this.particleInfo = particleInfo;
+	}
 	/**
-	 * @return an arrayList of peaks for the particle.
+	 * @return Returns the peakList.
 	 */
-	public ArrayList<Peak> getPeakList() {	
+	public PeakList getPeakList() {
 		return peakList;
+	}
+	/**
+	 * @param peakList The peakList to set.
+	 */
+	public void setPeakList(PeakList peakList) {
+		this.peakList = peakList;
+	}
+	/**
+	 * @return Returns the binnedList.
+	 */
+	public BinnedPeakList getBinnedList() {
+		return binnedList;
+	}
+	/**
+	 * @param binnedList The binnedList to set.
+	 */
+	public void setBinnedList(BinnedPeakList binnedList) {
+		this.binnedList = binnedList;
+	}
+	
+	public void setID(int id) {
+		this.ID = id;
+	}
+	
+	public int getID() {
+		return ID;
 	}
 }

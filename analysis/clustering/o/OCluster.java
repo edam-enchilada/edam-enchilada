@@ -6,8 +6,8 @@ import database.InfoWarehouse;
 
 public class OCluster extends CollectionDivider
 {
-	RootPartition root;
-	InfoWarehouse db;
+	protected RootPartition root;
+	
 	
 	public OCluster(int cID, InfoWarehouse database, String name, String comment) {
 		super(cID, database, name, comment);
@@ -16,16 +16,23 @@ public class OCluster extends CollectionDivider
 		db = database;
 	}
 
-	//@Override
-	public boolean setCursorType(int type) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	@Override
 	public int divide() {
-		// so where are all these nifty little atoms stored, anyway?
+		// TODO: copy stuff from Cluster-y things with curs.next an' shit
 		return 0;
+	}
+	
+	public boolean setCursorType(int type) 
+	{
+		switch (type) {
+		case CollectionDivider.DISK_BASED :
+			curs = db.getBinnedCursor(collection);
+			return true;
+		case CollectionDivider.STORE_ON_FIRST_PASS : 
+			return false;
+		default :
+			return false;
+		}
 	}
 
 

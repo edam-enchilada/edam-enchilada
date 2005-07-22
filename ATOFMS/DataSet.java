@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's PeakParams class.
+ * The Original Code is EDAM Enchilada's Dataset class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -40,25 +40,68 @@
 
 /*
  * Created on Jul 15, 2004
+ *
  */
-package atom;
+package ATOFMS;
 
 /**
  * @author andersbe
  *
- * Minimum peak parameters.
+ * needed to export collections to the MS-Analyze database, and 
+ * to import DataSets as collections into the SpASMS database.  
  * 
  */
-public class PeakParams {
+public class DataSet {
 	
-	public int minHeight;
-	public int minArea;
-	public float minRelArea;
-		
-	public PeakParams (int h, int a, float relA) {
-		minHeight = h;
-		minArea = a;
-		minRelArea = relA;
+	/**
+	 * These variables are necessary to export the dataset to
+	 * the MS-Analyze database.
+	 */ 
+	private String name;
+	private ATOFMSParticle[] particles;
+	private PeakParams params;
+	private CalInfo calInfo;
+	
+	/**
+	 * Constructor.
+	 * @param n - name of the dataset
+	 * @param p - array of particles in the dataset
+	 * @param pp - peak list parameters for the dataset
+	 * @param c - calibration information for the dataset
+	 */
+	public DataSet (String n, ATOFMSParticle[] p, PeakParams pp, CalInfo c){
+		name = n;
+		particles = p;
+		params = pp;
+		calInfo = c;
 	}
-
+	
+	/**
+	 * @return dataset name
+	 */
+	public String getName(){
+		return name;
+	}
+	
+	/**
+	 * @return array of particles in dataset
+	 */
+	public ATOFMSParticle[] getParticles(){
+		return particles;
+	}
+	
+	/**
+	 * @return PeakParams object for dataset
+	 */
+	public PeakParams getParams(){
+		return params;
+	}
+	
+	/**
+	 * @return CalInfo object for dataset
+	 */
+	public CalInfo getCalInfo(){
+		return calInfo;
+	}
+	
 }

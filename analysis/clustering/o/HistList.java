@@ -14,6 +14,13 @@ package analysis.clustering.o;
  * A new method has been added, addPeak(float).  When you call it, it adds 1
  * to the count in the bin that the argument belongs in.
  * 
+ * 
+ * TODO: cause HistList to keep track of the number of unaccounted-for peaks,
+ * that is, the number of peak-height-0's, which is implicit in the data.
+ * Could maybe do this by changing all the (height/binWidth)'s to that plus 1.
+ * Then you could never effectively add a peak height 0, which would be weird.
+ * But you never actually want to in normal use so far...
+ * 
  * @author Thomas Smith
  */
 
@@ -24,15 +31,26 @@ public class HistList extends ArrayList<Integer> {
 	/**
 	 * I have no idea what a serialVersionUID is.
 	 */
-	private static final long serialVersionUID = 6682790280462067261L;
+	private static final long serialVersionUID = 6682890280462067261L;
 	private float binWidth;
+	private int particleCount;
+	private int hitCount;
 	
 	public HistList(float width) {
 		super();
 		binWidth = width;
+		particleCount = 0;
+		hitCount = 0;
 	}
 
-	public void incrementBy(int index, int elem) {
+	private int heightToIndex(float height) {
+		return 1 + (int)(height / binWidth);
+	}
+	private float indexToMinHeight(int index) {
+		return (index - 1) * binWidth;
+	}
+	
+	private void incrementBy(int index, int elem) {
 		// changed semantics:  When you add something past the end of a list,
 		// just add enough "0" elements for it to work.
 		try {
@@ -57,24 +75,30 @@ public class HistList extends ArrayList<Integer> {
 	
 	public Integer get(float height) {
 		try {
-			return super.get((int)(height / binWidth));
+			return super.get(heightToIndex(height));
 		} catch (IndexOutOfBoundsException e) {
 			return 0;
 		}
 	}
 	
 	public void addPeak(float height) {
-		this.incrementBy((int)(height / binWidth), 1);
+		this.incrementBy(heightToIndex(height), 1);
+		hitCount++;
+		this.set(0, particleCount - hitCount);
+	}
+	
+	public void addToParticleCount(int count) {
+		particleCount += count;
 	}
 	
 	public float getIndexMin(int index) {
-		return index * binWidth;
+		return indexToMinHeight(index);
 	}
 	public float getIndexMax(int index) {
-		return (index+1) * binWidth;
+		return indexToMinHeight(index + 1);
 	}
 	public float getIndexMiddle(int index) {
-		return (index + 0.5f) * binWidth;
+		return indexToMinHeight(index) + (0.5f * binWidth);
 	}
 	
 	public float getBinWidth() {

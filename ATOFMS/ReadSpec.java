@@ -43,7 +43,7 @@
  * Created on Jul 28, 2004
  *
  */
-package msanalyze;
+package ATOFMS;
 
 import java.io.*;
 import java.text.DateFormat;
@@ -52,7 +52,6 @@ import java.util.Date;
 import java.util.zip.*;
 import java.nio.*;
 
-import atom.*;
 /**
  * @author ritza
  * TODO:  Needs a lot of work to reformat the data.  See the todo

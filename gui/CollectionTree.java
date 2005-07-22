@@ -48,9 +48,14 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
 
+import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
+
 import java.awt.Cursor;
-import java.awt.GridLayout;
+import java.awt.BorderLayout;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
 import java.util.Vector;
 
 import collection.*;
@@ -72,28 +77,34 @@ public class CollectionTree extends JPanel
 	implements TreeSelectionListener 
 { 
 	private JTree tree; //Collection tree
+	private CollectionModel treeModel;
 
 	private InfoWarehouse db;
 	
 	private MainFrame parentFrame = null;
-	public CollectionTree(InfoWarehouse database, MainFrame pFrame) {
-	
-        super(new GridLayout(1,0));
+	public CollectionTree(InfoWarehouse database, MainFrame pFrame, boolean forSynchronized) {
+        super(new BorderLayout());
+        
+        String treeTitle = forSynchronized ? "Synchronized Time Series" : "Collections";
+        int selectionMode = forSynchronized ? TreeSelectionModel.SINGLE_TREE_SELECTION 
+        									: TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION;
         db = database;
         
         //Create a tree that allows one selection at a time.
-        tree = new JTree(new CollectionModel(db));
+        tree = new JTree(treeModel = new CollectionModel(db, forSynchronized));
         tree.setRootVisible(false); // hides the root.
         tree.setShowsRootHandles(true); // shows +/- expand handles on 
         								// root level nodes
-        tree.getSelectionModel().setSelectionMode
-                (TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(selectionMode);
         tree.addTreeSelectionListener(this);
         parentFrame = pFrame;
         
+        DefaultTreeCellRenderer r = new DefaultTreeCellRenderer();
+        r.setLeafIcon(r.getClosedIcon());
+        tree.setCellRenderer(r);
         
-        JScrollPane pane = new JScrollPane(tree);
-        add(pane);
+        add(new JLabel(treeTitle, SwingConstants.CENTER), BorderLayout.NORTH);
+        add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
 	
     
@@ -103,42 +114,90 @@ public class CollectionTree extends JPanel
         Collection node = 
         	(Collection)tree.getLastSelectedPathComponent();
         if (node == null) return;
-        // Selection will display data in particles table - wire here.
-        //System.out.println(node.getCollectionID());
-        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        ArrayList<ATOFMSParticleInfo> particleInfo = db.getCollectionParticles(node.getCollectionID());
-        Vector<Object> nextRow = null;
-        Vector<Vector<Object>> particleTable = parentFrame.getData();
-        particleTable.clear();
-        
-        for (int i = 0; i < particleInfo.size(); i++)
-        {
-        	nextRow = new Vector<Object>(4);
-        	nextRow.add(new Integer(particleInfo.get(i).getAtomID()));
-        	nextRow.add(particleInfo.get(i).getFilename());
-        	nextRow.add(new Float(particleInfo.get(i).getSize()));
-        	nextRow.add(particleInfo.get(i).getDateString());
-        	particleTable.add(nextRow);
-        	
-        }
-        parentFrame.getParticlesTable().tableChanged(new TableModelEvent(
-        		parentFrame.getParticlesTable().getModel()));
-        parentFrame.getParticlesTable().doLayout();
-        //parentFrame.getParticlesTable().changeSelection(0,0,false,false);
-        parentFrame.validate();
-        
-        parentFrame.editText(MainFrame.DESCRIPTION,db.getCollectionDescription(node.getCollectionID()));
-        parentFrame.setCursor(Cursor.getPredefinedCursor
-                (Cursor.DEFAULT_CURSOR));
-    }
+        parentFrame.collectionSelected(this, node);
 
+    }
+    
+    public void clearSelection() {
+    	tree.clearSelection();
+    }
+    
+    public void expandToFind(int collectionID) {
+    	Collection rootNode = (Collection) treeModel.getRoot();
+    }
+    
     public void updateTree()
     {
-    	((CollectionModel)tree.getModel()).fireTreeStructureChanged(
-    			(Collection) tree.getModel().getRoot());
+    	treeModel.fireTreeStructureChanged((Collection) treeModel.getRoot());
+    }
+    
+    public ArrayList<Collection> getCollectionsInTreeOrderFromRoot(int depthToStart, Collection collection) {
+    	Collection[] collectionList = getCollectionsUpFrom(collection);
+    	
+    	ArrayList<Collection> collections = new ArrayList<Collection>();
+    	
+    	return getCollectionsInTreeOrderFromRootRec("", collectionList[depthToStart], collections, true);
+    }
+    
+    private ArrayList<Collection> getCollectionsInTreeOrderFromRootRec(String prefixSoFar, 
+    		Collection rootNode, ArrayList<Collection> curCollectionList, boolean isRoot) {
+
+    	String newPrefix = "";
+    	
+    	if (!isRoot) {
+	    	newPrefix = (prefixSoFar == "") ? rootNode.getName() : 
+	    									  prefixSoFar + " : " + rootNode.getName();
+	    	
+	    	curCollectionList.add(new Collection(newPrefix, rootNode.getDatatype(), rootNode.getCollectionID(), db));
+    	}
+    	
+    	for (int i = 0; i < treeModel.getChildCount(rootNode); i++) {
+    		Collection node = (Collection) treeModel.getChild(rootNode, i);
+    		
+    		getCollectionsInTreeOrderFromRootRec(newPrefix, node, curCollectionList, false);
+    	}
+    	
+    	return curCollectionList;
+    }
+    
+    
+    public Collection[] getCollectionsUpFrom(Collection collection) {
+    	return getCollectionsUpFromRec(1, (Collection) treeModel.getRoot(), collection);
+    }
+
+    private Collection[] getCollectionsUpFromRec(int depth, Collection curNode, Collection collectionToFind) {
+    	Collection[] foundList = null;
+    	
+		if (curNode.equals(collectionToFind)) 
+			foundList = new Collection[depth];
+		
+    	for (int i = 0; foundList == null && i < treeModel.getChildCount(curNode); i++) {
+    		Collection childNode = (Collection) treeModel.getChild(curNode, i);
+    		foundList = getCollectionsUpFromRec(depth + 1, childNode, collectionToFind);
+    	}
+    	
+		if (foundList != null)
+			foundList[depth - 1] = curNode;
+		
+    	return foundList;
+    	
+    }
+    
+    public Collection[] getSelectedCollections() {
+    	TreePath[] tps = tree.getSelectionPaths();
+    	if (tps != null) {
+	    	Collection[] selected = new Collection[tps.length];
+	    	for (int i = 0; i < tps.length; i++)
+	    		selected[i] =  (Collection) tps[i].getLastPathComponent();
+	    	
+	    	return selected;
+    	} else 
+    		return null;
     }
     
     public Collection getSelectedCollection(){
-    	return (Collection) tree.getSelectionPath().getLastPathComponent();
+    	TreePath tp = tree.getSelectionPath();
+    	
+    	return tp == null ? null : (Collection) tp.getLastPathComponent();
     }
 }

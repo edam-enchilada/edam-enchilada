@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's AtomicAnalysisUnit class.
+ * The Original Code is EDAM Enchilada's Peak class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -39,25 +39,48 @@
 
 
 /*
- * Created on Jul 15, 2004
- *
+ * Created on Jul 28, 2004
  */
-package atom;
-import java.util.*;
-
+package ATOFMS;
 
 /**
- * The AtomicAnalysisUnit is an interface that the Particle 
- * class will implement.  The interface will be most useful 
- * when we generalize the data so other data types will be 
- * able to implement it.
- * @author andersbe
+ * @author ritza
+ * 
+ * Peak can be constructed with height, area, rel. area and m/z or just height,
+ * area, and m/z.
  */
-public interface AtomicAnalysisUnit {
+public class Peak {
+	public int height;
+	public int area;
+	public float relArea;
+	public double massToCharge;
+	
+	public Peak (int h, int a, float relA, double mz)
+	{
+		height = h;
+		area = a;
+		relArea = relA;
+		massToCharge = mz;
+	}
+	
+	public Peak (int h, int a, double mz)
+	{
+		height = h;
+		area = a;
+		relArea = 0;
+		massToCharge = mz;
+	}
 	
 	/**
-	 * @return an arrayList of the peaks for the atom
+	 * prints peak.
 	 */
-	public ArrayList<Peak> getPeakList();
-	
+	public String toString()
+	{
+		String returnThis =
+			"Location: " + massToCharge + 
+			" Height: " + height +
+			" Area: " + area + 
+			" Rel. Area: " + relArea;
+		return returnThis;
+	}
 }

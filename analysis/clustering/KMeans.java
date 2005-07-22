@@ -111,7 +111,7 @@ public class KMeans extends ClusterK
 			// Using the atomID, find the atom's peak list.
 			atomID = particlesInCentroid.get(i).intValue();
 			thisBinnedPeakList = curs.getPeakListfromAtomID(atomID);
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			
 			j = thisBinnedPeakList.iterator();
 			// For every location in the binned list, add that area to the new list.
@@ -126,7 +126,8 @@ public class KMeans extends ClusterK
 		newList.divideAreasBy(thisCentroid.numMembers);
 		
 		//Create and return a centroid with the new list and 0 members.
-		Centroid newCentroid = new Centroid(normalize(newList), 0);
+		newList.normalize(distanceMetric);
+		Centroid newCentroid = new Centroid(newList, 0);
 		return newCentroid;
 	}
 }

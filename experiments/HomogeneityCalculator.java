@@ -22,7 +22,6 @@ import database.SQLServerDatabase;
  * Window - Preferences - Java - Code Style - Code Templates
  */
 public class HomogeneityCalculator {
-	
 	public static void main(String args[])
 	{
 		switch(Integer.parseInt(args[0])) {

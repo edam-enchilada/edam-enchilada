@@ -45,7 +45,8 @@ package gui;
 
 import javax.swing.table.AbstractTableModel;
 
-import analysis.ParticleInfo;
+import ATOFMS.ParticleInfo;
+
 
 import database.CollectionCursor;
 import database.InfoWarehouse;
@@ -70,7 +71,7 @@ public class AtomTableModel extends AbstractTableModel {
 		super();
 		this.db = db;
 		this.collectionID = collectionID;
-		curs = db.getParticleInfoOnlyCursor(collectionID);
+		curs = db.getAtomInfoOnlyCursor(db.getCollection(collectionID));
 	}
 
 	/* (non-Javadoc)

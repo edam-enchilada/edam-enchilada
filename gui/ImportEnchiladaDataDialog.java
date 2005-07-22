@@ -47,7 +47,10 @@
  */
 package gui;
 
-import generalImporter.EnchiladaDataSetImporter;
+import dataImporters.OldImporter;
+import dataImporters.EnchiladaDataSetImporter;
+import database.DynamicTableGenerator;
+import database.SQLServerDatabase;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -57,7 +60,12 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -68,10 +76,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.table.TableColumn;
+
 
 /**
  * @author ritza
+ * @author steinbel
  *
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates
@@ -80,10 +91,14 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 	
 		private JButton okButton;
 		private JButton cancelButton;
-		private ParTableModel pTableModel;
+		private JButton dataTypeButton;
+		private EnchiladaDataTableModel eTableModel;
 		private int dataSetCount;
 		private static Window parent = null;
 		private boolean exceptions = false;
+		private SQLServerDatabase db = MainFrame.db;
+		private JTextArea typelist;
+		
 		/**
 		 * Extends JDialog to form a modal dialogue box for importing 
 		 * par files.  
@@ -96,15 +111,17 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		public ImportEnchiladaDataDialog(Frame owner) throws HeadlessException {
 			// calls the constructor of the superclass (JDialog), sets the title and makes the
 			// dialog modal.  
-			super(owner, "Import MS-Analyze *.pars as Collections", true);
+			super(owner, "Import Enchilada Data Sets as Collections", true);
 			parent = owner;
 			setSize(500,600);
 			
 			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			
-			JTable parTable = getParTable();
+
+			JTable edTable = getEnchiladaDataTable();
 			
-			JScrollPane scrollPane = new JScrollPane(parTable);
+			JScrollPane scrollPane = new JScrollPane(edTable);
+			
 			
 			okButton = new JButton("OK");
 			okButton.setMnemonic(KeyEvent.VK_O);
@@ -114,16 +131,72 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			cancelButton.setMnemonic(KeyEvent.VK_C);
 			cancelButton.addActionListener(this);
 			
-			scrollPane.setPreferredSize(new Dimension(300, 100));
+			scrollPane.setPreferredSize(new Dimension(300, 200));
 			
 			JPanel listPane = new JPanel();
 			listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
-			JLabel label = new JLabel("Choose Datasets to Convert");
-			label.setLabelFor(parTable);
+			JLabel label = new JLabel("<html>Choose Enchilada Data files to import."
+					+ "  <font size = 2>If a dataset is spanned by more than one file, the files"
+					+ " must be imported in order.</font></html>");
+			label.setLabelFor(edTable);
+			
 			listPane.add(label);
 			listPane.add(Box.createRigidArea(new Dimension(0,5)));
 			listPane.add(scrollPane);
 			listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+			
+			listPane.add(Box.createRigidArea(new Dimension(0, 25)));
+			
+			//create a new textarea (typelist) for a list of the datatypes
+			typelist = new JTextArea(50, 70);
+			
+			//populate it with the names of the known datatypes
+			ArrayList<String> typeNames = new ArrayList<String>();			
+			typeNames = db.getKnownDatatypes();
+			
+			for (String type : typeNames)
+				typelist.append(type + "\n");
+			
+			typelist.setEditable(false);
+			
+			//create a label for the typelist
+			JLabel listLabel = new JLabel("Known datatypes");
+			
+			JLabel newTypeLabel = new JLabel();
+			newTypeLabel.setText("<html>To import data"
+					+ " of an unlisted type, import a metadata file for the" 
+					+ " new datatype.</html>");
+			newTypeLabel.setMaximumSize(new Dimension(150, 60));
+			
+			//button to pop up the FilePickerEditor
+			dataTypeButton = new JButton("Choose .md file");
+			dataTypeButton.setMnemonic(KeyEvent.VK_H);
+			dataTypeButton.addActionListener(this);
+			
+			//contain all the datatype information in one place
+			JPanel metaDataPane = new JPanel();
+			metaDataPane.setLayout(new BoxLayout(metaDataPane, BoxLayout.X_AXIS));
+			
+			JPanel typePane = new JPanel();
+			typePane.setLayout(new BoxLayout(typePane, BoxLayout.Y_AXIS));
+			typePane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+			typePane.add(listLabel);
+			typePane.add(Box.createRigidArea(new Dimension(0,5)));
+			typePane.add(typelist);
+			
+			JPanel choosePane = new JPanel();
+			choosePane.setLayout(new BoxLayout(choosePane, BoxLayout.Y_AXIS));
+			choosePane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+			choosePane.add(newTypeLabel);
+			choosePane.add(Box.createRigidArea(new Dimension(0,5)));
+			choosePane.add(dataTypeButton);
+			
+			metaDataPane.add(typePane);
+			metaDataPane.add(Box.createRigidArea(new Dimension(30, 0)));
+			metaDataPane.add(choosePane);
+			
+			listPane.add(metaDataPane);
+			
 			
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
@@ -140,32 +213,104 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			setVisible(true);	
 		}
 		
-		private JTable getParTable()
-		{
-			pTableModel = new ParTableModel(2);
-			JTable pTable = new JTable(pTableModel);	
+	
+		private JTable getEnchiladaDataTable(){
 			
-			TableColumn numColumn = pTable.getColumnModel().getColumn(0);
+			eTableModel = new EnchiladaDataTableModel();
+			JTable eTable = new JTable(eTableModel);
+			
+			TableColumn numColumn = eTable.getColumnModel().getColumn(0);
 			numColumn.setPreferredWidth(10);
-			TableColumn list = pTable.getColumnModel().getColumn(1);
-			ArrayList<String> filters = new ArrayList<String>();
-			filters.add("edsf");
-			filters.add("edmf");
-			list.setCellEditor(
-					new FilePickerEditor(filters,"Import",this));
+			TableColumn list = eTable.getColumnModel().getColumn(1);
+			list.setCellEditor(new FilePickerEditor("ed", "Import", this));
 			list.setPreferredWidth(250);
 			
-			return pTable;
+			return eTable;
+			
 		}
+		
 		
 		public void actionPerformed(ActionEvent e)
 		{
 			Object source = e.getSource();
 			if (source == okButton) {
-					new EnchiladaDataSetImporter(pTableModel);
-					dispose();
+				/*EnchiladaDataSetImporter edsi =
+					new EnchiladaDataSetImporter(eTableModel);
+				if (edsi.exceptionsExist()){
+					//get the messages from edsi, display them appropriately
+					ArrayList<String[]> messageList = edsi.getErrors();
+					//display multiple exceptions in same dialog
+					messageList.add(0, new String[]{"The following errors were",
+							" reported during importation: "});
+					for (String[] message : messageList){
+						for(int i=0; i<message.length; i++)
+							System.out.print(message[i]);
+					}
+					ExceptionDialog edialog = new ExceptionDialog(this, messageList);
+					}*/
+				EnchiladaDataSetImporter importer = new EnchiladaDataSetImporter(db);
+				ArrayList<String> files = importer.collectTableInfo(eTableModel);
+				importer.importFiles(files);
+				dispose();
 			}
 			else if (source == cancelButton)
 				dispose();
+			
+			else if (source == dataTypeButton){
+						
+				FilePicker fp = new FilePicker("Import", "md", this);
+				String fileName = fp.getFileName();
+				
+				if (fileName != null){
+					File file;
+					Scanner scan;
+					String typeName = "";
+					
+					try {
+						file = new File(fileName);
+						scan = new Scanner(file);
+						//find the datatype information.  eeww.
+						boolean found = false;
+						while (!found){
+							String next = scan.next();
+							if (next.contains("datatype")){
+								//find the thingy
+								int marker = next.indexOf("=");
+								//increment & decrement to get around quotes
+								next = next.substring(marker+2, next.length()-2);
+								System.out.println(next);
+								typeName = next;
+								found = true;
+							}
+						}
+						
+						
+						if (!db.containsDatatype(typeName)){						
+							Connection con = db.getCon();
+							DynamicTableGenerator newType =
+								new DynamicTableGenerator(con);
+							
+							//OldDynamicTableGenerator newType = new OldDynamicTableGenerator(file, con);
+							
+							typeName = newType.createTables(fileName);
+							//TODO: check for format, SQL errors in creation for GUI?
+							typelist.append(typeName + "\n");
+						}
+						
+						//if the scanner couldn't find anything, the file's not
+						//in the right format
+					} catch (NoSuchElementException e1){
+						ExceptionDialog edialog = new ExceptionDialog(this,
+								"Please check .md file " + fileName + 
+								" for correct format.");
+						
+					} catch (FileNotFoundException e1) {
+						ExceptionDialog edialog = new ExceptionDialog(this,
+								"Problems creating new datatype from " + fileName);
+						//System.err.println("Problems creating new datatype.");
+						//e1.printStackTrace();
+					}					
+				}
+			}
 		}
 }

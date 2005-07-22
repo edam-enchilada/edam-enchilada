@@ -10,9 +10,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.ZipException;
 
-import atom.ATOFMSParticle;
+import ATOFMS.ATOFMSParticle;
+import ATOFMS.ReadSpec;
 
-import msanalyze.ReadSpec;
+
 
 /**
  * @author ritza

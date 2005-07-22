@@ -11,7 +11,8 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's ParticleInfo class.
+ * The Original Code is EDAM Enchilada's DistanceMetric 
+ * enumeration.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -37,70 +38,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-
-/*
- * Created on Aug 20, 2004
- */
-package analysis;
-
-import gui.ATOFMSParticleInfo;
-import analysis.clustering.PeakList;
+package database;
 
 /**
- * This holds a peaklist, an ATOFMSParticleInfo, and a 
- * binnedPeaklist.  Not all of them will be initialized depending
- * on which type of cursor your request.  
- * 
  * @author andersbe
+ *
  */
-public class ParticleInfo {
-	private PeakList peakList;
-	private ATOFMSParticleInfo particleInfo;
-	private BinnedPeakList binnedList;
-	private int ID;
-	
-	/**
-	 * @return Returns the particleInfo.
-	 */
-	public ATOFMSParticleInfo getParticleInfo() {
-		return particleInfo;
-	}
-	/**
-	 * @param particleInfo The particleInfo to set.
-	 */
-	public void setParticleInfo(ATOFMSParticleInfo particleInfo) {
-		this.particleInfo = particleInfo;
-	}
-	/**
-	 * @return Returns the peakList.
-	 */
-	public PeakList getPeakList() {
-		return peakList;
-	}
-	/**
-	 * @param peakList The peakList to set.
-	 */
-	public void setPeakList(PeakList peakList) {
-		this.peakList = peakList;
-	}
-	/**
-	 * @return Returns the binnedList.
-	 */
-	public BinnedPeakList getBinnedList() {
-		return binnedList;
-	}
-	/**
-	 * @param binnedList The binnedList to set.
-	 */
-	public void setBinnedList(BinnedPeakList binnedList) {
-		this.binnedList = binnedList;
-	}
-	
-	public void setID(int id) {
-		this.ID = id;
-	}
-	
-	public int getID() {
-		return ID;
-	}
+public enum DynamicTable {
+	DataSetInfo, AtomInfoDense, AtomInfoSparse
 }

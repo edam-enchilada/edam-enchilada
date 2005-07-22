@@ -46,6 +46,7 @@ package gui;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 /**
  * @author ritza
@@ -85,6 +86,95 @@ public class ExceptionDialog extends JDialog implements ActionListener{
 		//Display the dialogue box.
 		pack();
 		setVisible(true);
+	}
+	
+	/**
+	 * ExceptionDialog without a title, to be used when no parent frame is known.
+	 * 
+	 * @param message - the message to be displayed.
+	 */
+	public ExceptionDialog(String[] message){
+		super();
+//		Make sure we have nice window decorations.
+		setDefaultLookAndFeelDecorated(true);
+		setSize(400,400);
+		
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+		
+		JLabel label;
+		for (int i=0;i<message.length;i++) {
+			label = new JLabel(message[i]);
+			panel.add(label);
+		}
+		button = new JButton("OK");
+		button.addActionListener(this);
+		panel.add(button);
+		
+		add(panel); // Add the panel to the dialogue box.
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		
+		//Display the dialogue box.
+		pack();
+		setVisible(true);
+	}
+	
+	public ExceptionDialog(String message){
+		new ExceptionDialog(new String[]{message});
+	}
+	
+	/**
+	 * ExceptionDialog constructor to handle multiple error messages at the same
+	 * time.
+	 * 
+	 * @param frame - the parent JFrame
+	 * @param messages -  The messages you wish to have displayed.  Each String[]
+	 * 						is a distinct message.
+	 */
+	public ExceptionDialog(JDialog frame, ArrayList<String[]> messages){
+		super(frame, "Error", true);
+		
+		setDefaultLookAndFeelDecorated(true);
+		setSize(400, 400);
+		
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+		
+		JLabel label;
+		// for each separate message, put it on a separate line
+		for (String[] newMessage : messages){
+			
+			label = new JLabel();
+			//insert all the info from the message
+			String longMessage = "";
+			for (int i=0; i<newMessage.length; i++)
+				longMessage = longMessage.concat(newMessage[i]);
+			
+			//System.out.println(longMessage);
+			label.setText(longMessage);
+			panel.add(label);
+			
+		}
+		button = new JButton("OK");
+		button.addActionListener(this);
+		panel.add(button);
+		
+		add(panel); // Add the panel to the dialogue box.
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		
+		//Display the dialogue box.
+		pack();
+		setVisible(true);
+	}
+	
+	/**
+	 * Constructor.
+	 * @param frame - parent JFrame.
+	 * @param message - error message.
+	 */
+	public ExceptionDialog(JDialog frame, String message){
+		String[] array = {message};
+		new ExceptionDialog(frame, array);
 	}
 	
 	/*

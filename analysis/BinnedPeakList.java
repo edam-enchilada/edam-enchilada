@@ -222,13 +222,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		if (dMetric == DistanceMetric.DOT_PRODUCT)
 		    distance = 1-distance;
 
-		assert distance < 2.01 :
-		    "Distance should be <= 2.0, actually is " + distance +"\n" 
-		    + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
-		    + getMagnitude(dMetric) + "\n" ;
+		//assert distance < 2.01 :
+		 //   "Distance should be <= 2.0, actually is " + distance +"\n" 
+		  //  + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
+		   // + getMagnitude(dMetric) + "\n" ;
+		
 		if (distance > 2) {
 			//System.out.println("Rounding off " + distance +
-			//		"to 2.0");
+			//		" to 2.0");
 			distance = 2.0f;
 		}
 		
@@ -361,6 +362,26 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	/**
+	 * A method to normalize this BinnedPeakList.  Depending 
+	 * on which distance metric is
+	 * used, this method will adapt to produce a distance of one 
+	 * from <0,0,0,....,0> to the vector represented by the list.
+	 * @param 	dMetric the distance metric to use to measure length
+	 */
+	public void normalize(DistanceMetric dMetric)
+	{
+		float magnitude = getMagnitude(dMetric);
+		
+		Map.Entry<Integer,Float> entry;
+		Iterator<Map.Entry<Integer,Float>> iterator = peaks.entrySet().iterator();
+		
+		while (iterator.hasNext()) {
+			entry = iterator.next();
+			entry.setValue(entry.getValue() / magnitude);
+		}
+	}
+	
 	public Iterator<BinnedPeak> iterator() {
 		return new Iter(this);
 	}
@@ -384,5 +405,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
+	
 	}
 }

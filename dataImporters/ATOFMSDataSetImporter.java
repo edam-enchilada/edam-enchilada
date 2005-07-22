@@ -42,7 +42,7 @@
  * Created on Aug 3, 2004
  *
  */
-package msanalyze;
+package dataImporters;
 
 import database.SQLServerDatabase;
 import externalswing.SwingWorker;
@@ -53,12 +53,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import atom.ATOFMSParticle;
-import atom.PeakParams;
+import ATOFMS.*;
 
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.Window;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
 import java.lang.reflect.InvocationTargetException;
@@ -68,6 +68,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
+
+import collection.Collection;
+
 
 /**
  * @author ritza
@@ -81,6 +84,7 @@ public class ATOFMSDataSetImporter {
 	private ParTableModel table;
 	private Window mainFrame;
 	private ImportParsDialog ipd;
+	private boolean parent;
 	
 	//Table values - used repeatedly.
 	private int rowCount;
@@ -133,7 +137,9 @@ public class ATOFMSDataSetImporter {
 	 * datasets row by row.
 	 */
 	public void collectTableInfo() {
+		
 		rowCount = table.getRowCount()-1;
+		totalInBatch = rowCount;
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
 			try {
@@ -145,6 +151,7 @@ public class ATOFMSDataSetImporter {
 				area = ((Integer)table.getValueAt(i,5)).intValue();
 				relArea = ((Float)table.getValueAt(i,6)).floatValue();
 				autoCal = ((Boolean)table.getValueAt(i,7)).booleanValue();
+				positionInBatch = i + 1;
 				// Call relevant methods
 				processDataSet(i);
 				readParFileAndCreateEmptyCollection();
@@ -189,15 +196,7 @@ public class ATOFMSDataSetImporter {
 			ATOFMSParticle.currCalInfo = calInfo;
 			ATOFMSParticle.currPeakParams = peakParams;
 			
-			/*
-			//TODO: datatype stuff here.
-			// get datatype and create table if needed.
-			String ext = file.toString();
-			ext = ext.substring(ext.lastIndexOf("."));
-			Datatype type = new Datatype(ext);
-			if (!type.tableExists()) 
-				type.createTable();
-				*/	
+			// NOTE: Datatype is already in the db.
 		}
 	}
 	
@@ -250,9 +249,25 @@ public class ATOFMSDataSetImporter {
 		System.out.println(data[2]);
 		System.out.println(massCalFile);
 		System.out.println(sizeCalFile);
-		id = db.createEmptyCollectionAndDataset(0,data[0],data[2],
-				massCalFile,sizeCalFile, ATOFMSParticle.currCalInfo,
-				ATOFMSParticle.currPeakParams);
+		int bool = -1;
+		if (ATOFMSParticle.currCalInfo.autocal)
+			bool = 1;
+		else bool = 0;
+		String dSet = parFile.toString();
+		dSet = dSet.substring(dSet.lastIndexOf(File.separator)+1, dSet.lastIndexOf("."));
+		
+		//if datasets are imported into a parent collection
+		//pass parent's id in as second parameter, else parentID is root (0)
+		int parentID = 0;
+		if (ipd.parentExists())
+			parentID = ipd.getParentID();
+		
+		id = db.createEmptyCollectionAndDataset("ATOFMS",parentID,data[0],data[2],
+				"'" + massCalFile + "', '" + sizeCalFile + "', " +
+				ATOFMSParticle.currPeakParams.minHeight + ", " + 
+				ATOFMSParticle.currPeakParams.minArea  + ", " + 
+				ATOFMSParticle.currPeakParams.minRelArea + ", " + 
+				bool);
 	}
 	
 	/**
@@ -297,6 +312,8 @@ public class ATOFMSDataSetImporter {
 							String name = parent.getName();
 							name = parent.toString()+ File.separator + name + ".set";
 							
+							Collection destination = db.getCollection(id[0]);
+							ATOFMSParticle currentParticle;
 							
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
 							StringTokenizer token;
@@ -304,6 +321,7 @@ public class ATOFMSDataSetImporter {
 							particleNum = 0;
 							//int doDisplay = 4;
 							int nextID = db.getNextID();
+							Collection curCollection = db.getCollection(id[0]);
 							while (readSet.ready()) { // repeat until end of file.
 								token = new StringTokenizer(readSet.readLine(), ",");
 								token.nextToken();
@@ -311,7 +329,14 @@ public class ATOFMSDataSetImporter {
 								particleFileName = grandParent.toString() + File.separator + particleName;
 								
 								read = new ReadSpec(particleFileName);
-								db.insertATOFMSParticle(read.getParticle(),id[0],id[1],nextID);
+								
+								// TODO: test this stuff
+								currentParticle = read.getParticle();
+								db.insertParticle(
+
+										currentParticle.particleInfoDenseString(),
+										currentParticle.particleInfoSparseString(),
+										destination,id[1],nextID);
 								nextID++;
 								particleNum++;
 								//doDisplay++;
@@ -353,6 +378,7 @@ public class ATOFMSDataSetImporter {
 							final String exceptionFile = particleName;
 						}catch (Exception e) {
 							try {
+								e.printStackTrace();
 								final String exception = e.toString();
 								SwingUtilities.invokeAndWait(new Runnable() {
 									public void run()
@@ -363,6 +389,7 @@ public class ATOFMSDataSetImporter {
 									}
 								});
 							} catch (Exception e2) {
+								e2.printStackTrace();
 								String[] s = {"ParticleException: ", e2.toString()};
 								ipd.displayException(s);
 							}

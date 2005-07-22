@@ -40,11 +40,9 @@
 
 package analysis.clustering;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
+
 
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;

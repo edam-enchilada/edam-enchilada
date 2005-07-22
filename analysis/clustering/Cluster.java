@@ -47,16 +47,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
-//import java.util.Arrays;
 
 import database.CollectionCursor;
 import database.InfoWarehouse;
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
-import analysis.MedianFinder;
-import analysis.ParticleInfo;
 
 /**
  * @author andersbe
@@ -68,7 +66,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	
-	DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
+	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	private static final int MAX_LOCATION = 2500;
 	private static int DOUBLE_MAX = MAX_LOCATION * 2;
 	private float[] longerLists = new float[MAX_LOCATION * 2];
@@ -91,12 +89,29 @@ public abstract class Cluster extends CollectionDivider {
 	}
 	
 	/**
-	 * See CollectionDivider for a description of how to 
-	 * implement this method.
-	 * @param method
-	 * @return
+	 * 
+	 * 
+	 * Sets the distance metric.  If using K-Means, the distance metric will always
+	 * be Euclidean Squared, since it is guaranteed to decrease.  If using K-Medians, the
+	 * distance metric will always be City Block, since it is guaranteed to decrease.
+	 * 
+	 * (non-Javadoc)
+	 * @see analysis.clustering.Cluster#setDistancMetric(int)
 	 */
-	public abstract boolean setDistanceMetric(DistanceMetric method);
+	public boolean setDistanceMetric(DistanceMetric method) {
+		distanceMetric = method;
+		if (method == DistanceMetric.CITY_BLOCK)
+			return true;
+		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
+			return true;
+		else if (method == DistanceMetric.DOT_PRODUCT)
+			return true;
+		else
+		{
+			throw new IllegalArgumentException("Illegal distance metric.");
+		}
+	}
+	
 	
 	/**
 	 * Prints out each peak in a peaklist.  Used for reporting results.
@@ -115,30 +130,6 @@ public abstract class Cluster extends CollectionDivider {
 			tempPeak = iter.next();
 			out.println(tempPeak.location + "\t" + tempPeak.area);
 		}
-	}
-	
-	/**
-	 * A method to produce a normalized BinnedPeakList from a
-	 * non-normalized one.  Depending on which distance metric is
-	 * used, this method will adapt to produce a distance of one 
-	 * from <0,0,0,....,0> to the vector represented by the list
-	 * @param 	list A list to normalize
-	 * @return 	a new BinnedPeaklist that represents list 
-	 * 			normalized.
-	 */
-	protected BinnedPeakList normalize(BinnedPeakList list)
-	{
-		float magnitude = list.getMagnitude(distanceMetric);
-		BinnedPeakList returnList = new BinnedPeakList();
-		BinnedPeak temp;
-		Iterator<BinnedPeak> iter = list.iterator();
-		while (iter.hasNext()) {
-			temp = iter.next();
-			if ((float)(temp.area / magnitude) != 0.0f)
-				returnList.addNoChecks(temp.location, 
-						temp.area / magnitude);
-		}
-		return returnList;
 	}
 		
 	/**
@@ -242,7 +233,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the max distance (2.0)
 			// since that centroid would not be considered
 			nearestDistance = 3.0f;
@@ -300,7 +291,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the max distance (2.0)
 			// since that centroid would not be considered
 			nearestDistance = 3.0f;
@@ -374,7 +365,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList = normalize(thisBinnedPeakList);
+			thisBinnedPeakList.normalize(distanceMetric);
 			// no centroid will be found further than the 
 			// vigilance since that centroid would not be 
 			// considered
@@ -507,6 +498,6 @@ public abstract class Cluster extends CollectionDivider {
 		}
 		//out.close();
 		System.out.println(sendToDB.toString());
-		db.setCollectionDescription(newHostID,sendToDB.toString());
+		db.setCollectionDescription(db.getCollection(newHostID),sendToDB.toString());
 	}
 }

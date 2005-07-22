@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is EDAM Enchilada's ATOFMSParticle unit test class.
+ * The Original Code is EDAM Enchilada's PeakParams class.
  *
  * The Initial Developer of the Original Code is
  * The EDAM Project at Carleton College.
@@ -39,28 +39,26 @@
 
 
 /*
- * Created on Jul 29, 2004
- *
+ * Created on Jul 15, 2004
  */
-package atom;
-
-import junit.framework.TestCase;
+package ATOFMS;
 
 /**
  * @author andersbe
  *
+ * Minimum peak parameters.
+ * 
  */
-public class ATOFMSParticleTest extends TestCase {
-
-	public final void testATOFMSParticle() {		
-		//TODO Implement ATOFMSParticle().
+public class PeakParams {
+	
+	public int minHeight;
+	public int minArea;
+	public float minRelArea;
+		
+	public PeakParams (int h, int a, float relA) {
+		minHeight = h;
+		minArea = a;
+		minRelArea = relA;
 	}
 
-	public final void testGetPeakList() {
-		//TODO Implement getPeakList().
-	}
-
-	public final void testToString() {
-		//TODO Implement toString().
-	}
 }

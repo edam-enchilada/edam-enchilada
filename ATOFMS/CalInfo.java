@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-package msanalyze;
+package ATOFMS;
 
 import java.io.*;
 /*
@@ -62,20 +62,7 @@ public class CalInfo {
 		sizecal = false;
 		autocal = false;
 	}
-	private void loadMassCal(String massCalFile) throws IOException
-	{
-		File massCal = new File(massCalFile);
-		BufferedReader in = new BufferedReader(new FileReader(massCal));
-		
-		// positive slope
-		posSlope = Double.valueOf(in.readLine()).doubleValue();
-		// positive intercept
-		posIntercept = Double.valueOf(in.readLine()).doubleValue();
-		negSlope = Double.valueOf(in.readLine()).doubleValue();
-		negIntercept = Double.valueOf(in.readLine()).doubleValue();
-		
-		in.close();
-	}
+
 	/**
 	 * Creates a CalInfo object from the given mass cal and size cal
 	 * files.  
@@ -132,6 +119,21 @@ public class CalInfo {
 		sizecal = false;
 
 		loadMassCal(massCalFile);
+	}
+	
+	private void loadMassCal(String massCalFile) throws IOException
+	{
+		File massCal = new File(massCalFile);
+		BufferedReader in = new BufferedReader(new FileReader(massCal));
+		
+		// positive slope
+		posSlope = Double.valueOf(in.readLine()).doubleValue();
+		// positive intercept
+		posIntercept = Double.valueOf(in.readLine()).doubleValue();
+		negSlope = Double.valueOf(in.readLine()).doubleValue();
+		negIntercept = Double.valueOf(in.readLine()).doubleValue();
+		
+		in.close();
 	}
 	
 	/**
