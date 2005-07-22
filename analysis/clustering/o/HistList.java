@@ -52,25 +52,26 @@ public class HistList {
 		hitCount = 0;
 	}
 
+	// revision that has 0's stored in the list: 1.11. HistListTest 1.3.
 	private int heightToIndex(float height) {
-		return 1 + (int)(height / binWidth);
+		return (int)(height / binWidth);
 	}
 	private float indexToMinHeight(int index) {
-		return (index - 1) * binWidth;
+		return (index) * binWidth;
 	}
 	
-	private void incrementBy(int index, int elem) {
+	private void increment(int index) {
 		// changed semantics:  When you add something past the end of a list,
 		// just add enough "0" elements for it to work.
 		try {
-			list.set(index, (list.get(index) + elem));
+			list.set(index, (list.get(index) + 1));
 		} catch (IndexOutOfBoundsException e) {
 			while(list.size() < index) {
 				// the above condition is right because size = max index + 1.
 				list.add(0);
 			}
-			list.add(index,elem);
-			assert(get(index) == elem);
+			list.add(index,1);
+			assert(get(index) == 1);
 		}
 	}
 	
@@ -95,40 +96,26 @@ public class HistList {
 			throw new RuntimeException("Negative data are not yet " +
 					"supported by the HistList of O-Cluster!");
 		}
-		this.incrementBy(heightToIndex(height), 1);
+		this.increment(heightToIndex(height));
 		hitCount++;
-		list.set(0, particleCount - hitCount);
 	}
 	
 	public void setParticleCount(int count) {
 		particleCount = count;
-		if (list.size() == 0) {
-			list.add(particleCount - hitCount);
-		} else {
-			list.set(0, particleCount - hitCount);
-		}
 	}
 	
 	public float getIndexMin(int index) {
-		if (index == 0) {
-			return 0;
-		} else {
-			return indexToMinHeight(index);
-		}
+		return indexToMinHeight(index);
 	}
 	public float getIndexMax(int index) {
-		if (index == 0) {
-			return 0;
-		} else {
-			return indexToMinHeight(index + 1);
-		}
+		return indexToMinHeight(index + 1);
 	}
 	public float getIndexMiddle(int index) {
-		if (index == 0) {
-			return 0;
-		} else {
-			return indexToMinHeight(index) + (0.5f * binWidth);
-		}
+		return indexToMinHeight(index) + (0.5f * binWidth);
+	}
+	
+	public int getZeroCount() {
+		return particleCount - hitCount;
 	}
 	
 	public float getBinWidth() {

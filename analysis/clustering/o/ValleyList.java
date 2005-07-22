@@ -35,7 +35,7 @@ public class ValleyList extends ArrayList<Extremum> {
 		
 		ValleyList newCopy = new ValleyList();
 		if (super.size() < 2) {
-			return newCopy;
+			return newCopy; // an empty list, because there can be no split.
 		}
 		Extremum e;
 		Iterator<Extremum> extrema = super.iterator();

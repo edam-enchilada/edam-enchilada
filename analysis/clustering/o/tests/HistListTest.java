@@ -18,7 +18,7 @@ public class HistListTest extends TestCase {
 		histogram.addPeak(1.7f);
 		histogram.addPeak(2.3f);
 		histogram.addPeak(22.5f);
-		assertEquals(96, (int) histogram.get(0));
+		assertEquals(96, (int) histogram.getZeroCount());
 		
 		histogram.clear();
 		histogram.addPeak(0.5f);
@@ -26,7 +26,7 @@ public class HistListTest extends TestCase {
 		histogram.addPeak(2.3f);
 		histogram.addPeak(22.5f);
 		histogram.setParticleCount(100);
-		assertEquals(96, (int) histogram.get(0));
+		assertEquals(96, (int) histogram.getZeroCount());
 	}
 	
 	public void testAdditivity() {
@@ -47,12 +47,12 @@ public class HistListTest extends TestCase {
 		histogram.addPeak(1.2f);
 		histogram.addPeak(12.1f);
 		
-		assertEquals(2, (int) histogram.get(1));
-		assertEquals(1, (int) histogram.get(2));
+		assertEquals(2, (int) histogram.get(0));
+		assertEquals(1, (int) histogram.get(1));
 		assertEquals("Adding spacers should still work",
-				0, (int) histogram.get(3));
-		assertEquals(0, (int) histogram.get(4));
-		assertEquals(1, (int) histogram.get(13));
+				0, (int) histogram.get(2));
+		assertEquals(0, (int) histogram.get(3));
+		assertEquals(1, (int) histogram.get(12));
 	}
 
 	public void testGet() {
