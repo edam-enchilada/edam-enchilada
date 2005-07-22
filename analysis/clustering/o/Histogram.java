@@ -41,8 +41,8 @@ public class Histogram {
 		histogram.addPeak(area);
 	}
 	
-	public void addImplicit(int totalCount) {
-		// XXX this doesn't do anything yet!  oops!
+	public void setImplicit(int totalCount) {
+		histogram.setParticleCount(totalCount);
 	}
 	
 	private int findAllValleys() {
@@ -104,7 +104,9 @@ public class Histogram {
 										splitPoints.getValley(i).location),
 								// goodness:
 								// some would say, should be negative density.
-								splitPoints.chiSquared(i)));
+								//splitPoints.chiSquared(i)));
+								0 - histogram.get(
+										splitPoints.getValley(i).count)));
 									
 			}
 			return splits;
@@ -151,7 +153,7 @@ public class Histogram {
 		if (printSplits) {
 			System.out.println("Valid splits at:");
 			List<SplitRule> rules = getSplitRules(95);
-			if (rules.size() == 0) {
+			if (rules == null || rules.size() == 0) {
 				System.out.println("*NONE*");
 			} else {
 				for (SplitRule rule : rules) {

@@ -15,19 +15,24 @@ public class Cheater {
 	public static void main(String[] args) {
 		InfoWarehouse db = new SQLServerDatabase();
 		db.openConnection();
-		CollectionCursor curs = db.getBinnedCursor(db.getCollection(1));
+		CollectionCursor curs = db.getBinnedCursor(db.getCollection(502));
 		
 		DataWithSummary data = new DataWithSummary();
 		
-		for (int i = 0; i < 2964; i++) {
-			curs.next();
+		while (curs.next()) {
 			data.add(normalize(curs.getCurrent().getBinnedList()));
 		}
 		
 		NumberBox n = new NumberBox(5000);
 		n.addAll(data);
 				
+		n.printDimension(12);
+		n.printDimension(24);
 		n.printDimension(27);
+		n.printDimension(29);
+		n.printDimension(37);
+		n.printDimension(39);
+		n.printDimension(48);
 	}
 	
 	protected static BinnedPeakList normalize(BinnedPeakList list)

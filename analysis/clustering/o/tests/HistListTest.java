@@ -13,11 +13,19 @@ public class HistListTest extends TestCase {
 
 	public void testZeroNiceness() {
 		histogram.clear();
-		histogram.addToParticleCount(100);
+		histogram.setParticleCount(100);
 		histogram.addPeak(0.5f);
 		histogram.addPeak(1.7f);
 		histogram.addPeak(2.3f);
 		histogram.addPeak(22.5f);
+		assertEquals(96, (int) histogram.get(0));
+		
+		histogram.clear();
+		histogram.addPeak(0.5f);
+		histogram.addPeak(1.7f);
+		histogram.addPeak(2.3f);
+		histogram.addPeak(22.5f);
+		histogram.setParticleCount(100);
 		assertEquals(96, (int) histogram.get(0));
 	}
 	

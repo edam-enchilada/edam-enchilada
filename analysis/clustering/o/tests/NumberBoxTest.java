@@ -30,8 +30,12 @@ public class NumberBoxTest extends TestCase {
 	public void testGetBestSplit() {
 		SplitRule r = nb.getBestSplit(95);
 		
-		assertEquals("Bad split point", 0.75f, r.area, 0.24f);
+
 		assertEquals("Wrong dimension", 3, r.location);
+		assertEquals("Bad split point", 0.75f, r.area, 0.24f);
+//		assertEquals("Wrong dimension", 2, r.location);
+//		assertEquals("Bad split point", 2.8f, r.area, 0.1f);
+
 	}
 	
 	private Float[][] irisData = {

@@ -10,6 +10,7 @@ public class NumberBox {
 	private StatSummary stats;
 	private Histogram[] histograms;
 	private int MAX_LOCATION;
+	private boolean histogramsAreUpdated = false;
 	
 	public NumberBox(int numDims, StatSummary initialStats) {
 		//super;
@@ -43,8 +44,20 @@ public class NumberBox {
 		}
 	}
 
+	private void setImplicits() {
+		if (! histogramsAreUpdated) {
+			for (int i = 0; i < MAX_LOCATION * 2; i++) {
+				if (histograms[i] != null) {
+					histograms[i].setImplicit(stats.count());
+				}
+			}
+//			System.out.println("Set implicits to " + stats.count());
+			histogramsAreUpdated = true;
+		}
+	}
 
 	private void addAtom(BinnedPeakList atom) {
+		histogramsAreUpdated = false;
 		assert(stats != null);
 		stats.addAtom(atom);
 		// TODO: maybe resize histogram
@@ -57,6 +70,7 @@ public class NumberBox {
 	 * addAll of Collection<BinnedPeakList> is O(n).
 	 */
 	public boolean addAll(DataWithSummary that) {
+		histogramsAreUpdated = false;
 		if (stats == null) {
 			stats = new StatSummary(that.getAtoms());
 		} else {
@@ -64,9 +78,10 @@ public class NumberBox {
 		}
 		// TODO: maybe resize histograms.
 		histAtoms(that.getAtoms());
-		return false;
+		return true;
 	}
 	public boolean addAll(Collection<BinnedPeakList> atoms) {
+		histogramsAreUpdated = false;
 		if (stats == null) {
 			stats = new StatSummary(atoms);
 		} else {
@@ -78,6 +93,7 @@ public class NumberBox {
 	}
 
 	public SplitRule getBestSplit(int confidencePercent) {
+		setImplicits();
 		SplitRule best = null;
 		for (int i = 0; i < MAX_LOCATION * 2; i++) {
 			if (best == null && histograms[i] != null) {
@@ -90,10 +106,16 @@ public class NumberBox {
 				}
 			}
 		}
+//		if (best == null) {
+//			System.out.println("No split point found!");
+//		} else {
+//			System.out.println("Yay!  Using " + best.toString());
+//		}
 		return best;
 	}
 	
 	public void printDimension(int dim) {
+		setImplicits();
 		System.out.println("Trying to print stats for dim " + dim);
 		System.out.println("Total particles: " + stats.count());
 		if (dim < MAX_LOCATION && dim > - MAX_LOCATION) {
