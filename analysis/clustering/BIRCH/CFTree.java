@@ -40,9 +40,6 @@
 package analysis.clustering.BIRCH;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 
@@ -56,23 +53,26 @@ import analysis.DistanceMetric;
 public class CFTree {
 	// Q: should dist < threshold or should dist <= threshold?
 	public float threshold;
-	private int leafFactor;
 	private int branchFactor;
 	public CFNode root;
 	private int numDataPoints;
 	
+	private ClusterFeature recentlySplitA;
+	private ClusterFeature recentlySplitB;
+	
 	// Constructor
-	public CFTree(float t, int b, int l) {
+	public CFTree(float t, int b) {
 		threshold = t;
-		leafFactor = l;
 		branchFactor = b;
 		root = new CFNode(null);
 		numDataPoints = 0;
+		recentlySplitA = null;
+		recentlySplitB = null;
 	}
 	
 	// insert a particle. returns the changed CFNode.
 	public CFNode insertEntry(BinnedPeakList entry, int atomID) {
-		numDataPoints++;
+ 		numDataPoints++;
 		System.out.println("inserting particle # " + numDataPoints);
 		// If this is the first entry, make it the root.
 		if (root.getSize() == 0) {
@@ -82,9 +82,8 @@ public class CFTree {
 			return root;
 		}
 		ClusterFeature closestLeaf = findClosestLeafEntry(entry,root);
-		BinnedPeakList closestList = closestLeaf.getCentroid();
 		CFNode closestNode = closestLeaf.curNode;
-		if (closestList.getDistance(entry, DistanceMetric.CITY_BLOCK) < threshold) 
+		if (closestLeaf.getCentroid().getDistance(entry, DistanceMetric.CITY_BLOCK) <= threshold) 
 			closestLeaf.updateCF(entry, atomID);
 		else {
 			ClusterFeature newEntry;
@@ -99,25 +98,14 @@ public class CFTree {
 		return closestNode;
 		
 	}
-	
+		
 	// find closest leaf entry (recursive)
 	// returns closest CF.
 	public ClusterFeature findClosestLeafEntry(BinnedPeakList entry, CFNode curNode) {
 		if (curNode == null)
 			return null;
 		// get the closest cf in the current node;
-		float minDistance = Float.MAX_VALUE;
-		float thisDistance;
-		ClusterFeature minFeature = null;
-		ArrayList<ClusterFeature> cfs = curNode.getCFs();
-		for (int i = 0; i < cfs.size(); i++) {
-			BinnedPeakList list = cfs.get(i).getCentroid();
-			thisDistance = cfs.get(i).getSums().getDistance(entry,DistanceMetric.CITY_BLOCK);
-			if (thisDistance < minDistance) {
-				minDistance = thisDistance;
-				minFeature = cfs.get(i);
-			}
-		}
+		ClusterFeature minFeature = curNode.getClosest(entry);
 		if (minFeature.curNode.isLeaf()) {
 			return minFeature;
 		}
@@ -129,7 +117,7 @@ public class CFTree {
 	// points as seeds and separates entries.
 	public CFNode splitNodeIfPossible(CFNode node) {
 		assert (node.isLeaf()) : "Split node is not a leaf";
-		if (node.getSize() >= leafFactor) { 
+		if (node.getSize() >= branchFactor) { 
 			return splitNodeRecurse(node);
 		}
 		updateNonSplitPath(node);
@@ -143,23 +131,12 @@ public class CFTree {
 			nodeA.updateLeafPointers(node.parentCF, node.prevLeaf, node.nextLeaf);
 			nodeB.updateLeafPointers(node.parentCF, node.prevLeaf, node.nextLeaf);
 		}
-		float maxDistance = Float.MIN_VALUE;
-		float thisDistance;
-		ClusterFeature entryA = null, entryB = null;
+		ClusterFeature[] farthestTwo = node.getTwoFarthest();
+		ClusterFeature entryA = farthestTwo[0];
+		ClusterFeature entryB = farthestTwo[1];
 		ArrayList<ClusterFeature> cfs = node.getCFs();
 		BinnedPeakList listI, listJ;
-		for (int i = 0; i < cfs.size(); i++) {
-			listI = cfs.get(i).getCentroid();
-			for (int j = i; j < cfs.size(); j++) {
-				listJ = cfs.get(j).getCentroid();
-				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
-				if (thisDistance > maxDistance) {
-					maxDistance = thisDistance;
-					entryA = cfs.get(i);
-					entryB = cfs.get(j);
-				}
-			}
-		}
+		
 		// use entryA and entryB as two seeds; separate entries.
 		nodeA.addCF(entryA);
 		nodeB.addCF(entryB);
@@ -182,7 +159,6 @@ public class CFTree {
 				}
 			}
 		}
-
 		
 		for (int i = 0; i < nodeA.getSize(); i++) 
 			nodeA.getCFs().get(i).updatePointers(nodeA.getCFs().get(i).child, nodeA);
@@ -214,6 +190,11 @@ public class CFTree {
 		parentB = new ClusterFeature(parentNode);
 		parentB.updatePointers(nodeB, parentNode);
 		parentB.updateCF();
+		
+		parentNode.addCF(parentA);
+		parentNode.addCF(parentB);
+		removeNode(node);
+		
 		if (nodeA.isLeaf() && nodeB.isLeaf()) {
 			nodeA.updateLeafPointers(parentA, nodeA.prevLeaf, nodeB);
 			nodeB.updateLeafPointers(parentB, nodeA, nodeB.nextLeaf);
@@ -225,10 +206,7 @@ public class CFTree {
 		else {
 			nodeA.updateNonLeafPointers(parentA);
 			nodeB.updateNonLeafPointers(parentB);
-		}
-		parentNode.addCF(parentA);
-		parentNode.addCF(parentB);
-		removeNode(node);	
+		}	
 		
 		assert (parentA.curNode.equals(parentB.curNode)) : "parents aren't in same node.";
 		
@@ -240,17 +218,18 @@ public class CFTree {
 		if (parentNode.getSize() >= branchFactor) {
 			return splitNodeRecurse(parentNode);
 		}
-		
 		// If parentCF node doesn't need to be split,update rest of path and
 		// we're done.
-		updateNonSplitPath(parentNode);		
+		updateNonSplitPath(parentNode);
+		recentlySplitA = parentA;
+		recentlySplitB = parentB;
 		return parentNode;
 		
 	}
 	
 	// updates the path starting from the node's PARENT and up.
 	public void updateNonSplitPath(CFNode node) {
-		if (node.parentCF != null) {
+		if (node != null && node.parentCF != null) {
 			node.parentCF.updateCF();
 			updateNonSplitPath(node.parentCF.curNode);
 		}
@@ -267,60 +246,45 @@ public class CFTree {
 	}
 	
 	// removes node.  TODO:  is there any way to deal with this better?
+	// also removes all children under that node.
 	public void removeNode(CFNode node) {
-		node.parentCF = null;
-		node.parentNode = null;
-		node.nextLeaf = null;
-		node.prevLeaf = null;
-		node = null;
+		ClusterFeature parentCF = node.clearNode();
+		if (parentCF != null) {
+			parentCF.child = null;
+			updateNonSplitPath(parentCF.curNode);
+		}
 	}
 	
 	// refines the merge
 	public void refineMerge(CFNode node) {
 		// find closest two entries in the given node.
-		float minDistance = Float.MAX_VALUE;
-		float thisDistance;
-		ClusterFeature entryA = null, entryB = null;
-		ArrayList<ClusterFeature> cfs = node.getCFs();
-		BinnedPeakList listI,listJ;
-		for (int i = 0; i < cfs.size(); i++) {
-			listI = cfs.get(i).getCentroid();
-			for (int j = i; j < cfs.size(); j++) {
-				listJ = cfs.get(j).getCentroid();
-				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
-				if (i != j && thisDistance < minDistance) {
-					minDistance = thisDistance;
-					entryA = cfs.get(i);
-					entryB = cfs.get(j);
-				}
-			}
-		}
-		ClusterFeature merge = mergeEntries(entryA, entryB);
+		ClusterFeature[] closestTwo = node.getTwoClosest();
+		if ((closestTwo[0].isEqual(recentlySplitA) || closestTwo[1].isEqual(recentlySplitA)) &&
+				(closestTwo[0].isEqual(recentlySplitB) || closestTwo[1].isEqual(recentlySplitB)))
+			return;
+		ClusterFeature merge = mergeEntries(closestTwo[0], closestTwo[1]);
 		// use the splitNodeRecurse method if merged child needs to split.
-		if (!merge.curNode.isLeaf()) {
-			if (merge.child.getSize() >= branchFactor) { 
+		if (!merge.curNode.isLeaf()) 
+			if (merge.child.getSize() >= branchFactor) {
 				splitNodeRecurse(merge.child);
 			}
-		}
 		updateNonSplitPath(merge.child);
 	}
 	
 	// merge two entries and their children
 	// returns merged cluster feature
-	// TODO: Deal with normalization factor here.
 	public ClusterFeature mergeEntries(ClusterFeature entry, ClusterFeature entryToMerge) {
 		assert (entry.curNode.equals(entryToMerge.curNode)) : "entries aren't in same node!";		
 		CFNode curNode = entry.curNode;
 		entry.getSums().addAnotherParticle(entryToMerge.getSums());
-		entry.getSumOfSquares().addAnotherParticle(entryToMerge.getSumOfSquares());
+		entry.setSumOfSquares(entry.getSumOfSquares() + entryToMerge.getSumOfSquares());
+		entry.setCount(entry.getCount() + entryToMerge.getCount());
 		if (!curNode.isLeaf()) {
 			for (int i = 0; i < entryToMerge.child.getSize(); i++) 
 				entry.child.addCF(entryToMerge.child.getCFs().get(i));
 		}
-		entry.count += entryToMerge.count;
 		// is it ok to have objects that point to nothing?  garbage collect?
 		entry.curNode.removeCF(entryToMerge);
-		
 		entry.updateCF();
 		return entry;
 	}
@@ -328,142 +292,45 @@ public class CFTree {
 	// estimates the next threshold and resets it
 	// resets it according to dMin;
 	public float nextSimpleThreshold() {
-		CFNode curNode = root;
-		while (!curNode.isLeaf()) {
-			int maxCount = 0;
-			int index = -1;
-			for (int i = 0; i < curNode.getSize(); i++)
-				if (curNode.getCFs().get(i).getCount() > maxCount) {
-					maxCount = curNode.getCFs().get(i).getCount();
-					index = i;
-				}
-			curNode = curNode.getCFs().get(index).child;
-		}
-		ArrayList<ClusterFeature> cfs = curNode.getCFs();
-		float dMin = Float.MAX_VALUE;
-		for (int i = 0; i < cfs.size(); i++) {
-			BinnedPeakList sumsI = cfs.get(i).getCentroid();
-			for (int j = i; j < cfs.size(); j++) {
-				BinnedPeakList sumsJ = cfs.get(j).getCentroid();
-				float dist = sumsI.getDistance(sumsJ, DistanceMetric.CITY_BLOCK);
-				if (i != j && dist < dMin)
-					dMin = dist;
+		float dMin = 0;
+		CFNode leaf = getFirstLeaf(root);
+		int maxCount = 0, count;
+		CFNode maxLeaf = null;
+		while (leaf != null) {
+			count = 0;
+			for (int i = 0; i < leaf.getSize(); i++) 
+				count += leaf.getCFs().get(i).getCount();
+			if (count > maxCount && leaf.getSize() > 1) {
+				maxCount = count;
+				maxLeaf = leaf;
 			}
+			leaf = leaf.nextLeaf;
 		}
-		threshold = dMin;
+		if (maxLeaf == null)
+			dMin = threshold + 0.1f;
+		else {
+			ClusterFeature[] m = maxLeaf.getTwoClosest();
+			dMin = m[0].getCentroid().getDistance(m[1].getCentroid(), DistanceMetric.CITY_BLOCK);
+		}
+		assert (dMin > threshold) : "min distance bewteen two entries is smaller than T!";
+		
 		return dMin;
 	}
 	
 	// estimates the next threshold and resets it
+	// according to paper, not high priority right now.
 	public float nextPaperThreshold() {
-		CFNode curLeaf = getFirstLeaf(root);
-		// find the largest volume of the leaves.
-		BinnedPeakList centroid;
-		float maxVolume = Float.MIN_VALUE;
-		CFNode maxLeaf = null;
-		while (curLeaf != null) {
-			// get leaf's centroid.
-			centroid = new BinnedPeakList();
-			for (int i = 0; i < curLeaf.getSize(); i++)
-				centroid.addAnotherParticle(curLeaf.getCFs().get(i).getSums());
-			centroid.divideAreasBy(curLeaf.getSize());
-			// TODO: normalize here?
-			centroid.normalize(DistanceMetric.CITY_BLOCK);
-			
-			// get leaf's radius
-			float radius = 0, dist;
-			for (int i = 0; i < curLeaf.getSize(); i++) {
-				BinnedPeakList list = curLeaf.getCFs().get(i).getCentroid();
-				dist = list.getDistance(centroid, DistanceMetric.CITY_BLOCK);
-				radius += (dist*dist);
-			}
-			radius = (float) Math.sqrt(radius / curLeaf.getSize());
-			
-			// get leaf's volume.
-			float volume = 1;
-			for (int i = 0; i < curLeaf.getSize(); i++)
-				volume = volume * radius;
-			if (volume > maxVolume) {
-				maxVolume = volume;
-				maxLeaf = curLeaf;
-			}
-			curLeaf = curLeaf.nextLeaf;
-		}
-		
-		//calculate nextT
-		float nextT = maxVolume * (numDataPoints+1) / numDataPoints;
-		
-		// calculate expansion factor;
-		float expansionFactor;
-		float averageRootRadius = getAverageRootRadius();
-		float newAverageRootRadius = averageRootRadius * (numDataPoints+1) / numDataPoints;
-		if (newAverageRootRadius/averageRootRadius > 1)
-			expansionFactor = newAverageRootRadius/averageRootRadius;
-		else 
-			expansionFactor = 1;
-		
-		// calculate dMin
-		CFNode curNode = root;
-		while (!curNode.isLeaf()) {
-			int maxCount = 0;
-			int index = -1;
-			for (int i = 0; i < curNode.getSize(); i++)
-				if (curNode.getCFs().get(i).getCount() > maxCount) {
-					maxCount = curNode.getCFs().get(i).getCount();
-					index = i;
-				}
-			curNode = curNode.getCFs().get(index).child;
-		}
-		ArrayList<ClusterFeature> cfs = curNode.getCFs();
-		float dMin = Float.MAX_VALUE;
-		for (int i = 0; i < cfs.size(); i++) {
-			BinnedPeakList sumsI = cfs.get(i).getCentroid();
-			for (int j = i; j < cfs.size(); j++) {
-				BinnedPeakList sumsJ = cfs.get(j).getCentroid();
-				float dist = sumsI.getDistance(sumsJ, DistanceMetric.CITY_BLOCK);
-				if (i != j && dist < dMin)
-					dMin = dist;
-			}
-		}
-		System.out.println("old threshold: " + threshold);
-		System.out.println("largestLeafVolume: " + maxVolume);
-		System.out.println("nextT: " + nextT);
-		System.out.println("expansionFactor: " + expansionFactor);
-		System.out.println("dMin: " + dMin);
-		
-		
-		// Finally, calculate the true nextT;
-		float returnedT = -1;
-		if (dMin > (expansionFactor * nextT))
-			returnedT = dMin;
-		else 
-			returnedT = expansionFactor * nextT;
-		if (returnedT < threshold)
-			returnedT = threshold + .1f;
-		threshold = returnedT;
-		System.out.println("NEW THRESHOLD: " + returnedT);
-		System.out.println();
-		return returnedT;
+		return 0;
 	}
 	
-	public float getAverageRootRadius() {
-		assert (root != null) : "root is null";
-		BinnedPeakList centroid = new BinnedPeakList();
-		for (int i = 0; i < root.getSize(); i++)
-			centroid.addAnotherParticle(root.getCFs().get(i).getSums());
-		centroid.divideAreasBy(root.getSize());
-		// TODO: normalize here?
-		centroid.normalize(DistanceMetric.CITY_BLOCK);
-
-		float radius = 0, dist;
-		for (int i = 0; i < root.getSize(); i++) {
-			BinnedPeakList list = root.getCFs().get(i).getCentroid();
-			dist = list.getDistance(centroid, DistanceMetric.CITY_BLOCK);
-			radius += (dist*dist);
+	public void insertEmptyPath(float tHold, ArrayList<Integer> indices) {
+		CFNode curNode = root;
+		for (int i = 0; i < indices.size(); i++) {
+			// if index is too big, add a new node.  Otherwise, it's already there.
+			if (curNode.getCFs().size() <= indices.get(i)) {
+				new CFNode(curNode.parentCF);
+			}
 		}
-		radius = (float) Math.sqrt(radius / root.getSize());
-		
-		return radius;
 	}
 	
 	// scan outliers to see if they can fit into tree.
@@ -487,24 +354,33 @@ public class CFTree {
 	}
 	
 	public void printLeaves(CFNode node) {
-		assert (node != null && node.isLeaf()) : " node is not leaf!";
 		if (node == null)
 			return;
-		System.out.println("PREV: " + node.prevLeaf + " CUR: " + node + " NEXT: " + node.nextLeaf);
+		assert (node.isLeaf()) : " node is not leaf!";
+		System.out.println("PREV: " + node.prevLeaf + " CUR: " + node + " NEXT: " + node.nextLeaf);	
 		if (node.nextLeaf != null) 	
 			printLeaves(node.nextLeaf);
 	}
 	
-	public int[] countNodes() {
+	public void countNodes() {
 		int[] counts = {0,0,0,0,0};
-		return countNodesRecurse(root, counts);
+		counts = countNodesRecurse(root, counts);
+		
+		System.out.println();
+		System.out.println("threshold: " + threshold);
+		System.out.println("# of nodes: " + counts[0]);
+		System.out.println("# of leaves: " + counts[1]);
+		System.out.println("# of subclusters: " + counts[2]);
+		System.out.println("# of grouped subclusters: " + counts[3]);
+		System.out.println("# of particles represented: " + counts[4]);
+
 	}
 	
 	//{nodeCount, leafCount, subclusterCount, groupedsubclustercount, particleCount}
 	public int[] countNodesRecurse(CFNode node, int[] counts) {
 		if (node == null) 
 			return counts;
-		else if (node.isLeaf()) {
+		if (node.isLeaf()) {
 			counts[0]++;
 			counts[1]++;
 			for (int i = 0; i < node.getSize(); i++) {

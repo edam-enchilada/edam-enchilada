@@ -13,9 +13,6 @@ import database.SQLServerDatabase;
 
 public class BIRCH extends Cluster{
 	private int branchingFactor;
-	private int leafFactor;
-	//private int pageSize;
-	//private int availableMemory;
 	private int maxNodes;
 	private InfoWarehouse db;
 	private int collectionID;
@@ -25,15 +22,14 @@ public class BIRCH extends Cluster{
 	{
 		super(cID, database,name,comment);
 		// set parameters
-		branchingFactor = 5;
-		leafFactor = 5;
+		branchingFactor = 3;
 		maxNodes = 15;
 		collectionID = cID;
 		db = database;
 	}
 	
 	public void buildTree(float threshold) {
-		curTree = new CFTree(threshold, branchingFactor,leafFactor); 		
+		curTree = new CFTree(threshold, branchingFactor); 		
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
 		while(curs.next()) {
@@ -46,59 +42,44 @@ public class BIRCH extends Cluster{
 			//if (curTree.countNodes() >= maxNodes) {
 			//	rebuildTree();
 			//}
-		}
-		
+		}	
 		curs.reset();
 	}
 	
-	public void rebuildSimpleTree() {
-		curTree.nextSimpleThreshold();
-		CFNode curLeaf = curTree.getFirstLeaf(curTree.root);
-		while (curLeaf != null) {
-				ArrayList<ClusterFeature> cfs = curLeaf.getCFs();
-				for (int i = 0; i < cfs.size(); i++) {
-					ClusterFeature list = cfs.get(i);
-					for (int j = 0; j < i; j++) {
-						if (list.getSums().getDistance(cfs.get(j).getSums(), 
-								DistanceMetric.CITY_BLOCK) < curTree.threshold) {
-							ClusterFeature merged = curTree.mergeEntries(cfs.get(i),cfs.get(j));
-							break;
-						}
-					}
+	public void rebuildTree() {
+		float newThreshold = curTree.nextSimpleThreshold();
+		CFTree newTree = new CFTree(newThreshold, branchingFactor);
+		CFNode nextLeaf = curTree.getFirstLeaf(curTree.root);
+		CFNode newParent = null;
+		while (nextLeaf != null) {
+			if (!nextLeaf.parentNode.equals(newParent)) {
+				newParent = nextLeaf.parentNode;
+			ArrayList<Integer> path = getNextPath(nextLeaf);
+			newTree.insertEmptyPath(curTree.threshold, path);
 			}
-			curLeaf = curLeaf.nextLeaf;
+			nextLeaf = nextLeaf.nextLeaf;
 		}
-		curLeaf = curTree.getFirstLeaf(curTree.root);
-		while (curLeaf != null) {
-			curTree.updateNonSplitPath(curLeaf);
-			curLeaf = curLeaf.nextLeaf;
-		}
+		curTree = newTree;
 	}
 	
-	// TODO: get a null pointer exception here.
-	public void rebuildTreeFromPaper() {
-		CFTree oldTree = curTree;
-		CFTree newTree = new CFTree(curTree.nextSimpleThreshold(), branchingFactor,leafFactor);
-		CFNode oldNode, newNode = null;
-		oldNode = oldTree.getFirstLeaf(oldTree.root);
-		newNode = new CFNode(oldNode.parentCF);
-		while (oldNode != null) {
-			// put entries in leaf:
-			ArrayList<ClusterFeature> oldCFs = oldNode.getCFs();
-			ClusterFeature closestCF;
-			for (int i = 0; i < oldCFs.size(); i++) {
-				closestCF = newTree.findClosestLeafEntry(oldCFs.get(i).getSums(), newNode);
-				newNode.addCF(oldCFs.get(i));
-				if (closestCF != null &&
-						closestCF.getSums().getDistance(oldCFs.get(i).getSums(), 
-								DistanceMetric.CITY_BLOCK) > newTree.threshold) {
-					ClusterFeature merge = newTree.mergeEntries(closestCF,oldCFs.get(i));
-					newTree.updateNonSplitPath(merge.curNode);
-				}
-				
-			}
+	public ArrayList<Integer> getNextPath(CFNode curNode) {
+		curTree.printTree();
+		System.out.println("curNode: " + curNode);
+		ArrayList<Integer> indices = new ArrayList<Integer>();
+		indices.add(new Integer(0));
+		while (curNode.parentNode != null) {
+			int index = curNode.parentNode.getCFs().indexOf(curNode.parentCF);
+			System.out.println("parentNode: " + curNode.parentNode);
+			System.out.println("parentNodeSize: " + curNode.parentNode.getSize());
+			for (int i = 0; i < curNode.parentNode.getCFs().size(); i++)
+				System.out.println(curNode.parentNode.getCFs().get(i));
+			System.out.println();
+			System.out.println("looking for cf: " + curNode.parentCF);
+			indices.add(0, new Integer(index));
+			System.out.println(index);
+			curNode = curNode.parentNode;
 		}
-		//newTree.printTree();
+		return indices;
 	}
 	
 	public void clusterLeaves() {
@@ -107,30 +88,6 @@ public class BIRCH extends Cluster{
 	
 	public void refineClusters() {
 		
-	}
-
-	/**
-	 * 
-	 * From clusterK; this could be put in Cluster class.
-	 * Sets the distance metric.  If using K-Means, the distance metric will always
-	 * be Euclidean Squared, since it is guaranteed to decrease.  If using K-Medians, the
-	 * distance metric will always be City Block, since it is guaranteed to decrease.
-	 * 
-	 * (non-Javadoc)
-	 * @see analysis.clustering.Cluster#setDistancMetric(int)
-	 */
-	public boolean setDistanceMetric(DistanceMetric method) {
-		distanceMetric = method;
-		if (method == DistanceMetric.CITY_BLOCK)
-			return true;
-		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
-			return true;
-		else if (method == DistanceMetric.DOT_PRODUCT)
-			return true;
-		else
-		{
-			throw new IllegalArgumentException("Illegal distance metric.");
-		}
 	}
 
 	@Override
@@ -150,61 +107,22 @@ public class BIRCH extends Cluster{
 	public static void main(String[] args) {
 		InfoWarehouse db = new SQLServerDatabase("SpASMSdb");
 		db.openConnection();
-		BIRCH birch = new BIRCH(2, db, "BIRCH", "comment");
+		BIRCH birch = new BIRCH(3, db, "BIRCH", "comment");
 		birch.setCursorType(0);
 		birch.setDistanceMetric(DistanceMetric.CITY_BLOCK);	
-		birch.buildTree(0.75f);
+		birch.buildTree(1.75f);
 		System.out.println("-------------------------------");
 		birch.curTree.printTree();
 		System.out.println("-------------------------------");
-		int[] info = birch.curTree.countNodes();
-		System.out.println();
-		System.out.println("threshold: " + birch.curTree.threshold);
-		System.out.println("# of nodes: " + info[0]);
-		System.out.println("# of leaves: " + info[1]);
-		System.out.println("# of subclusters: " + info[2]);
-		System.out.println("# of grouped subclusters: " + info[3]);
-		System.out.println("# of particles represented: " + info[4]);
-
-		/**
-		birch.rebuildSimpleTree();
-		//System.out.println("-------------------------------");
-		//birch.curTree.printTree();
-		System.out.println("-------------------------------");
-		info = birch.curTree.countNodes();
-		System.out.println();
-		System.out.println("threshold: " + birch.curTree.threshold);
-		System.out.println("# of nodes: " + info[0]);
-		System.out.println("# of leaves: " + info[1]);
-		System.out.println("# of subclusters: " + info[2]);
-		System.out.println("# of grouped subclusters: " + info[3]);
-		System.out.println("# of particles represented: " + info[4]);
+		birch.curTree.countNodes();
 	
-		birch.rebuildSimpleTree();
-		//System.out.println("-------------------------------");
-		//birch.curTree.printTree();
-		System.out.println("-------------------------------");
-		info = birch.curTree.countNodes();
-		System.out.println();
-		System.out.println("threshold: " + birch.curTree.threshold);
-		System.out.println("# of nodes: " + info[0]);
-		System.out.println("# of leaves: " + info[1]);
-		System.out.println("# of subclusters: " + info[2]);
-		System.out.println("# of grouped subclusters: " + info[3]);
-		System.out.println("# of particles represented: " + info[4]);
+		System.out.println("nextThreshold: " + birch.curTree.nextSimpleThreshold());
 		
-		birch.rebuildSimpleTree();
-		//System.out.println("-------------------------------");
-		//birch.curTree.printTree();
+		birch.rebuildTree();
 		System.out.println("-------------------------------");
-		info = birch.curTree.countNodes();
-		System.out.println();
-		System.out.println("threshold: " + birch.curTree.threshold);
-		System.out.println("# of nodes: " + info[0]);
-		System.out.println("# of leaves: " + info[1]);
-		System.out.println("# of subclusters: " + info[2]);
-		System.out.println("# of grouped subclusters: " + info[3]);
-		System.out.println("# of particles represented: " + info[4]);
-*/
+		birch.curTree.printTree();
+		System.out.println("-------------------------------");
+		birch.curTree.countNodes();
+	
 	}	
 }

@@ -41,6 +41,7 @@ package analysis.clustering.BIRCH;
 
 import java.util.ArrayList;
 import analysis.BinnedPeakList;
+import analysis.DistanceMetric;
 
 /**
  * CFNode is a node for the CFTree.  It contains an arraylist of cluster
@@ -83,6 +84,75 @@ public class CFNode {
 		return false;
 	}
 	
+	// returns the two closest cluster features.
+	public ClusterFeature[] getTwoClosest() {
+		if (cfs.size() < 2) {
+			return null;
+		}
+		float minDistance = Float.MAX_VALUE;
+		float thisDistance;
+		ClusterFeature entryA = null, entryB = null;
+		BinnedPeakList listI, listJ;
+		for (int i = 0; i < cfs.size(); i++) {
+			listI = cfs.get(i).getCentroid();
+			for (int j = i; j < cfs.size(); j++) {
+				listJ = cfs.get(j).getCentroid();
+				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
+				if (i != j && thisDistance < minDistance) {
+					minDistance = thisDistance;
+					entryA = cfs.get(i);
+					entryB = cfs.get(j);
+				}
+			}
+		}
+		ClusterFeature[] closestTwo = new ClusterFeature[2];
+		closestTwo[0] = entryA;
+		closestTwo[1] = entryB;
+		return closestTwo;
+	}
+	
+	//returns the two farthest cluster features.
+	public ClusterFeature[] getTwoFarthest() {
+		if (cfs.size() < 2) {
+			return null;
+		}
+		float maxDistance = Float.MIN_VALUE;
+		float thisDistance;
+		ClusterFeature entryA = null, entryB = null;
+		BinnedPeakList listI, listJ;
+		for (int i = 0; i < cfs.size(); i++) {
+			listI = cfs.get(i).getCentroid();
+			for (int j = i; j < cfs.size(); j++) {
+				listJ = cfs.get(j).getCentroid();
+				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
+				if (thisDistance > maxDistance) {
+					maxDistance = thisDistance;
+					entryA = cfs.get(i);
+					entryB = cfs.get(j);
+				}
+			}
+		}
+		ClusterFeature[] farthestTwo = new ClusterFeature[2];
+		farthestTwo[0] = entryA;
+		farthestTwo[1] = entryB;
+		return farthestTwo;
+	}
+	
+	public ClusterFeature getClosest(BinnedPeakList entry) {
+		float minDistance = Float.MAX_VALUE;
+		float thisDistance;
+		ClusterFeature minCF = null;
+		for (int i = 0; i < cfs.size(); i++) {
+			BinnedPeakList list = cfs.get(i).getCentroid();
+			thisDistance = list.getDistance(entry,DistanceMetric.CITY_BLOCK);
+			if (thisDistance < minDistance) {
+				minDistance = thisDistance;
+				minCF = cfs.get(i);
+			}
+		}
+		return minCF;
+	}
+	
 	public void updateLeafPointers(ClusterFeature parent, CFNode prev, CFNode next) {
 		parentCF = parent;
 		if (parent == null)
@@ -102,14 +172,25 @@ public class CFNode {
 		parentNode = parent.curNode;
 	}
 	
+	// {Node, CLusterFeature, Child}
+	public ClusterFeature clearNode() {
+		ClusterFeature returnThis = parentCF;
+		parentNode = null;
+		parentCF = null;
+		nextLeaf = null;
+		prevLeaf = null;
+		cfs.clear();
+		return returnThis;
+	}
+	
 	// print the node
 	public void printNode(String delimiter) {
-		//System.out.println(delimiter + "parent: " + parentNode);
-		//System.out.println(delimiter + "node: " + this);
-		System.out.println(delimiter + "# cfs: " + getSize());
+		System.out.println(delimiter + "parent: " + parentNode);
+		System.out.println(delimiter + "node: " + this);
+		//System.out.println(delimiter + "# cfs: " + getSize());
 		//System.out.println(delimiter + "prev leaf: " + prevLeaf);
 		//System.out.println(delimiter + "next leaf: " + nextLeaf);
-		System.out.println(delimiter + "Node's cfs:");
+		//System.out.println(delimiter + "Node's cfs:");
 		for (int i = 0; i < cfs.size(); i++) {
 			cfs.get(i).printCF(delimiter);
 		}
@@ -131,62 +212,5 @@ public class CFNode {
 	// get the cluster feature arraylist
 	public ArrayList<ClusterFeature> getCFs() {
 		return cfs;
-	}
-	
-	public static void main(String[] args) {
-		CFNode node = new CFNode(null);
-		ClusterFeature cf1 = new ClusterFeature(node);
-		ClusterFeature cf2 = new ClusterFeature(node);
-		BinnedPeakList list1 = new BinnedPeakList();
-		list1.add(0,1);
-		list1.add(1,4);
-		list1.add(2,0);
-		list1.add(3,10);
-		BinnedPeakList list2 = new BinnedPeakList();
-		list2.add(0,0);
-		list2.add(1,3);
-		list2.add(2,5);
-		list2.add(3,0);
-		BinnedPeakList list3 = new BinnedPeakList();
-		list3.add(0,1);
-		list3.add(1,2);
-		list3.add(2,3);
-		list3.add(3,4);
-		cf1.updateCF(list1,1);
-		cf1.updateCF(list2,2);
-		cf2.updateCF(list3,3);
-		node.addCF(cf1);
-		node.addCF(cf2);
-		
-		CFNode leafNode = new CFNode(cf1);
-		ClusterFeature cf3 = new ClusterFeature(leafNode);
-		BinnedPeakList list4 = new BinnedPeakList();
-		list4.add(0,5);
-		list4.add(1,0);
-		list4.add(2,1);
-		list4.add(3,1);
-		cf3.updateCF(list4,4);
-		leafNode.addCF(cf3);
-		cf1.child = leafNode;
-		
-		System.out.println("Printing parentCF node:");
-		node.printNode("");
-		System.out.println();
-		System.out.println("Printing leaf node:");
-		leafNode.printNode("");
-		
-		ClusterFeature cf4 = new ClusterFeature(node);
-		BinnedPeakList list5 = new BinnedPeakList();
-		list5.add(0,1);
-		list5.add(1,2);
-		list5.add(2,3);
-		list5.add(3,4);
-		cf4.updateCF(list5,5);
-
-		System.out.println();
-		System.out.println("Removed node? " + node.removeCF(cf4));
-		System.out.println("New Parent Node:");
-		node.printNode("");
-	}
-	
+	}	
 }

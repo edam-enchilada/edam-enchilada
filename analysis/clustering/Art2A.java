@@ -169,20 +169,6 @@ public class Art2A extends Cluster
 			return false;
 		}
 	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.Cluster#setDistancMetric(int)
-	 */
-	public boolean setDistanceMetric(DistanceMetric method) 
-	{
-		distanceMetric = method;
-		if (method == DistanceMetric.CITY_BLOCK)
-			return true;
-		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
-			return true;
-		else
-			return false;
-	}
 	
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
 			NonZeroCursor curs)

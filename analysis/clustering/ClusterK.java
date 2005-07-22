@@ -272,28 +272,6 @@ public abstract class ClusterK extends Cluster {
 			return false;
 		}
 	}
-	
-	/**
-	 * Sets the distance metric.  If using K-Means, the distance metric will always
-	 * be Euclidean Squared, since it is guaranteed to decrease.  If using K-Medians, the
-	 * distance metric will always be City Block, since it is guaranteed to decrease.
-	 * 
-	 * (non-Javadoc)
-	 * @see analysis.clustering.Cluster#setDistancMetric(int)
-	 */
-	public boolean setDistanceMetric(DistanceMetric method) {
-		distanceMetric = method;
-		if (method == DistanceMetric.CITY_BLOCK)
-			return true;
-		else if (method == DistanceMetric.EUCLIDEAN_SQUARED)
-			return true;
-		else if (method == DistanceMetric.DOT_PRODUCT)
-			return true;
-		else
-		{
-			throw new IllegalArgumentException("Illegal distance metric.");
-		}
-	}
 
 	private static class OutlierData implements Comparable<OutlierData> {
 		private BinnedPeakList peakList;

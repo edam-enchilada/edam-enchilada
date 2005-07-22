@@ -59,9 +59,9 @@ import analysis.DistanceMetric;
 
 public class ClusterFeature {
 	private ArrayList<Integer> atomIDs;
-	public int count;
+	private int count;
 	private BinnedPeakList sums;
-	private BinnedPeakList squareSums;
+	private float squareSums;
 	public CFNode child = null;
 	public CFNode curNode;
 	
@@ -69,13 +69,13 @@ public class ClusterFeature {
 	public ClusterFeature(CFNode cur) {
 		count = 0;
 		sums = new BinnedPeakList();
-		squareSums = new BinnedPeakList();
+		squareSums = 0;
 		curNode = cur;
 		atomIDs = new ArrayList<Integer>();
 	}
 	
 	// Constructor
-	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, BinnedPeakList s2, ArrayList<Integer> ids) {
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, ArrayList<Integer> ids) {
 		curNode = cur;
 		count = c;
 		sums = s1;
@@ -93,7 +93,7 @@ public class ClusterFeature {
 		Iterator<BinnedPeak> iterator = list.iterator();
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			squareSums.add(peak.location, peak.area*peak.area);
+			squareSums += peak.area*peak.area;
 		}
 		//sums = normalize(sums, DistanceMetric.CITY_BLOCK);
 		//squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
@@ -107,13 +107,13 @@ public class ClusterFeature {
 			return false;
 		count = 0;
 		sums = new BinnedPeakList();
-		squareSums = new BinnedPeakList();
+		squareSums = 0;
 		ArrayList<ClusterFeature> cfs = child.getCFs();
 		atomIDs.clear();
 		for (int i = 0; i < cfs.size(); i++) {
 			count += cfs.get(i).count;
 			sums.addAnotherParticle(cfs.get(i).getSums());
-			squareSums.addAnotherParticle(cfs.get(i).getSumOfSquares());
+			squareSums += cfs.get(i).squareSums;
 			atomIDs.addAll(cfs.get(i).atomIDs);
 		}
 		// TODO: only normalize sums??
@@ -135,19 +135,16 @@ public class ClusterFeature {
 		if (cf.getCount() != count || cf.getSums().length() != sums.length())
 			return false;
 		
+		if (squareSums != cf.squareSums)
+			return false;
+		
 		Iterator<BinnedPeak> sumsA = sums.iterator();
 		Iterator<BinnedPeak> sumsB = cf.getSums().iterator();
-		Iterator<BinnedPeak> sumsOfSquaresA = squareSums.iterator();
-		Iterator<BinnedPeak> sumsOfSquaresB = cf.getSumOfSquares().iterator();
 		BinnedPeak peakA;
 		BinnedPeak peakB;
 		while (sumsA.hasNext()) {
 			peakA = sumsA.next();
 			peakB = sumsB.next();
-			if (peakA.area != peakB.area || peakA.location != peakB.location)
-				return false;
-			peakA = sumsOfSquaresA.next();
-			peakB = sumsOfSquaresB.next();
 			if (peakA.area != peakB.area || peakA.location != peakB.location)
 				return false;
 		}
@@ -156,11 +153,17 @@ public class ClusterFeature {
 	
 	// prints the cluster feature
 	public void printCF(String delimiter) {
-		System.out.print(delimiter + "Count: " + count);
+		System.out.print(delimiter + "CF: " + this);
+		System.out.print("  Count: " + count);
 		System.out.print("  AtomIDs: ");
 		for (int i = 0; i < atomIDs.size(); i++)
 			System.out.print(atomIDs.get(i) + ", ");
 		System.out.println();
+	}
+	
+	
+	public void setCount(int c) {
+		count = c;
 	}
 		
 	// gets the count
@@ -173,8 +176,12 @@ public class ClusterFeature {
 		return sums;
 	}
 	
+	public void setSumOfSquares(float s) {
+		squareSums = s;
+	}
+	
 	// gets the sums of the squares
-	public BinnedPeakList getSumOfSquares() {
+	public float getSumOfSquares() {
 		return squareSums;
 	}
 	
