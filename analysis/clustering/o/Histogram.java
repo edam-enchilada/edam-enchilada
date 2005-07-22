@@ -94,6 +94,9 @@ public class Histogram {
 	
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		LinkedList<SplitRule> splits = new LinkedList<SplitRule>();
+		splits.add(new SplitRule(dimension, 0,
+				0 - Math.abs(histogram.getZeroCount() 
+							- histogram.getHitCount())));
 		if (findAllValleys() > 0) {
 			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {
@@ -106,7 +109,7 @@ public class Histogram {
 								// some would say, should be negative density.
 								//splitPoints.chiSquared(i)));
 								0 - histogram.get(
-										splitPoints.getValley(i).count)));
+										splitPoints.getValley(i).location)));
 									
 			}
 			return splits;
@@ -145,6 +148,7 @@ public class Histogram {
 		// be figured out.
 		System.out.println("Histogram for Dimension " + dimension);
 		System.out.println("Pk.Area\tCount");
+		System.out.println("0\t" + histogram.getZeroCount());
 		for (int i = 0; i < histogram.size(); i++) {
 			System.out.println(histogram.getIndexMiddle(i) + "\t"
 					+ histogram.get(i));
@@ -157,7 +161,7 @@ public class Histogram {
 				System.out.println("*NONE*");
 			} else {
 				for (SplitRule rule : rules) {
-					System.out.println(rule.area);
+					System.out.println(rule.area+"\t"+rule.toString());
 				}
 			}
 		}

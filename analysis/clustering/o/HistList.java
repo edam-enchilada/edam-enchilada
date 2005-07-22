@@ -134,4 +134,8 @@ public class HistList {
 	public int size() {
 		return list.size();
 	}
+
+	public int getHitCount() {
+		return hitCount;
+	}
 }

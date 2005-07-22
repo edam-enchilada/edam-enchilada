@@ -17,8 +17,8 @@ public class SplitRule extends BinnedPeak {
 		this.goodness = goodness;
 	}
 	
-	public boolean isAtomLess(BinnedPeakList atom) {
-		return area > atom.getAreaAt(location);
+	public boolean isAtomGreater(BinnedPeakList atom) {
+		return area < atom.getAreaAt(location);
 	}
 	
 	public List<DataWithSummary> splitAtoms(List<BinnedPeakList> atoms) {
@@ -32,10 +32,10 @@ public class SplitRule extends BinnedPeak {
 		
 		while (i.hasNext()) {
 			atom = i.next();
-			if (isAtomLess(atom)) {
-				bucket.get(0).add(atom);
-			} else {
+			if (isAtomGreater(atom)) {
 				bucket.get(1).add(atom);
+			} else {
+				bucket.get(0).add(atom);
 			}
 		}
 		return bucket;
