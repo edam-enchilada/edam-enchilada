@@ -812,5 +812,5 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertFalse(curs.next());
 		curs.reset();
 	}
-	
+
 }

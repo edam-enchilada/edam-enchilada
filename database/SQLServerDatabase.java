@@ -284,8 +284,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			else
 				returnVals[1] = 0;
 			
+			//Changed back to use datasetName separately from params to fix
+			//importation from MSAnalyze.  TODO: We should discuss.  ~Leah
 			String statement = "INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
-							   returnVals[1] + ", " + params + ")";
+							   returnVals[1] + ",'" + datasetName + "',"+ params + ")";
 			System.out.println(statement); //debugging
 			stmt.execute(statement);
 
@@ -1815,14 +1817,14 @@ public class SQLServerDatabase implements InfoWarehouse
 					"			WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #ParticlesToExport.AtomID),\n" +
 					"TotalPosIntegral = \n" +
 					"	(SELECT SUM (PeakArea)\n" +
-					"		FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + "\n" +
-					"			WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #ParticlesToExport.AtomID\n" +
-					"			AND " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".PeakLocation >= 0),\n" +
+					"		FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + "\n" +
+					"			WHERE " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + ".AtomID = #ParticlesToExport.AtomID\n" +
+					"			AND " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + ".PeakLocation >= 0),\n" +
 					"TotalNegIntegral =\n" +
 					"	(SELECT SUM (PeakArea)\n" +
-					"		FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + "\n" +
-					"			WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #ParticlesToExport.AtomID\n" +
-					"			AND " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".PeakLocation < 0)\n"
+					"		FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + "\n" +
+					"			WHERE " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + ".AtomID = #ParticlesToExport.AtomID\n" +
+					"			AND " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + ".PeakLocation < 0)\n"
 			);
 			
 			// Find the start time of our mock dataset, use this
