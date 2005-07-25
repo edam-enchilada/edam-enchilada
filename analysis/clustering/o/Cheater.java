@@ -23,16 +23,23 @@ public class Cheater {
 			data.add(normalize(curs.getCurrent().getBinnedList()));
 		}
 		
-		NumberBox n = new NumberBox(5000);
-		n.addAll(data);
-				
-		n.printDimension(12);
-		n.printDimension(24);
-		n.printDimension(27);
-		n.printDimension(29);
-		n.printDimension(37);
-		n.printDimension(39);
-		n.printDimension(48);
+		RootPartition r = new RootPartition(null);
+		r.split(data);
+		
+		Partition p = r.getLeftChild();
+		p.printRulesDown();
+		
+//		
+//		NumberBox n = new NumberBox(5000);
+//		n.addAll(data);
+//				
+//		n.printDimension(12);
+//		n.printDimension(24);
+//		n.printDimension(27);
+//		n.printDimension(29);
+//		n.printDimension(37);
+//		n.printDimension(39);
+//		n.printDimension(48);
 	}
 	
 	protected static BinnedPeakList normalize(BinnedPeakList list)

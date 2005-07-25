@@ -118,7 +118,9 @@ public class NumberBox {
 		setImplicits();
 		System.out.println("Trying to print stats for dim " + dim);
 		System.out.println("Total particles: " + stats.count());
-		if (dim < MAX_LOCATION && dim > - MAX_LOCATION) {
+		if (dim < MAX_LOCATION && dim > - MAX_LOCATION
+				&& histograms[dim + MAX_LOCATION] != null)
+		{
 			System.out.println(stats.toString(dim));
 			histograms[dim + MAX_LOCATION].printHistogram(true);
 		}

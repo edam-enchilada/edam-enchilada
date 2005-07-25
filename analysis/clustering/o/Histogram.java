@@ -7,8 +7,8 @@ public class Histogram {
 	private float binWidth;
 	private ValleyList splitPoints;
 	private int dimension;
-	private int zeroCount;
-	
+	private int sensitivity;
+	private int totalCount;
 	
 	/*
 	 * We need to get Histograms to work with the dual nominal/weird nature
@@ -29,12 +29,19 @@ public class Histogram {
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
-		this.zeroCount = count;
+		this.sensitivity = 12;
+		totalCount = count;
 	}
 	
 	public Histogram(float stdDev, int count, int dimension) {
 		this(stdDev, count);
 		this.dimension = dimension;
+	}
+	
+	public Histogram(float stdDev, int count,
+			int dimension, int sensitivity)
+	{
+		this.sensitivity = sensitivity;
 	}
 
 	public void addPeak(float area) {
@@ -53,7 +60,8 @@ public class Histogram {
 			// get() in the HistList class.
 			
 			if (histogram.get(bin - 1) < histogram.get(bin)
-					&& histogram.get(bin) >= histogram.get(bin + 1))
+					&& histogram.get(bin) >= histogram.get(bin + 1)
+					&& histogram.get(bin) > sensitivity)
 			{
 				// this bin contains a peak...
 				
@@ -75,8 +83,11 @@ public class Histogram {
 			}
 		}
 		
-		extremaLocations.remove(); // the 0th element is where the local min
-		// before 0 would go.  but there is none, so we remove it.
+		if (extremaLocations.size() > 0) {
+			extremaLocations.remove();
+			// the 0th element is where the local min
+			// before 0 would go.  but there is none, so we remove it.
+		}
 		
 		splitPoints.clear();
 		Iterator<Integer> i = extremaLocations.iterator();
@@ -94,9 +105,12 @@ public class Histogram {
 	
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		LinkedList<SplitRule> splits = new LinkedList<SplitRule>();
-		splits.add(new SplitRule(dimension, 0,
+		SplitRule zeroSplit = new SplitRule(dimension, 0,
 				0 - Math.abs(histogram.getZeroCount() 
-							- histogram.getHitCount())));
+							- histogram.getHitCount()));
+		if (zeroSplit.goodness > - totalCount / sensitivity) {
+			splits.add(zeroSplit);
+		}
 		if (findAllValleys() > 0) {
 			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {
@@ -179,5 +193,9 @@ public class Histogram {
 	 */
 	public void setDimension(int dimension) {
 		this.dimension = dimension;
+	}
+
+	public void setSensitivity(int sensitivity) {
+		this.sensitivity = sensitivity;
 	}
 }

@@ -23,5 +23,11 @@ public class RootPartition extends Partition {
 	public String toString() {
 		return "Root of Partition Hierarchy.";
 	}
+	
+	public void printRulesDown() {
+		System.out.print("Root partition.\nChild: <<");
+		left.printRulesDown();
+		System.out.println(">>\n");
+	}
 
 }

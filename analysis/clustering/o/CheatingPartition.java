@@ -32,5 +32,9 @@ public class CheatingPartition extends Partition {
 	public void printDimension(int dim) {
 		stats.printDimension(dim);
 	}
+	
+	public void printRulesDown() {
+		System.out.print("I don't know...");
+	}
 
 }

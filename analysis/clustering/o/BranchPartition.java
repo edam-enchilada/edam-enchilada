@@ -58,9 +58,12 @@ public class BranchPartition extends Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#rulesDown()
 	 */
-	public String rulesDown() {
-		// TODO Auto-generated method stub
-		return null;
+	public void printRulesDown() {
+		System.out.print(toString() + "\nChildren:  Left\n<");
+		left.printRulesDown();
+		System.out.print(">\nRight \n<");
+		right.printRulesDown();
+		System.out.print(">");
 	}
 	
 	public String toString() {

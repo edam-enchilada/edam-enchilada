@@ -43,9 +43,9 @@ public class FrozenPartition extends Partition {
 	/* (non-Javadoc)
 	 * @see analysis.clustering.o.Partition#rulesDown()
 	 */
-	public String rulesDown() {
+	public void printRulesDown() {
 		// TODO Auto-generated method stub
-		return null;
+		System.out.print("Frozen partition!");
 	}
 
 	/*

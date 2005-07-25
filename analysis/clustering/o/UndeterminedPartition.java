@@ -30,16 +30,19 @@ public class UndeterminedPartition extends Partition {
 		/*
 		 * FOR DEBUGGING (with iris data set) ONLY
 		 */
-		System.out.println("***************************************");
-		for (int i = 0; i < 4; i++) {
-			nb.printDimension(i);
-		}
+//		System.out.println("***************************************");
+//		for (int i = 0; i < 4; i++) {
+//			nb.printDimension(i);
+//		}
 		/*
 		 * end for debugging.
 		 */
 		
 		SplitRule rule = nb.getBestSplit(95);
 		// no good split
+//		if (rule == null || rule.goodness < -10 * 20) {
+//			SplitRule rule90 = nb.getBestSplit(90);
+//			if (rule90 != null && rule90.goodness > -10 * 20) {
 		if (rule == null) {
 			if (nb.getBestSplit(90) != null) {
 				// "ambiguous"
@@ -71,5 +74,8 @@ public class UndeterminedPartition extends Partition {
 
 	public String toString() {
 		return "Undetermined partition.";
+	}
+	public void printRulesDown() {
+		System.out.print("Undetermined partition.");
 	}
 }

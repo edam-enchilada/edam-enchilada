@@ -17,6 +17,7 @@ public abstract class Partition {
 	
 	public abstract int split(DataWithSummary atoms);
 	public abstract String toString();
+	public abstract void printRulesDown();
 	
 	public CollectionDivider getCollectionSource() {
 		if (collectionSource != null) {
@@ -60,6 +61,7 @@ public abstract class Partition {
 	public void setParent(Partition parent) {
 		this.parent = parent;
 	}
+
 
 
 }
