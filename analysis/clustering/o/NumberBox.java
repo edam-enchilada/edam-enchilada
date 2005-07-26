@@ -126,4 +126,14 @@ public class NumberBox {
 		}
 	}
 	
+	public void printCentroid() {
+		System.out.println("Partition centroid:");
+		System.out.println("Particle count: " + stats.count());
+		System.out.println("m/z\tarea");
+		for (int i = - MAX_LOCATION; i < MAX_LOCATION; i++) {
+			if (stats.mean(i) > 0.01) {
+				System.out.println(i + "\t" + stats.mean(i));
+			}
+		}
+	}
 }

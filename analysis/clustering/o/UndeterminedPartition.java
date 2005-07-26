@@ -39,10 +39,7 @@ public class UndeterminedPartition extends Partition {
 		 */
 		
 		SplitRule rule = nb.getBestSplit(95);
-		// no good split
-//		if (rule == null || rule.goodness < -10 * 20) {
-//			SplitRule rule90 = nb.getBestSplit(90);
-//			if (rule90 != null && rule90.goodness > -10 * 20) {
+		// no good split?
 		if (rule == null) {
 			if (nb.getBestSplit(90) != null) {
 				// "ambiguous"
@@ -50,6 +47,7 @@ public class UndeterminedPartition extends Partition {
 				return collectedData.size();
 			} else {
 				// frozen!
+				nb.printCentroid();
 				parent.transmogrifyChild(this, new FrozenPartition(parent));
 				return 0;
 			}
