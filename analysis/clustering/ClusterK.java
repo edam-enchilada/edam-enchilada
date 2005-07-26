@@ -54,7 +54,6 @@ import javax.swing.SwingUtilities;
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
-import analysis.DistanceMetric;
 import analysis.SubSampleCursor;
 import database.CollectionCursor;
 import database.InfoWarehouse;

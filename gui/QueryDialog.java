@@ -122,7 +122,6 @@ implements ActionListener, ItemListener
 	{
 		super(frame, "Query", true);
 		//Make sure we have nice window decorations.
-		setDefaultLookAndFeelDecorated(true);
 		setSize(510,450);
 		
 		this.cTree = cTree;

@@ -368,6 +368,9 @@ public class SQLServerDatabase implements InfoWarehouse
 							       "FROM AtomMembership\n" +
 								   "WHERE CollectionID = " +
 								   collection.getCollectionID());
+			System.out.println(collection.getCollectionID());
+			System.out.println(newID);
+			System.out.flush();
 			while (rs.next())
 			{
 				stmt.addBatch("INSERT INTO AtomMembership\n" +
@@ -1871,8 +1874,6 @@ public class SQLServerDatabase implements InfoWarehouse
 				endTime = new Date(rs.getTimestamp(1).getTime());
 				//endTime = endTime.substring(0, startTime.length()-2);
 			}
-			
-			
 			String comment = " ";
 			
 			// Get the comment for the current collection to use
@@ -2153,7 +2154,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			String q = "CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))" +
 " INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')" +
 " INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')" +
-" CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))" +
+" CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))" +
 " CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))" +
 " CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)" +
 " CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))" +

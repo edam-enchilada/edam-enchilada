@@ -65,7 +65,6 @@ public class ExceptionDialog extends JDialog implements ActionListener{
 		super(frame, "Error", true);
 		
 		//Make sure we have nice window decorations.
-		setDefaultLookAndFeelDecorated(true);
 		setSize(400,400);
 		
 		JPanel panel = new JPanel();
@@ -96,7 +95,6 @@ public class ExceptionDialog extends JDialog implements ActionListener{
 	public ExceptionDialog(String[] message){
 		super();
 //		Make sure we have nice window decorations.
-		setDefaultLookAndFeelDecorated(true);
 		setSize(400,400);
 		
 		JPanel panel = new JPanel();
@@ -134,7 +132,6 @@ public class ExceptionDialog extends JDialog implements ActionListener{
 	public ExceptionDialog(JDialog frame, ArrayList<String[]> messages){
 		super(frame, "Error", true);
 		
-		setDefaultLookAndFeelDecorated(true);
 		setSize(400, 400);
 		
 		JPanel panel = new JPanel();

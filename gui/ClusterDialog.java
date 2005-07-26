@@ -125,7 +125,6 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		this.cTree = cTree;
 		this.db = db;
 		//Set window settings.
-		//setDefaultLookAndFeelDecorated(true);
 		setSize(480, 275);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		

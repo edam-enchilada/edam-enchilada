@@ -117,9 +117,23 @@ public class MainFrame extends JFrame implements ActionListener
 	public MainFrame()
 	{
 		super("Enchilada");
-
-        setDefaultLookAndFeelDecorated(false);
-        
+		
+		/* "If you are going to set the look and feel, you should do it as the 
+		 * very first step in your application. Otherwise you run the risk of 
+		 * initializing the Java look and feel regardless of what look and feel 
+		 * you've requested. This can happen inadvertently when a static field 
+		 * references a Swing class, which causes the look and feel to be 
+		 * loaded. If no look and feel has yet been specified, the default Java 
+		 * look and feel is loaded."
+		 * From http://java.sun.com/docs/books/tutorial/uiswing/misc/plaf.html
+		 */
+		try {
+			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+         
 		setSize(800, 600);
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

@@ -65,7 +65,10 @@ public class ClusterFeature {
 	public CFNode child = null;
 	public CFNode curNode;
 	
-	// Constructor
+	/**
+	 * Constructor
+	 * @param cur - current node
+	 */
 	public ClusterFeature(CFNode cur) {
 		count = 0;
 		sums = new BinnedPeakList();
@@ -74,8 +77,16 @@ public class ClusterFeature {
 		atomIDs = new ArrayList<Integer>();
 	}
 	
-	// Constructor
-	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, ArrayList<Integer> ids) {
+	/**
+	 * Constructor
+	 * @param cur - current node
+	 * @param c - count
+	 * @param s1 - sums peaklist
+	 * @param s2 - sum of sqaures
+	 * @param ids - atomids
+	 */
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, 
+			ArrayList<Integer> ids) {
 		curNode = cur;
 		count = c;
 		sums = s1;
@@ -83,7 +94,11 @@ public class ClusterFeature {
 		atomIDs = ids;
 	}
 	
-	// Updates the cf by adding a peaklist to it
+	/**
+	 * Updates the cf by adding a peaklist to it.
+	 * @param list - binnedPeakList
+	 * @param atomID - atomID
+	 */
 	public void updateCF(BinnedPeakList list, int atomID) {
 		
 		count++;
@@ -95,13 +110,13 @@ public class ClusterFeature {
 			peak = iterator.next();
 			squareSums += peak.area*peak.area;
 		}
-		//sums = normalize(sums, DistanceMetric.CITY_BLOCK);
-		//squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
 		atomIDs.add(new Integer(atomID));
 	}
 	
-	// updates the cf by adding the cfs in its child.
-	// returns false if there's no child
+	/**
+	 * Updates the CF by adding the cfs in its child.
+	 * @return true if successful, false if there's no child.
+	 */
 	public boolean updateCF() {
 		if (child == null)
 			return false;
@@ -116,21 +131,26 @@ public class ClusterFeature {
 			squareSums += cfs.get(i).squareSums;
 			atomIDs.addAll(cfs.get(i).atomIDs);
 		}
-		// TODO: only normalize sums??
-		//sums = normalize(sums, DistanceMetric.CITY_BLOCK);
-		//squareSums = normalize(squareSums, DistanceMetric.CITY_BLOCK);
 		return true;
 	}
 	
-	// updates the child and the current node in one shot.
+	/**
+	 * Updates the child and the currentNode.
+	 * @param newChild - new child
+	 * @param newCurNode - new current node.
+	 */
 	public void updatePointers(CFNode newChild, CFNode newCurNode) {
 		child = newChild;
 		curNode = newCurNode;
 	}
 
-	// tests for equality with another cluster feature.
-	// Note: i don't check for same parent/child yet.
-	// Note: I don't check for atomIDs, since they might not be around in the end.
+	/**
+	 * Tests for equality with another cluster feature. Note: i don't check 
+	 * for same parent/child yet. Note: I don't check for atomIDs, since they 
+	 * might not be around in the end.
+	 * @param cf - cf to compare
+	 * @return true if they are the same, false otherwise.
+	 */
 	public boolean isEqual(ClusterFeature cf) {
 		if (cf.getCount() != count || cf.getSums().length() != sums.length())
 			return false;
@@ -151,7 +171,10 @@ public class ClusterFeature {
 		return true;
 	}
 	
-	// prints the cluster feature
+	/**
+	 * prints the cluster feature
+	 * @param delimiter - delimiter for the level
+	 */
 	public void printCF(String delimiter) {
 		System.out.print(delimiter + "CF: " + this);
 		System.out.print("  Count: " + count);
@@ -162,33 +185,58 @@ public class ClusterFeature {
 	}
 	
 	
+	/**
+	 * sets the count
+	 * @param c - new count
+	 */
 	public void setCount(int c) {
 		count = c;
 	}
 		
-	// gets the count
+	/**
+	 * gets the count
+	 * @return - count
+	 */
 	public int getCount() {
 		return count;
 	}
 	
-	// gets the sums
+	/**
+	 * gets the sums
+	 * @return - sums
+	 */
 	public BinnedPeakList getSums() {
 		return sums;
 	}
 	
+	/**
+	 * sets the sum of squares
+	 * @param s - new sum of squares
+	 */
 	public void setSumOfSquares(float s) {
 		squareSums = s;
 	}
 	
-	// gets the sums of the squares
+	/**
+	 * gets the sum of squares
+	 * @return - sum of squares
+	 */
 	public float getSumOfSquares() {
 		return squareSums;
 	}
 	
+	/**
+	 * gets the arraylist of atomIDs
+	 * @return - atomIDs
+	 */
 	public ArrayList<Integer> getAtomIDs() {
 		return atomIDs;
 	}
 	
+	/**
+	 * Gets the centroid for the CF.
+	 * @return - cf's centroid
+	 */
 	public BinnedPeakList getCentroid() {
 		BinnedPeakList list = new BinnedPeakList();
 		Iterator<BinnedPeak> iterator = sums.iterator();

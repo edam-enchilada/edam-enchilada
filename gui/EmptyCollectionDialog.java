@@ -70,7 +70,6 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 			boolean datatypeEditable)
 	{
 		super (parent,"Empty Collection", true);
-		setDefaultLookAndFeelDecorated(true);
 		setSize(400,200);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		

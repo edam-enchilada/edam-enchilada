@@ -51,15 +51,18 @@ import analysis.DistanceMetric;
  *
  */
 public class CFNode {
+	/* Class Variables */
 	private ArrayList<ClusterFeature> cfs;
 	public ClusterFeature parentCF = null;
 	public CFNode parentNode = null;
 	
-	// TODO: don't think we need prevLeaf
 	public CFNode prevLeaf = null;
 	public CFNode nextLeaf = null;
 	
-	// Constructor
+	/**
+	 * Constructor
+	 * @param p - parent cluster feature
+	 */
 	public CFNode(ClusterFeature p) {
 		cfs = new ArrayList<ClusterFeature>();
 		parentCF = p;
@@ -67,13 +70,20 @@ public class CFNode {
 			parentNode = p.curNode;
 	}
 	
-	// Add a cluster feature
+	/**
+	 * Adds a cluster feature
+	 * @param cf - cf to add
+	 */
 	public void addCF(ClusterFeature cf){
 		cfs.add(cf);
 		cf.curNode = this;
 	}
 	
-	// Remove a cluster feature
+	/**
+	 * Removes a cluster feature
+	 * @param cf - cf to remove
+	 * @return true if successful, false otherwise.
+	 */
 	public boolean removeCF(ClusterFeature cf) {
 		for (int i = 0; i < cfs.size(); i++) {
 			if (cfs.get(i).isEqual(cf)) {
@@ -84,7 +94,11 @@ public class CFNode {
 		return false;
 	}
 	
-	// returns the two closest cluster features.
+	/**
+	 * returns the two closest cluster features (cf1 and cf2) in this node.  
+	 * The returned array is of the form {cf1,cf2}.
+	 * @return the array above
+	 */
 	public ClusterFeature[] getTwoClosest() {
 		if (cfs.size() < 2) {
 			return null;
@@ -97,7 +111,8 @@ public class CFNode {
 			listI = cfs.get(i).getCentroid();
 			for (int j = i; j < cfs.size(); j++) {
 				listJ = cfs.get(j).getCentroid();
-				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
+				thisDistance = listI.getDistance(listJ,
+						DistanceMetric.CITY_BLOCK);
 				if (i != j && thisDistance < minDistance) {
 					minDistance = thisDistance;
 					entryA = cfs.get(i);
@@ -111,7 +126,11 @@ public class CFNode {
 		return closestTwo;
 	}
 	
-	//returns the two farthest cluster features.
+	/**
+	 * returns the two farthest cluster features (cf1 and cf2) in this node.  
+	 * The returned array is of the form {cf1,cf2}.
+	 * @return the array above
+	 */
 	public ClusterFeature[] getTwoFarthest() {
 		if (cfs.size() < 2) {
 			return null;
@@ -124,7 +143,8 @@ public class CFNode {
 			listI = cfs.get(i).getCentroid();
 			for (int j = i; j < cfs.size(); j++) {
 				listJ = cfs.get(j).getCentroid();
-				thisDistance = listI.getDistance(listJ,DistanceMetric.CITY_BLOCK);
+				thisDistance = listI.getDistance(listJ,
+						DistanceMetric.CITY_BLOCK);
 				if (thisDistance > maxDistance) {
 					maxDistance = thisDistance;
 					entryA = cfs.get(i);
@@ -138,41 +158,52 @@ public class CFNode {
 		return farthestTwo;
 	}
 	
+	/**
+	 * Gets the closest CF in the node to the given entry.
+	 * @param entry - binnedPeakList to compare
+	 * @return - closest CF
+	 */
 	public ClusterFeature getClosest(BinnedPeakList entry) {
 		float minDistance = Float.MAX_VALUE;
 		float thisDistance;
 		ClusterFeature minCF = null;
 		for (int i = 0; i < cfs.size(); i++) {
+			if (cfs.get(i).getCount() != 0) {
 			BinnedPeakList list = cfs.get(i).getCentroid();
 			thisDistance = list.getDistance(entry,DistanceMetric.CITY_BLOCK);
 			if (thisDistance < minDistance) {
 				minDistance = thisDistance;
 				minCF = cfs.get(i);
 			}
+			}
 		}
 		return minCF;
 	}
 	
-	public void updateLeafPointers(ClusterFeature parent, CFNode prev, CFNode next) {
+	
+	/**
+	 * Updates the parent for the node and its CFs.
+	 * @param parent - new parent CF
+	 */
+	public void updateParent(ClusterFeature parent) {
 		parentCF = parent;
 		if (parent == null)
 			parentNode = null;
 		else
 			parentNode = parent.curNode;
-		prevLeaf = prev;
-		nextLeaf = next;
+		if (!isLeaf()) {
+			for (int i = 0; i < cfs.size(); i++) {
+				cfs.get(i).updatePointers(cfs.get(i).child, this);
+				cfs.get(i).child.parentCF = cfs.get(i);
+				cfs.get(i).child.parentNode = this;
+			}
+		}
 	}
 	
-	public void updateNonLeafPointers(ClusterFeature parent) {
-		parentCF = parent;
-		if (parent == null)
-			parentNode = null;
-		else
-			parentNode = parent.curNode;
-		parentNode = parent.curNode;
-	}
-	
-	// {Node, CLusterFeature, Child}
+	/**
+	 * clears the node.
+	 * @return the parentCF
+	 */
 	public ClusterFeature clearNode() {
 		ClusterFeature returnThis = parentCF;
 		parentNode = null;
@@ -183,19 +214,34 @@ public class CFNode {
 		return returnThis;
 	}
 	
-	// print the node
+	/**
+	 * Prints the node
+	 * @param delimiter - delimiter for the given level in the tree
+	 */
 	public void printNode(String delimiter) {
-		System.out.println(delimiter + "parent: " + parentNode);
+		//System.out.println(delimiter + "parent: " + parentNode);
 		System.out.println(delimiter + "node: " + this);
+	//	ClusterFeature[] blah = getTwoClosest();
+	//	if (isLeaf() && blah != null){
+	//		System.out.println(delimiter + "* cf1: " + blah[0]);
+	//		System.out.println(delimiter + "* cf2: " + blah[1]);
+	//		System.out.println(delimiter + "* closest CF dist: " + 
+		//blah[0].getCentroid().getDistance(blah[1].getCentroid(), 
+		//DistanceMetric.CITY_BLOCK));
+	//	}
 		//System.out.println(delimiter + "# cfs: " + getSize());
-		//System.out.println(delimiter + "prev leaf: " + prevLeaf);
-		//System.out.println(delimiter + "next leaf: " + nextLeaf);
-		//System.out.println(delimiter + "Node's cfs:");
+		System.out.println(delimiter + "prev leaf: " + prevLeaf);
+		System.out.println(delimiter + "next leaf: " + nextLeaf);
+		System.out.println(delimiter + "Node's cfs:");
 		for (int i = 0; i < cfs.size(); i++) {
 			cfs.get(i).printCF(delimiter);
 		}
 	}
 	
+	/**
+	 * Determines if the given node is a leaf or not.
+	 * @return - true if it's a leaf, false otherwise.
+	 */
 	public boolean isLeaf() {
 		if (cfs.size() == 0) 
 			return true;
@@ -204,12 +250,18 @@ public class CFNode {
 		return false;
 	}
 	
-	// get the number of cluster features
+	/**
+	 * get the number of CFs
+	 * @return - size
+	 */
 	public int getSize() {
 		return cfs.size();
 	}
 	
-	// get the cluster feature arraylist
+	/**
+	 * Gets the cluster feature array
+	 * @return - cf array
+	 */
 	public ArrayList<ClusterFeature> getCFs() {
 		return cfs;
 	}	
