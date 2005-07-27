@@ -1945,7 +1945,8 @@ public class SQLServerDatabase implements InfoWarehouse
 						"TotalNegIntegral)\n" +
 						"VALUES ('" + newName +"', '" + 
 						(new File(rs.getString("Filename"))).getName() +
-						"', '" + dFormat.format(new Date(
+						"', '" + 
+						dFormat.format(new Date(
 								rs.getTimestamp("Time").
 								getTime())) + 
 								"', " + 
@@ -1969,8 +1970,8 @@ public class SQLServerDatabase implements InfoWarehouse
 					"RelPeakArea " +
 					"FLOAT, PeakHeight INT)\n" +
 					"\n" +
-					"" +
-					"" +
+					"\n" +
+					"\n" +
 					"INSERT INTO #PeaksToExport\n" +
 					"(OrigFilename, PeakLocation, PeakArea, " +
 					"RelPeakArea, PeakHeight)\n" +

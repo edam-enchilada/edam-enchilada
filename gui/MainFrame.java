@@ -213,7 +213,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == exportParsButton || source == MSAexportItem)
 		{
-			getSelectedCollection().exportToPar();
+			getSelectedCollection().exportToPar(this);
 		}
 		
 		else if (source == deleteAdoptItem)

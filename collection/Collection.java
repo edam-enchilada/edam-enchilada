@@ -45,6 +45,7 @@
 package collection;
 
 import database.*;
+import gui.FilePicker;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -197,12 +198,34 @@ public class Collection {
 	}
 	
 	//TODO:  Need a progress bar here.
-	public boolean exportToPar()
+	public boolean exportToPar(javax.swing.JFrame parent)
 	{
-		String name = getName();
-		File parFile = new File(name + ".par");
-		File setFile = new File(name + ".set");
+		String name;
+		String parFileName = (new FilePicker("Choose .par file destination",
+											 "par", parent)
+							  ).getFileName();
+
+		if (parFileName == null) {
+			return false;
+		} else if (! parFileName.endsWith(".par")) {
+			parFileName = parFileName + ".par";
+		}
+		parFileName = parFileName.replaceAll("'", "");
+		// parFileName is an absolute pathname to the par file.
+		// the set file goes in the same directory
+		File parFile = new File(parFileName);
+		File setFile = new File(parFileName.replaceAll("\\.par$", ".set"));
 		System.out.println(parFile.getAbsolutePath());
+		
+		// String name is the basename of the par file---the dataset name.
+		// I've done trivial testing---spaces and periods seem to be ok
+		// in this name.  I'm sure that single quotes aren't... so I remove
+		// them above.
+		File noExt = new File(parFileName.replaceAll("\\.par$", ""));
+		name = noExt.getName(); // name has no path
+		
+	
+		// the thought: set "name" to the basename of the file they choose.
 		java.util.Date date = db.exportToMSAnalyzeDatabase(this, name, "MS-Analyze");
 		try {
 			DateFormat dFormat = 
