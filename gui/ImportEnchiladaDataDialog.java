@@ -47,7 +47,6 @@
  */
 package gui;
 
-import dataImporters.OldImporter;
 import dataImporters.EnchiladaDataSetImporter;
 import database.DynamicTableGenerator;
 import database.SQLServerDatabase;

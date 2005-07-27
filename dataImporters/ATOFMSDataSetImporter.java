@@ -58,7 +58,6 @@ import ATOFMS.*;
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.Window;
-import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
 import java.lang.reflect.InvocationTargetException;

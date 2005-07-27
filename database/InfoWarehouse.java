@@ -51,7 +51,6 @@ import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
 
-import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
 
 import ATOFMS.Peak;

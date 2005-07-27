@@ -48,6 +48,7 @@ import javax.swing.*;
 import database.SQLServerDatabase;
 
 import java.awt.event.*;
+import java.util.ArrayList;
 
 /**
  * @author ritza
@@ -58,9 +59,8 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JButton cancelButton;
 	private JTextField nameField;
 	private JTextField commentField;
-	private JTextField datatypeField;
+	private JComboBox datatypeBox;
 	private int collectionID = -1;
-	private String initialDatatype;
 	
 	public EmptyCollectionDialog(JFrame parent) {
 		this(parent, "", true);
@@ -73,25 +73,20 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		setSize(400,200);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
-		JPanel namePanel = new JPanel();
 		JLabel nameLabel = new JLabel("Name: ");
 		nameField = new JTextField(25);
-		namePanel.add(nameLabel);
-		namePanel.add(nameField);
 		
-		JPanel commentPanel = new JPanel();
 		JLabel commentLabel = new JLabel("Comment: ");
 		commentField = new JTextField(25);
-		commentPanel.add(commentLabel);
-		commentPanel.add(commentField);
 		
-		JPanel datatypePanel = new JPanel();
 		JLabel datatypeLabel = new JLabel("Datatype: ");
-		datatypeField = new JTextField(25);
-		datatypeField.setText(datatype);
-		datatypeField.setEditable(datatypeEditable);
-		datatypePanel.add(datatypeLabel);
-		datatypePanel.add(datatypeField);
+		ArrayList<String> datatypeNames = MainFrame.db.getKnownDatatypes();
+		String[] nameArray = new String[datatypeNames.size() + 1];
+		nameArray[0] = "Choose One:  ";
+		for (int i = 1; i <= datatypeNames.size(); i++)
+			nameArray[i] = datatypeNames.get(i-1);
+		datatypeBox = new JComboBox(nameArray);
+		datatypeBox.setSelectedIndex(0);
 		
 		JPanel buttonPanel = new JPanel();
 		okButton = new JButton("OK");
@@ -102,10 +97,46 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		buttonPanel.add(cancelButton);
 		
 		JPanel mainPanel = new JPanel();
-		mainPanel.add(namePanel);
-		mainPanel.add(commentPanel);
-		mainPanel.add(datatypePanel);
-		mainPanel.add(buttonPanel);
+		SpringLayout layout = new SpringLayout();
+	    mainPanel.setLayout(layout);	
+		
+	    mainPanel.add(nameLabel);
+	    mainPanel.add(nameField);
+	    mainPanel.add(commentLabel);
+	    mainPanel.add(commentField);
+	    mainPanel.add(datatypeLabel);
+	    mainPanel.add(datatypeBox);
+	    mainPanel.add(buttonPanel);
+
+	    
+		layout.putConstraint(SpringLayout.WEST, nameLabel,
+                10, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, nameLabel,
+                15, SpringLayout.NORTH, mainPanel);
+		layout.putConstraint(SpringLayout.WEST, nameField,
+                80, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, nameField,
+                10, SpringLayout.NORTH, mainPanel);
+		layout.putConstraint(SpringLayout.WEST, commentLabel,
+                10, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, commentLabel,
+                15, SpringLayout.SOUTH, nameField);
+		layout.putConstraint(SpringLayout.WEST, commentField,
+                80, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, commentField,
+                10, SpringLayout.SOUTH, nameField);
+		layout.putConstraint(SpringLayout.WEST, datatypeLabel,
+                10, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, datatypeLabel,
+               20, SpringLayout.SOUTH, commentField);
+		layout.putConstraint(SpringLayout.WEST, datatypeBox,
+                80, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, datatypeBox,
+                15, SpringLayout.SOUTH, commentField);
+		layout.putConstraint(SpringLayout.WEST, buttonPanel,
+                120, SpringLayout.WEST, mainPanel);
+		layout.putConstraint(SpringLayout.NORTH, buttonPanel,
+                20, SpringLayout.SOUTH, datatypeLabel);
 		
 		add(mainPanel);
 		
@@ -128,7 +159,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		if (source == okButton) {
 			SQLServerDatabase db = new SQLServerDatabase();
 			db.openConnection();
-			collectionID = db.createEmptyCollection(datatypeField.getText(), 0,nameField.getText(),commentField.getText(),"");
+			collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
 			db.closeConnection();
 			System.out.println("Empty Collection ID: " + collectionID);
 			dispose();
