@@ -1767,8 +1767,11 @@ public class SQLServerDatabase implements InfoWarehouse
 			String sOdbcConnection) 
 	{
 		
-		assert (collection.getDatatype().equals("ATOFMS")) :
-			"trying to export the wrong datatype for MSAnalyze: " + collection.getDatatype();		
+		if (! collection.getDatatype().equals("ATOFMS")) {
+			throw new RuntimeException(
+					"trying to export the wrong datatype for MSAnalyze: " 
+					+ collection.getDatatype());
+		}
 		DateFormat dFormat = null;
 		Date startTime = null;
 		try {
@@ -1864,7 +1867,6 @@ public class SQLServerDatabase implements InfoWarehouse
 				unixTime = 0;
 				//endTime = "";
 			}
-			
 			// find the end time in the same manner
 			rs = stmt.executeQuery(
 					"SELECT MAX ([Time])\n" +
@@ -1942,8 +1944,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"NumPeaks,TotalPosIntegral, " +
 						"TotalNegIntegral)\n" +
 						"VALUES ('" + newName +"', '" + 
-//						"..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\" + 
-						rs.getString("Filename") +
+						(new File(rs.getString("Filename"))).getName() +
 						"', '" + dFormat.format(new Date(
 								rs.getTimestamp("Time").
 								getTime())) + 
@@ -2005,7 +2006,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"VALUES\n" +
 						"(\n" +
 						"	'" + newName + "', '" + 
-						rs.getString(1) + "', " +
+						(new File(rs.getString(1))).getName() + "', " +
 						rs.getFloat(2) + ", " + rs.getInt(3) + 
 						", " +
 						rs.getFloat(4) + ", " + rs.getInt(5) +
