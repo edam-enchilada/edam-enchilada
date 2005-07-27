@@ -1,0 +1,40 @@
+Branch partition; rule: Split along dimension 27 at value 0.16884781 (goodness -
+67.0)
+Children:  Left
+	<Branch partition; rule: Split along dimension 23 at value 0.13800928 (goodness -19.0)
+	Children:  Left
+		<Branch partition; rule: Split along dimension 38 at value 0.03458449 (goodness -66.0)
+		Children:  Left
+			<Frozen partition!>
+		Right 
+			<Frozen partition!>>
+	Right 
+		<Frozen partition!>>
+Right 
+	<Frozen partition!>
+
+
+Branch partition; rule: Split along dimension 51 at value 0.0 (goodness -34.0)
+Children:  Left
+	<Branch partition; rule: Split along dimension 27 at value 0.109947234 (goodness -37.0)
+	Children:  Left
+		<Branch partition; rule: Split along dimension 23 at value 0.0 (goodness -15.0)
+		Children:  Left
+			<Frozen partition!>
+		Right 
+			<Frozen partition!>>
+	Right 
+		<Frozen partition!>>
+Right 
+	<Branch partition; rule: Split along dimension 27 at value 0.15707316 (goodness -31.0)
+	Children:  Left
+		<Frozen partition!>
+	Right 
+		<Frozen partition!>>
+
+
+
+SKM or subspace?
+
+
+maybe do GenIc - distance based, streaming, real simple
