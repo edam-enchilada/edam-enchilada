@@ -241,10 +241,23 @@ public class Collection {
 			// actually the max value of a bin in the data (2^16)
 			// TODO: Test to make sure size matches the
 			// scatter delay MSA produces for the same dataset
-				out.println(particleCount + ", " + 
-						particle.getFilename().substring(0,1) + 
-						File.separator +
-						particle.getFilename() + 
+				out.println(particleCount + "," + 
+						// better would be to copy all the .amz files around
+						// and use relative pathnames in a non-abusive way.
+//						particle.getFilename().substring(0,1) + 
+//						File.separator +
+						
+						//XXX: hack.  MSA only understands relative pathnames:
+						"..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\" +
+						// .substring(3) : the part of the path after "c:\".
+						// How to make this platform-independent?
+						// well, MS-Analyze doesn't work on linux, so there!
+						particle.getFilename().substring(3) + 
+
+						// if MS-Analyze is ever smart enough to recognize
+						// absolute pathnames, get rid of the stuff above
+						// and use this line.
+//						particle.getFilename() + 
 						", " + particle.getScatDelay() + 
 						", 65535, " +
 						nFormat.format(particle.getLaserPower()) + 

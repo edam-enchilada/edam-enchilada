@@ -105,12 +105,14 @@ public class Histogram {
 	
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		LinkedList<SplitRule> splits = new LinkedList<SplitRule>();
+		
 		SplitRule zeroSplit = new SplitRule(dimension, 0,
 				0 - Math.abs(histogram.getZeroCount() 
 							- histogram.getHitCount()));
 		if (zeroSplit.goodness > - totalCount / sensitivity) {
 			splits.add(zeroSplit);
 		}
+		
 		if (findAllValleys() > 0) {
 			splitPoints = splitPoints.removeInsignificant(confidencePercent);
 			for (int i = 0; i < splitPoints.numValleys(); i++) {

@@ -131,7 +131,7 @@ public class NumberBox {
 		System.out.println("Particle count: " + stats.count());
 		System.out.println("m/z\tarea");
 		for (int i = - MAX_LOCATION; i < MAX_LOCATION; i++) {
-			if (stats.mean(i) > 0.01) {
+			if (stats.mean(i) > 0.0001) {
 				System.out.println(i + "\t" + stats.mean(i));
 			}
 		}

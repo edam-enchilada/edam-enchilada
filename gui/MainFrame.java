@@ -117,7 +117,7 @@ public class MainFrame extends JFrame implements ActionListener
 	public MainFrame()
 	{
 		super("Enchilada");
-		
+
 		/* "If you are going to set the look and feel, you should do it as the 
 		 * very first step in your application. Otherwise you run the risk of 
 		 * initializing the Java look and feel regardless of what look and feel 
@@ -133,7 +133,7 @@ public class MainFrame extends JFrame implements ActionListener
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-         
+
 		setSize(800, 600);
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

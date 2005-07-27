@@ -1925,7 +1925,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"0, 0, '" + comment + "')");
 			
 
-			// get the values for the particles tabel
+			// get the values for the particles table
 			//so we can export them to MS Access
 			rs = stmt.executeQuery(
 					"SELECT * \n" +
@@ -1942,6 +1942,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"NumPeaks,TotalPosIntegral, " +
 						"TotalNegIntegral)\n" +
 						"VALUES ('" + newName +"', '" + 
+//						"..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\..\\\\" + 
 						rs.getString("Filename") +
 						"', '" + dFormat.format(new Date(
 								rs.getTimestamp("Time").
