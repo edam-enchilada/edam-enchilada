@@ -42,6 +42,14 @@ package analysis;
 import java.util.*;
 
 
+/*
+ * NOTE! NOTE! NOTE!
+ * when we generalize clustering and binnedpeaklists and such, we should
+ * consider making the positive and negative spectra separate AtomInfoSparse
+ * tables in the database, so that we don't have all the icky subtracting
+ * and adding MAX_LOCATION and negative indices.
+ */
+
 /**
  * @author andersbe
  * @author smitht
