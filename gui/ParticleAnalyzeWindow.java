@@ -126,7 +126,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		chart.setHasKey(false);
 		chart.setTitle("Positive and negative peak values");
 		chart.setTitleX(0,"Positive mass-to-charge ratios");
-		chart.setTitleY(0,"Height");
+		chart.setTitleY(0,"Height"); // XXX
 		chart.setTitleY(1,"Height");
 		chart.setTitleX(1,"Negative mass-to-charge ratios");
 		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
@@ -425,13 +425,15 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset negDS = new Dataset(), posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
-			posDS.add(new DataPoint(p.massToCharge, p.height));
+			posDS.add(new DataPoint(p.massToCharge, p.area));
 		}
 		for(Peak p : negPeaks)
 		{
-			negDS.add(new DataPoint(-p.massToCharge, p.height));
+			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
 
+		chart.setTitleY(0,"Area");
+		chart.setTitleY(1,"Area");
 		
 		chart.setDataset(0,posDS);
 		chart.setDataset(1,negDS);
@@ -456,6 +458,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 
 		chart.setDataset(1,negSpecDS);
 		chart.setDataset(0,posSpecDS);
+		
+		chart.setTitleY(0,"Intensity");
+		chart.setTitleY(1,"Intensity");
+		
 		chart.packData(false, true);
 		chart.setDataDisplayType(false, true);
 	}
