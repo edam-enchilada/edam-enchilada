@@ -126,8 +126,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		chart.setHasKey(false);
 		chart.setTitle("Positive and negative peak values");
 		chart.setTitleX(0,"Positive mass-to-charge ratios");
-		chart.setTitleY(0,"Height"); // XXX
-		chart.setTitleY(1,"Height");
+		chart.setTitleY(0,"Area"); // XXX
+		chart.setTitleY(1,"Area");
 		chart.setTitleX(1,"Negative mass-to-charge ratios");
 		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
 		chart.setNumTicks(10,10, 1,1);
