@@ -2127,7 +2127,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			db.database = dbName;
 			db.openConnection();
 			con = db.getCon();
-			in = new Scanner(new File("database//SQLServerRebuildDatabase.txt"));
+			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
 			String query = "";
 			StringTokenizer token;
 			// loop through license block

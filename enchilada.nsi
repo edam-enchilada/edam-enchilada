@@ -56,6 +56,7 @@ Section "EDAM Enchilada (required)"
   File "gpl.txt"
   File "library.txt"
   File "MPL-1.1.txt"
+  File "SQLServerRebuildDatabase.txt"
   
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\EDAM_Enchilada "Install_Dir" "$INSTDIR"
@@ -102,6 +103,7 @@ Section "un.Uninstall"
   Delete "$INSTDIR\gpl.txt"
   Delete "$INSTDIR\library.txt"
   Delete "$INSTDIR\MPL-1.1.txt"
+  Delete "$INSTDIR\SQLServerRebuildDatabase.txt"
   Delete $INSTDIR\*.par
   Delete $INSTDIR\*.set
   Delete $INSTDIR\uninstall.exe
