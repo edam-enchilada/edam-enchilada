@@ -1,9 +1,7 @@
-/**
- * 
- */
 package analysis.clustering.o;
 
 /**
+ * Never actually used, I think?
  * @author smitht
  *
  */

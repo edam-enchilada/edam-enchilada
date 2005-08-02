@@ -1,11 +1,9 @@
-/**
- * 
- */
 package analysis.clustering.o;
 
 import analysis.CollectionDivider;
 
 /**
+ * FrozenPartitions currently just have to silently discard their data.  Cool!
  * @author smitht
  *
  */
@@ -32,19 +30,7 @@ public class FrozenPartition extends Partition {
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#rulesUp()
-	 */
-	public String rulesUp() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#rulesDown()
-	 */
 	public void printRulesDown() {
-		// TODO Auto-generated method stub
 		System.out.print("Frozen partition!");
 	}
 

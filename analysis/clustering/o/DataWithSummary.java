@@ -5,6 +5,18 @@ import java.util.Collection;
 
 import analysis.BinnedPeakList;
 
+/**
+ * DataWithSummary - an ArrayList of atoms, and some Cluster Feature
+ * kind of things.
+ * 
+ * Use DataWithSummary kinda like an ArrayList.  You add stuff to it.
+ * I guess it's not iterable itself, but it has a getAtoms method, so
+ * meh.  These statistics are important for making Histograms.  The stats
+ * are StatSummary's.
+ * 
+ * @author smitht
+ *
+ */
 
 public class DataWithSummary {
 	private ArrayList<BinnedPeakList> atoms;
@@ -34,18 +46,36 @@ public class DataWithSummary {
 		return atoms.addAll(that.atoms);
 	}
 	
+	/**
+	 * Returns the standard deviation of some dimension of the data,
+	 * efficiently (O(1)).
+	 * @param dimension Which dimension to find stdDev of? 
+	 * @return the standard deviation.
+	 */
 	public float stdDev(int dimension) {
 		return (float) stats.stdDev(dimension);
 	}
 	
+	/**
+	 * Returns an object which contains interesting statistical information
+	 * about all the data in this object.
+	 * @return a StatSummary object.
+	 */
 	public StatSummary getStats() {
 		return stats;
 	}
 	
+	/**
+	 * Returns a list of all of the BinnedPeakLists in this object.
+	 * @return the list of BPLs.
+	 */
 	public ArrayList<BinnedPeakList> getAtoms() {
 		return atoms;
 	}
 	
+	/**
+	 * @return the number of BinnedPeakLists in this object.
+	 */
 	public int size() {
 		return atoms.size();
 	}

@@ -1,5 +1,15 @@
 package analysis.clustering.o;
 
+/**
+ * StatSummary - a Cluster Feature vector, containing summary information
+ * for every dimension.
+ * 
+ * StatSummary keeps track of the sum, sum of squares for every dimension,
+ * and the count for all dimensions.  With this information, the mean,
+ * standard deviation, and probably a few other statistics can be calculated
+ * without referring to the original data.
+ */
+
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -18,18 +28,28 @@ public class StatSummary {
 	/*
 	 * Constructors
 	 */
+	/**
+	 * Make a new StatSummary containing these statistics.
+	 */
 	public StatSummary(double[] sum, double[] sumsq, int count) {
 		this.sum = sum;
 		this.sumsq = sumsq;
 		this.count = count;
 	}
 	
+	/**
+	 * Make a new StatSummary containing data from this list of BinnedPeakLists.
+	 * @param atoms the data to summarize.
+	 */
 	public StatSummary(Collection<BinnedPeakList> atoms) {
 		sumsq = new double[DOUBLE_MAX];
 		sum = new double[DOUBLE_MAX];
 		addAll(atoms);
 	}
 	
+	/**
+	 * Make a new empty StatSummary.
+	 */
 	public StatSummary() {
 		sumsq = new double[DOUBLE_MAX];
 		sum = new double[DOUBLE_MAX];
@@ -37,6 +57,11 @@ public class StatSummary {
 	
 	/*
 	 * Methods for Adding More Atoms or Statistics
+	 */
+	
+	/**
+	 * Add statistical information from all these atoms, in O(n*(average d))
+	 * time.
 	 */
 	public void addAll(Collection<BinnedPeakList> atoms) {
 		Iterator<BinnedPeakList> j = atoms.iterator();
@@ -46,10 +71,16 @@ public class StatSummary {
 		}
 	}
 	
+	/**
+	 * Add statistical information from all these atoms, in O(d) time.
+	 */
 	public void addAll(DataWithSummary atoms) {
 		addStats(atoms.getStats());
 	}
 	
+	/**
+	 * Add a single atom's statistics in O(dimensions in that atom) time.
+	 */
 	public void addAtom(BinnedPeakList atom) {
 		Iterator<BinnedPeak> i = atom.iterator();
 		count++;
@@ -58,6 +89,9 @@ public class StatSummary {
 		}
 	}
 	
+	/**
+	 * Add these summary statistics to this StatSummary in O(d).
+	 */
 	public void addStats(double[] sum, double[] sumsq, int count) {
 		for (int i = 0; i < DOUBLE_MAX; i++) {
 			this.sum[i] += sum[i];
@@ -66,6 +100,9 @@ public class StatSummary {
 		this.count += count;
 	}
 	
+	/**
+	 * Add these summary statistics to this StatSummary in O(d).
+	 */
 	public void addStats(StatSummary that) {
 		this.addStats(that.sum, that.sumsq, that.count);
 	}
@@ -85,6 +122,9 @@ public class StatSummary {
 	
 	/*
 	 * Statistical Methods
+	 */
+	/**
+	 * Find the standard deviation in O(1) time.
 	 */
 	public double stdDev(int dim) {
 		return Math.sqrt((sumsq[dim + MAX_LOCATION] 

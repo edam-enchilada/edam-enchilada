@@ -1,5 +1,9 @@
 package analysis.clustering.o;
 
+/**
+ * Never finished.  Look at Cheater.java for what would go here (in the
+ * divide() method).
+ */
 
 import analysis.CollectionDivider;
 import database.InfoWarehouse;

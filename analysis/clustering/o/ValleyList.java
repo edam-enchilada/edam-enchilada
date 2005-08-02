@@ -1,3 +1,8 @@
+/**
+ * A weird ArrayList that keeps track of triples of values that describe
+ * a valley in a histogram.  For example, 35-12-24.  An' stuff.
+ */
+
 package analysis.clustering.o;
 
 import java.util.ArrayList;
@@ -30,6 +35,10 @@ public class ValleyList extends ArrayList<Extremum> {
 		return super.get(super.size() - 1);
 	}
 
+	/**
+	 * @return a new ValleyList containing only statistically-significant 
+	 * valleys.
+	 */
 	public ValleyList removeInsignificant(int certaintyPercent) {
 		float targetChiSquared = percentToChiSquared(certaintyPercent);
 		
@@ -97,6 +106,10 @@ public class ValleyList extends ArrayList<Extremum> {
 							/expected);
 	}
 	
+	/**
+	 * @param valIndex the same index that you use for getValley(int).
+	 * @return the chi-squared value for the valley referenced by valIndex.
+	 */
 	public float chiSquared(int valIndex) {
 		List<Extremum> val = getValleyNeighborhood(valIndex);
 		

@@ -24,8 +24,9 @@ public class Histogram {
 	 */
 	
 	public Histogram(float stdDev, int count) {
-		// try different width!!
-		// "Scott's normal reference rule"
+		// try different widths!!
+		// "Scott's normal reference rule" -- probably should change to one
+		// of Scott's rules that allows for tons of skew.
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));
 		histogram = new HistList(binWidth);
 		splitPoints = new ValleyList();
@@ -44,11 +45,20 @@ public class Histogram {
 		this.sensitivity = sensitivity;
 	}
 
+	/**
+	 * This is the way to add data to the histogram.  The parameter is what
+	 * you want histogram'd...
+	 */
 	public void addPeak(float area) {
 		histogram.addPeak(area);
 	}
 	
-	public void setImplicit(int totalCount) {
+	/**
+	 * Set the count of particles, so that HistList can keep track of implicit
+	 * zeroes.
+	 * @param totalCount
+	 */
+	public void setParticleCount(int totalCount) {
 		histogram.setParticleCount(totalCount);
 	}
 	
@@ -103,6 +113,16 @@ public class Histogram {
 		return splitPoints.numValleys();
 	}
 	
+	/**
+	 * Get a list of SplitRules, a list of valid ways of splitting this
+	 * dimension.
+	 * 
+	 * Returns either null or an empty list if there are no useful splits.
+	 * Sorry about the inconsistency.  Use getBestSplit instead, it is
+	 * better.
+	 * 
+	 * The only supported values of confidencePercent are currently 90 and 95.
+	 */
 	public List<SplitRule> getSplitRules(int confidencePercent) {
 		LinkedList<SplitRule> splits = new LinkedList<SplitRule>();
 		
@@ -134,6 +154,10 @@ public class Histogram {
 		}
 	}
 	
+	/**
+	 * Return the best SplitRule for this dimension.  If there are no
+	 * valid ones, returns null.
+	 */
 	public SplitRule getBestSplit(int confidencePercent) {
 		List<SplitRule> goodRules = getSplitRules(confidencePercent);
 		SplitRule best = null;
@@ -159,6 +183,10 @@ public class Histogram {
 		}
 	}
 	
+	/**
+	 * Prints out the bin values and their counts for this histogram.
+	 * @param printSplits also print the valid split points?
+	 */
 	public void printHistogram(boolean printSplits) {
 		//TODO: add count of added peaks, and let the number of implicit 0's
 		// be figured out.

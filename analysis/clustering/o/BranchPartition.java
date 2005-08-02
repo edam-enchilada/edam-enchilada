@@ -1,5 +1,5 @@
 /**
- * 
+ * BranchPartition - a Partition that has a static rule to split data.
  */
 package analysis.clustering.o;
 
@@ -16,9 +16,9 @@ public class BranchPartition extends Partition {
 	/*
 	 * Constructors
 	 */
-	public BranchPartition(Partition par, SplitRule cutPoint,
+	public BranchPartition(Partition parent, SplitRule cutPoint,
 			Partition l, Partition r) {
-		parent = par;
+		this.parent = parent;
 		rule = cutPoint;
 		left = l;
 		right = r;
@@ -36,23 +36,15 @@ public class BranchPartition extends Partition {
 		rule = cutPoint;
 	}
 
+	/**
+	 * Divides the incoming data according to its SplitRule, and feeds
+	 * the appropriate data to its children!
+	 */
 	public int split(DataWithSummary atoms) {
-		// or should this do the sort and collect statistics thing?
-		// uh?
-		// what if left and right need to be created still?
-		// I guess that shouldn't happen.
 		List<DataWithSummary> divided = rule.splitAtoms(atoms);
 		atoms = null; // so maybe atoms can get garbage collected.
 		return left.split(divided.get(0)) 
 			+ right.split(divided.get(1));
-	}
-
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#rulesUp()
-	 */
-	public String rulesUp() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/* (non-Javadoc)

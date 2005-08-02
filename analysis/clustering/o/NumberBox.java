@@ -1,3 +1,8 @@
+/**
+ * A useful class that keeps track of StatSummaries and Histograms for all
+ * dimensions.
+ */
+
 package analysis.clustering.o;
 
 import java.util.Collection;
@@ -48,7 +53,7 @@ public class NumberBox {
 		if (! histogramsAreUpdated) {
 			for (int i = 0; i < MAX_LOCATION * 2; i++) {
 				if (histograms[i] != null) {
-					histograms[i].setImplicit(stats.count());
+					histograms[i].setParticleCount(stats.count());
 				}
 			}
 //			System.out.println("Set implicits to " + stats.count());
@@ -66,8 +71,18 @@ public class NumberBox {
 
 	/*
 	 * These two methods are the same, but, I think there need to be two
-	 * of them because the addAll of DataWithSummary is O(1) while the
-	 * addAll of Collection<BinnedPeakList> is O(n).
+	 * of them because the addAll of DataWithSummary is O(d) while the
+	 * addAll of Collection<BinnedPeakList> is O(n*(avg. d)).
+	 * 
+	 * Although putting the atoms into histograms is still O(n) in both
+	 * cases.  Muh.
+	 * 
+	 * Oh, DataWithSummary is no longer even a subclass of Coll<BPL> so it
+	 * has to be 2.  yay!
+	 */
+	/**
+	 * Add the contents of the DataWithSummary object to the statistics
+	 * and histograms.
 	 */
 	public boolean addAll(DataWithSummary that) {
 		histogramsAreUpdated = false;
@@ -80,6 +95,9 @@ public class NumberBox {
 		histAtoms(that.getAtoms());
 		return true;
 	}
+	/**
+	 * Add the contents of the Colelction to the stats and histograms.
+	 */
 	public boolean addAll(Collection<BinnedPeakList> atoms) {
 		histogramsAreUpdated = false;
 		if (stats == null) {
@@ -92,6 +110,10 @@ public class NumberBox {
 		return true;
 	}
 
+	/**
+	 * @return the best way of splitting *any* dimension, or null if there
+	 * are no good splits.
+	 */
 	public SplitRule getBestSplit(int confidencePercent) {
 		setImplicits();
 		SplitRule best = null;
@@ -114,6 +136,9 @@ public class NumberBox {
 		return best;
 	}
 	
+	/**
+	 * Prints out the histogram of a dimension, with statistics.
+	 */
 	public void printDimension(int dim) {
 		setImplicits();
 		System.out.println("Trying to print stats for dim " + dim);
@@ -126,6 +151,11 @@ public class NumberBox {
 		}
 	}
 	
+	/**
+	 * Prints the mean particle of the partition.  Partitions aren't
+	 * determined by centroid, but centroids can still be useful to look at.
+	 *
+	 */
 	public void printCentroid() {
 		System.out.println("Partition centroid:");
 		System.out.println("Particle count: " + stats.count());

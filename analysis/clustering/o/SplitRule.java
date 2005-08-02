@@ -21,6 +21,13 @@ public class SplitRule extends BinnedPeak {
 		return area < atom.getAreaAt(location);
 	}
 	
+	/**
+	 * Split up a list of atoms according to the rule that this SplitRule
+	 * represents.  Splits are always with regard to a greater-than test.
+	 * If the split is at 0, numbers that are not greater than zero (like,
+	 * oh, say, 0) go in one set and numbers that are greater than zero
+	 * go in t'other.
+	 */
 	public List<DataWithSummary> splitAtoms(List<BinnedPeakList> atoms) {
 		List<DataWithSummary> bucket;
 		bucket = new ArrayList<DataWithSummary>(2);

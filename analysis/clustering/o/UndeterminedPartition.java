@@ -1,6 +1,4 @@
-/**
- * 
- */
+
 package analysis.clustering.o;
 
 import java.util.List;
@@ -8,6 +6,10 @@ import java.util.List;
 import analysis.CollectionDivider;
 
 /**
+ * A Partition that needs to learn about itself.  Partitions are created
+ * Undetermined and may become Branched or Frozen.  Undetermined partitions
+ * do stuff with histograms and other kooky little numbers.  Actually no,
+ * just NumberBoxes.
  * @author smitht
  *
  */
@@ -21,22 +23,18 @@ public class UndeterminedPartition extends Partition {
 		nb = new NumberBox(2500);
 	}
 
-	/* (non-Javadoc)
-	 * @see analysis.clustering.o.Partition#split(java.util.List)
+	/**
+	 * This version of split(data) actually tries to find a valid splitting
+	 * point in the input data and to go with it.
 	 */
 	public int split(DataWithSummary data) {
 		nb.addAll(data);
 		
-		/*
-		 * FOR DEBUGGING (with iris data set) ONLY
-		 */
 //		System.out.println("***************************************");
 //		for (int i = 0; i < 4; i++) {
 //			nb.printDimension(i);
 //		}
-		/*
-		 * end for debugging.
-		 */
+//		// debug
 		
 		SplitRule rule = nb.getBestSplit(95);
 		// no good split?

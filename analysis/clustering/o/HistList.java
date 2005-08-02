@@ -20,8 +20,6 @@ package analysis.clustering.o;
  * maybe it won't have to change, but it will definitey have to be thought
  * about.   
  * 
- * TODO: Sensitivity.
- * 
  * TODO: Try different rules for splitting at 0.
  * Probably want to split where there is a significant population both with
  * and without 0.  The number of bins with at least Sensitivity hits in them
@@ -32,6 +30,12 @@ package analysis.clustering.o;
 
 
 import java.util.ArrayList;
+
+/*
+ * Basically, a HistList is an ArrayList that can be accessed by peak height
+ * rather than integral index.  You tell it how wide an index will be, and
+ * it does the rest.
+ */
 
 public class HistList {
 	/**
@@ -53,13 +57,23 @@ public class HistList {
 	}
 
 	// revision that has 0's stored in the list: 1.11. HistListTest 1.3.
+	/**
+	 * Map float index to integral index
+	 */
 	private int heightToIndex(float height) {
 		return (int)(height / binWidth);
 	}
+	
+	/**
+	 * Map integral index to (minimum) float index
+	 */
 	private float indexToMinHeight(int index) {
 		return (index) * binWidth;
 	}
 	
+	/**
+	 * add 1 to the specified index of the ArrayList.
+	 */
 	private void increment(int index) {
 		// changed semantics:  When you add something past the end of a list,
 		// just add enough "0" elements for it to work.
@@ -75,7 +89,11 @@ public class HistList {
 		}
 	}
 	
-	public Integer get(int index) {
+	/**
+	 * Get this index from the ArrayList, except if there is no member there,
+	 * in which case return 0 (because there are 0 instances of a hit there).
+	 */
+	public int get(int index) {
 		try {
 			return list.get(index);
 		} catch (IndexOutOfBoundsException e) {
@@ -83,6 +101,9 @@ public class HistList {
 		}
 	}
 	
+	/**
+	 * Get the count of hits in the bin that *height* would fall into.
+	 */
 	public Integer get(float height) {
 		try {
 			return list.get(heightToIndex(height));
@@ -91,6 +112,10 @@ public class HistList {
 		}
 	}
 	
+	/**
+	 * Add a peak to the HistList: that is, bin the height and increment
+	 * that bin.
+	 */
 	public void addPeak(float height) {
 		if (height < 0) {
 			throw new RuntimeException("Negative data are not yet " +
@@ -98,10 +123,6 @@ public class HistList {
 		}
 		this.increment(heightToIndex(height));
 		hitCount++;
-	}
-	
-	public void setParticleCount(int count) {
-		particleCount = count;
 	}
 	
 	public float getIndexMin(int index) {
@@ -112,6 +133,16 @@ public class HistList {
 	}
 	public float getIndexMiddle(int index) {
 		return indexToMinHeight(index) + (0.5f * binWidth);
+	}
+	
+	/**
+	 * HistList keeps track of how many particles exist and how many are
+	 * accunted for in this list.  Because zeros are implicit, the number
+	 * of zeros is equal to the total particles minus the accounted-for
+	 * particles.
+	 */
+	public void setParticleCount(int count) {
+		particleCount = count;
 	}
 	
 	public int getZeroCount() {
@@ -131,6 +162,11 @@ public class HistList {
 		particleCount = 0;
 		hitCount = 0;
 	}
+	
+	/**
+	 * The maximum bin index + 1, not the number of particles represented 
+	 * in the histogram.
+	 */
 	public int size() {
 		return list.size();
 	}

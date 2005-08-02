@@ -19,14 +19,26 @@ public class Cheater {
 		
 		DataWithSummary data = new DataWithSummary();
 		
+		// using a DataWithSummary accomplishes making an ArrayList of
+		// everything, while simultaneously compiling some statistical
+		// information needed to make a histogram.
 		while (curs.next()) {
 			data.add(normalize(curs.getCurrent().getBinnedList()));
 		}
 		
+		// a RootPartition handles all of the object transformation stuff
+		// that needs to happen when an Undetermined changes to a Branch
+		// or Frozen partition.
 		RootPartition r = new RootPartition(null);
+		// This is the cute little sexy call that runs the algorithm
+		// on all the data.  Neat!  If the data are ambiguous, this
+		// would return a nonzero value, but this is Cheater.java:
+		// I don't care.
 		r.split(data);
 		
 		Partition p = r.getLeftChild();
+		
+		// prints out the hierarchy of rules.
 		p.printRulesDown();
 		
 //		
@@ -42,6 +54,9 @@ public class Cheater {
 //		n.printDimension(48);
 	}
 	
+	/**
+	 * Copied from Cluster.java.
+	 */
 	protected static BinnedPeakList normalize(BinnedPeakList list)
 	{
 		float magnitude = list.getMagnitude(DistanceMetric.CITY_BLOCK);
