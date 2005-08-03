@@ -39,6 +39,9 @@
 
 package analysis.clustering.BIRCH;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
+
 import collection.Collection;
 import ATOFMS.ParticleInfo;
 import analysis.*;
@@ -57,10 +60,10 @@ import database.*;
 public class BIRCH extends Cluster{
 	/* Class Variables */
 	private int branchingFactor;
-	private int maxNodes;
 	private InfoWarehouse db;
 	private int collectionID;
 	private CFTree curTree;
+	private MemoryUsage mem;
 	
 	/*
 	 * Constructor.  Calls The Cluster Class's constructor.
@@ -69,8 +72,7 @@ public class BIRCH extends Cluster{
 	{
 		super(cID, database,name,comment);
 		// set parameters.
-		branchingFactor = 3;
-		maxNodes = 5;
+		branchingFactor = 4;
 		collectionID = cID;
 		db = database;
 	}
@@ -88,23 +90,26 @@ public class BIRCH extends Cluster{
 		while(curs.next()) { 
 			particle = curs.getCurrent();
 			particle.getBinnedList().normalize(distanceMetric);
-			changedNode = curTree.insertEntry(
-					particle.getBinnedList(), particle.getID());
+			changedNode = curTree.insertEntry(particle.getBinnedList());
+			
 			lastSplitNode = curTree.splitNodeIfPossible(changedNode);
+			
 			// If there has been a split above the leaves, refine the
-			// split.
+			// split
 			if (!lastSplitNode.isLeaf() || 
 					!changedNode.equals(lastSplitNode)) {
 				curTree.refineMerge(lastSplitNode);
-			}
+			}	
+			
 			// If we have run out of memory (i.e. node space), rebuild tree.
-			if (curTree.getNodeNumber(curTree.root, 0) >= maxNodes) {
+			mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+			if (mem.getUsed() >= mem.getCommitted()*0.90) {
+				System.out.println();
+				curTree.countNodes();
 				System.out.println("out of memory: rebuilding tree");
-				System.out.println("old tree:");
-				curTree.printTree();
 				rebuildTree();
-				System.out.println("new tree: ");
-				curTree.printTree();
+				curTree.countNodes();
+				System.out.println();
 			}
 		}	
 		curs.reset();
@@ -117,11 +122,11 @@ public class BIRCH extends Cluster{
 	 */
 	public void rebuildTree() {
 		float newThreshold = curTree.nextThreshold();
+		System.out.println("new Threshold: " + newThreshold);
 		CFTree newTree = new CFTree(newThreshold, branchingFactor);
 		newTree = rebuildTreeRecurse(newTree, newTree.root, curTree.root, null);
 		// remove all the nodes with count = 0;
 		newTree.assignLeaves();
-		newTree.printTree();
 		CFNode curLeaf = newTree.getFirstLeaf();
 		while (curLeaf != null) {
 			// TODO: make this more elegant
@@ -137,8 +142,11 @@ public class BIRCH extends Cluster{
 			}
 			curLeaf = curLeaf.nextLeaf;
 		}
+		newTree.numDataPoints = curTree.numDataPoints;
 		newTree.assignLeaves();
 		curTree = newTree;
+		newTree = null;
+		System.gc();
 	}
 	
 	/**
@@ -167,11 +175,10 @@ public class BIRCH extends Cluster{
 				if (!reinserted) {
 					ClusterFeature newLeaf = new ClusterFeature(
 							newCurNode, thisCF.getCount(), thisCF.getSums(), 
-							thisCF.getSumOfSquares(), thisCF.getAtomIDs());				
+							thisCF.getSumOfSquares());				
 					newCurNode.addCF(newLeaf);
 					newTree.updateNonSplitPath(newLeaf.curNode);
 				}
-				
 			}
 		}
 		else {
@@ -189,6 +196,7 @@ public class BIRCH extends Cluster{
 						oldCurNode.getCFs().get(i).child, lastLeaf);
 			}
 		}
+		oldCurNode = null;
 		return newTree;
 	}
 	
@@ -224,11 +232,13 @@ public class BIRCH extends Cluster{
 		BIRCH birch = new BIRCH(3, db, "BIRCH", "comment");
 		birch.setCursorType(0);
 		birch.setDistanceMetric(DistanceMetric.CITY_BLOCK);	
-		birch.buildTree(0f);
-		System.out.println("-------------------------------");
-		birch.curTree.printTree();
-		System.out.println("-------------------------------");
+		MemoryUsage mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+		System.out.println("memory used: " + mem.getUsed());
+		System.out.println("memory committed: " + mem.getCommitted());
+		System.out.println();
+		birch.buildTree(0.0f);
+		System.out.println();
+		System.out.println("FINAL TREE:");
 		birch.curTree.countNodes();
-		System.out.flush();
 	}	
 }

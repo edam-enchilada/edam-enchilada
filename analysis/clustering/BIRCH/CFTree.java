@@ -39,6 +39,8 @@
 
 package analysis.clustering.BIRCH;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
@@ -56,7 +58,7 @@ public class CFTree {
 	public float threshold;
 	private int branchFactor;
 	public CFNode root;
-	private int numDataPoints = 0;
+	public int numDataPoints = 0;
 	private CFNode prev = null;
 	private CFNode firstLeaf = null;
 	
@@ -80,13 +82,13 @@ public class CFTree {
 	 * @param atomID - particle's corresponding atomID (testing purposes)
 	 * @return node that particle is inserted into.
 	 */
-	public CFNode insertEntry(BinnedPeakList entry, int atomID) {
+	public CFNode insertEntry(BinnedPeakList entry) {
  		numDataPoints++;
 		System.out.println("inserting particle # " + numDataPoints);
 		// If this is the first entry, make it the root.
 		if (root.getSize() == 0) {
 			ClusterFeature firstCF = new ClusterFeature(root);
-			firstCF.updateCF(entry, atomID);
+			firstCF.updateCF(entry);
 			root.addCF(firstCF);
 			return root;
 		}
@@ -95,7 +97,7 @@ public class CFTree {
 		// if distance is below the threshold, CF absorbs the new entry.
 		if (closestLeaf.getCentroid().getDistance(
 				entry, DistanceMetric.CITY_BLOCK) <= threshold) 
-			closestLeaf.updateCF(entry, atomID);
+			closestLeaf.updateCF(entry);
 		// else, add it to the closestNode as a new CF.
 		else {
 			ClusterFeature newEntry;
@@ -103,10 +105,11 @@ public class CFTree {
 				newEntry = new ClusterFeature(null);
 			else
 				newEntry = new ClusterFeature(closestNode.parentNode);
-			newEntry.updateCF(entry, atomID);
+			newEntry.updateCF(entry);
 			newEntry.updatePointers(null, closestNode);
 			closestNode.addCF(newEntry);
 		}
+		updateNonSplitPath(closestNode);
 		return closestNode;
 		
 	}
@@ -120,11 +123,11 @@ public class CFTree {
 		numDataPoints++;
 		System.out.println("reinserting cluster # " + numDataPoints);
 		// If this is the first entry, make it the root.
+
 		if (root.getSize() == 1 && root.getCFs().get(0).getCount() == 0){
 			getFirstLeaf().addCF(cf);
 			cf.updatePointers(null, firstLeaf);
 			updateNonSplitPath(firstLeaf);
-			System.out.println("adding first leaf");
 			return true;
 		}
 		ClusterFeature closestLeaf = 
@@ -134,25 +137,21 @@ public class CFTree {
 		// If distance is within the threshold, the closestEntry absorbs CF.
 		if (closestLeaf.getCentroid().getDistance(cf.getCentroid(), 
 				DistanceMetric.CITY_BLOCK) <= threshold) {
-			System.out.println("within threshold");
 			closestLeaf.getSums().addAnotherParticle(cf.getSums());
 			closestLeaf.setSumOfSquares(closestLeaf.getSumOfSquares() + 
 					cf.getSumOfSquares());
 			closestLeaf.setCount(closestLeaf.getCount() + cf.getCount());
-			updateNonSplitPath(closestLeaf.curNode);
 		}
 		// If adding the entry as a new CF results in a split, return false.
 		else if (closestNode.getSize() >= branchFactor) {
-			System.out.println("can't add to Node; will result in a split");
 			return false;
 		}
 		// Add it as a new CF to the closest Node if it doesn't split it.
 		else {
-			System.out.println("add CF without splitting");
 			closestNode.addCF(cf);
 			cf.updatePointers(null, closestNode);		
-			updateNonSplitPath(closestLeaf.curNode);
 		}
+		updateNonSplitPath(closestLeaf.curNode);
 		return true;
 	}
 		
@@ -196,14 +195,21 @@ public class CFTree {
 	 * @param node - node to split.
 	 * @return last split node.
 	 */
-	public CFNode splitNodeRecurse(CFNode node) {	
+	private CFNode splitNodeRecurse(CFNode node) {	
 		CFNode nodeA = new CFNode(node.parentCF);
 		CFNode nodeB = new CFNode(node.parentCF);
 	
 		ClusterFeature[] farthestTwo = node.getTwoFarthest();
+		assert (farthestTwo != null) : "trying to split a node with 1 CF";
 		ClusterFeature entryA = farthestTwo[0];
 		ClusterFeature entryB = farthestTwo[1];
 		
+		assert (entryA != null) : "EntryA is null";
+		assert (entryB != null) : "EntryB is null";
+		
+		assert (entryA.getSums().testForMax(entryA.getCount())) :"TEST FOR MAX FAILS!";
+		assert (entryB.getSums().testForMax(entryB.getCount())) :"TEST FOR MAX FAILS!";
+				
 		ArrayList<ClusterFeature> cfs = node.getCFs();
 		BinnedPeakList listI, listJ;
 		
@@ -218,24 +224,25 @@ public class CFTree {
 						DistanceMetric.CITY_BLOCK);
 				distB = listI.getDistance(entryB.getCentroid(),
 						DistanceMetric.CITY_BLOCK);
-				if (distA < distB) {
+				if (distA <= distB) {
 					nodeA.addCF(cfs.get(i));
 				}
-				else if (distA > distB)
+				else
 					nodeB.addCF(cfs.get(i));
-				else {
-					double rand = Math.random();
-					if (rand <= 0.5)
-						nodeA.addCF(cfs.get(i));
-					else nodeB.addCF(cfs.get(i));
-				}
 			}
+		}
+		for (int i = 0; i < nodeA.getSize(); i++) {
+			assert(nodeA.getCFs().get(i).getSums().testForMax(nodeA.getCFs().get(i).getCount())) : 
+				"TEST FOR MAX FAILS IN NODE";
+		}
+		for (int i = 0; i < nodeB.getSize(); i++) {
+			assert(nodeB.getCFs().get(i).getSums().testForMax(nodeB.getCFs().get(i).getCount())) : 
+					"TEST FOR MAX FAILS IN NODE";
 		}
 		
 		assert ((nodeA.isLeaf() && nodeB.isLeaf()) || 
 				(!nodeA.isLeaf() && !nodeB.isLeaf())) : 
 					"one node's a leaf, the other isn't";
-		
 		//give the two nodes different parent CFs, and add these parent CFs
 		// to the parent node.
 		ClusterFeature origParent = node.parentCF;
@@ -250,8 +257,7 @@ public class CFTree {
 		else {
 			parentNode = origParent.curNode;
 			parentNode.removeCF(origParent);
-		}
-		
+		}	
 		parentA = new ClusterFeature(parentNode);
 		parentA.updatePointers(nodeA, parentNode);
 		parentA.updateCF();
@@ -260,30 +266,34 @@ public class CFTree {
 		parentB.updateCF();
 		parentNode.addCF(parentA);
 		parentNode.addCF(parentB);
+		
 		removeNode(node);
+		
 		nodeA.updateParent(parentA);
-		nodeB.updateParent(parentB);
-	
+		nodeB.updateParent(parentB);	
+		
 		assert (parentA.curNode.equals(parentB.curNode)) : 
 			"parents aren't in same node.";
-		
 		if (nodeA.isLeaf()) {
 			assert (nodeA.parentCF != null) : "leaf's parentCF is null!";
 		}
-				
+
 		// If parentCF node needs to be split, recurse.
 		if (parentNode.getSize() >= branchFactor) {
 			return splitNodeRecurse(parentNode);
 		}
 		// If parentCF node doesn't need to be split, we're done.
-		updateNonSplitPath(parentNode);
 		recentlySplitA = parentA;
 		recentlySplitB = parentB;
+	
+		assignLeaves();			
+		updateNonSplitPath(nodeA);	
 		return parentNode;
 		
 	}
 	
 	/**
+	 * TODO: THis is where the biggest performance hit comes.
 	 * Updates the path recursively starting from the node's PARENT and up.  
 	 * It is important to note that the first node passed won't be updated.
 	 * @param node - node to update.
@@ -338,7 +348,7 @@ public class CFTree {
 	 * would defeat the purpose of splitting.
 	 * @param node - node to merge.
 	 */
-	public void refineMerge(CFNode node) {
+	public void refineMerge(CFNode node) {		
 		// find closest two entries in the given node.
 		ClusterFeature[] closestTwo = node.getTwoClosest();
 		if ((closestTwo[0].isEqual(recentlySplitA) || 
@@ -384,56 +394,79 @@ public class CFTree {
 	 * can happen when, after splitting and merge refinement, two CFs in one
 	 * leaf are below the threshold in distance.  Not in the paper's algorithm.
 	 * @param node - node to check for merge; has to be a leaf.
+	 * @return true if merged, false if not
 	 */
-	public void checkForMerge(CFNode node) {
+	public boolean checkForMerge(CFNode node) {
 		assert (node.isLeaf()) : "node to check for merging isn't a leaf";
 		boolean merge = true;
+		boolean returnThis = false;
 		ClusterFeature[] closest;
+		ClusterFeature mergedCF;
 		while (merge) {
 		closest = node.getTwoClosest();
 		if (closest != null && closest[0].getCentroid().
 				getDistance(closest[1].getCentroid(), 
 				DistanceMetric.CITY_BLOCK) <=  threshold) {
-			mergeEntries(closest[0], closest[1]);
+			returnThis = true;
+			mergedCF = mergeEntries(closest[0], closest[1]);
 		}
 		else
 			merge = false;
-		}	
+		}
+		
+		//updateNonSplitPath(node);
+		return returnThis;
 	}
 	
 	/**
-	 * estimates the next threshold for the new tree once this tree has used
+	 * Estimates the next threshold for the new tree once this tree has used
 	 * up all the available memory.  Calculates the minimum distance between
-	 * two CFs in the biggest leaf.
+	 * two CFs for the most crowded leaf.
 	 * @return new threshold.
 	 */
 	public float nextThreshold() {
-		float dMin = 0;
-		CFNode leaf = firstLeaf;
-		int maxCount = 0, count;
-		CFNode maxLeaf = null;
-		while (leaf != null) {
-			count = 0;
-			for (int i = 0; i < leaf.getSize(); i++) 
-				count += leaf.getCFs().get(i).getCount();
-			if (count > maxCount && leaf.getSize() > 1) {
-				maxCount = count;
-				maxLeaf = leaf;
-			}
-			leaf = leaf.nextLeaf;
+		float dMin = nextThresholdRecurse(root);
+		assert (dMin > threshold) : 
+			"min distance bewteen two entries is smaller than T!";
+		assert (dMin <= 2.1) : "min distance is greater than 2: " + dMin;
+		if (dMin > 2.0) {
+			System.out.println("rounding " + dMin + " to 2.0");
+			dMin = 2.0f;
 		}
-		if (maxLeaf == null)
-			dMin = threshold + 0.1f;
-		else {
-			ClusterFeature[] m = maxLeaf.getTwoClosest();
+		return dMin;
+	}
+	
+	private float nextThresholdRecurse(CFNode node) {
+		float dMin = 0;
+		if (node.isLeaf()) {
+			// if there's only onde CF in the leaf, find another leaf.
+			if (node.getSize() <= 1) {
+				//printTree();
+				//countNodes();
+				node = firstLeaf;
+				while (node.getSize() <= 1) {
+					node = node.nextLeaf;
+					if (node == null)
+						return threshold + 0.1f;
+				}
+			}
+			ClusterFeature[] m = node.getTwoClosest();
 			dMin = m[0].getCentroid().getDistance(m[1].getCentroid(), 
 					DistanceMetric.CITY_BLOCK);
 		}
-		assert (dMin > threshold) : 
-			"min distance bewteen two entries is smaller than T!";
-		assert (dMin <= 2.0) : "min distance is greater than 2!";
+		else {
+			int maxCount = Integer.MIN_VALUE;
+			int maxIndex = -1;
+			for (int i = 0; i < node.getSize(); i++) 
+				if (node.getCFs().get(i).getCount() > maxCount) {
+					maxCount = node.getCFs().get(i).getCount();
+					maxIndex = i;
+				}
+			return nextThresholdRecurse(node.getCFs().get(maxIndex).child);
+		}
 		return dMin;
 	}
+	
 	
 	/**
 	 * Assign the prevLeaf and nextLeaf pointers to the leaves in the tree.
@@ -451,10 +484,11 @@ public class CFTree {
 	 * Recursive call for assigning the leaves.
 	 * @param curNode - current noce in tree traversal.
 	 */
-	public void assignLeavesRecurse(CFNode curNode) {
+	private void assignLeavesRecurse(CFNode curNode) {
 		if (curNode.isLeaf()) {
 			checkForMerge(curNode);
 			curNode.prevLeaf = prev;
+			curNode.nextLeaf = null;
 			if (prev != null)
 				prev.nextLeaf = curNode;
 			prev = curNode;
@@ -488,13 +522,12 @@ public class CFTree {
 	 * @param node - current node in tree traversal
 	 * @param delimiter - current delimiter for level.
 	 */
-	public void printTreeRecurse(CFNode node, String delimiter) {
+	private void printTreeRecurse(CFNode node, String delimiter) {
 		System.out.println(delimiter + "NEW NODE");
 		node.printNode(delimiter);
 		if (!node.isLeaf()) 
 			for (int i = 0; i < node.getSize(); i++) 
 				printTreeRecurse(node.getCFs().get(i).child, delimiter + "  ");
-		else System.out.println(delimiter + "cfs: null");
 	}
 	
 	/**
@@ -521,7 +554,7 @@ public class CFTree {
 		count++;
 		if (!node.isLeaf()) {
 			for (int i = 0; i < node.getSize(); i++) {
-				return getNodeNumber(node.getCFs().get(i).child, count);
+				count += getNodeNumber(node.getCFs().get(i).child, 0);
 			}
 		}
 		return count;
@@ -534,7 +567,9 @@ public class CFTree {
 		int[] counts = {0,0,0,0,0};
 		counts = countNodesRecurse(root, counts);
 		
-		System.out.println();
+		
+		System.out.println("****************************");
+		System.out.println();		
 		System.out.println("threshold: " + threshold);
 		System.out.println("# of nodes: " + counts[0]);
 		System.out.println("# of leaves: " + counts[1]);
@@ -542,6 +577,13 @@ public class CFTree {
 		System.out.println("# of grouped subclusters: " + counts[3]);
 		System.out.println("# of particles represented: " + counts[4]);
 		System.out.println();
+		MemoryUsage mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+		System.out.println("initial memory: " + mem.getInit());
+		System.out.println("memory used: " + mem.getUsed());
+		System.out.println("memory committed: " + mem.getCommitted());
+		System.out.println("max. memory: " + mem.getMax());
+		System.out.println();
+		System.out.println("****************************");
 	}
 	
 	/**
@@ -555,7 +597,7 @@ public class CFTree {
 	 * @param counts - above array (initialized to {0,0,0,0,0}
 	 * @return counts 
 	 */
-	public int[] countNodesRecurse(CFNode node, int[] counts) {
+	private int[] countNodesRecurse(CFNode node, int[] counts) {
 		if (node == null) 
 			return counts;
 		if (node.isLeaf()) {

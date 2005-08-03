@@ -221,18 +221,18 @@ public class CFNode {
 	public void printNode(String delimiter) {
 		//System.out.println(delimiter + "parent: " + parentNode);
 		System.out.println(delimiter + "node: " + this);
-	//	ClusterFeature[] blah = getTwoClosest();
-	//	if (isLeaf() && blah != null){
+		//ClusterFeature[] blah = getTwoClosest();
+		//if (isLeaf() && blah != null){
 	//		System.out.println(delimiter + "* cf1: " + blah[0]);
 	//		System.out.println(delimiter + "* cf2: " + blah[1]);
-	//		System.out.println(delimiter + "* closest CF dist: " + 
+		//	System.out.println(delimiter + "* closest CF dist: " + 
 		//blah[0].getCentroid().getDistance(blah[1].getCentroid(), 
 		//DistanceMetric.CITY_BLOCK));
-	//	}
+		//}
 		//System.out.println(delimiter + "# cfs: " + getSize());
-		System.out.println(delimiter + "prev leaf: " + prevLeaf);
-		System.out.println(delimiter + "next leaf: " + nextLeaf);
-		System.out.println(delimiter + "Node's cfs:");
+		//System.out.println(delimiter + "prev leaf: " + prevLeaf);
+		//System.out.println(delimiter + "next leaf: " + nextLeaf);
+		//System.out.println(delimiter + "Node's cfs:");
 		for (int i = 0; i < cfs.size(); i++) {
 			cfs.get(i).printCF(delimiter);
 		}

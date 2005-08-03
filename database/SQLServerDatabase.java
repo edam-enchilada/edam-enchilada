@@ -2211,7 +2211,6 @@ public class SQLServerDatabase implements InfoWarehouse
 				in.close();
 
 		}
-		
 		return true;
 	}
 	
@@ -2476,7 +2475,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			InstancedResultSet irs = db.getAllAtomsRS(collection);
 			try {
 				stmt = con.createStatement();
-			
 				partInfRS = stmt.executeQuery(
 						"SELECT ATOFMSAtomInfoDense.AtomID, " +
 						"OrigFilename, ScatDelay, " +
@@ -3356,6 +3354,23 @@ public class SQLServerDatabase implements InfoWarehouse
 			return false;
 		}
 		
+	}
+	
+	public int getFirstAtomInCollection(Collection collection) {
+		int atom = -1;
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
+			
+			if (rs.next())
+				atom = rs.getInt(1);
+			
+		}
+		catch (SQLException e){
+			new ExceptionDialog(new String[]{"SQL Exception getting first atom in collection"});
+			System.err.println("problems checking datatype from SQLServer.");
+		}
+		return atom;
 	}
 
 }

@@ -45,6 +45,8 @@ package gui;
 
 import javax.swing.*;
 
+import collection.Collection;
+
 import analysis.CollectionDivider;
 import analysis.SQLDivider;
 
@@ -112,13 +114,15 @@ implements ActionListener, ItemListener
 	private JTextField commentField;
 	private JPanel commonInfo;
 	
+	private Collection collection;
+	
 	/**
 	 * Constructor.  Creates a tabbed pane that is added to
 	 * a JDialog Object.  The constructor also shows the GUI.
 	 * @param frame - the parent of the JDialog object.
 	 */
 	public QueryDialog(JFrame frame, CollectionTree cTree,
-			InfoWarehouse db) 
+			InfoWarehouse db, Collection collection) 
 	{
 		super(frame, "Query", true);
 		//Make sure we have nice window decorations.
@@ -126,6 +130,7 @@ implements ActionListener, ItemListener
 		
 		this.cTree = cTree;
 		this.db = db;
+		this.collection = collection;
 		
 		// Create the two panels for the dialogue box.
 		JPanel basic = basicQuery();
@@ -520,11 +525,17 @@ implements ActionListener, ItemListener
 					fromAMPM.getSelectedItem() + "'";
 				}
 				if (countSelected)
-				{
+				{	
+					int startAtom = db.getFirstAtomInCollection(collection);
+					
+					int from = Integer.parseInt(fromCount.getText());
+					from += startAtom;
+					int to = Integer.parseInt(toCount.getText());
+					to += startAtom;
 					if (sizeSelected || timeSelected)
 						where += " AND";
-					where += " AtomInfo.AtomID <= " + toCount.getText() +
-					" AND AtomInfo.AtomID >= " + fromCount.getText(); 
+					where += " ATOFMSAtomInfoDense.AtomID <= " + to +
+					" AND ATOFMSAtomInfoDense.AtomID >= " + from; 
 				}
 				System.out.println("Dividing now:");
 				System.out.println(where);

@@ -272,7 +272,7 @@ public class MainFrame extends JFrame implements ActionListener
 						"destination as the source");
 		}
 		else if (source == queryItem) {new QueryDialog(this, 
-											collectionPane, db);}
+											collectionPane, db, getSelectedCollection());}
 		
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
@@ -606,8 +606,11 @@ public class MainFrame extends JFrame implements ActionListener
         ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
         
 		Vector<Object> columns = new Vector<Object>(colnames.size());
-		for (int i = 0; i < colnames.size(); i++) 
-			columns.add(colnames.get(i));
+		for (int i = 0; i < colnames.size(); i++) {
+			String temp = colnames.get(i);
+			temp = temp.substring(1,temp.length()-1);
+			columns.add(temp);
+		}
 				
 		data = new Vector<Vector<Object>>(1000);
 		Vector<Object> row = new Vector<Object>(colnames.size());

@@ -50,9 +50,10 @@ public class HomogeneityCalculator {
 			
 			ResultSet rs = stmt.executeQuery(
 					"SELECT OrigFilename\n" +
-					"FROM AtomInfo, AtomMembership\n" +
+					"FROM ATOFMSAtomInfoDense, AtomMembership\n" +
 					"	WHERE AtomMembership.CollectionID = " + cID + "\n" +
-					"	AND AtomMembership.AtomID = AtomInfo.AtomID");
+					"	AND AtomMembership.AtomID = ATOFMSAtomInfoDense" +
+					".AtomID");
 			while (rs.next())
 			{
 				String filename = rs.getString(1);

@@ -58,7 +58,6 @@ import analysis.DistanceMetric;
  */
 
 public class ClusterFeature {
-	private ArrayList<Integer> atomIDs;
 	private int count;
 	private BinnedPeakList sums;
 	private float squareSums;
@@ -74,7 +73,6 @@ public class ClusterFeature {
 		sums = new BinnedPeakList();
 		squareSums = 0;
 		curNode = cur;
-		atomIDs = new ArrayList<Integer>();
 	}
 	
 	/**
@@ -85,13 +83,11 @@ public class ClusterFeature {
 	 * @param s2 - sum of sqaures
 	 * @param ids - atomids
 	 */
-	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, 
-			ArrayList<Integer> ids) {
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2) {
 		curNode = cur;
 		count = c;
 		sums = s1;
 		squareSums = s2;
-		atomIDs = ids;
 	}
 	
 	/**
@@ -99,8 +95,7 @@ public class ClusterFeature {
 	 * @param list - binnedPeakList
 	 * @param atomID - atomID
 	 */
-	public void updateCF(BinnedPeakList list, int atomID) {
-		
+	public void updateCF(BinnedPeakList list) {
 		count++;
 		sums.addAnotherParticle(list);
 		BinnedPeakList squares = new BinnedPeakList();
@@ -110,7 +105,6 @@ public class ClusterFeature {
 			peak = iterator.next();
 			squareSums += peak.area*peak.area;
 		}
-		atomIDs.add(new Integer(atomID));
 	}
 	
 	/**
@@ -118,18 +112,17 @@ public class ClusterFeature {
 	 * @return true if successful, false if there's no child.
 	 */
 	public boolean updateCF() {
-		if (child == null)
+		if (child == null || child.getCFs().size() == 0) 
 			return false;
+		
+		ArrayList<ClusterFeature> cfs = child.getCFs();
 		count = 0;
 		sums = new BinnedPeakList();
 		squareSums = 0;
-		ArrayList<ClusterFeature> cfs = child.getCFs();
-		atomIDs.clear();
 		for (int i = 0; i < cfs.size(); i++) {
 			count += cfs.get(i).count;
 			sums.addAnotherParticle(cfs.get(i).getSums());
 			squareSums += cfs.get(i).squareSums;
-			atomIDs.addAll(cfs.get(i).atomIDs);
 		}
 		return true;
 	}
@@ -176,12 +169,8 @@ public class ClusterFeature {
 	 * @param delimiter - delimiter for the level
 	 */
 	public void printCF(String delimiter) {
-		System.out.print(delimiter + "CF: " + this);
-		System.out.print("  Count: " + count);
-		System.out.print("  AtomIDs: ");
-		for (int i = 0; i < atomIDs.size(); i++)
-			System.out.print(atomIDs.get(i) + ", ");
-		System.out.println();
+		//System.out.print(delimiter + "CF: " + this);
+		System.out.println(delimiter + "Count: " + count);
 	}
 	
 	
@@ -223,14 +212,6 @@ public class ClusterFeature {
 	 */
 	public float getSumOfSquares() {
 		return squareSums;
-	}
-	
-	/**
-	 * gets the arraylist of atomIDs
-	 * @return - atomIDs
-	 */
-	public ArrayList<Integer> getAtomIDs() {
-		return atomIDs;
 	}
 	
 	/**

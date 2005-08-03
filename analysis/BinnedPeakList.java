@@ -161,7 +161,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 				distance = -1.0f;
 			}
 		}	
-		
 		float eucTemp = 0;
 		while (shortIter.hasNext())
 		{
@@ -229,11 +228,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		// distance is ultimately the same thing as Euclidean squared anyway).
 		if (dMetric == DistanceMetric.DOT_PRODUCT)
 		    distance = 1-distance;
-
-		assert distance < 2.01 :
+		
+		assert distance < 2.01 : 
 		    "Distance should be <= 2.0, actually is " + distance +"\n" 
 		   + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
-		  + getMagnitude(dMetric) + "\n" ;
+		  + getMagnitude(dMetric) + "\n";
 		
 		if (distance > 2) {
 			//System.out.println("Rounding off " + distance +
@@ -379,7 +378,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 */
 	public void normalize(DistanceMetric dMetric)
 	{
-		float magnitude = getMagnitude(dMetric);
+		float magnitude = getMagnitude(dMetric);	
 		
 		Map.Entry<Integer,Float> entry;
 		Iterator<Map.Entry<Integer,Float>> iterator = peaks.entrySet().iterator();
@@ -388,6 +387,17 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			entry = iterator.next();
 			entry.setValue(entry.getValue() / magnitude);
 		}
+	}
+	
+	// used for testing BIRCH
+	public boolean testForMax(int max) {
+		Iterator<BinnedPeak> iterator = iterator();
+		while (iterator.hasNext()) {
+			BinnedPeak peak = iterator.next();
+			if (peak.area > max)
+				return false;
+		}
+		return true;
 	}
 	
 	public Iterator<BinnedPeak> iterator() {
@@ -413,6 +423,5 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
-	
 	}
 }

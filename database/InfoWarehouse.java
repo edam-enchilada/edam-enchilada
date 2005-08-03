@@ -278,4 +278,6 @@ public interface InfoWarehouse {
 	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
+
+	public int getFirstAtomInCollection(Collection collection);
 }
