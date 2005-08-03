@@ -355,6 +355,7 @@ public abstract class ClusterK extends Cluster {
 		    newCent = new Centroid(curs.getCurrent().getBinnedList(),0);
 		  
 		    assert (newCent != null) : "Error adding centroid";
+		    assert (newCent.peaks != null) : "New centroid has no peaklist!";
 		    centroidList.add(newCent);
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
@@ -364,12 +365,12 @@ public abstract class ClusterK extends Cluster {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
 						curs.getPeakListfromAtomID(thisParticleInfo.getID());
-						thisBinnedPeakList.normalize(distanceMetric);
+					thisBinnedPeakList.normalize(distanceMetric);
 					double nearestDistance = Double.MAX_VALUE;
+					
 					for (int curCent = 0; 
 					     curCent < centroidList.size(); 
-					     curCent++)
-						
+					     curCent++)		
 					{// for each centroid
 						double distance =
 							centroidList.get(curCent).peaks.
@@ -379,11 +380,18 @@ public abstract class ClusterK extends Cluster {
 						if (distance < nearestDistance)
 							nearestDistance = distance;
 					}// end for each centroid
+					
 					if (nearestDistance > furthestGlobalDistance) {
 					    furthestGlobalDistance = nearestDistance;
 					    furthestPeakList = thisBinnedPeakList;
 					}
-		        } // while curs.next()
+		        } // end while curs.next()
+		        if (furthestPeakList == null) {
+		        	// XXX this would be better as a dialog box, we should
+		        	// do something about that.
+		        	throw new RuntimeException("No furthest particle: probably "
+		        		+"ran out of particles to make into centroids!");
+		        }
 		        newCent = new Centroid(furthestPeakList,0);
 		        centroidList.add(newCent);
 		    } // for i:1 to k    
