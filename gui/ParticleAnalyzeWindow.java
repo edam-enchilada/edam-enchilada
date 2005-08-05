@@ -437,7 +437,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		chart.setDataset(0,posDS);
 		chart.setDataset(1,negDS);
-		
+
+		chart.packData(false, true); //updates the Y axis scale.
 		chart.setDataDisplayType(true, false);
 	}
 	
