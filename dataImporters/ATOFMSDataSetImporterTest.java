@@ -67,7 +67,6 @@ import gui.ParTableModel;
 public class ATOFMSDataSetImporterTest extends TestCase {
 	ATOFMSDataSetImporter importer;
 	SQLServerDatabase db;
-	Connection con;
 	ParTableModel table;
 	/*
 	 * @see TestCase#setUp()
@@ -79,21 +78,6 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	
 	protected void setUp()
 	{
-		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
-		} catch (Exception e) {
-			System.err.println("Failed to load current driver.");	
-		} 
-		
-		con = null;
-		
-		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://localhost:1433;TestDB;SelectMethod=cursor;","SpASMS","finally");
-		} catch (Exception e) {
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		
 		//TODO: commented this out AR
 		//SQLServerDatabase.rebuildDatabase("TestDB");
 	
@@ -120,13 +104,12 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			con.close();
-			con = DriverManager.getConnection(
-					"jdbc:microsoft:sqlserver://" +
-					"localhost:1433;TestDB;SelectMethod=cursor;",
-					"SpASMS","finally");
+			
+			SQLServerDatabase tempDB = new SQLServerDatabase();
+			tempDB.openConnection();
+			Connection con = tempDB.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
-			con.close();
+			tempDB.closeConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -186,12 +169,12 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		} catch (Exception e) {success = false; }
 		assertTrue(success);
 		
-		assertTrue(db.getCollectionComment(1).equals("one"));
-		assertTrue(db.getCollectionDescription(1).equals("onedescrip"));
-		assertTrue(db.getCollectionName(1).equals("One"));
+		assertTrue(db.getCollectionComment(2).equals("one"));
+		assertTrue(db.getCollectionDescription(2).equals("onedescrip"));
+		assertTrue(db.getCollectionName(2).equals("One"));
 		
 		ArrayList<GeneralAtomFromDB> particles = 
-			db.getCollectionParticles(db.getCollection(1));
+			db.getCollectionParticles(db.getCollection(2));
 		
 		// Check the first and last particles to see if they have been
 		// imported properly.

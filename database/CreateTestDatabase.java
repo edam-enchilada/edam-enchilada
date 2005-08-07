@@ -104,43 +104,43 @@ public class CreateTestDatabase {
 		
 			stmt.executeUpdate(
 					"USE TestDB\n" +
-					"INSERT INTO Collections VALUES (1,'One', 'one', 'onedescrip', 'ATOFMS')\n" +
-					"INSERT INTO Collections VALUES (2,'Two', 'two', 'twodescrip', 'ATOFMS')\n" +
-					"INSERT INTO Collections VALUES (3,'Three', 'three', 'threedescrip', 'Datatype2')\n" +
-					"INSERT INTO Collections VALUES (4,'Four', 'four', 'fourdescrip', 'Datatype2')\n" +
-					"INSERT INTO Collections VALUES (5, 'Five', 'five', 'fivedescrip', 'Datatype2')\n");
+					"INSERT INTO Collections VALUES (2,'One', 'one', 'onedescrip', 'ATOFMS')\n" +
+					"INSERT INTO Collections VALUES (3,'Two', 'two', 'twodescrip', 'ATOFMS')\n" +
+					"INSERT INTO Collections VALUES (4,'Three', 'three', 'threedescrip', 'Datatype2')\n" +
+					"INSERT INTO Collections VALUES (5,'Four', 'four', 'fourdescrip', 'Datatype2')\n" +
+					"INSERT INTO Collections VALUES (6, 'Five', 'five', 'fivedescrip', 'Datatype2')\n");
 					
 			stmt.executeUpdate(
 					"USE TestDB\n" +
-					"INSERT INTO AtomMembership VALUES(1,1)\n" +
-					"INSERT INTO AtomMembership VALUES(1,2)\n" +
-					"INSERT INTO AtomMembership VALUES(1,3)\n" +
-					"INSERT INTO AtomMembership VALUES(1,4)\n" +
-					"INSERT INTO AtomMembership VALUES(1,5)\n" +
-					"INSERT INTO AtomMembership VALUES(2,6)\n" +
-					"INSERT INTO AtomMembership VALUES(2,7)\n" +
-					"INSERT INTO AtomMembership VALUES(2,8)\n" +
-					"INSERT INTO AtomMembership VALUES(2,9)\n" +
-					"INSERT INTO AtomMembership VALUES(2,10)\n" +
-					"INSERT INTO AtomMembership VALUES(3,11)\n" +
-					"INSERT INTO AtomMembership VALUES(3,12)\n" +
-					"INSERT INTO AtomMembership VALUES(3,13)\n" +
-					"INSERT INTO AtomMembership VALUES(3,14)\n" +
-					"INSERT INTO AtomMembership VALUES(3,15)\n" +
-					"INSERT INTO AtomMembership VALUES(4,16)\n" +
-					"INSERT INTO AtomMembership VALUES(4,17)\n" +
-					"INSERT INTO AtomMembership VALUES(4,18)\n" +
-					"INSERT INTO AtomMembership VALUES(4,19)\n" +
-					"INSERT INTO AtomMembership VALUES(4,20)\n" +
-					"INSERT INTO AtomMembership VALUES(5,21)\n" );
+					"INSERT INTO AtomMembership VALUES(2,1)\n" +
+					"INSERT INTO AtomMembership VALUES(2,2)\n" +
+					"INSERT INTO AtomMembership VALUES(2,3)\n" +
+					"INSERT INTO AtomMembership VALUES(2,4)\n" +
+					"INSERT INTO AtomMembership VALUES(2,5)\n" +
+					"INSERT INTO AtomMembership VALUES(3,6)\n" +
+					"INSERT INTO AtomMembership VALUES(3,7)\n" +
+					"INSERT INTO AtomMembership VALUES(3,8)\n" +
+					"INSERT INTO AtomMembership VALUES(3,9)\n" +
+					"INSERT INTO AtomMembership VALUES(3,10)\n" +
+					"INSERT INTO AtomMembership VALUES(4,11)\n" +
+					"INSERT INTO AtomMembership VALUES(4,12)\n" +
+					"INSERT INTO AtomMembership VALUES(4,13)\n" +
+					"INSERT INTO AtomMembership VALUES(4,14)\n" +
+					"INSERT INTO AtomMembership VALUES(4,15)\n" +
+					"INSERT INTO AtomMembership VALUES(5,16)\n" +
+					"INSERT INTO AtomMembership VALUES(5,17)\n" +
+					"INSERT INTO AtomMembership VALUES(5,18)\n" +
+					"INSERT INTO AtomMembership VALUES(5,19)\n" +
+					"INSERT INTO AtomMembership VALUES(5,20)\n" +
+					"INSERT INTO AtomMembership VALUES(6,21)\n" );
 
 			stmt.executeUpdate(
 					"USE TestDB\n" +
-					"INSERT INTO CollectionRelationships VALUES(0,1)\n" +
 					"INSERT INTO CollectionRelationships VALUES(0,2)\n" +
 					"INSERT INTO CollectionRelationships VALUES(0,3)\n" +
 					"INSERT INTO CollectionRelationships VALUES(0,4)\n" +
-					"INSERT INTO CollectionRelationships VALUES(4,5)");
+					"INSERT INTO CollectionRelationships VALUES(0,5)\n" +
+					"INSERT INTO CollectionRelationships VALUES(5,6)");
 
 			stmt.executeUpdate(
 					"USE TestDB\n" +
