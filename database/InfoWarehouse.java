@@ -44,12 +44,15 @@
  */
 package database;
 
+import gui.ProgressBarWrapper;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
+import javax.swing.JFrame;
 
 import atom.GeneralAtomFromDB;
 
@@ -271,10 +274,9 @@ public interface InfoWarehouse {
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
 	
-	public int createAggregateTimeSeries(String syncRootName, Collection[] collections, 
-			String timeBasisSQLstring, boolean baseOnCollection);
-	public String getTimeBasisSQLString(int collectionID);
-	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval);
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
+			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr);
+	public int[] getValidMZValuesForCollection(Collection collection);
 	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);

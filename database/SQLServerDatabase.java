@@ -3041,158 +3041,94 @@ public class SQLServerDatabase implements InfoWarehouse
 		return newCollectionID;
 	}
 	
-	public int createAggregateTimeSeries(String syncRootName, Collection[] collections, String timeBasisSQLstring, boolean baseOnCollection) {
-		String timeBasisSetupStr = baseOnCollection ? ""                             : timeBasisSQLstring ;
-		String timeBasisQueryStr = baseOnCollection ? "(" + timeBasisSQLstring + ")" : "@timeBasis";
-				
-		int rootCollectionID = createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
-		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries");
-				
-		for (int i = 0; i < collections.length; i++) {
-			String sql = null;
-			
-			Collection curColl = collections[i];
-			int collectionID = curColl.getCollectionID();
-			String collectionName = curColl.getName();
-			AggregationOptions options = curColl.getAggregationOptions();
-			if (options == null)
-				curColl.setAggregationOptions(options = new AggregationOptions());
-			
-			if (curColl.getDatatype().equals("ATOFMS")) {
-				int[] mzValues = getValidMZValuesForCollection(curColl);
-				
-				if (mzValues == null) {
-					new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
-					System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-					
-					return -1;
-				} else if (mzValues.length == 0) {
-					new ExceptionDialog("Note: Collection: " +collectionName + " doesn't have any peak data to aggregate!");
-					System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-				} else {
-					int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
-					int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
-					
-					sql = "declare @collectionToPeakLocMap table ( PeakLocation int, CollectionID int ) \n";
-					
-					for (int j = 0; j < mzValues.length; j++) {
-						int mzVal = mzValues[j];
-						
-						int mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzVal + "", "", "");
-						sql += "insert @collectionToPeakLocMap (PeakLocation, CollectionID) values (" + mzVal + ", " + mzCollectionID + ") \n";
-					}
-					
-					int nextAtomID = getNextID();
-					String groupMethod = (options.combMethod == AggregationOptions.CombiningMethod.SUM) ? "SUM" : "AVG";
-					
-					sql += timeBasisSetupStr;
-					sql += 
-						"DECLARE @atoms TABLE ( \n" +
-						"   NewAtomID int IDENTITY(" + nextAtomID + ",1), \n" +
-						"   CollectionID int, \n" +
-						"   Time DateTime, \n" +
-						"   Value real \n" +
-						") \n\n" +
-						
-						"insert @atoms (CollectionID, Time, Value) \n" +
-						"select PLM.CollectionID, BasisTimeStart, " + groupMethod + "(PeakHeight) AS PeakHeight \n" +
-						"from ATOFMSAtomInfoDense AID \n" +
-						"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
-						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-						"join " + timeBasisQueryStr + " TB  \n" +
-						"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
-						"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
-						"join @collectionToPeakLocMap PLM on (PLM.PeakLocation = cast(round(AIS.PeakLocation, 0) as int)) \n" +
-						"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
-						"group by PLM.CollectionID, cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n" +
-						"order by cast(round(AIS.PeakLocation, 0) as int), BasisTimeStart \n\n";
-						
-						if (options.produceParticleCountTS) {
-							int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-							
-							sql +=
-								"insert @atoms (CollectionID, Time, Value) \n" +
-								"select " + combinedCollectionID + ", BasisTimeStart, " + groupMethod + "(PeakHeight) AS PeakHeight \n" +
-								"from ATOFMSAtomInfoDense AID \n" +
-								"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
-								"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-								"join " + timeBasisQueryStr + " TB  \n" +
-								"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
-								"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
-								"where AM.CollectionID = " + collectionID + " and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
-								"group by BasisTimeStart \n" +
-								"order by BasisTimeStart \n\n";
-						}
-						
-						sql += 
-							"insert AtomMembership (CollectionID, AtomID) \n" +
-							"select CollectionID, NewAtomID from @atoms \n\n" +
-		
-							"insert " + tableName + " (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from @atoms";				
-				}
-			}
-			
-			if (sql != null) {
-				try {
-					Statement stmt = con.createStatement();
-					stmt.execute(sql);
-				} catch (SQLException e) {
-					new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
-					System.err.println("SQL exception aggregating collection: " + collectionName);
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return rootCollectionID;
-	}
-	
-	public String getTimeBasisSQLString(int collectionID) {
-		String timeSubstr = 
-			"   select distinct Time \n" +
-			"   from ATOFMSAtomInfoDense AID \n" +
-			"   join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			"   where CollectionID = " + collectionID;
-		
-		return "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
-			   "from (\n" + timeSubstr + "\n) T1 " +
-			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
-			   "group by T1.Time \n" +
-			   "union \n" +
-			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
-			   "from ATOFMSAtomInfoDense AID \n" +
-			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			   "where CollectionID = " + collectionID;
-	}
-	
-	public String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
-		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) \n";
-		java.util.Date startTime, endTime;
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
+			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr) {
 
-		while (start.before(end)) {
-			startTime = start.getTime();
-			
-			//start.add(Calendar.DATE,   interval.get(Calendar.DATE));
-			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
-			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
-			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
-			
-			if (!start.before(end))
-				start = end;
-			
-			endTime = start.getTime();
-			
-			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values ('" + 
-						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
+		int collectionID = curColl.getCollectionID();
+		String collectionName = curColl.getName();
+		AggregationOptions options = curColl.getAggregationOptions();
+
+		if (curColl.getDatatype().equals("ATOFMS")) {				
+			if (mzValues == null) {
+				new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
+				
+				return;
+			} else if (mzValues.length == 0) {
+				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
+			} else {
+				String sql = timeBasisSetupStr +
+					"DECLARE @atoms TABLE ( \n" +
+					"   NewAtomID int IDENTITY(%d, 1), \n" +
+					"   Time DateTime, \n" +
+					"   Value real \n" +
+					") \n\n" +
+				
+					"insert @atoms (Time, Value) \n" +
+					"select BasisTimeStart, " + options.getGroupMethodStr() + "(PeakHeight) AS PeakHeight \n" +
+					"from ATOFMSAtomInfoDense AID \n" +
+					"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
+					"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+					"join " + timeBasisQueryStr + " TB  \n" +
+					"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
+					"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
+					"where AM.CollectionID = " + collectionID + "\n" +
+					"and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
+					"%s" +
+					"group by BasisTimeStart \n" +
+					"order by BasisTimeStart \n\n";
+				
+				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
+				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
+				
+				for (int j = 0; j < mzValues.length; j++) {	
+					int mzPeakLoc = mzValues[j];
+					
+					int mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
+					int nextAtomID = getNextID();
+
+					String formattedSql = String.format(sql, nextAtomID, 
+							"and cast(round(AIS.PeakLocation, 0) as int) = " + mzPeakLoc + "\n");
+
+					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
+					fillAtomsFromMemoryTable(collectionName, mzCollectionID, formattedSql);
+				}
+				
+				if (options.produceParticleCountTS) {
+					int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
+					int nextAtomID = getNextID();
+
+					String formattedSql = String.format(sql, nextAtomID, "");
+
+					progressBar.increment("  " + collectionName + ", Particle Counts");
+					fillAtomsFromMemoryTable(collectionName, combinedCollectionID, formattedSql);
+				}
+			}
 		}
-		
-		return sql;
 	}
 	
-	private int[] getValidMZValuesForCollection(Collection collection) {
+	private void fillAtomsFromMemoryTable(String collectionName, int collectionID, String memoryTableSqlStr) {
+		String tableName = getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries");
+		
+		String insertSql = 
+			"insert AtomMembership (CollectionID, AtomID) \n" +
+			"select " + collectionID + ", NewAtomID from @atoms \n\n" +
+			
+			"insert " + tableName + " (AtomID, Time, Value) \n" +
+			"select NewAtomID, Time, Value from @atoms";
+
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute(memoryTableSqlStr + insertSql);
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
+			System.err.println("SQL exception aggregating collection: " + collectionName);
+			e.printStackTrace();
+		}
+	}
+	
+	public int[] getValidMZValuesForCollection(Collection collection) {
 		int collectionID = collection.getCollectionID();
 		AggregationOptions options = collection.getAggregationOptions();
 		

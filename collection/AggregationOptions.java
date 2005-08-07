@@ -18,6 +18,9 @@ public class AggregationOptions {
 	public int[] mzValues;
 	public String mzString = "";
 
+	public String getGroupMethodStr() {
+		return combMethod == AggregationOptions.CombiningMethod.SUM ? "SUM" : "AVG";
+	}
 	public void setMZValues(String mzString) {
 		this.mzString = mzString;
 		

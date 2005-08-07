@@ -3,9 +3,11 @@ package gui;
 import collection.AggregationOptions;
 import collection.Collection;
 import database.InfoWarehouse;
+import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import javax.swing.*;
@@ -281,16 +283,16 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			
 			if (baseSequenceOnCollection) {
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
-				timeBasisSQLStr = db.getTimeBasisSQLString(selectedCollection.getCollectionID());
+				timeBasisSQLStr = getTimeBasisSQLString(selectedCollection.getCollectionID());
 			} else {
 				GregorianCalendar start = startTime.getDate();
 				GregorianCalendar end = endTime.getDate();
 				GregorianCalendar interval = intervalPeriod.getDate();
 
-				timeBasisSQLStr = db.getTimeBasisSQLString(start, end, interval);
+				timeBasisSQLStr = getTimeBasisSQLString(start, end, interval);
 			}
 
-			int collectionID = db.createAggregateTimeSeries(newSeriesName, collections, timeBasisSQLStr, baseSequenceOnCollection);
+			int collectionID = createAggregateTimeSeries(newSeriesName, collections, timeBasisSQLStr, baseSequenceOnCollection);
 			parentFrame.updateSynchronizedTree(collectionID);
 			setVisible(false);
 			dispose();
@@ -298,6 +300,97 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			setVisible(false);
 			dispose();
 		}
+	}
+	
+	private int createAggregateTimeSeries(String syncRootName, final Collection[] collections, 
+			String timeBasisSQLstring, boolean baseOnCollection) {
+		final String timeBasisSetupStr = baseOnCollection ? ""                             : timeBasisSQLstring + "\n ";
+		final String timeBasisQueryStr = baseOnCollection ? "(" + timeBasisSQLstring + ")" : "@timeBasis";
+		
+		final int[][] mzValues = new int[collections.length][];
+		int numCollectionsToMake = 0;
+
+		for (int i = 0; i < collections.length; i++) {
+			Collection curColl = collections[i];
+			if (curColl.getDatatype().equals("ATOFMS")) {
+				mzValues[i] = db.getValidMZValuesForCollection(curColl);
+				
+				if (mzValues[i] != null)
+					numCollectionsToMake += mzValues[i].length;
+
+				AggregationOptions options = curColl.getAggregationOptions();
+				if (options == null)
+					curColl.setAggregationOptions(options = new AggregationOptions());
+				
+				if (options.produceParticleCountTS)
+					numCollectionsToMake++;
+			}
+		}
+		
+		final ProgressBarWrapper progress = 
+			new ProgressBarWrapper(this, "Aggregating Time Series", numCollectionsToMake);
+		
+		final int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
+		
+		final SwingWorker worker = new SwingWorker() {
+			public Object construct() {
+				for (int i = 0; i < collections.length; i++)
+					db.createAggregateTimeSeries(progress, rootCollectionID, collections[i], mzValues[i], timeBasisSetupStr, timeBasisQueryStr);
+
+				progress.disposeThis();
+				
+				return null;
+			}
+		};
+		worker.start();
+		
+		progress.constructThis();
+		
+		return rootCollectionID;
+	}
+	
+	private String getTimeBasisSQLString(int collectionID) {
+		String timeSubstr = 
+			"   select distinct Time \n" +
+			"   from ATOFMSAtomInfoDense AID \n" +
+			"   join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			"   where CollectionID = " + collectionID;
+		
+		return "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
+			   "from (\n" + timeSubstr + "\n) T1 " +
+			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
+			   "group by T1.Time \n" +
+			   "union \n" +
+			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
+			   "from ATOFMSAtomInfoDense AID \n" +
+			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			   "where CollectionID = " + collectionID;
+	}
+	
+	private String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) \n";
+		java.util.Date startTime, endTime;
+
+		while (start.before(end)) {
+			startTime = start.getTime();
+			
+			//start.add(Calendar.DATE,   interval.get(Calendar.DATE));
+			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
+			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+			
+			if (!start.before(end))
+				start = end;
+			
+			endTime = start.getTime();
+			
+			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values ('" + 
+						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
+		}
+		
+		return sql;
 	}
 	
 	public void valueChanged(ListSelectionEvent e) {
