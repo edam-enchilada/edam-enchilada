@@ -102,7 +102,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(this);
 		
-		//add an option to import all the datasets into one parent collection
+		//an option to import all the datasets into one parent collection
 		parentButton = new JRadioButton(
 				"Create a parent collection for all incoming datasets.",
 				false);
@@ -185,7 +185,8 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			exceptions = false;
 		}
 		else if (source == parentButton){
-			//pop up a "create new collections" dialog box
+			//pop up a "create new collections" dialog box & keep number of new
+			//collection
 			EmptyCollectionDialog ecd = 
 				new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
 			parentID = ecd.getCollectionID();
@@ -193,7 +194,6 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			if (parentID == -1) {
 				parentButton.setSelected(false);
 			} else {
-				//show the name of the collection you're importing into, somehow?
 				parentLabel.setText("Importing into collection # " + parentID);
 				importedTogether = true;
 			}

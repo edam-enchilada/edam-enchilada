@@ -2,7 +2,6 @@ package dataImporters;
 
 import gui.EnchiladaDataTableModel;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -30,6 +29,7 @@ import database.SQLServerDatabase;
 
 public class EnchiladaDataSetImporter extends DefaultHandler {
 	
+	private String data = "";
 	private SQLServerDatabase db;
 	private Connection con;
 	private Statement stmt;
@@ -95,26 +95,15 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * @param fileNames
 	 */
 	public void importFiles(ArrayList<String> fileNames){
-		
-		//make the DTD
-		File file = new File(fileNames.get(0));
-		String path = file.getAbsolutePath();
-		int length = file.getName().length();
-		path = path.substring(0, path.length()-length );
-		FileMaker maker = new FileMaker(path, "enchilada");
-		if (maker.fileCreated())
-			maker.setEnchiladaContents();
-		
+				
 		for (String eachFile : fileNames)
 			read(eachFile);
-		
-		maker.deleteTemps();
 		
 	}
 	
 	/**
 	 * Given a .ed filename, sets up to parse that xml file and stores the 
-	 * information in the relevant tables in the database..  
+	 * information in the relevant tables in the database.  
 	 * Helper function for importFiles().
 	 * 
 	 * @param fileName - the xml (.ed) file to read
@@ -184,8 +173,11 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			//System.out.println(eName);//debugging
 			
 			//handle different tags
-			if (eName.equals("enchiladadata"))
+			if (eName.equals("enchiladadata")){
 				datatype = attrs.getValue(0);
+				//if (attrs.getValue(1).equals("true"))
+				//	continues = true;
+			}
 			else if (eName.equals("datasetinfo")){
 				inDataSetInfo = true;
 				dataSetName = attrs.getValue(0);
@@ -236,7 +228,37 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
              String qName  // qualified name
              )throws SAXException{
 		 
-		 //at the end of the document, push all the information to the database
+		 /*
+		  * First, grab all the CDATA that has been assembled in characters().
+		  * (Probably a more elegant way to do this . . . )
+		  * Because the parser checks to make sure the elements are in order,
+		  * we can check in reverse-heirarchical order to reduce if statements.
+		  */
+		 if (! data.equals("")){
+			 //if it's a sparse info field, add it to the last sparse entry for this
+			 //sparse table
+			 if (inAtomInfoSparse){
+				 ArrayList<String> list = AISinfo.get(sparseName);
+				 String AISparams = list.get(list.size()-1);
+				 AISparams = intersperse(data, AISparams);
+				 //replace old with new
+				 list.remove(list.size()-1);
+				 list.add(AISparams);
+				 //System.out.println("AISparams: " + AISparams);//debugging
+			 }
+			 else if (inAtomInfoDense){
+				 AIDparams = intersperse(data, AIDparams);
+				// System.out.println("AIDparams: " + AIDparams);//debugging
+			 }
+			 else if (inDataSetInfo){
+				 DSIparams = intersperse(data, DSIparams);
+				// System.out.println("DSIparams: " + DSIparams);//debugging
+			 } 
+			 data = "";
+		 }
+		 
+		 
+		 /*at the end of the document, push all the information to the database*/
 		 if (qName.equals("enchiladadata")){
 			 try {
 					stmt.executeBatch();
@@ -267,34 +289,11 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 public void characters(char[] buf, int offset, int len)
 	 	throws SAXException{
 		 
-		 String data = new String(buf, offset, len);
+
+		 String temp = new String(buf, offset, len);
+		 data = data.concat(temp);
 		 //System.out.println(data);//debugging
 		 
-		 /*
-		  * @non-Javadoc
-		  * Because the parser checks to make sure the elements are in order,
-		  * we can check in reverse-heirarchical order to reduce if statements.
-		  */
-
-		 //if it's a sparse info field, add it to the last sparse entry for this
-		 //sparse table
-		 if (inAtomInfoSparse){
-			 ArrayList<String> list = AISinfo.get(sparseName);
-			 String AISparams = list.get(list.size()-1);
-			 AISparams = intersperse(data, AISparams);
-			 //replace old with new
-			 list.remove(list.size()-1);
-			 list.add(AISparams);
-			 //System.out.println("AISparams: " + AISparams);//debugging
-		 }
-		 else if (inAtomInfoDense){
-			 AIDparams = intersperse(data, AIDparams);
-			 //System.out.println("AIDparams: " + AIDparams);//debugging
-		 }
-		 else if (inDataSetInfo){
-			 DSIparams = intersperse(data, DSIparams);
-			 //System.out.println("DSIparams: " + DSIparams);//debugging
-		 }
 	 }
 	 
 	 /**
@@ -310,7 +309,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		 //separate out the numbers from the real men!
 		 try{
 			 Float number = new Float(add);
-				
+			 
 			 if (params.equals(""))
 			 	params = add;
 			 else

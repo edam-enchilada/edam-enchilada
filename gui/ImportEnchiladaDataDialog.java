@@ -71,8 +71,10 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -91,12 +93,16 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		private JButton okButton;
 		private JButton cancelButton;
 		private JButton dataTypeButton;
+		private JRadioButton parentButton;
+		private JLabel parentLabel;
 		private EnchiladaDataTableModel eTableModel;
 		private int dataSetCount;
 		private static Window parent = null;
 		private boolean exceptions = false;
 		private SQLServerDatabase db = MainFrame.db;
 		private JTextArea typelist;
+		private boolean importedTogether = false;
+		private int parentID = -1;
 		
 		/**
 		 * Extends JDialog to form a modal dialogue box for importing 
@@ -121,6 +127,9 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			
 			JScrollPane scrollPane = new JScrollPane(edTable);
 			
+			parentButton = new JRadioButton();
+			parentButton.setMnemonic(KeyEvent.VK_P);
+			parentButton.addActionListener(this);
 			
 			okButton = new JButton("OK");
 			okButton.setMnemonic(KeyEvent.VK_O);
@@ -134,9 +143,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			
 			JPanel listPane = new JPanel();
 			listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
-			JLabel label = new JLabel("<html>Choose Enchilada Data files to import."
-					+ "  <font size = 2>If a dataset is spanned by more than one file, the files"
-					+ " must be imported in order.</font></html>");
+			JLabel label = new JLabel("<html>Choose Enchilada Data files to import.");
 			label.setLabelFor(edTable);
 			
 			listPane.add(label);
@@ -201,6 +208,12 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
 			buttonPane.setBorder(BorderFactory.createEmptyBorder(0,10,10,10));
 			
+			//import into a parent collection goes here
+			parentLabel = new JLabel("Create a parent collection for all"
+					+ " incoming datasets.");
+			buttonPane.add(parentButton);
+			buttonPane.add(parentLabel);
+			
 			buttonPane.add(Box.createHorizontalGlue());
 			buttonPane.add(okButton);
 			buttonPane.add(Box.createRigidArea(new Dimension(10,0)));
@@ -233,20 +246,6 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		{
 			Object source = e.getSource();
 			if (source == okButton) {
-				/*EnchiladaDataSetImporter edsi =
-					new EnchiladaDataSetImporter(eTableModel);
-				if (edsi.exceptionsExist()){
-					//get the messages from edsi, display them appropriately
-					ArrayList<String[]> messageList = edsi.getErrors();
-					//display multiple exceptions in same dialog
-					messageList.add(0, new String[]{"The following errors were",
-							" reported during importation: "});
-					for (String[] message : messageList){
-						for(int i=0; i<message.length; i++)
-							System.out.print(message[i]);
-					}
-					ExceptionDialog edialog = new ExceptionDialog(this, messageList);
-					}*/
 				EnchiladaDataSetImporter importer = new EnchiladaDataSetImporter(db);
 				ArrayList<String> files = importer.collectTableInfo(eTableModel);
 				importer.importFiles(files);
@@ -273,7 +272,6 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 						while (!found){
 							String next = scan.next();
 							if (next.contains("datatype")){
-								//find the thingy
 								int marker = next.indexOf("=");
 								//increment & decrement to get around quotes
 								next = next.substring(marker+2, next.length()-2);
@@ -288,8 +286,6 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 							Connection con = db.getCon();
 							DynamicTableGenerator newType =
 								new DynamicTableGenerator(con);
-							
-							//OldDynamicTableGenerator newType = new OldDynamicTableGenerator(file, con);
 							
 							typeName = newType.createTables(fileName);
 							//TODO: check for format, SQL errors in creation for GUI?
@@ -309,6 +305,21 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 						//System.err.println("Problems creating new datatype.");
 						//e1.printStackTrace();
 					}					
+				}
+			}
+			
+			else if (source == parentButton){
+				//pop up a "create new collections" dialog box & keep number of new
+				//collection
+				EmptyCollectionDialog ecd = 
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", true);
+				parentID = ecd.getCollectionID();
+				
+				if (parentID == -1) {
+					parentButton.setSelected(false);
+				} else {
+					parentLabel.setText("Importing into collection # " + parentID);
+					importedTogether = true;
 				}
 			}
 		}

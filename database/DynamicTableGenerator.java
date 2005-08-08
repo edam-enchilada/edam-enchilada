@@ -1,6 +1,5 @@
 package database;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -16,8 +15,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import dataImporters.FileMaker;
 
 /**
  * @author ritza
@@ -167,6 +164,9 @@ public class DynamicTableGenerator extends DefaultHandler {
 				"','[DataSetID]','INT',1," + DynamicTable.DataSetInfo.ordinal()
 				+ "," + columnCounter + ")";
 			columnCounter++;
+			statement += "INSERT INTO MetaData VALUES ('" + datatype +
+				"','[DataSet]','VARCHAR(8000)',0," + DynamicTable.DataSetInfo.ordinal()
+				+ "," + columnCounter + ")";
 		}
 		
 		else if (eName.equals("atominfodense")){
@@ -251,21 +251,10 @@ public class DynamicTableGenerator extends DefaultHandler {
 	  * @return	The new datatype's name.
 	  */
 	 public String createTables(String file){
-		 
-		 //create a meta.dtd file in a temporary directory
-		 File md = new File(file);
-		 String shortName = md.getName();
-		 String path = file.substring(0, (file.length()-shortName.length()) );
-		 FileMaker maker = new FileMaker(path, "meta");
-		 if (maker.fileCreated())
-			 maker.setMetaContents();
-		 
+		 		 
 		 //read file and put info into MetaData
 		 read(file);
-		 
-		 //remove temporary file and directory
-		 maker.deleteTemps();
-		 
+		 		 
 		 String tableStr;
 		 
 		 /*

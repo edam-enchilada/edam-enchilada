@@ -699,9 +699,13 @@ public class SQLServerDatabase implements InfoWarehouse
 					
 					ArrayList<String> sparse = sparseTables.get(sparseTables.firstKey());
 					//insert all the strings in the arraylist
-					for (int j = 0; j < sparse.size(); j++)
-						bulkFile.println(nextID + "," + sparse.get(j));
-				
+					String printer;
+					System.out.println("Printing to bulk file:");
+					for (int j = 0; j < sparse.size(); j++){
+						printer = nextID + "," + sparse.get(j);
+						System.out.println(printer);//debugging
+						bulkFile.println(printer);
+					}
 					//remove that mapping
 					sparseTables.remove(sparseTables.firstKey());
 					
@@ -710,6 +714,8 @@ public class SQLServerDatabase implements InfoWarehouse
 						      "FROM '" + tempFilename + "'\n" +
 							  "WITH (FIELDTERMINATOR=',')");
 				}
+				
+				bulkFile.close();
 				
 			//endif	
 			} else {
@@ -729,7 +735,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					for (int j = 0; j < sparse.size(); j++){
 						string = "INSERT INTO " + tableName + 
 								" VALUES (" + nextID + "," + sparse.get(j) + ")";
-						//System.out.println(string);	//debugging
+						System.out.println(string);	//debugging
 						stmt.addBatch(string);
 					}
 					
