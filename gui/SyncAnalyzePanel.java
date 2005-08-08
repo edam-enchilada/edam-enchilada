@@ -194,12 +194,15 @@ public class SyncAnalyzePanel extends JPanel {
 			ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
 			Collections.sort(dateSet);
 
-			double secondsFromStart = 0;
+			// This casting longs to doubles could come back to bite
+			// me in the ass... but it's the only way to shove both
+			// dates and regular data into the x-axis of a datapoint...
+			double lastTimePoint = 0;
 			double maxValue[] = new double[numSets];
-			long startTime = dateSet.get(0).getTime();
+			double startTime = (double) dateSet.get(0).getTime();
 			for (Date d : dateSet)
 			{
-				secondsFromStart = (d.getTime() - startTime) / 1000.0;
+				lastTimePoint = (double) d.getTime();
 				double[] values = data.get(d);
 
 				for (int i = 0; i < numSets; i++) {
@@ -209,7 +212,7 @@ public class SyncAnalyzePanel extends JPanel {
 						maxValue[i] = value;
 					
 					if (value != -99)
-						datasets[i].add(new DataPoint(secondsFromStart, value));
+						datasets[i].add(new DataPoint(lastTimePoint, value));
 				}
 			}
 
@@ -222,12 +225,13 @@ public class SyncAnalyzePanel extends JPanel {
 			Chart chart = new Chart(numSequences, true);
 			chart.setHasKey(false);
 			chart.setTitle("<html><b>Time Series Comparison</b></html>");
+			chart.setTitleX(0, "Time");
+			chart.drawXAxisAsDateTime(0);
 			
 			for (int i = 0; i < numSequences; i++) {
-				chart.setTitleX(i, "Time (in seconds) from start of data");
 				chart.setTitleY(i, "Sequence " + (i + 1) + " Value");
 				chart.setColor(i, i == 0 ? Color.red : Color.blue);
-				chart.setAxisBounds(i, -10, secondsFromStart + 10, 0, maxValue[i]);
+				chart.setAxisBounds(i, startTime - 1000, lastTimePoint + 1000, 0, maxValue[i]);
 				chart.setDataset(i, datasets[i]);
 				chart.setDataDisplayType((datasets[i].size() == 1), true);
 			}
@@ -245,19 +249,38 @@ public class SyncAnalyzePanel extends JPanel {
 				Chart compChart = new Chart(1, false);
 				compChart.setHasKey(false);
 				compChart.setTitle("<html><b>Condition Series " + (i - numSequences + 1) + "</b></html>");
-				compChart.setTitleX(0, "Time (in seconds) from start of data");
+				compChart.setTitleX(0, "Time");
 				compChart.setTitleY(0, "Condition Series " + (i - numSequences + 1) + " Value");
 				compChart.setColor(0, Color.green);
-				compChart.setAxisBounds(0, -10, secondsFromStart + 10, 0, maxValue[i]);
+				compChart.setAxisBounds(0, startTime - 1000, lastTimePoint + 1000, 0, maxValue[i]);
 				compChart.setDataset(0, datasets[i]);
 				compChart.setDataDisplayType((datasets[i].size() == 1), true);		
 				compChart.setNumTicks(10,10, 1,1);
 				compChart.setBarWidth(3);
+				compChart.drawXAxisAsDateTime(0);
 
 				compChart.setPreferredSize(new Dimension(400, 400));
 				compChart.setBorder(new EmptyBorder(15, 0, 0, 0));
 				
 				bottomPanel = addComponent(compChart, bottomPanel);
+			}
+			
+			if (numSequences > 1) {
+				Chart scatterChart = new Chart(2, true);
+				scatterChart.setHasKey(false);
+				scatterChart.setTitle("<html><b>Time Series Scatter Plot</b></html>");
+				scatterChart.setTitleY(0, "Sequence 1 Value");
+				scatterChart.setTitleY(1, "Sequence 2 Value");
+				scatterChart.setAxisBounds(0, startTime - 1000, lastTimePoint + 1000, 0, maxValue[0]);
+				scatterChart.setAxisBounds(1, startTime - 1000, lastTimePoint + 1000, 0, maxValue[1]);
+				scatterChart.setDataset(0, datasets[0]);
+				scatterChart.setDataset(1, datasets[1]);
+				scatterChart.drawAsScatterPlot();
+
+				scatterChart.setPreferredSize(new Dimension(400, 400));
+				scatterChart.setBorder(new EmptyBorder(15, 0, 0, 0));
+				
+				bottomPanel = addComponent(scatterChart, bottomPanel);
 			}
 		} else {
 			JPanel textPanel = new JPanel(new FlowLayout());

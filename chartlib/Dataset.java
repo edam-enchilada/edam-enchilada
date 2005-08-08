@@ -80,25 +80,13 @@ public class Dataset extends TreeSet<DataPoint>
 	 */
 	public boolean add(DataPoint d) throws IllegalArgumentException
 	{
-		try
-		{
-			double x = d.x, y = d.y;
-			if(Double.isInfinite(x )
-					|| Double.isNaN(x)
-					|| Double.isInfinite(y)
-					|| Double.isNaN(y))
-				throw new IllegalArgumentException("Infinite or NaN Datapoint value.");
-			
-		}
-		catch(IllegalArgumentException e)
-		{
-			throw e;
-		}
-		catch(ClassCastException c)
-		{
-			throw new IllegalArgumentException("Non-Datapoint object added to Dataset.");
-		}
-		
+		double x = d.x, y = d.y;
+		if(Double.isInfinite(x )
+				|| Double.isNaN(x)
+				|| Double.isInfinite(y)
+				|| Double.isNaN(y))
+			throw new IllegalArgumentException("Infinite or NaN Datapoint value.");
+	
 		return super.add(d);
 	}
 
@@ -114,10 +102,9 @@ public class Dataset extends TreeSet<DataPoint>
 	 */
 	public DataPoint get(double x, double tolerance)
 	{
-		DataPoint dp;
-		for(int count=0; count < size(); count++)
-		{
-			dp = (DataPoint)get(count);
+		Iterator<DataPoint> iterator = iterator();
+		while(iterator.hasNext()) {
+			DataPoint dp = iterator.next();
 			if(Math.abs(dp.x - x) <= tolerance)
 				return dp;
 		}

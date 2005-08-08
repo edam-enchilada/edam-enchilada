@@ -42,6 +42,8 @@
  */
 package chartlib;
 import java.util.ArrayList;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 /**
  * @author sulmanj
@@ -50,7 +52,11 @@ import java.util.ArrayList;
  * 
  */
 public class GraphAxis {
-	
+	private static SimpleDateFormat dateFormat = 
+		new SimpleDateFormat("M/dd/yy");
+	private static SimpleDateFormat timeFormat = 
+		new SimpleDateFormat("HH:mm:ss");
+
 	//the range of the axis
 	private double min;
 	private double max;
@@ -140,6 +146,15 @@ public class GraphAxis {
 		return title;
 	}
 	
+	public double getMin() 
+	{
+		return min;
+	}
+	
+	public double getMax() 
+	{
+		return max;
+	}
 	/**
 	 * Sets a new range, keeping tick marks as they are.
 	 * @param newMin
@@ -301,6 +316,22 @@ public class GraphAxis {
 		return ticks;
 	}
 	
+	public String[] getBigTicksLabelsTop(boolean drawAsDateTime) {		
+		String[] labels = new String[bigTicksVals.length];
+		for(int count = 0; count < labels.length; count++)
+			labels[count] = 
+				drawAsDateTime ? 
+						dateFormat.format(new Date((long) this.bigTicksVals[count])) : 
+				        Double.toString((double)(Math.round(bigTicksVals[count] * 100)) / 100);
+		return labels;
+	}
+	
+	public String[] getBigTicksLabelsBottom() {
+		String[] labels = new String[bigTicksVals.length];
+		for(int count = 0; count < labels.length; count++)
+			labels[count] = timeFormat.format(new Date((long) this.bigTicksVals[count]));
+		return labels;
+	}
 	
 	/**
 	 * Returns an array of doubles representing the relative locations of all small ticks

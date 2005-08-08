@@ -560,6 +560,7 @@ public class Chart extends JPanel
 	
 	/**
 	 * Sets a color for the data and key of the given chart.
+	 * @param index Which chart to change.
 	 * @param index The chart to change, starting at 0 at the top.
 	 * @param c The new color.
 	 */
@@ -571,6 +572,28 @@ public class Chart extends JPanel
 			chartAreas[index].setColor(0, c);
 
 		key.setColor(index, c);
+	}
+	
+	/**
+	 * Sets chart display to be a scatter plot. This requires
+	 * combineCharts to be true, and will fail if not.
+	 */
+	public void drawAsScatterPlot() {
+		assert(combineCharts);
+		
+		chartAreas[0].drawAsScatterPlot();
+	}
+
+	/**
+	 * Set the chart to draw the x-axis as a date instead
+	 * of as a number...
+	 * @param index The chart to act on
+	 */
+	public void drawXAxisAsDateTime(int index) {
+		if (combineCharts)
+			chartAreas[0].drawXAxisAsDateTime();
+		else
+			chartAreas[index].drawXAxisAsDateTime();
 	}
 	
 	/**
