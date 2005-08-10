@@ -1,7 +1,8 @@
 package gui;
 
-import java.awt.FlowLayout;
+import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.*;
 
 public class ProgressBarWrapper {
 	private JDialog waitBarDialog;
@@ -12,14 +13,18 @@ public class ProgressBarWrapper {
 	
 	public ProgressBarWrapper(JFrame parentFrame, String title, int numSteps) {
 		waitBarDialog = new JDialog(parentFrame, title, true);
-		waitBarDialog.setLayout(new FlowLayout());
+		waitBarDialog.setLayout(new BorderLayout());
 		pBar = new JProgressBar(0, numSteps);
 		pBar.setValue(0);
 		pBar.setStringPainted(true);
-		pLabel = new JLabel("       Placeholder text.....                                                   ");
+		pBar.setBorder(new EmptyBorder(5, 5, 5, 5));
+		pLabel = new JLabel("");
+		pLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		pLabel.setLabelFor(pBar);
-		waitBarDialog.add(pBar);
-		waitBarDialog.add(pLabel);
+		pBar.setBorder(new EmptyBorder(5, 5, 5, 5));
+		waitBarDialog.add(pBar, BorderLayout.NORTH);
+		waitBarDialog.add(pLabel, BorderLayout.CENTER);
+		waitBarDialog.setPreferredSize(new Dimension(500, 100));
 	}
 	
 	public void increment(String text) {
