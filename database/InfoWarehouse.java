@@ -202,7 +202,7 @@ public interface InfoWarehouse {
 	 */
 	public int getCollectionSize(int collectionID);
 	
-	public ArrayList<Integer> getCollectionIDsWithAtoms(ArrayList<Integer> collectionIDs, boolean includeChildren);
+	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs, boolean includeChildren);
 	
 	/**
 	 * Returns an array list of ATOFMSAtomFromDB's describing

@@ -47,14 +47,9 @@ package collection;
 import database.*;
 import gui.FilePicker;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.io.*;
+import java.text.*;
+import java.util.*;
 
 import atom.ATOFMSAtomFromDB;
 
@@ -74,6 +69,7 @@ public class Collection {
 
 	private String cachedName, cachedComment, cachedDescription;
 	private ArrayList<Integer> cachedSubCollectionIDs = null;
+	private Set<Integer> cachedCollectionIDSubTree = null;
 	private Collection[] cachedSubCollections;
 	private int cachedContainsData = -1;
 	
@@ -148,14 +144,18 @@ public class Collection {
 	}
 	
 	public boolean containsData() {
-		if (cachedContainsData == -1) {
-			ArrayList<Integer> tmp = new ArrayList<Integer>();
-			tmp.add(collectionID);
-			
-			cachedContainsData = db.getCollectionIDsWithAtoms(tmp, false).size();
-		}
+		if (cachedContainsData == -1)
+			cachedContainsData = db.getCollectionIDsWithAtoms(getCollectionIDSubTree(), false).size();
 	
 		return cachedContainsData > 0;
+	}
+	
+	public Set<Integer> getCollectionIDSubTree() {
+		if (cachedCollectionIDSubTree == null) {
+			cachedCollectionIDSubTree = db.getAllDescendantCollections(collectionID, true); 
+		}
+		
+		return cachedCollectionIDSubTree;
 	}
 	
 	public String getName() {

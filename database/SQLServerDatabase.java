@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -1203,27 +1204,14 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		ArrayList<Integer> subChildren = new ArrayList<Integer>();
 
-		// Assume that each collectionID will need 10 characters
-		// (with comma). Add 500 characters for rest of query. Probably
-		// overkill, but faster than regenerating the string every time
-		// by appending.
-		StringBuilder queryString =
-		    new StringBuilder(collections.size()*10+500);
-		queryString.append(
-		        "SELECT DISTINCT ChildID\n" +
-		        "FROM CollectionRelationships\n" +
-		        "WHERE ParentID IN ("
-		);
-		
-		for (Integer collection : collections)
-		    queryString.append(collection + ",");
-		queryString.deleteCharAt(queryString.length()-1);
-		
-		queryString.append(")");
+		String query = 
+			"SELECT DISTINCT ChildID\n" +
+			"FROM CollectionRelationships\n" +
+			"WHERE ParentID IN (" + join(collections, ",") + ")";
 
 		try {
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(queryString.toString());
+			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next())
 			{
 				subChildren.add(new Integer(rs.getInt("ChildID")));
@@ -1377,18 +1365,19 @@ public class SQLServerDatabase implements InfoWarehouse
 		return returnThis;
 	}
 	
-	public ArrayList<Integer> getCollectionIDsWithAtoms(ArrayList<Integer> collectionIDs, boolean includeChildren) {
+	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs, boolean includeChildren) {
 		ArrayList<Integer> ret = new ArrayList<Integer>();
 	
 		if (includeChildren) {
 			// This is *really* slow... oh well. 
-			for (int i = 0; i < collectionIDs.size(); i++)
-				if (getCollectionSize(collectionIDs.get(i)) > 0)
-					ret.add(collectionIDs.get(i));
+			for (Integer collectionID : collectionIDs) {
+				if (getCollectionSize(collectionID) > 0)
+					ret.add(collectionID);
+			}
 		} else {
 			try {
 				ResultSet rs = con.createStatement().
-					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + joinArrayList(collectionIDs, ",") + ")");
+					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
 				
 				while (rs.next())
 					ret.add(rs.getInt("CollectionID"));
@@ -1403,14 +1392,16 @@ public class SQLServerDatabase implements InfoWarehouse
 		return ret;
 	}
 	
-	private String joinArrayList(ArrayList a, String delimiter) {
+	public static String join(java.util.Collection collection, String delimiter) {
 		// Blecch... java should be able to do this itself...
-		
+
 		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < a.size(); i++) {
-			if (i > 0)
+		boolean firstElement = true;
+		for (Object o : collection) {
+			if (!firstElement)
 				sb.append(",");
-			sb.append(a.get(i));
+			sb.append(o);
+			firstElement = false;
 		}
 		
 		return sb.toString();
@@ -1532,26 +1523,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.execute("CREATE TABLE #TempParticles" + instance + 
 						 " (AtomID INT PRIMARY KEY CLUSTERED)\n");
 			
-			// Assume that each collectionID will need 10 characters
-			// (with comma). Add 500 characters for rest of query. Probably
-			// overkill, but faster than regenerating the string every time
-			// by appending.
-			StringBuilder queryString =
-			    new StringBuilder(descCollections.size()*10+500);
-			queryString.append(
-			    "INSERT INTO #TempParticles" + instance + " (AtomID)\n" +
+			String query = 
+				"INSERT INTO #TempParticles" + instance + " (AtomID)\n" +
 			    "(SELECT DISTINCT AtomID \n" +
 			    " FROM AtomMembership\n" +
-			    " WHERE CollectionID IN ("
-			);
-		
-			for (Integer col : descCollections)
-			    queryString.append(col + ",");
-			queryString.deleteCharAt(queryString.length()-1);
+			    " WHERE CollectionID IN (" + join(descCollections, ",") + "))";
 			
-		    queryString.append("))");
-		    
-		    stmt.executeUpdate(queryString.toString());
+			stmt.executeUpdate(query);
 
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving children of the collection.");
@@ -3053,6 +3031,8 @@ public class SQLServerDatabase implements InfoWarehouse
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
 		AggregationOptions options = curColl.getAggregationOptions();
+		
+		Set<Integer> collectionIDTree = getAllDescendantCollections(collectionID, true);
 
 		if (curColl.getDatatype().equals("ATOFMS")) {				
 			if (mzValues == null) {
@@ -3079,7 +3059,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"join " + timeBasisQueryStr + " TB  \n" +
 					"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
 					"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
-					"where AM.CollectionID = " + collectionID + "\n" +
+					"where AM.CollectionID in (" + join(collectionIDTree, ",") + ") \n" +
 					"and abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < " + options.peakTolerance + "\n" +
 					"%s" +
 					"group by BasisTimeStart \n" +
@@ -3135,40 +3115,35 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	public int[] getValidMZValuesForCollection(Collection collection) {
-		int collectionID = collection.getCollectionID();
+		Set<Integer> collectionIDs = collection.getCollectionIDSubTree();
 		AggregationOptions options = collection.getAggregationOptions();
 		
 		String sql = "select distinct cast(round(PeakLocation, 0) as int) as RoundedPeakLocation " +
 					 "from ATOFMSAtomInfoDense AID " +
 					 "join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) " +
 					 "join AtomMembership AM on (AIS.AtomID = AM.AtomID) " +
-					 "where AM.CollectionID = " + collectionID + 
+					 "where AM.CollectionID in (" + join(collectionIDs, ",") + ") " + 
 					 " and abs(PeakLocation - round(PeakLocation, 0)) < " + options.peakTolerance;
-		
-		if (options.mzValues != null && options.mzValues.length > 0) {
-			// Blecch... java should be able to do this itself...
-			// Oh well, build a comma-delimited string from an int array
-			StringBuffer valuesString = new StringBuffer();
-			for (int i = 0; i < options.mzValues.length; i++) {
-				if (i > 0)
-					valuesString.append(",");
-				valuesString.append(options.mzValues[i]);
-			}
-		
-			sql += "and round(PeakLocation, 0) in ( " + valuesString.toString()  + " ) ";
-		}
+
+		if (options.mzValues != null && options.mzValues.size() > 0)
+			sql += "and round(PeakLocation, 0) in ( " + join(options.mzValues, ",") + " ) ";
 		
 		try {
-			ArrayList<Integer> tempValues = new ArrayList<Integer>();
+			ArrayList<Integer> peakLocs = new ArrayList<Integer>();
 			
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(sql);
 			
 			while (rs.next())
-				tempValues.add(rs.getInt("RoundedPeakLocation"));
+				peakLocs.add(rs.getInt("RoundedPeakLocation"));
 			rs.close();
 			
-			return options.getMZValueArray(tempValues);
+			int[] ret = new int[peakLocs.size()];
+			int i = 0;
+			for (int peakLoc : peakLocs)
+				ret[i++] = peakLoc;
+			
+			return ret;
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception creating finding M/Z values within collection");
 			System.err.println("Error creating finding M/Z values within collection.");

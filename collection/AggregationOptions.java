@@ -15,7 +15,7 @@ public class AggregationOptions {
 	public double peakTolerance = .4;
 	public boolean produceParticleCountTS = false;
 	public CombiningMethod combMethod = CombiningMethod.SUM;
-	public int[] mzValues;
+	public ArrayList<Integer> mzValues;
 	public String mzString = "";
 
 	public String getGroupMethodStr() {
@@ -50,16 +50,7 @@ public class AggregationOptions {
 				tempValues.add(low++);
 		}
 		
-		mzValues = getMZValueArray(tempValues);
-	}
-	
-	public int[] getMZValueArray(ArrayList<Integer> values) {
-		int[] tempValues = new int[values.size()];
-		for (int i = 0; i < values.size(); i++)
-			tempValues[i] = values.get(i);
-		
-		Arrays.sort(tempValues);
-		
-		return tempValues;
+		Collections.sort(tempValues);
+		mzValues = tempValues;
 	}
 }

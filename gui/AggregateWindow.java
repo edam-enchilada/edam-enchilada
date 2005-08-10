@@ -2,7 +2,7 @@ package gui;
 
 import collection.AggregationOptions;
 import collection.Collection;
-import database.InfoWarehouse;
+import database.*;
 import externalswing.SwingWorker;
 
 import java.awt.*;
@@ -283,7 +283,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			
 			if (baseSequenceOnCollection) {
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
-				timeBasisSQLStr = getTimeBasisSQLString(selectedCollection.getCollectionID());
+				timeBasisSQLStr = getTimeBasisSQLString(selectedCollection);
 			} else {
 				GregorianCalendar start = startTime.getDate();
 				GregorianCalendar end = endTime.getDate();
@@ -312,15 +312,15 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 
 		for (int i = 0; i < collections.length; i++) {
 			Collection curColl = collections[i];
+			AggregationOptions options = curColl.getAggregationOptions();
+			if (options == null)
+				curColl.setAggregationOptions(options = new AggregationOptions());
+			
 			if (curColl.getDatatype().equals("ATOFMS")) {
 				mzValues[i] = db.getValidMZValuesForCollection(curColl);
 				
 				if (mzValues[i] != null)
 					numCollectionsToMake += mzValues[i].length;
-
-				AggregationOptions options = curColl.getAggregationOptions();
-				if (options == null)
-					curColl.setAggregationOptions(options = new AggregationOptions());
 				
 				if (options.produceParticleCountTS)
 					numCollectionsToMake++;
@@ -349,22 +349,23 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		return rootCollectionID;
 	}
 	
-	private String getTimeBasisSQLString(int collectionID) {
+	private String getTimeBasisSQLString(Collection c) {
+		String collectionIDs = "(" + SQLServerDatabase.join(c.getCollectionIDSubTree(), ",") + ")";
 		String timeSubstr = 
-			"   select distinct Time \n" +
-			"   from ATOFMSAtomInfoDense AID \n" +
-			"   join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			"   where CollectionID = " + collectionID;
+			"       select distinct Time \n" +
+			"       from ATOFMSAtomInfoDense AID \n" +
+			"       join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			"       where CollectionID in " + collectionIDs;
 		
-		return "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
-			   "from (\n" + timeSubstr + "\n) T1 " +
-			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
-			   "group by T1.Time \n" +
-			   "union \n" +
-			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
-			   "from ATOFMSAtomInfoDense AID \n" +
-			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			   "where CollectionID = " + collectionID;
+		return "\n    select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
+			   "    from (\n" + timeSubstr + "\n) T1 " +
+			   "    join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
+			   "    group by T1.Time \n" +
+			   "    union \n" +
+			   "    select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
+			   "    from ATOFMSAtomInfoDense AID \n" +
+			   "    join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			   "    where CollectionID in " + collectionIDs;
 	}
 	
 	private String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
