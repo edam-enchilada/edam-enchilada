@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- WARNING: changes to this file will cause Enchilada to break. -->
+
 <!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse+)>
 	<!-- The metadata element MUST have a datatype associated with it -->
 	<!ATTLIST metadata datatype CDATA #REQUIRED>

@@ -1,0 +1,95 @@
+Enchilada Importer Instructions
+
+Contents:
+	1. Introduction
+	2. DTDs
+	3. How to Import
+
+1) Introdcution
+
+Two types of XML files needed to import data:
+	- Metadata file (*.md) contains information about the form of the datatype.  Defines tables for the database.  Complies with meta.dtd.
+	- Enchiladadata file (*.ed) contains data.  Uses previously defined tables to store this information.  Complies with enchilada.dtd.
+
+The DTDs are included in the installer* and are placed wherever you choose to install the program.  Note that you will need to know the pathnames to the DTDs in order to reference them in the .ed and .md files.  (This reference is necessary to ensure that the incoming files conform to the DTDs and will be compatible with Enchilada.)  Any changes to these files will break the Enchilada importer.
+
+Both files rely on the conceptual hierarchy of dataset info -> atominfo dense -> atominfo sparse.  The dataset info is information about the dataset itself (e.g., the date it was collected, the location, etc.).  The dense atom info describes information that is unique to each atom (e.g., timestamp, size, direction, etc.).  The sparse atom info describes multiple pieces of information about an atom (e.g., peak locations and areas).  Multiple sparse tables can be used to hold different types of sparse info about the same atom.
+
+
+* Not yet implemented.
+
+
+2) DTDs  - Any changes to these files will break the Enchilada importer.
+
+meta.dtd
+-------------------------
+<?xml version="1.0" encoding="utf-8"?>
+
+<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse+)>
+	<!-- The metadata element MUST have a datatype associated with it -->
+	<!ATTLIST metadata datatype CDATA #REQUIRED>
+	
+<!ELEMENT datasetinfo (field*)>
+
+<!ELEMENT atominfodense (field*)>
+
+<!ELEMENT atominfosparse (field*)>
+	<!-- In case more than one AIS table is required, each must have a name/number. -->
+	<!ATTLIST atominfosparse table CDATA #REQUIRED>
+	
+<!ELEMENT field (#PCDATA)>
+	<!-- The name of the field/columns in the database.  -->
+	<!-- Attributes are the type of data in that field (using SQLServer's 
+	datatype naming scheme, and whether or not it is a primary key - used for 
+	the AIS table(s).  -->
+	<!ATTLIST field 
+					type CDATA #REQUIRED
+			  		primaryKey (true | false) "false"
+	>
+
+--------------------------
+
+enchilada.dtd
+--------------------------
+<?xml version="1.0" encoding="utf-8"?>
+
+<!ELEMENT enchiladadata (datasetinfo+)>
+	<!-- The enchiladadata element MUST have a datatype associated with it. -->
+	<!ATTLIST enchiladadata datatype CDATA #REQUIRED>
+	
+<!ELEMENT datasetinfo (field*, atominfodense*)>
+	<!-- Each dataset MUST have a name (this is used as a primary key). -->
+	<!ATTLIST datasetinfo dataSetName CDATA #REQUIRED>
+	
+<!ELEMENT atominfodense (field*, atominfosparse*)>
+
+<!ELEMENT atominfosparse (field*)>
+	<!-- The AIS elements MUST specify which AIS table they belong to.  -->
+	<!ATTLIST atominfosparse table CDATA #REQUIRED>
+	
+<!ELEMENT field (#PCDATA)>
+	<!-- The field tags surround the actual data. -->
+
+-------------------------
+
+3) How to Import
+
+To import data, a matching datatype must first exist in the database.  Datatypes are imported via the metadata files.  Once the datatype is in the database, use the enchiladadata file format to import the data.  In the enchiladadata file, the number of fields within each level of the hierarchy must match the number of fields defined for that datatype in the metadata file.
+	Example:
+		(in metadata file)
+		<datasetinfo>
+			<field>location</field>
+			<field>day</field>
+		</datasetinfo>
+		<atominfodense>
+			...
+
+		(in enchiladadata file)
+		<datsetinfo dataSetName="first dataset">
+			<field>Yellowstone</field>
+			<field>Tuesday</field>
+			<atominfodense>
+				...
+		</datasetinfo>
+
+
