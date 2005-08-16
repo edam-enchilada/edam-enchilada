@@ -108,7 +108,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * 
 	 * @param fileName - the xml (.ed) file to read
 	 */
-	private void read(String fileName){
+	public void read(String fileName){
 	
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		//validate the XML to make sure it's all nice and legal
@@ -175,8 +175,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			//handle different tags
 			if (eName.equals("enchiladadata")){
 				datatype = attrs.getValue(0);
-				//if (attrs.getValue(1).equals("true"))
-				//	continues = true;
+				//System.out.println(datatype);//debugging
 			}
 			else if (eName.equals("datasetinfo")){
 				inDataSetInfo = true;
@@ -304,7 +303,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	  * @param params	The existing string.
 	  * @return	The comma-separated string.
 	  */
-	 private String intersperse(String add, String params){
+	 public String intersperse(String add, String params){
 		 
 		 //separate out the numbers from the real men!
 		 try{
