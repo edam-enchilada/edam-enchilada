@@ -81,7 +81,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JTable peaksTable; 
 	private JRadioButton peakButton, specButton;
 	private JButton nextButton, zoomOutButton, prevButton;
-	private JSplitPane labelingControlPane, mainControlPane;
 	private JTextPane labelText;
 	private JCheckBox labelPeaks;
 	
@@ -103,6 +102,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private Dataset posSpecDS, negSpecDS;
 	private int atomID;
 	private String atomFile;
+	private double selectedMZ = 0;
 	
 	private boolean spectrumLoaded = false;
 	
@@ -110,10 +110,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private static final int DEFAULT_XMIN = 0;
 	private static final int DEFAULT_XMAX = 400;
 	
-	private double selectedMZ = 0;
-	
 	private static double labelingThreshold = .5;
 	private static String labelingDir = "labeling";
+
+	// Object to hold sync-lock to make sure that any calls to Lei's external labeling
+	// code are synchronized (since only one spectrum can be labeled at a time)
+	private static Object labelLock = new Object();
 	
 	static {
 		File f = new File("config.ini");
@@ -140,11 +142,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			// just go on with the default values 
 		}
 	}
-
-	
-	// Object to hold sync-lock to make sure that any calls to Lei's external labeling
-	// code are synchronized (since only one spectrum can be labeled at a time)
-	private static Object labelLock = new Object();
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -265,11 +262,11 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
 		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
 		labelPanel.setPreferredSize(new Dimension(300, 200));
-		
-		labelingControlPane
+
+		final JSplitPane labelingControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, labelPanel, sigPanel);
 
-		mainControlPane
+		final JSplitPane mainControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, labelingControlPane);
 
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
@@ -295,6 +292,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			
 			public void itemStateChanged(ItemEvent evt) {
 				boolean isSelected = evt.getStateChange() == ItemEvent.SELECTED;
+				labelingControlPane.setVisible(isSelected);
 				
 				if (isSelected) {
 					doLabeling();
