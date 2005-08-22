@@ -98,7 +98,6 @@ public class ClusterFeature {
 	public void updateCF(BinnedPeakList list) {
 		count++;
 		sums.addAnotherParticle(list);
-		BinnedPeakList squares = new BinnedPeakList();
 		BinnedPeak peak;
 		Iterator<BinnedPeak> iterator = list.iterator();
 		while (iterator.hasNext()) {
@@ -221,8 +220,9 @@ public class ClusterFeature {
 	public BinnedPeakList getCentroid() {
 		BinnedPeakList list = new BinnedPeakList();
 		Iterator<BinnedPeak> iterator = sums.iterator();
+		BinnedPeak next;
 		while (iterator.hasNext()) {
-			BinnedPeak next = iterator.next();
+			next = iterator.next();
 			list.addNoChecks(next.location, next.area / count);
 		}
 		list.normalize(DistanceMetric.CITY_BLOCK);

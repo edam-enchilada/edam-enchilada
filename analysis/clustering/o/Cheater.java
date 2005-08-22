@@ -15,7 +15,7 @@ public class Cheater {
 	public static void main(String[] args) {
 		InfoWarehouse db = new SQLServerDatabase();
 		db.openConnection();
-		CollectionCursor curs = db.getBinnedCursor(db.getCollection(502));
+		CollectionCursor curs = db.getBinnedCursor(db.getCollection(24));
 		
 		DataWithSummary data = new DataWithSummary();
 		

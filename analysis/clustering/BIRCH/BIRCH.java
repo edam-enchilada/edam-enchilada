@@ -41,6 +41,7 @@ package analysis.clustering.BIRCH;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.util.Date;
 
 import collection.Collection;
 import ATOFMS.ParticleInfo;
@@ -64,6 +65,7 @@ public class BIRCH extends Cluster{
 	private int collectionID;
 	private CFTree curTree;
 	private MemoryUsage mem;
+	private long start, end;
 	
 	/*
 	 * Constructor.  Calls The Cluster Class's constructor.
@@ -83,10 +85,11 @@ public class BIRCH extends Cluster{
 	 * @param threshold - initial threshold for tree.
 	 */
 	public void buildTree(float threshold) {
-		curTree = new CFTree(threshold, branchingFactor); 		
+		curTree = new CFTree(threshold, branchingFactor); 
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
 		// Insert particles one by one.
+		start = new Date().getTime();
 		while(curs.next()) { 
 			particle = curs.getCurrent();
 			particle.getBinnedList().normalize(distanceMetric);
@@ -104,15 +107,23 @@ public class BIRCH extends Cluster{
 			// If we have run out of memory (i.e. node space), rebuild tree.
 			mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 			if (mem.getUsed() >= mem.getCommitted()*0.90) {
+				end = new Date().getTime();
+				System.out.println("interval: " + (end-start));
+				start = new Date().getTime();
 				System.out.println();
 				curTree.countNodes();
 				System.out.println("out of memory: rebuilding tree");
 				rebuildTree();
+				end = new Date().getTime();
+				System.out.println("interval: " + (end-start));
+				start = new Date().getTime();
 				curTree.countNodes();
 				System.out.println();
 			}
+			System.gc();
 		}	
-		curs.reset();
+		end = new Date().getTime();
+		System.out.println("interval: " + (end-start));
 	}
 	
 	/**
@@ -145,8 +156,6 @@ public class BIRCH extends Cluster{
 		newTree.numDataPoints = curTree.numDataPoints;
 		newTree.assignLeaves();
 		curTree = newTree;
-		newTree = null;
-		System.gc();
 	}
 	
 	/**
@@ -216,7 +225,7 @@ public class BIRCH extends Cluster{
 	 */
 	public boolean setCursorType(int type) {
 		Collection collection = db.getCollection(collectionID);
-		curs = new NonZeroCursor(db.getMemoryBinnedCursor(collection));
+		curs = new NonZeroCursor(db.getBinnedCursor(collection));
 		return true;
 	}
 
@@ -229,7 +238,7 @@ public class BIRCH extends Cluster{
 	public static void main(String[] args) {
 		InfoWarehouse db = new SQLServerDatabase("SpASMSdb");
 		db.openConnection();
-		BIRCH birch = new BIRCH(3, db, "BIRCH", "comment");
+		BIRCH birch = new BIRCH(7, db, "BIRCH", "comment");
 		birch.setCursorType(0);
 		birch.setDistanceMetric(DistanceMetric.CITY_BLOCK);	
 		MemoryUsage mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();

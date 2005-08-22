@@ -81,12 +81,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		float magnitude = 0;
 
 		Iterator<BinnedPeak> i = iterator();
-		//if (list.length() == 0)
-		//{
-		//	BinnedPeakList returnThis = new BinnedPeakList();
-		//	returnThis.add(0.0f,1.0f);
-		//	return returnThis;
-		//}
 		if (dMetric == DistanceMetric.CITY_BLOCK)
 			while (i.hasNext())
 			{
@@ -144,8 +138,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		{
 			temp = longIter.next();
 			longerLists[temp.location + MAX_LOCATION] = temp.area;
-			//Do we need this?: - nope
-			//bCheckedLocs[temp.location + MAX_LOCATION] = true;
 
 			// Assume optimistically that each location is unmatched in the
 			// shorter peak list.
@@ -392,8 +384,9 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	// used for testing BIRCH
 	public boolean testForMax(int max) {
 		Iterator<BinnedPeak> iterator = iterator();
+		BinnedPeak peak;
 		while (iterator.hasNext()) {
-			BinnedPeak peak = iterator.next();
+			peak = iterator.next();
 			if (peak.area > max)
 				return false;
 		}

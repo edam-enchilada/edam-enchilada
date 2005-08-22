@@ -2590,6 +2590,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			ParticleInfo sPInfo = super.getCurrent();
 			
 			sPInfo.setBinnedList(bin(sPInfo.getPeakList().getPeakList()));
+			//TODO:  USED FOR BIRCH; DON"T KNOW HOW OTHER CLUSTERING ALGORITHMS WITH BE AFFECTED!!
+			//sPInfo.setPeakList(null);
+			//sPInfo.setParticleInfo(null);
+			//////////////TODO
 			return sPInfo;
 		}
 		
@@ -2699,7 +2703,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		}
 	}
-
 
 	/**
 	 * Memory Binned Cursor.  Returns binned peak info for a given atom,

@@ -84,7 +84,8 @@ public class CFTree {
 	 */
 	public CFNode insertEntry(BinnedPeakList entry) {
  		numDataPoints++;
-		System.out.println("inserting particle # " + numDataPoints);
+		//if (numDataPoints / 100.0 == numDataPoints / 100)
+			System.out.println("inserting particle # " + numDataPoints);
 		// If this is the first entry, make it the root.
 		if (root.getSize() == 0) {
 			ClusterFeature firstCF = new ClusterFeature(root);
@@ -121,7 +122,8 @@ public class CFTree {
 	 */
 	public boolean reinsertEntry(ClusterFeature cf) {
 		numDataPoints++;
-		System.out.println("reinserting cluster # " + numDataPoints);
+	//	if (numDataPoints / 100.0 == numDataPoints / 100)
+			System.out.println("reinserting cluster # " + numDataPoints);
 		// If this is the first entry, make it the root.
 
 		if (root.getSize() == 1 && root.getCFs().get(0).getCount() == 0){
@@ -183,9 +185,10 @@ public class CFTree {
 	public CFNode splitNodeIfPossible(CFNode node) {
 		assert (node.isLeaf()) : "Split node is not a leaf";
 		if (node.getSize() >= branchFactor) { 
-			return splitNodeRecurse(node);
+			node = splitNodeRecurse(node);
 		}
-		updateNonSplitPath(node);
+		else 
+			updateNonSplitPath(node);
 		assignLeaves();
 		return node;	
 	}
@@ -285,8 +288,7 @@ public class CFTree {
 		// If parentCF node doesn't need to be split, we're done.
 		recentlySplitA = parentA;
 		recentlySplitB = parentB;
-	
-		assignLeaves();			
+		
 		updateNonSplitPath(nodeA);	
 		return parentNode;
 		

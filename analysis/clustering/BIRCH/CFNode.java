@@ -167,9 +167,10 @@ public class CFNode {
 		float minDistance = Float.MAX_VALUE;
 		float thisDistance;
 		ClusterFeature minCF = null;
+		BinnedPeakList list; 
 		for (int i = 0; i < cfs.size(); i++) {
 			if (cfs.get(i).getCount() != 0) {
-			BinnedPeakList list = cfs.get(i).getCentroid();
+			list = cfs.get(i).getCentroid();
 			thisDistance = list.getDistance(entry,DistanceMetric.CITY_BLOCK);
 			if (thisDistance < minDistance) {
 				minDistance = thisDistance;
