@@ -11,12 +11,10 @@ Two types of XML files needed to import data:
 	- Metadata file (*.md) contains information about the form of the datatype.  Defines tables for the database.  Complies with meta.dtd.
 	- Enchiladadata file (*.ed) contains data.  Uses previously defined tables to store this information.  Complies with enchilada.dtd.
 
-The DTDs are included in the installer* and are placed wherever you choose to install the program.  Note that you will need to know the pathnames to the DTDs in order to reference them in the .ed and .md files.  (This reference is necessary to ensure that the incoming files conform to the DTDs and will be compatible with Enchilada.)  Any changes to these files will break the Enchilada importer.
+The DTDs are included in the installer and are placed wherever you choose to install the program.  Note that you will need to know the pathnames to the DTDs in order to reference them in the .ed and .md files.  (This reference is necessary to ensure that the incoming files conform to the DTDs and will be compatible with Enchilada.)  Any changes to these files will break the Enchilada importer.
 
 Both files rely on the conceptual hierarchy of dataset info -> atominfo dense -> atominfo sparse.  The dataset info is information about the dataset itself (e.g., the date it was collected, the location, etc.).  The dense atom info describes information that is unique to each atom (e.g., timestamp, size, direction, etc.).  The sparse atom info describes multiple pieces of information about an atom (e.g., peak locations and areas).  Multiple sparse tables can be used to hold different types of sparse info about the same atom.
 
-
-* Not yet implemented.
 
 
 2) DTDs  - Any changes to these files will break the Enchilada importer.

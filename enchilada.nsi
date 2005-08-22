@@ -50,8 +50,9 @@ Section "EDAM Enchilada (required)"
   
   ; Put file there
   File "edam-enchilada.jar"
-  File "meta.dtd"
-  File "enchilada.dtd"
+  File "importation files\meta.dtd"
+  File "importation files\enchilada.dtd"
+  File "importation files\ImporterInstructions"
   File "Enchilada.bat"
   File "gpl.txt"
   File "library.txt"
@@ -99,6 +100,7 @@ Section "un.Uninstall"
   Delete $INSTDIR\edam-enchilada.jar
   Delete $INSTDIR\meta.dtd
   Delete $INSTDIR\enchilada.dtd
+  Delete $INSTDIR\ImporterInstructions
   Delete $INSTDIR\Enchilada.bat
   Delete "$INSTDIR\gpl.txt"
   Delete "$INSTDIR\library.txt"
