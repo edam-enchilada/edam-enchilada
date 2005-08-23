@@ -231,9 +231,9 @@ public class SQLServerDatabase implements InfoWarehouse
 							   "(CollectionID, Name, Comment, Description, Datatype)\n" +
 							   "VALUES (" +
 							   Integer.toString(nextID) + 
-							   ", '" + name + "', '" 
-							   + comment + "', '" + 
-							   description + "', '" + datatype + "')");
+							   ", '" + removeReservedCharacters(name) + "', '" 
+							   + removeReservedCharacters(comment) + "', '" + 
+							   removeReservedCharacters(description) + "', '" + datatype + "')");
 			stmt.executeUpdate("INSERT INTO CollectionRelationships\n" +
 							   "(ParentID, ChildID)\n" +
 							   "VALUES (" + Integer.toString(parent) +
@@ -1373,7 +1373,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (getCollectionSize(collectionID) > 0)
 					ret.add(collectionID);
 			}
-		} else {
+		} else if (collectionIDs.size() > 0) {
 			try {
 				ResultSet rs = con.createStatement().
 					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
@@ -2915,7 +2915,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();		
 			ResultSet rs 
 				= stmt.executeQuery("SET NOCOUNT ON " +
-						"INSERT ValueMaps (Name) Values('" + name.replace("'", "''") + "') " +
+						"INSERT ValueMaps (Name) Values('" + removeReservedCharacters(name) + "') " +
 						"SELECT @@identity " +
 						"SET NOCOUNT OFF");
 			rs.next();
@@ -3034,16 +3034,26 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 		String sqlStr = "select max(Time) as MaxTime, min(Time) as MinTime \n" +
-					    "from ATOFMSAtomInfoDense AID \n" + 
+					    "from (\n" +
+					    "    select AtomID, Time from ATOFMSAtomInfoDense \n" +
+					    "    union \n" +
+					    "    select AtomID, Time from TimeSeriesAtomInfoDense \n" +
+					    ") AID \n" + 
 						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
 						"where CollectionID in (" + SQLServerDatabase.join(allCollectionsWithChildren, ",") + ")";
 		try{
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(sqlStr);
 
+			
 			if (rs.next()) {
-				minDate.setTime(rs.getTimestamp("MinTime"));
-				maxDate.setTime(rs.getTimestamp("MaxTime"));
+				Timestamp minT = rs.getTimestamp("MinTime");
+				if (!rs.wasNull())
+					minDate.setTime(minT);
+				
+				Timestamp maxT = rs.getTimestamp("MaxTime");
+				if (!rs.wasNull())
+					maxDate.setTime(maxT);
 			}
 			
 			rs.close();
@@ -3059,7 +3069,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		String collectionIDs = "(" + SQLServerDatabase.join(c.getCollectionIDSubTree(), ",") + ")";
 		String timeSubstr = 
 			"    select distinct Time \n" +
-			"    from ATOFMSAtomInfoDense AID \n" +
+			"    from " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID \n" +
 			"    join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
 			"    where CollectionID in " + collectionIDs;
 		
@@ -3071,7 +3081,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			   "group by T1.Time \n" +
 			   "union \n" +
 			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
-			   "from ATOFMSAtomInfoDense AID \n" +
+			   "from " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID \n" +
 			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
 			   "where CollectionID in " + collectionIDs;
 		
