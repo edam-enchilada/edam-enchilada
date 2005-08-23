@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -88,7 +87,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	private String url;
 	private String port;
 	private String database;
-	private int instance = 0;
+	private static int instance = 0;
 	private String tempdir = System.getenv("TEMP");
 	private Statement batchStatement;
 	
@@ -3028,9 +3027,114 @@ public class SQLServerDatabase implements InfoWarehouse
 		return newCollectionID;
 	}
 	
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
-			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr) {
+	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate) {
+		Set<Integer> allCollectionsWithChildren = new HashSet<Integer>();
+		for (Collection c : collections) {
+			allCollectionsWithChildren.addAll(c.getCollectionIDSubTree());
+		}
+		
+		String sqlStr = "select max(Time) as MaxTime, min(Time) as MinTime \n" +
+					    "from ATOFMSAtomInfoDense AID \n" + 
+						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+						"where CollectionID in (" + SQLServerDatabase.join(allCollectionsWithChildren, ",") + ")";
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(sqlStr);
 
+			if (rs.next()) {
+				minDate.setTime(rs.getTimestamp("MinTime"));
+				maxDate.setTime(rs.getTimestamp("MaxTime"));
+			}
+			
+			rs.close();
+		} catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving max time for collections.");
+			System.err.println("SQL exception retrieving max time for collections");
+			e.printStackTrace();
+		}
+	}
+	
+	public void createTempAggregateBasis(Collection c) {
+		instance++;
+		String collectionIDs = "(" + SQLServerDatabase.join(c.getCollectionIDSubTree(), ",") + ")";
+		String timeSubstr = 
+			"    select distinct Time \n" +
+			"    from ATOFMSAtomInfoDense AID \n" +
+			"    join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			"    where CollectionID in " + collectionIDs;
+		
+		String basisSql = 
+		       "insert #TempAggBasis" + instance + " (BasisTimeStart, BasisTimeEnd) \n" +
+		       "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
+			   "from (\n" + timeSubstr + "\n) T1 " +
+			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
+			   "group by T1.Time \n" +
+			   "union \n" +
+			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
+			   "from ATOFMSAtomInfoDense AID \n" +
+			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+			   "where CollectionID in " + collectionIDs;
+		
+		createTempAggregateBasis(basisSql);		
+	}
+	
+	public void createTempAggregateBasis(Calendar start, Calendar end, Calendar interval) {
+		instance++;
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		java.util.Date startTime, endTime;
+		String basisSql = "";
+		
+		while (start.before(end)) {
+			startTime = start.getTime();
+			
+			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
+			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+			
+			if (!start.before(end))
+				start = end;
+			
+			endTime = start.getTime();
+			
+			basisSql += "insert #TempAggBasis" + instance + " (BasisTimeStart, BasisTimeEnd) values ('" + 
+						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
+		}
+
+		createTempAggregateBasis(basisSql);	
+	}
+	
+	private void createTempAggregateBasis(String basisSQL) {
+		String sql = 
+			"CREATE TABLE #TempAggBasis" + instance + " ( \n" + 
+	        "   BasisTimeStart datetime, \n" +
+ 	        "   BasisTimeEnd datetime \n" + 
+	        ")\n\n" + 
+		    basisSQL;
+		
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute(sql);
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL exception creating aggregate basis temp table");
+			System.err.println("SQL exception creating aggregate basis temp table");
+			e.printStackTrace();
+		}
+	}
+
+	public void deleteTempAggregateBasis() {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute("DROP TABLE #TempAggBasis" + instance);
+			instance--;
+		} catch (SQLException e) {
+			new ExceptionDialog("SQL exception deleting aggregate basis temp table");
+			System.err.println("SQL exception deleting aggregate basis temp table");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) {
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
 		AggregationOptions options = curColl.getAggregationOptions();
@@ -3047,7 +3151,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 			} else {
-				String sql = timeBasisSetupStr +
+				String sql = 
 					"DECLARE @atoms TABLE ( \n" +
 					"   NewAtomID int IDENTITY(%d, 1), \n" +
 					"   Time DateTime, \n" +
@@ -3059,7 +3163,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"from ATOFMSAtomInfoDense AID \n" +
 					"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
 					"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-					"join " + timeBasisQueryStr + " TB  \n" +
+					"join #TempAggBasis" + instance + " TB \n" +
 					"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
 					"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
 					"where AM.CollectionID in (" + join(collectionIDTree, ",") + ") \n" +

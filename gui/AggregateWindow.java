@@ -3,11 +3,9 @@ package gui;
 import collection.AggregationOptions;
 import collection.Collection;
 import database.*;
-import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import javax.swing.*;
@@ -109,10 +107,14 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    group.add(timesRadio = new JRadioButton("Times"));
 	    selSeqRadio.setSelected(true);
 	    
+	    Calendar startDate = new GregorianCalendar(), endDate = new GregorianCalendar();
+	    Calendar interval = new GregorianCalendar(0, 0, 0, 0, 0, 0);
+	    db.getMaxMinDateInCollections(collections, startDate, endDate);
+	    
 	    JPanel timesPanel = new JPanel(new GridLayout(3, 1, 0, 5));
-	    timesPanel.add(startTime = new TimePanel("Start Time:", false));
-	    timesPanel.add(endTime = new TimePanel("End Time:", false));
-	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", true));
+	    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false));
+	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false));
+	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true));
 	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
 	   
 		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
@@ -262,7 +264,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		parent.add(bottomHalf, BorderLayout.CENTER);
 		return bottomHalf;
 	}
-	
+
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
@@ -281,18 +283,19 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			String timeBasisSQLStr = null;
 			boolean baseSequenceOnCollection = selSeqRadio.isSelected(); 
 			
+			Aggregator aggregator;
 			if (baseSequenceOnCollection) {
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
-				timeBasisSQLStr = getTimeBasisSQLString(selectedCollection);
+				aggregator = new Aggregator(this, db, selectedCollection);
 			} else {
 				GregorianCalendar start = startTime.getDate();
 				GregorianCalendar end = endTime.getDate();
 				GregorianCalendar interval = intervalPeriod.getDate();
 
-				timeBasisSQLStr = getTimeBasisSQLString(start, end, interval);
+				aggregator = new Aggregator(this, db, start, end, interval);
 			}
 
-			int collectionID = createAggregateTimeSeries(newSeriesName, collections, timeBasisSQLStr, baseSequenceOnCollection);
+			int collectionID = aggregator.createAggregateTimeSeries(newSeriesName, collections);
 			parentFrame.updateSynchronizedTree(collectionID);
 			setVisible(false);
 			dispose();
@@ -300,98 +303,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			setVisible(false);
 			dispose();
 		}
-	}
-	
-	private int createAggregateTimeSeries(String syncRootName, final Collection[] collections, 
-			String timeBasisSQLstring, boolean baseOnCollection) {
-		final String timeBasisSetupStr = baseOnCollection ? ""                             : timeBasisSQLstring + "\n ";
-		final String timeBasisQueryStr = baseOnCollection ? "(" + timeBasisSQLstring + ")" : "@timeBasis";
-		
-		final int[][] mzValues = new int[collections.length][];
-		int numCollectionsToMake = 0;
-
-		for (int i = 0; i < collections.length; i++) {
-			Collection curColl = collections[i];
-			AggregationOptions options = curColl.getAggregationOptions();
-			if (options == null)
-				curColl.setAggregationOptions(options = new AggregationOptions());
-			
-			if (curColl.getDatatype().equals("ATOFMS")) {
-				mzValues[i] = db.getValidMZValuesForCollection(curColl);
-				
-				if (mzValues[i] != null)
-					numCollectionsToMake += mzValues[i].length;
-				
-				if (options.produceParticleCountTS)
-					numCollectionsToMake++;
-			}
-		}
-		
-		final ProgressBarWrapper progress = 
-			new ProgressBarWrapper(this, "Aggregating Time Series", numCollectionsToMake);
-		
-		final int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
-		
-		final SwingWorker worker = new SwingWorker() {
-			public Object construct() {
-				for (int i = 0; i < collections.length; i++)
-					db.createAggregateTimeSeries(progress, rootCollectionID, collections[i], mzValues[i], timeBasisSetupStr, timeBasisQueryStr);
-
-				progress.disposeThis();
-				
-				return null;
-			}
-		};
-		worker.start();
-		
-		progress.constructThis();
-		
-		return rootCollectionID;
-	}
-	
-	private String getTimeBasisSQLString(Collection c) {
-		String collectionIDs = "(" + SQLServerDatabase.join(c.getCollectionIDSubTree(), ",") + ")";
-		String timeSubstr = 
-			"       select distinct Time \n" +
-			"       from ATOFMSAtomInfoDense AID \n" +
-			"       join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			"       where CollectionID in " + collectionIDs;
-		
-		return "\n    select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
-			   "    from (\n" + timeSubstr + "\n) T1 " +
-			   "    join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
-			   "    group by T1.Time \n" +
-			   "    union \n" +
-			   "    select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
-			   "    from ATOFMSAtomInfoDense AID \n" +
-			   "    join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			   "    where CollectionID in " + collectionIDs;
-	}
-	
-	private String getTimeBasisSQLString(Calendar start, Calendar end, Calendar interval) {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
-		String sql = "declare @timeBasis table ( BasisTimeStart datetime, BasisTimeEnd datetime ) \n";
-		java.util.Date startTime, endTime;
-
-		while (start.before(end)) {
-			startTime = start.getTime();
-			
-			//start.add(Calendar.DATE,   interval.get(Calendar.DATE));
-			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
-			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
-			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
-			
-			if (!start.before(end))
-				start = end;
-			
-			endTime = start.getTime();
-			
-			sql += "insert @timeBasis (BasisTimeStart, BasisTimeEnd) values ('" + 
-						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
-		}
-		
-		return sql;
 	}
 	
 	public void valueChanged(ListSelectionEvent e) {
@@ -427,13 +338,13 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	public class TimePanel extends JPanel implements ActionListener {
 		private JComboBox day, month, year, hour, minute, second;
 		
-		public TimePanel(String name, boolean isInterval) {
+		public TimePanel(String name, Calendar initDate, boolean isInterval) {
 			setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
 			
 			JLabel label = new JLabel(name);
-			hour   = getComboBox(isInterval ? 0 : 1, 24, false);
-			minute = getComboBox(0, 59, true);
-			second = getComboBox(0, 59, true);
+			hour   = getComboBox(initDate.get(Calendar.HOUR_OF_DAY), 0, isInterval ? 24 : 23, false);
+			minute = getComboBox(initDate.get(Calendar.MINUTE), 0, 59, true);
+			second = getComboBox(initDate.get(Calendar.SECOND), 0, 59, true);
 
 			label.setPreferredSize(new Dimension(70, 20));
 			hour.setPreferredSize(new Dimension(40, 20));
@@ -449,9 +360,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			add(second);
 			
 			if (!isInterval) {
-				day    = getComboBox(1, 31, false);
-				month  = getComboBox(1, 12, false);
-				year   = getComboBox(2000, 2005, false);
+				month  = getComboBox(initDate.get(Calendar.MONTH) + 1, 1, 12, false);
+				day    = getComboBox(initDate.get(Calendar.DAY_OF_MONTH), 1, 31, false);
+				year   = getComboBox(initDate.get(Calendar.YEAR), 2000, 2005, false);
 				day.setPreferredSize(new Dimension(40, 20));
 				month.setPreferredSize(new Dimension(40, 20));
 				year.setPreferredSize(new Dimension(60, 20));
@@ -478,7 +389,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			timesRadio.setSelected(true);
 		}
 		
-		private JComboBox getComboBox(int start, int end, boolean padZero) {
+		private JComboBox getComboBox(int initVal, int start, int end, boolean padZero) {
 			String[] ret = new String[end - start + 1];
 			for (int i = 0; i < ret.length; i++) {
 				int num = start + i;
@@ -487,7 +398,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				ret[i] = prefix + String.valueOf(start + i);
 			}
 			
-			return new JComboBox(ret);
+			JComboBox retBox = new JComboBox(ret);
+			retBox.setSelectedIndex(initVal - start);
+			return retBox;
 		}
 		
 		private int getIntVal(JComboBox box) {

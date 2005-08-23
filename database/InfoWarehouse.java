@@ -52,7 +52,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
-import javax.swing.JFrame;
 
 import atom.GeneralAtomFromDB;
 
@@ -273,9 +272,13 @@ public interface InfoWarehouse {
 	public Vector<int[]> getValueMapRanges();
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
+	public void createTempAggregateBasis(Collection c);
+	public void createTempAggregateBasis(Calendar start, Calendar end, Calendar interval);
+	public void deleteTempAggregateBasis();
+	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate);
 	
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
-			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr);
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, 
+			Collection curColl, int[] mzValues);
 	public int[] getValidMZValuesForCollection(Collection collection);
 	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
