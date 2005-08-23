@@ -218,19 +218,21 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == deleteAdoptItem)
 		{
+			Collection c = getSelectedCollection();
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.orphanAndAdopt(getSelectedCollection());
+			db.orphanAndAdopt(c);
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree();
+	        selectedCollectionTree.updateTree(c.getCollectionID());
 			validate();
 		}
 		
 		else if (source == recursiveDeleteItem)
 		{
+			Collection c = getSelectedCollection();
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.recursiveDelete(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree();
+	        selectedCollectionTree.updateTree(c.getCollectionID());
 			validate();
 		}
 		
@@ -717,8 +719,7 @@ public class MainFrame extends JFrame implements ActionListener
 	}
 
 	public void updateSynchronizedTree(int collectionID) {
-		synchronizedPane.updateTree();
-		synchronizedPane.expandToFind(collectionID);
+		synchronizedPane.updateTree(collectionID);
 	}
 	
 	public void updateAnalyzePanel(Collection c) {

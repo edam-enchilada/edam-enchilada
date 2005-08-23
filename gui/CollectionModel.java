@@ -48,6 +48,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import collection.*;
 import database.*;
 import javax.swing.event.EventListenerList;
@@ -62,6 +63,8 @@ public class CollectionModel implements TreeModel {
 	private boolean forSynchronized;
 	
 	private EventListenerList listenerList;
+	private Hashtable<Integer, Collection> collectionLookup;
+	
 	/**
 	 * 
 	 */
@@ -71,6 +74,7 @@ public class CollectionModel implements TreeModel {
 		forSynchronized = sync;
 		
 		listenerList = new EventListenerList();
+		collectionLookup = new Hashtable<Integer, Collection>();
 	}
 
 	/* (non-Javadoc)
@@ -82,6 +86,8 @@ public class CollectionModel implements TreeModel {
 				root = new Collection("root-synchronized", 1, db);
 			else
 				root = new Collection("root", 0, db);
+			
+			collectionLookup.put(0, root);
 		}
 		
 		return root;
@@ -90,8 +96,13 @@ public class CollectionModel implements TreeModel {
 	/* (non-Javadoc)
 	 * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
 	 */
-	public Object getChild(Object parent, int index) { 
-		return ((Collection) parent).getChildAt(index);
+	public Object getChild(Object parent, int index) {
+		Collection child = ((Collection) parent).getChildAt(index);
+		if (child != null && !collectionLookup.containsKey(child.getCollectionID())) {
+			collectionLookup.put(child.getCollectionID(), child);
+		}
+		
+		return child;
 	}
 
 	/* (non-Javadoc)
@@ -138,6 +149,13 @@ public class CollectionModel implements TreeModel {
 		}
 		return -1;
 	}
+	
+	public Collection findCollectionNode(int collectionID) {
+		if (collectionLookup.containsKey(collectionID))
+			return collectionLookup.get(collectionID);
+		else 
+			return root;
+	}
 
 	/* (non-Javadoc)
 	 * @see javax.swing.tree.TreeModel#addTreeModelListener(javax.swing.event.TreeModelListener)
@@ -153,21 +171,29 @@ public class CollectionModel implements TreeModel {
 		listenerList.remove(TreeModelListener.class, l);
 	}
 
-	protected void fireTreeStructureChanged(Collection oldRoot)
+	protected void fireTreeStructureChanged(Collection[] nodePathList)
 	{
-		// Erase cached tree...
-		root = null;
+		Collection[] newNodeList = new Collection[nodePathList.length - 1];
+		for (int i = 0; i < newNodeList.length; i++)
+			newNodeList[i] = nodePathList[i];
 		
-		TreeModelEvent e = new TreeModelEvent(this, new Object[] {oldRoot});
-		// from javadocs for listenerlist
-	     // Guaranteed to return a non-null array
-	     Object[] listeners = listenerList.getListenerList();
+		TreeModelEvent e;
+		
+		// Erase cached subtree... and construct node path...
+		if (newNodeList.length == 0) {
+			root = null;
+			e = new TreeModelEvent(this, nodePathList);
+		} else {
+			newNodeList[newNodeList.length - 1].clearCachedChildren();
+			e = new TreeModelEvent(this, newNodeList);
+		}
+		
+
+		TreeModelListener[] listeners = 
+			listenerList.getListeners(TreeModelListener.class);
 	     // Process the listeners last to first, notifying
 	     // those that are interested in this event
-	     for (int i = listeners.length-2; i>=0; i-=2) {
-	         if (listeners[i]==TreeModelListener.class) {
-	             ((TreeModelListener)listeners[i+1]).treeStructureChanged(e);
-	         }
-	     }
+	     for (int i = 0; i < listeners.length; i++) 
+	         listeners[i].treeStructureChanged(e);
 	}
 }

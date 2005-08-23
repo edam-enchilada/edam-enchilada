@@ -115,13 +115,16 @@ public class CollectionTree extends JPanel
     	tree.clearSelection();
     }
     
-    public void expandToFind(int collectionID) {
-    	Collection rootNode = (Collection) treeModel.getRoot();
+    // Fallback... update from root...
+    public void updateTree() { 
+    	int collectionID = ((Collection) treeModel.getRoot()).getCollectionID();
+    	updateTree(collectionID); 
     }
     
-    public void updateTree()
+    public void updateTree(int collectionID)
     {
-    	treeModel.fireTreeStructureChanged((Collection) treeModel.getRoot());
+    	Collection c = treeModel.findCollectionNode(collectionID);
+    	treeModel.fireTreeStructureChanged(getCollectionsUpFrom(c));
     }
     
     public ArrayList<Collection> getCollectionsInTreeOrderFromRoot(int depthToStart, Collection collection) {

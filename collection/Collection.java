@@ -88,6 +88,12 @@ public class Collection {
 		db = database;
 	}
 	
+	public void clearCachedChildren() {
+		cachedSubCollectionIDs = null;
+		cachedCollectionIDSubTree = null;
+		cachedSubCollections = null;
+	}
+	
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
 		if (cachedSubCollectionIDs == null)
