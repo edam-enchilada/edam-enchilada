@@ -46,6 +46,7 @@ package analysis.clustering;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import ATOFMS.ParticleInfo;
 import analysis.*;
@@ -65,6 +66,7 @@ public class Art2A extends Cluster
 	private float learningRate;
 	private int size;
 	protected NonZeroCursor curs;
+	private ClusterInformation cInfo;
 	// stableIterations contains the number of iterations that ART-2a
 	// terminates after if there has not been an improvement in totalDistance
 	private final int stableIterations = 10;
@@ -86,6 +88,12 @@ public class Art2A extends Cluster
 		collectionID = cID;
 		totalDistancePerPass = new ArrayList<Double>();
 		size = db.getCollectionSize(collectionID);
+		
+		CopyOnWriteArraySet<String> set = new CopyOnWriteArraySet<String>();
+		set.add("ATOFMSAtomInfoDense.[LaserPower]");
+		set.add("ATOFMSAtomInfoDense.[Size]");
+		cInfo = new ClusterInformation(set, "Automatic",null);
+	
 	}
 	
 	private BinnedPeakList adjustByLearningRate(
@@ -103,12 +111,12 @@ public class Art2A extends Cluster
 		while (iter.hasNext())
 		{
 			addedPeak = iter.next();
-			centroidArea = centroid.getAreaAt(addedPeak.location);
-			locationsGrabbed.add(new Integer(addedPeak.location));
+			centroidArea = centroid.getAreaAt(addedPeak.key);
+			locationsGrabbed.add(new Integer(addedPeak.key));
 			
-			returnList.addNoChecks(addedPeak.location, 
+			returnList.addNoChecks(addedPeak.key, 
 					centroidArea + 
-					(addedPeak.area-centroidArea)*learningRate);
+					(addedPeak.value-centroidArea)*learningRate);
 		}
 		
 		BinnedPeak centroidPeak;
@@ -121,17 +129,17 @@ public class Art2A extends Cluster
 			centroidPeak = iter.next();
 			alreadyAdded = false;
 			for (int j = 0; j < locationsGrabbed.size(); j++)
-				if (centroidPeak.location == 
+				if (centroidPeak.key == 
 					locationsGrabbed.get(j).intValue())
 					alreadyAdded = true;
 			if (!alreadyAdded)
 			{
 				addedArea = addedParticle.getAreaAt(
-						centroidPeak.location);
+						centroidPeak.key);
 				
-				returnList.addNoChecks(centroidPeak.location,
-						centroidPeak.area +
-						(addedArea-centroidPeak.area) *
+				returnList.addNoChecks(centroidPeak.key,
+						centroidPeak.value +
+						(addedArea-centroidPeak.value) *
 						learningRate);
 			}
 		}
@@ -158,12 +166,13 @@ public class Art2A extends Cluster
 	 */
 	public boolean setCursorType(int type) 
 	{
+		// TODO: no memory binned cursor here anymore; have to fix eventually.
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
+			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
+		    curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
 			return true;
 		default :
 			return false;

@@ -123,7 +123,7 @@ public class Chart extends JPanel
 	}
 	
 	/**
-	 * Returns the index of the chart area at point p in the Chart.
+	 * Returns the index of the chart value at point p in the Chart.
 	 * @param p The point to check.
 	 * @return The index of the chart found, or -1 if no chart is found.
 	 */
@@ -133,12 +133,12 @@ public class Chart extends JPanel
 	}
 	
 	/**
-	 * Returns the index of the chart area at point p in the Chart.
+	 * Returns the index of the chart value at point p in the Chart.
 	 * @param p The point to check.
-	 * @param p If true, only checks for charts' actual data area;
+	 * @param p If true, only checks for charts' actual data value;
 	 * if the point is on an axis, the method will return -1.
 	 * @return The index of the chart found, or -1 if no chart's 
-	 * data area is found at the point.
+	 * data value is found at the point.
 	 */ 
 	public int getChartIndexAt(Point p, boolean dataAreaOnly)
 	{
@@ -164,13 +164,13 @@ public class Chart extends JPanel
 	
 	/**
 	 * Given a point in screen coordinates that is on a chart,
-	 * finds what location in chart
+	 * finds what key in chart
 	 * coordinates the screen point is at.
 	 * @param index The chart to apply the point to.
 	 * @param p The point to get the value for.
-	 * @return A Point2D.Double object containing the location of p
+	 * @return A Point2D.Double object containing the key of p
 	 * in the chart, converted to chart coordinates.  Returns null if
-	 * the point is not within the data area of the specified chart.
+	 * the point is not within the data value of the specified chart.
 	 */
 	public java.awt.geom.Point2D.Double getDataValueForPoint(int index, Point p)
 	{
@@ -188,12 +188,12 @@ public class Chart extends JPanel
 	
 	/**
 	 * Given a point in screen coordinates that is on a chart,
-	 * finds what location in chart
+	 * finds what key in chart
 	 * coordinates the screen point is at.
 	 * @param p The point in screen coordinates.
-	 * @return A Point2D.Double object containing the location of p
+	 * @return A Point2D.Double object containing the key of p
 	 * in the chart, converted to chart coordinates.  Returns null if
-	 * the point is not within the data area of a chart.
+	 * the point is not within the data value of a chart.
 	 */
 	public java.awt.geom.Point2D.Double getDataValueForPoint(Point p)
 	{
@@ -234,7 +234,7 @@ public class Chart extends JPanel
 //     * corresponding to the given data value.
 //     * @param x The data value to transform to screen coordinates.
 //     * @return The X coordinate in screen space of x, relative to the chart's
-//     * data area.  Returns -1 if x is not within the chart's bounds.
+//     * data value.  Returns -1 if x is not within the chart's bounds.
 //     */
 //	public int getXCoordForDataValue(int index, double x)
 //	{
@@ -315,9 +315,9 @@ public class Chart extends JPanel
 	}
 	
 	/**
-	 * Sets a dataset for a chart area.
+	 * Sets a dataset for a chart value.
 	 * @param ds The dataset to add.
-	 * @param index The chart area to which to add the dataset, indexed at 0,
+	 * @param index The chart value to which to add the dataset, indexed at 0,
 	 * starting from the top.
 	 */
 	public void setDataset(int index, Dataset ds )
@@ -700,14 +700,14 @@ public class Chart extends JPanel
 	 * Called when first creating Chart, or maybe afterwards if a 
 	 * new type of layout is desired (e.g. more chart areas). 
 	 * 
-	 * Currently implemented with only one chart area.
+	 * Currently implemented with only one chart value.
 	 * 
 	 * @param titleString The title of the chart.
 	 */
 	private void setupLayout()
 	{
 		//Border layout is good for having spacing on the sides
-		//and a dynamically resizing center area (the ChartArea)
+		//and a dynamically resizing center value (the ChartArea)
 		setLayout(new BorderLayout());
 		
 		titleLabel = new ChartTitle(title);
@@ -770,10 +770,10 @@ public class Chart extends JPanel
 	}
 	
 	/**
-	 * Returns the location of the upper left corner of a chart area in
+	 * Returns the key of the upper left corner of a chart value in
 	 * the Chart object's coordinate system.
 	 * @param index Which chart to locate.
-	 * @return A Point containing the location.
+	 * @return A Point containing the key.
 	 */
 	private Point getChartLocation(int index)
 	{

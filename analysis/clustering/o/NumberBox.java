@@ -33,12 +33,12 @@ public class NumberBox {
 		Iterator<BinnedPeak> i = bpl.iterator();
 		while (i.hasNext()) {
 			p = i.next();
-			if (histograms[p.location + MAX_LOCATION] == null) {
-				histograms[p.location + MAX_LOCATION] 
-				           = new Histogram((float) stats.stdDev(p.location),
-				        		   stats.count(), p.location);
+			if (histograms[p.key + MAX_LOCATION] == null) {
+				histograms[p.key + MAX_LOCATION] 
+				           = new Histogram((float) stats.stdDev(p.key),
+				        		   stats.count(), p.key);
 			}
-			histograms[p.location + MAX_LOCATION].addPeak(p.area);
+			histograms[p.key + MAX_LOCATION].addPeak(p.value);
 		}
 	}
 

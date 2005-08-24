@@ -185,13 +185,13 @@ public class NewBinnedPeakListTest extends TestCase {
 	}
 	
 	public void assertBinnedPeakEquals(BinnedPeak u, BinnedPeak v) {
-		assertEquals(u.location, v.location);
-		assertEquals(u.area, v.area, 0.001f);
+		assertEquals(u.key, v.key);
+		assertEquals(u.value, v.value, 0.001f);
 	}
 
 	private class LocationComparator implements Comparator<BinnedPeak> {
 		public int compare(BinnedPeak a, BinnedPeak b) {
-			return a.location - b.location;
+			return a.key - b.key;
 		}
 	}
 

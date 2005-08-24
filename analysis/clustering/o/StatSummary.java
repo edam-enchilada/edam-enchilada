@@ -116,7 +116,7 @@ public class StatSummary {
 	}
 	
 	private void addPeak(BinnedPeak p) {
-		addPeak(p.location, p.area);
+		addPeak(p.key, p.value);
 	}
 	
 	

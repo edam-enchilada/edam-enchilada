@@ -91,6 +91,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem copyItem;
 	private JMenuItem pasteItem;
 	private JMenuItem deleteAdoptItem;
+	private JMenuItem dataFormatItem;
 	private JMenuItem recursiveDeleteItem;
 	private CollectionTree collectionPane;
 	private CollectionTree synchronizedPane;
@@ -218,21 +219,19 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == deleteAdoptItem)
 		{
-			Collection c = getSelectedCollection();
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.orphanAndAdopt(c);
+			db.orphanAndAdopt(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree(c.getCollectionID());
+	        selectedCollectionTree.updateTree();
 			validate();
 		}
 		
 		else if (source == recursiveDeleteItem)
 		{
-			Collection c = getSelectedCollection();
 	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.recursiveDelete(getSelectedCollection());
 	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree(c.getCollectionID());
+	        selectedCollectionTree.updateTree();
 			validate();
 		}
 		
@@ -317,6 +316,10 @@ public class MainFrame extends JFrame implements ActionListener
 				MapValuesWindow bw = new MapValuesWindow(this, db, selectedCollection);
 				bw.setVisible(true);
 			}
+		}
+		
+		else if (source == dataFormatItem) {
+			new DataFormatViewer(this);
 		}
 	}
 	
@@ -444,6 +447,15 @@ public class MainFrame extends JFrame implements ActionListener
 		collectionMenu.add(recursiveDeleteItem);
 		collectionMenu.addSeparator();
 		collectionMenu.add(accessSelected);		
+		
+		// add a datatype menu to the menu bar.
+		JMenu datatypeMenu = new JMenu("Datatype");
+		datatypeMenu.setMnemonic(KeyEvent.VK_D);
+		menuBar.add(datatypeMenu);
+		dataFormatItem = new JMenuItem("Data Format Viewer", KeyEvent.VK_D);
+		dataFormatItem.addActionListener(this);
+
+		datatypeMenu.add(dataFormatItem);
 		
 		//Add a help menu to the menu bar.
 		JMenu helpMenu = new JMenu("Help");
@@ -719,7 +731,8 @@ public class MainFrame extends JFrame implements ActionListener
 	}
 
 	public void updateSynchronizedTree(int collectionID) {
-		synchronizedPane.updateTree(collectionID);
+		synchronizedPane.updateTree();
+		synchronizedPane.expandToFind(collectionID);
 	}
 	
 	public void updateAnalyzePanel(Collection c) {

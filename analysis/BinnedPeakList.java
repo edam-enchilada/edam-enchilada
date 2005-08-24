@@ -55,7 +55,7 @@ import java.util.*;
  * @author smitht
  *
  * An implementation of a sparse array, this class is essentially
- * a peak list where every location is an integer value (rounded 
+ * a peak list where every key is an integer value (rounded 
  * appropriately from a float).  Provides methods for adding peaks
  * from a regular peaklist, as well as methods for adding values
  * with no checks.
@@ -84,7 +84,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		if (dMetric == DistanceMetric.CITY_BLOCK)
 			while (i.hasNext())
 			{
-				magnitude += i.next().area;
+				magnitude += i.next().value;
 			}
 		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 		         dMetric == DistanceMetric.DOT_PRODUCT)
@@ -92,7 +92,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			float currentArea;
 			while (i.hasNext())
 			{
-				currentArea = i.next().area;
+				currentArea = i.next().value;
 				magnitude += currentArea*currentArea;
 			}
 			magnitude = (float) Math.sqrt(magnitude);
@@ -137,14 +137,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		while (longIter.hasNext()) 
 		{
 			temp = longIter.next();
-			longerLists[temp.location + MAX_LOCATION] = temp.area;
+			longerLists[temp.key + MAX_LOCATION] = temp.value;
 
-			// Assume optimistically that each location is unmatched in the
+			// Assume optimistically that each key is unmatched in the
 			// shorter peak list.
 			if (dMetric == DistanceMetric.CITY_BLOCK)
-			    distance += temp.area;
+			    distance += temp.value;
 			else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-				distance += temp.area*temp.area;
+				distance += temp.value*temp.value;
 			else if (dMetric == DistanceMetric.DOT_PRODUCT)
 			    ; // If no match in shorter list, contributes nothing
 			else {
@@ -157,16 +157,16 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		while (shortIter.hasNext())
 		{
 			temp = shortIter.next();
-			if (longerLists[temp.location+MAX_LOCATION] != 0)
+			if (longerLists[temp.key+MAX_LOCATION] != 0)
 			{
 				if (dMetric == DistanceMetric.CITY_BLOCK)
 				{
-					distance -= longerLists[temp.location+MAX_LOCATION];
+					distance -= longerLists[temp.key+MAX_LOCATION];
 				}
 				else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
-					distance -= longerLists[temp.location+MAX_LOCATION]*
-						longerLists[temp.location+MAX_LOCATION];
+					distance -= longerLists[temp.key+MAX_LOCATION]*
+						longerLists[temp.key+MAX_LOCATION];
 				}
 				else if (dMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // Again, nothing to subtract off here
@@ -177,15 +177,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 				}
 				
 				if (dMetric == DistanceMetric.CITY_BLOCK)
-					distance += Math.abs(temp.area-longerLists[temp.location+MAX_LOCATION]);
+					distance += Math.abs(temp.value-longerLists[temp.key+MAX_LOCATION]);
 				else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
-					eucTemp = temp.area-longerLists[temp.location+MAX_LOCATION];
+					eucTemp = temp.value-longerLists[temp.key+MAX_LOCATION];
 					distance += eucTemp*eucTemp;
 				}
 				else if (dMetric == DistanceMetric.DOT_PRODUCT) {
 				    distance +=
-				        temp.area*longerLists[temp.location+MAX_LOCATION];
+				        temp.value*longerLists[temp.key+MAX_LOCATION];
 				}
 				else {
 				    assert false :
@@ -197,9 +197,9 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			else
 			{
 				if (dMetric == DistanceMetric.CITY_BLOCK)
-					distance += temp.area;
+					distance += temp.value;
 				else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-					distance += temp.area*temp.area;
+					distance += temp.value*temp.value;
 				else if (dMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // Nothing to add here if new match
 				else {
@@ -236,10 +236,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	}
 	
 	/**
-	 * Retrieve the area of the peaklist at a given location
-	 * @param location	The location of the area you wish to
+	 * Retrieve the value of the peaklist at a given key
+	 * @param key	The key of the value you wish to
 	 * 					retrieve.
-	 * @return			The area at the given location.
+	 * @return			The value at the given key.
 	 */
 	public float getAreaAt(int location)
 	{
@@ -253,17 +253,17 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	
 	/**
 	 * Add a regular peak to the peaklist.  This actually involves
-	 * quite a bit of processing.  First, each float location is
-	 * rounded to its nearest integer value.  Then, that location
+	 * quite a bit of processing.  First, each float key is
+	 * rounded to its nearest integer value.  Then, that key
 	 * is checked in the current peak to see if it already exists.
-	 * If it does, it adds the area of the new peak to the 
-	 * preexisting area.  This is done so that when you have two
+	 * If it does, it adds the value of the new peak to the 
+	 * preexisting value.  This is done so that when you have two
 	 * peaks right next to eachother (ie 1.9999 and 2.0001) that
 	 * probably should be both considered the same element, the
 	 * signal is doubled.  
 	 * 
-	 * @param location
-	 * @param area
+	 * @param key
+	 * @param value
 	 */
 	public void add(float location, float area)
 	{
@@ -271,7 +271,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			"Location to add is out of bounds" + location;
 		int locationInt;
 		
-		// If the location is positive or zero, then add 0.5 to round.
+		// If the key is positive or zero, then add 0.5 to round.
 		// Otherwise, subtract 0.5 to round.
 		if (location >= 0.0f)
 			locationInt = (int) ((float) location + 0.5);
@@ -292,7 +292,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @param bp the BinnedPeak to add.
 	 */
 	public void add(BinnedPeak bp) {
-		add((float) bp.location, bp.area);
+		add((float) bp.key, bp.value);
 	}
 	
 	/**
@@ -310,14 +310,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * you are copying from another list: not taking care to make
 	 * sure that you are not adding duplicate locations can result
 	 * in undesired behavior!!!!
-	 * @param location	The location of the peak
-	 * @param area	The area of the peak at that location.
+	 * @param key	The key of the peak
+	 * @param value	The value of the peak at that key.
 	 */
 	public void addNoChecks(int location, float area)
 	{
 		assert(location < MAX_LOCATION && location > - MAX_LOCATION) : 
-			"location is out of bounds: " + location;
-		//peaks.add(new BinnedPeak(location,area));
+			"key is out of bounds: " + location;
+		//peaks.add(new BinnedPeak(key,value));
 		peaks.put(location, area);
 	}
 	
@@ -338,7 +338,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak p;
 		while (i.hasNext()) {
 			p = i.next();
-			System.out.println(p.location + ", " + p.area);
+			System.out.println(p.key + ", " + p.value);
 		}
 	}
 	
@@ -387,7 +387,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak peak;
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			if (peak.area > max)
+			if (peak.value > max)
 				return false;
 		}
 		return true;

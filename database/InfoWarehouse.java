@@ -52,7 +52,9 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
+import javax.swing.JFrame;
 
+import analysis.clustering.ClusterInformation;
 import atom.GeneralAtomFromDB;
 
 import ATOFMS.Peak;
@@ -86,7 +88,7 @@ public interface InfoWarehouse {
 	/**
 	 * Creates an empty collection with no atomic analysis units in it.
 	 * 
-	 * @param parent		The location to add this collection under (0
+	 * @param parent		The key to add this collection under (0
 	 * 						to add at the root).
 	 * @param name			What to call this collection in the interface
 	 * @param comment		A comment for this collection
@@ -104,7 +106,7 @@ public interface InfoWarehouse {
 	 * Create a new collection from an array list of atomIDs which 
 	 * have yet to be inserted into the database.  
 	 * 
-	 * @param parentID	The location of the parent to insert this
+	 * @param parentID	The key of the parent to insert this
 	 * 					collection (0 to insert at root level)
 	 * @param name		What to call this collection
 	 * @param comment	What to leave as the comment
@@ -254,6 +256,8 @@ public interface InfoWarehouse {
 	
 	public CollectionCursor getBinnedCursor(Collection collection);
 	
+	public CollectionCursor getClusteringCursor(Collection collection, ClusterInformation cInfo);
+	
 	public CollectionCursor getMemoryBinnedCursor(Collection collection);
 	
 	public CollectionCursor getRandomizedCursor(Collection collection);
@@ -272,13 +276,9 @@ public interface InfoWarehouse {
 	public Vector<int[]> getValueMapRanges();
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
-	public void createTempAggregateBasis(Collection c);
-	public void createTempAggregateBasis(Calendar start, Calendar end, Calendar interval);
-	public void deleteTempAggregateBasis();
-	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate);
 	
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, 
-			Collection curColl, int[] mzValues);
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
+			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr);
 	public int[] getValidMZValuesForCollection(Collection collection);
 	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 

@@ -47,7 +47,7 @@ import java.awt.Font;
 /**
  * @author sulmanj
  *
- * A text area that manages the title.
+ * A text value that manages the title.
  */
 public class ChartTitle extends JLabel 
 {

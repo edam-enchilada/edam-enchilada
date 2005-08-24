@@ -46,8 +46,8 @@ package ATOFMS;
 /**
  * @author ritza
  * 
- * Peak can be constructed with height, area, rel. area and m/z or just height,
- * area, and m/z.
+ * Peak can be constructed with height, value, rel. value and m/z or just height,
+ * value, and m/z.
  */
 public class Peak {
 	public int height;

@@ -114,12 +114,12 @@ public class KMeans extends ClusterK
 			thisBinnedPeakList.normalize(distanceMetric);
 			
 			j = thisBinnedPeakList.iterator();
-			// For every location in the binned list, add that area to the new list.
+			// For every key in the binned list, add that value to the new list.
 			while (j.hasNext())
 			{
 				addedPeak = 
 					j.next();
-				newList.add(addedPeak.location, addedPeak.area);
+				newList.add(addedPeak.key, addedPeak.value);
 			}
 		}
 		// we have the sums - divide by the particle number to get mean.

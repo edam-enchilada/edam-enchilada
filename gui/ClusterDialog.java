@@ -44,15 +44,17 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 
+import database.DynamicTable;
 import database.InfoWarehouse;
 
 import analysis.DistanceMetric;
 import analysis.clustering.*;
-import analysis.clustering.Cluster;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 /**
  * @author ritza
@@ -113,6 +115,15 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	private JComboBox metricDropDown;
 	private JComboBox averageClusterDropDown;
 	
+	private JPanel clusteringInfo;
+	private String[] nameArray;
+	private JComboBox comboBox;
+	private JPanel cards2;
+	private ArrayList<JRadioButton> denseButtons;
+	private ArrayList<JRadioButton> sparseButtons;
+	private ArrayList<JRadioButton> weightButtons;
+	private JComboBox infoTypeDropdown;
+	
 	/**
 	 * Constructor.  Creates and shows the dialogue box.
 	 * 
@@ -125,9 +136,41 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		this.cTree = cTree;
 		this.db = db;
 		//Set window settings.
-		setSize(480, 275);
+		setSize(500, 750);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
+		int fontSize = 16;
+		JLabel step1 = new JLabel(" 1.  Select Clustering Specifications ");
+		step1.setFont(new Font(step1.getFont().getName(), step1.getFont().getStyle(), fontSize));
+		step1.setBorder(BorderFactory.createEtchedBorder());
+		JLabel step2 = new JLabel(" 2.  Choose Appropriate Clustering Algorithm ");
+		step2.setFont(new Font(step2.getFont().getName(), step2.getFont().getStyle(), fontSize));
+		step2.setBorder(BorderFactory.createEtchedBorder());
+		JLabel step3 = new JLabel(" 3.  Begin Clustering ");
+		step3.setFont(new Font(step3.getFont().getName(), step3.getFont().getStyle(), fontSize));
+		step3.setBorder(BorderFactory.createEtchedBorder());
+		
+		JPanel clusterAlgorithms = setClusteringAlgorithms();
+		JPanel clusterSpecs = setClusteringSpecifications();
+		
+		//Create common info panel:
+		JPanel commonInfo = setCommonInfo();
+		getRootPane().setDefaultButton(okButton);
+		
+		add(step1);
+		add(clusterSpecs);
+		add(step2);
+		add(clusterAlgorithms);
+		add(step3);
+		add(commonInfo);
+		setLayout(new FlowLayout(FlowLayout.LEFT));
+		//Display the dialogue box.
+		setVisible(true);
+	}
+	
+	public JPanel setClusteringAlgorithms() {
+		JPanel mainPanel = new JPanel();
+		mainPanel.setPreferredSize(new Dimension(500,160));
 		JLabel header = new JLabel("Cluster using: ");
 		
 		//Create the drop down menu and the dividing line.
@@ -215,23 +258,130 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		cards.add(art2aCard, ART2A);
 		cards.add(kClusterCard,KCLUSTER);
 		cards.add(otherCard, OTHER);
-		
-		//CardLayout cLayout = (CardLayout) cards.getLayout();
-		
-		//Create common info panel:
-		JPanel commonInfo = setCommonInfo();
-		getRootPane().setDefaultButton(okButton);
+				
+	
 		
 		// Add all of the components to the main panel.
-		add(headerAndDropDown);
-		add(dividingLine);
-		add(cards);
-		add(commonInfo);
-		setLayout(new FlowLayout());
-		
-		//Display the dialogue box.
-		setVisible(true);
+		mainPanel.add(headerAndDropDown);
+		mainPanel.add(dividingLine);
+		mainPanel.add(cards);
+		mainPanel.setLayout(new FlowLayout());
+		return mainPanel;
 	}
+	
+	public JPanel setClusteringSpecifications() {
+		denseButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(), DynamicTable.AtomInfoDense);
+		sparseButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoSparse);
+		weightButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoDense);
+		weightButtons.add(0, new JRadioButton("None"));
+		
+		JPanel panel = new JPanel();
+		JPanel densePanel = new JPanel();
+		JPanel sparsePanel = new JPanel();
+		JPanel weightPanel = new JPanel();
+		
+		String init = "Choose Particle Information to Cluster...";
+		String dense = "Dense Particle Information";
+		String sparse = "Sparse Particle Information";
+		String[] infoNames = {init, dense, sparse};
+		infoTypeDropdown = new JComboBox(infoNames);
+		infoTypeDropdown.addItemListener(this);
+		
+		SpringLayout denseLayout = new SpringLayout();
+		densePanel.setLayout(denseLayout);	
+		densePanel.setPreferredSize(new Dimension(250,300));
+		String[] denseNames = {" Key = Automatic (1, 2, 3, etc) "};
+		JComboBox denseKeyBox = new JComboBox(denseNames);
+		densePanel.add(denseKeyBox);
+		JLabel denseChoose = new JLabel("Choose one or more values below:");
+		densePanel.add(denseChoose);
+		denseLayout.putConstraint(SpringLayout.WEST, denseKeyBox, 20, SpringLayout.WEST, densePanel);
+		denseLayout.putConstraint(SpringLayout.NORTH, denseKeyBox, 10, SpringLayout.NORTH, densePanel);
+		denseLayout.putConstraint(SpringLayout.WEST, denseChoose, 20, SpringLayout.WEST, densePanel);
+		denseLayout.putConstraint(SpringLayout.NORTH, denseChoose, 10, SpringLayout.SOUTH, denseKeyBox);
+		JScrollPane denseButtonPane = getButtonPane(denseButtons, false);
+		densePanel.add(denseButtonPane);
+		denseLayout.putConstraint(SpringLayout.WEST, denseButtonPane, 20, SpringLayout.WEST, densePanel);
+		denseLayout.putConstraint(SpringLayout.NORTH, denseButtonPane, 20, SpringLayout.SOUTH, denseChoose);
+
+		SpringLayout sparseLayout = new SpringLayout();
+		sparsePanel.setLayout(sparseLayout);	
+		sparsePanel.setPreferredSize(new Dimension(250,300));
+		String[] boxNames = new String[sparseButtons.size()];
+		for (int j = 0; j < sparseButtons.size(); j++)
+			boxNames[j] = "Key = " + sparseButtons.get(j).getText();
+		JComboBox sparseKeyBox = new JComboBox(boxNames);
+		sparsePanel.add(sparseKeyBox);
+		JLabel sparseChoose = new JLabel("Choose one value below:");
+		sparsePanel.add(sparseChoose);
+		sparseLayout.putConstraint(SpringLayout.WEST, sparseKeyBox, 20, SpringLayout.WEST, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.NORTH, sparseKeyBox, 10, SpringLayout.NORTH, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.WEST, sparseChoose, 20, SpringLayout.WEST, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.NORTH, sparseChoose, 10, SpringLayout.SOUTH, sparseKeyBox);
+		JScrollPane sparseButtonPane = getButtonPane(sparseButtons, true);
+		sparsePanel.add(sparseButtonPane);
+		sparseLayout.putConstraint(SpringLayout.WEST, sparseButtonPane, 20, SpringLayout.WEST, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.NORTH, sparseButtonPane, 20, SpringLayout.SOUTH, sparseChoose);
+		
+		
+		SpringLayout weightLayout = new SpringLayout();
+		weightPanel.setLayout(weightLayout);	
+		weightPanel.setPreferredSize(new Dimension(210,300));
+		JLabel weightChoose = new JLabel("Choose a weight:");
+		weightPanel.add(weightChoose);
+		weightLayout.putConstraint(SpringLayout.WEST, weightChoose, 0, SpringLayout.WEST, weightPanel);
+		weightLayout.putConstraint(SpringLayout.NORTH, weightChoose, 47, SpringLayout.NORTH, weightPanel);
+		JScrollPane weightButtonPane = getButtonPane(weightButtons, true);
+		weightButtons.get(0).setSelected(true);
+		weightPanel.add(weightButtonPane);
+		weightLayout.putConstraint(SpringLayout.WEST, weightButtonPane, 0, SpringLayout.WEST, weightPanel);
+		weightLayout.putConstraint(SpringLayout.NORTH, weightButtonPane, 20, SpringLayout.SOUTH, weightChoose);
+		
+		cards2 = new JPanel(new CardLayout());
+		cards2.add(new JPanel(), init);
+		cards2.add(densePanel, dense);
+		cards2.add(sparsePanel, sparse);
+		
+		panel.setLayout(new FlowLayout());
+		panel.setPreferredSize(new Dimension(500, 340));
+		panel.add(infoTypeDropdown);
+		panel.add(new JLabel("                                           " +
+				"                      "));
+		panel.add(cards2);
+		panel.add(weightPanel);
+	
+		return panel;
+		
+	}
+	
+	public JScrollPane getButtonPane(ArrayList<JRadioButton> buttons, boolean grouped) {
+		JPanel pane = new JPanel();
+		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
+		ButtonGroup group = new ButtonGroup();
+		if (grouped) 
+			for (int i = 0; i < buttons.size(); i++) 
+				group.add(buttons.get(i));
+		for (int i = 0; i < buttons.size(); i++) 
+			pane.add(buttons.get(i));
+		JScrollPane scrollPane = new JScrollPane(pane);
+		scrollPane.setPreferredSize(new Dimension(200, 200));
+		return scrollPane;	
+	}
+	
+	public ArrayList<JRadioButton> getColumnNames(String datatype, DynamicTable table) {
+		ArrayList<JRadioButton> buttonsToCheck = new ArrayList<JRadioButton>();
+		ArrayList<ArrayList<String>> namesAndTypes = 
+			MainFrame.db.getColNamesAndTypes(datatype, table);
+		for (int i = 0; i < namesAndTypes.size(); i++) {
+			if ((namesAndTypes.get(i).get(1).equals("INT") || 
+					namesAndTypes.get(i).get(1).equals("REAL")) && 
+					!namesAndTypes.get(i).get(0).equals("AtomID")) 
+			buttonsToCheck.add(new JRadioButton(namesAndTypes.get(i).get(0) + 
+					": " + namesAndTypes.get(i).get(1)));
+		}
+		return buttonsToCheck;
+	}
+
 	
 	/**
 	 * setCommonInfo() lays out the information that the two tabbed panels share;
@@ -241,6 +391,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	 */
 	public JPanel setCommonInfo(){
 		JPanel commonInfo = new JPanel();
+		commonInfo.setPreferredSize(new Dimension(500, 100));
 		//Create Name text field;
 		JPanel comment = new JPanel();
 		JLabel commentLabel = new JLabel("Comment: ");
@@ -480,6 +631,11 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		else if (evt.getSource() == refineCentroids)
 		{
 			refinedCentroids = !refinedCentroids;
+		}
+		else if (evt.getSource() == infoTypeDropdown) {
+			CardLayout cl = (CardLayout)(cards2.getLayout());
+			String newEvent = (String)evt.getItem();
+			cl.show(cards2, newEvent);
 		}
 	}
 }

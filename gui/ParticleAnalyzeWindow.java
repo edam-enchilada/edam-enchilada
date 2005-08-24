@@ -46,10 +46,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.sql.*;
-import java.util.*;
-
+import java.util.ArrayList;
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.table.*;
 
 import ATOFMS.ATOFMSParticle;
@@ -78,31 +76,22 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	//GUI elements
 	private Chart chart;
 	private ZoomableChart zchart;
-	private JTable peaksTable; 
+	private JTable table; 
 	private JRadioButton peakButton, specButton;
 	private JButton nextButton, zoomOutButton, prevButton;
-	private JTextPane labelText;
-	private JCheckBox labelPeaks;
 	
 	//Data elements
 	private SQLServerDatabase db;
 	private JTable particlesTable;
 	private int curRow;
-	private int numIonRows; 
 	
-	private LabelLoader labelLoader;
-	private AbstractTableModel peaksDataModel;
+	private AbstractTableModel datamodel;
 	private ArrayList<ATOFMS.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
 	private ArrayList<Peak> negPeaks;
-	private ArrayList<LabelingIon> negIons;
-	private ArrayList<LabelingIon> posIons;
-	private ArrayList<LabelingIon> posLabels;
-	private ArrayList<LabelingIon> negLabels;
 	private Dataset posSpecDS, negSpecDS;
 	private int atomID;
 	private String atomFile;
-	private double selectedMZ = 0;
 	
 	private boolean spectrumLoaded = false;
 	
@@ -110,38 +99,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private static final int DEFAULT_XMIN = 0;
 	private static final int DEFAULT_XMAX = 400;
 	
-	private static double labelingThreshold = .5;
-	private static String labelingDir = "labeling";
 
-	// Object to hold sync-lock to make sure that any calls to Lei's external labeling
-	// code are synchronized (since only one spectrum can be labeled at a time)
-	private static Object labelLock = new Object();
-	
-	static {
-		File f = new File("config.ini");
-		try {
-			Scanner scan = new Scanner(f);
-			while (scan.hasNext()) {
-				String tag = scan.next();
-				String val = scan.next();
-				if (scan.hasNext())
-					scan.nextLine();
-				
-				if (tag.equalsIgnoreCase("labeling_threshold:")) {
-					try {
-						labelingThreshold = Double.parseDouble(val);
-					} catch (NumberFormatException e) {
-						System.out.println("Error! Value: " + val + " isn't a number. Using '.5' as a label threshold.");
-					}
-				}
-				else if (tag.equalsIgnoreCase("labeling_dir:")) { labelingDir = val; }
-			}
-			scan.close();
-		} catch (FileNotFoundException e) { 
-			// Don't worry if the file doesn't exist... 
-			// just go on with the default values 
-		}
-	}
 	
 	/**
 	 * Makes a new panel containing a zoomable chart and a table of values.
@@ -158,11 +116,11 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.particlesTable = dt;
 	    this.curRow = curRow;
 	    
-	    labelLoader = new LabelLoader(this);
-		
 		peaks = new ArrayList<Peak>();
 		atomFile = null;
 		
+		JPanel mainPanel = new JPanel(new BorderLayout());
+
 		// sets up chart
 		chart = new chartlib.Chart(2, false);
 		chart.setHasKey(false);
@@ -194,81 +152,42 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		nextButton.addActionListener(this);
 		centerPanel.add(zchart, BorderLayout.CENTER);
 		centerPanel.add(nextPrevPanel, BorderLayout.SOUTH);
+		mainPanel.add(centerPanel, BorderLayout.CENTER);
 		
 		//sets up table
-		peaksDataModel = new PeaksTableModel();
-		peaksTable = new JTable(peaksDataModel);
-		peaksTable.setFocusable(false);
-		peaksTable.getColumnModel().getColumn(1).setPreferredWidth(50);
-		peaksTable.getColumnModel().getColumn(2).setPreferredWidth(50);
-		peaksTable.setPreferredScrollableViewportSize(new Dimension(300, 200));
-		peaksTable.setRowSelectionAllowed(true);
-		peaksTable.setColumnSelectionAllowed(false);
-		peaksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		ListSelectionModel rowSM = peaksTable.getSelectionModel();
-		rowSM.addListSelectionListener(new ListSelectionListener() {
-		    public void valueChanged(ListSelectionEvent e) {
-		        //Ignore extra messages.
-		        if (e.getValueIsAdjusting()) return;
-
-		        ListSelectionModel lsm =
-		            (ListSelectionModel)e.getSource();
-		        if (!lsm.isSelectionEmpty()) {
-		            int selectedRow = lsm.getMinSelectionIndex();
-					selectedMZ = (Double) peaksDataModel.getValueAt(selectedRow, 0);
-					setLabels();
-		        } else 
-		        	selectedMZ = 0;
-		    }
-		});
+		datamodel = new PeaksTableModel();
+		table = new JTable(datamodel);
+		table.setFocusable(false);
+		table.getColumnModel().getColumn(1).setPreferredWidth(50);
+		table.getColumnModel().getColumn(2).setPreferredWidth(50);
+		table.setPreferredScrollableViewportSize(new Dimension(300, 200));
+		table.setRowSelectionAllowed(true);
+		table.setColumnSelectionAllowed(false);
 		
 		JPanel peaksPanel = new JPanel(new BorderLayout());
 		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
-		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
+		peaksPanel.add(new JScrollPane(table), BorderLayout.CENTER);
         
-		negIons = new ArrayList<LabelingIon>();
-		posIons = new ArrayList<LabelingIon>();
-		buildLabelSigs(labelingDir + "/nion-sigs.txt", negIons);
-		buildLabelSigs(labelingDir + "/pion-sigs.txt", posIons);
-		
-		numIonRows = Math.max(negIons.size(), posIons.size());
-		
 		JPanel sigPanel = new JPanel(new BorderLayout());
+		String[] ions = { "NaO4", "Hg+", "CO2", "H2" };
 
-		JPanel signatures = new JPanel(new GridLayout(numIonRows + 1, 2));
-		signatures.add(new JLabel("Negative Ions:"));
-		signatures.add(new JLabel("Positive Ions:"));
-		for (int i = 0; i < numIonRows; i++) {
-			if (i < negIons.size())
-				signatures.add(negIons.get(i).getCheckboxPanelForIon());
-			else
-				signatures.add(new JPanel());
-			
-			if (i < posIons.size())
-				signatures.add(posIons.get(i).getCheckboxPanelForIon());
-			else
-				signatures.add(new JPanel());
+		JPanel signatures = new JPanel(new GridLayout(ions.length, 1));
+		for (String ion : ions) {
+			JPanel ionPanel = new JPanel(new BorderLayout());
+			JCheckBox box = new JCheckBox();
+			ionPanel.add(box, BorderLayout.WEST);
+			ionPanel.add(new JLabel(ion), BorderLayout.CENTER);
+			signatures.add(ionPanel);
 		}
 		
 		sigPanel.add(new JLabel("Signature", SwingConstants.CENTER), BorderLayout.NORTH);
 		sigPanel.add(new JScrollPane(signatures), BorderLayout.CENTER);
 		
-		labelText = new JTextPane();
-		labelText.setEditable(false);
-		labelText.setContentType("text/html");
-		JScrollPane labelScrollPane = new JScrollPane(labelText);
+		JSplitPane controlPane
+			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, sigPanel);
+		JPanel rightPanel = new JPanel(new BorderLayout());
+		rightPanel.add(controlPane, BorderLayout.CENTER);
 		
-		JPanel labelPanel = new JPanel(new BorderLayout());
-		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
-		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
-		labelPanel.setPreferredSize(new Dimension(300, 200));
-
-		final JSplitPane labelingControlPane
-			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, labelPanel, sigPanel);
-
-		final JSplitPane mainControlPane
-			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, labelingControlPane);
-
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
 
@@ -286,64 +205,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
 		bottomPanel.add(buttonPanel);
-		bottomPanel.add(labelPeaks = new JCheckBox("Label Peaks", true));
-		labelPeaks.addItemListener(new ItemListener() {
-			int lastDividerLocation = 0;
-			
-			public void itemStateChanged(ItemEvent evt) {
-				boolean isSelected = evt.getStateChange() == ItemEvent.SELECTED;
-				labelingControlPane.setVisible(isSelected);
-				
-				if (isSelected) {
-					doLabeling();
-					mainControlPane.setDividerLocation(lastDividerLocation);
-				} else {
-					lastDividerLocation = mainControlPane.getDividerLocation();
-					mainControlPane.setDividerLocation(1.0);
-				}
-
-				mainControlPane.validate();
-			}
-		});
+		bottomPanel.add(new JCheckBox("Label Peaks", true));
 		
-		JPanel rightPanel = new JPanel(new BorderLayout());
-		rightPanel.add(mainControlPane, BorderLayout.CENTER);
 		rightPanel.add(bottomPanel, BorderLayout.SOUTH);
-
-		JPanel mainPanel = new JPanel(new BorderLayout());
-		mainPanel.add(centerPanel, BorderLayout.CENTER);
 		mainPanel.add(rightPanel, BorderLayout.EAST);
 		add(mainPanel);
-
+		
 		showGraph();
-		pack();
-		
-		// If we never found data files, then disable labeling permanently...
-		if (numIonRows == 0) {
-			labelPeaks.setSelected(false);
-			labelPeaks.setEnabled(false);
-			labelPeaks.setToolTipText("Can't label -- label code/data not found in subfolder: '" + labelingDir + "'");
-		}
 	}
-	
-	private void buildLabelSigs(String fileName, ArrayList<LabelingIon> ionListToBuild) {
-		File f = new File(fileName);
-		
-		try {
-			Scanner s = new Scanner(f);
-			while (s.hasNext()) {
-				LabelingIon ion = new LabelingIon(s.nextLine());
-				if (ion.isValid())
-					ionListToBuild.add(ion);
-			}
-			
-			s.close();
-		} catch (FileNotFoundException e) {
-			System.err.println("Signature file: " + f.getAbsolutePath() + " not found!");
-		}
-	}
-	
-	
 
 	/**
 	 * Sets the chart to display a new set of peaks.
@@ -371,9 +240,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				negPeaks.add(p);
 			}
 		}
-
-		labelLoader.invalidate();
-		doLabeling();
 		
 		//sets up chart to detect mouse hits on peaks
 		double[] xCoords = new double[posPeaks.size()];
@@ -400,18 +266,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		chart.packData(false, true); //updates the Y axis scale.
 		chart.setTitle("Particle from" + filename);
-		peaksDataModel.fireTableDataChanged();
+		datamodel.fireTableDataChanged();
 		
 		unZoom();
-	}
-	
-	private void doLabeling() {
-		if (!labelLoader.hasValidLabels() && labelPeaks.isSelected()) {
-			labelText.setText("Processing labels...");
-			// Fire up labeling process...
-			
-			labelLoader.loadLabels();
-		}
 	}
 	
 	/**
@@ -422,6 +279,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	{
 		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX - 1);
 		zoomOutButton.setEnabled(false);
+//		chart.setAxisBounds(DEFAULT_XMIN,DEFAULT_XMAX, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+//		//chart.setTicks(20,Chart.CURRENT_VALUE,1,1);
+//		chart.packData(false, true);
 	}
 
 	
@@ -490,7 +350,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	{
 		if(peaks.isEmpty()) return;
 		
-		Point mousePoint = e.getPoint();  //the mouse location
+		
+		Point mousePoint = e.getPoint();  //the mouse key
 		Peak peak;
 		int chartIndex = chart.getChartIndexAt(mousePoint); //the chart the mouse is point at
 		if(chartIndex == -1) return; //mouse not pointing at a chart -> don't do anything
@@ -498,6 +359,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		//java.awt.geom.Point2D.Double dataPoint = chart.getDataValueForPoint(chartIndex, mousePoint);
 		Double dp = chart.getBarForPoint(chartIndex, mousePoint);
 		int multiplier, adder = 0;
+		
+		table.clearSelection();
 		
 		if(dp != null)
 		{
@@ -521,19 +384,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			{
 				peak = peaks.get(count);
 				
-				if(peak.massToCharge == multiplier * dp) 
-				{
-					int peakIndex = count + adder;
-					peaksTable.clearSelection();
-					peaksTable.addRowSelectionInterval(peakIndex, peakIndex);
-					
-					selectedMZ = peak.massToCharge;
-					setLabels();
-				}
+				if(peak.massToCharge == multiplier * dp)
+					table.addRowSelectionInterval(count + adder, count + adder);
+				
 			}
 		}
 	}
-	
 	public void mouseDragged(MouseEvent e){}
 	public void mouseClicked(MouseEvent e) {}
 	public void mousePressed(MouseEvent e){}
@@ -588,18 +444,17 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	public void displaySpectrum()
 	{
-		if(!spectrumLoaded) {
-			try{
-				getSpectrum();
-			}
-			catch (Exception e)
-			{
-				System.err.println("Error loading spectrum");
-				e.printStackTrace();
-				posSpecDS = new Dataset();
-				negSpecDS = new Dataset();
-				//peakButton.setSelected(true);
-			}
+		if(!spectrumLoaded)
+		try{
+			getSpectrum();
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error loading spectrum");
+			e.printStackTrace();
+			posSpecDS = new Dataset();
+			negSpecDS = new Dataset();
+			//peakButton.setSelected(true);
 		}
 
 		chart.setDataset(1,negSpecDS);
@@ -716,208 +571,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		{
 			negSpecDS.add(negDP[i]);
 		}
+		
 	}
 	
-	private void setLabels() {
-		if (selectedMZ == 0) {
-			labelText.setText("Finished processing labels. <br>Select a peak to see its label.");
-			return;
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		ArrayList<LabelingIon> ionList             = selectedMZ < 0 ? negIons : posIons;
-		Hashtable<LabelingIon, Double> labeledIons = selectedMZ < 0 ? labelLoader.foundNegIons : labelLoader.foundPosIons;
-		
-		int selectedMZRounded = (int) Math.abs(selectedMZ);
-		
-		for (int i = 0; i < ionList.size(); i++) {
-			LabelingIon ion = ionList.get(i);
-			int[] mzVals = ion.mzVals;
-			
-			for (int j = 0; j < mzVals.length; j++) {
-				if (mzVals[j] == selectedMZRounded && ion.ratios[j] > labelingThreshold) {
-					String color = "black";
-
-					if (labeledIons.containsKey(ion))
-						color = "red";
-					else if (!ion.isChecked())
-						color = "#98AFC7";
-					
-					sb.append("<b><font color='" + color + "'>" + ion.name + "</font>");
-				}
-			}
-		}
-		
-		if (sb.length() > 0)
-			labelText.setText("<html>" + sb.toString() + "</html>");
-		else
-			labelText.setText("No labels found for this peak!");
-	}
 	
-	private class LabelLoader implements Runnable {
-		private boolean hasValidLabels = false;
-		
-		public Hashtable<LabelingIon, Double> foundPosIons;
-		public Hashtable<LabelingIon, Double> foundNegIons;
-
-		private ParticleAnalyzeWindow callbackWindow;
-		private Thread runningThread = null;
-		
-		public LabelLoader(ParticleAnalyzeWindow callbackWindow) {
-			this.callbackWindow = callbackWindow;
-		}
-		
-		public void loadLabels() {
-			// Only run if signature data was found...
-			if (numIonRows > 0) {
-				runningThread = new Thread(this);
-				runningThread.start();
-			}
-		}
-		
-		public void invalidate() { hasValidLabels = false; }
-		public boolean hasValidLabels() { return hasValidLabels; }
-		
-		public void run() {
-			// Only one thread at a time should run...
-			synchronized (labelLock) {
-				ArrayList<LabelingIon> negWrittenIons = new ArrayList<LabelingIon>();
-				ArrayList<LabelingIon> posWrittenIons = new ArrayList<LabelingIon>();
-				try {
-					writeSpectrum(labelingDir + "/spc_positive.txt", posPeaks);
-					writeSpectrum(labelingDir + "/spc_negative.txt", negPeaks);
-					writeSignature(labelingDir + "/temp_pion-sigs.txt", posIons, posWrittenIons);
-					writeSignature(labelingDir + "/temp_nion-sigs.txt", negIons, negWrittenIons);
-					
-					// Run labeling program:
-					
-					ProcessBuilder pb = new ProcessBuilder(System.getProperty("user.dir") + "/" + labelingDir + "/run.bat");
-					pb.directory(new File(labelingDir));
-					Process p = pb.start();
-	
-				    BufferedReader br =
-				    	new BufferedReader(new InputStreamReader(p.getInputStream()));
-	
-				    while (br.readLine() != null) {}
-				    
-				    // And read in its output:
-				    
-				    foundPosIons = new Hashtable<LabelingIon, Double>();
-				    foundNegIons = new Hashtable<LabelingIon, Double>();
-					
-				    Scanner s = new Scanner(new File(labelingDir + "/label_positive.txt"));
-				    s.nextLine();
-					if (s.hasNext()) {
-						String[] tokens = s.nextLine().split(" ");
-	
-						for (int i = 0; i <  tokens.length / 2; i++) { 
-							foundPosIons.put(posWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
-									Double.parseDouble(tokens[2 * i + 1]));
-	
-						}
-					}
-					s.close();
-					
-				    s = new Scanner(new File(labelingDir + "/label_negative.txt"));
-				    s.nextLine();
-					if (s.hasNext()) {
-						String[] tokens = s.nextLine().split(" ");
-	
-						for (int i = 0; i <  tokens.length / 2; i++) { 
-							foundNegIons.put(negWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
-									Double.parseDouble(tokens[2 * i + 1]));
-	
-						}
-					}
-					s.close();
-	
-					hasValidLabels = true;
-					callbackWindow.setLabels();
-					
-					new File(labelingDir + "/spc_positive.txt").delete();
-					new File(labelingDir + "/spc_negative.txt").delete();
-					new File(labelingDir + "/temp_pion-sigs.txt").delete();
-					new File(labelingDir + "/temp_nion-sigs.txt").delete();
-					new File(labelingDir + "/label_negative.txt").delete();
-					new File(labelingDir + "/label_positive.txt").delete();
-				} 
-				catch (IOException e) { e.printStackTrace(); }
-			}
-		}
-		
-		private void writeSpectrum(String spectrumFileName, ArrayList<Peak> peaks) throws FileNotFoundException {
-			PrintStream writer = new PrintStream(new File(spectrumFileName));
-			writer.println("1");
-			for (Peak p : peaks)
-				writer.printf("%d %d ", (int) Math.abs(p.massToCharge), (int) p.area);
-			writer.print("-1");
-			writer.close();
-		}
-			
-		private void writeSignature(String sigFileName, ArrayList<LabelingIon> masterIonList, ArrayList<LabelingIon> writtenIons) 
-		throws FileNotFoundException {
-			PrintStream writer = new PrintStream(new File(sigFileName));
-			for (LabelingIon ion : masterIonList) {
-				if (ion.isChecked()) {
-					writer.println(ion);
-					writtenIons.add(ion);
-				}
-			}
-			writer.close();	
-		}
-	}
-	
-	private class LabelingIon {
-		private JCheckBox checkBox;
-		
-		public String name;
-		public int[] mzVals;
-		public double[] ratios;
-		
-		private boolean isValidIon = true;
-		private String stringRep;
-		
-		public LabelingIon(String stringRep) {
-			this.stringRep = stringRep;
-			try {
-				stringRep = stringRep.replaceAll("  ", " ");
-				String[] tokens = stringRep.split(" ");
-				name = tokens[0];
-				
-				int numMZVals = (tokens.length - 2) / 2;
-				mzVals = new int[numMZVals];
-				ratios = new double[numMZVals];
-	
-				for (int i = 0; i < numMZVals; i++) {
-					mzVals[i] = Integer.parseInt(tokens[i * 2 + 1]);
-					ratios[i] = Double.parseDouble(tokens[i * 2 + 1]);
-				}
-			} catch (NumberFormatException e) {
-				System.err.println("Invalid ion string: " + stringRep);
-				isValidIon = false;
-			}
-		}
-		
-		public boolean isValid() { return isValidIon; }
-		public boolean isChecked() { return checkBox.isSelected(); }
-		public String toString() { return stringRep; }
-		
-		public JPanel getCheckboxPanelForIon() {
-			JPanel ionPanel = new JPanel(new BorderLayout());
-			checkBox = new JCheckBox();
-			checkBox.setSelected(true);
-			ionPanel.add(checkBox, BorderLayout.WEST);
-			ionPanel.add(new JLabel(name), BorderLayout.CENTER);
-			
-			checkBox.addItemListener(new ItemListener() {
-				public void itemStateChanged(ItemEvent evt) {
-					labelLoader.invalidate();
-					doLabeling();
-				}
-			});
-			return ionPanel;
-		}
-	}
 	
 	/**
 	 * Handles the data for the table.

@@ -65,9 +65,9 @@ public class Cheater {
 		Iterator<BinnedPeak> iter = list.iterator();
 		while (iter.hasNext()) {
 			temp = iter.next();
-			if ((float)(temp.area / magnitude) != 0.0f)
-				returnList.addNoChecks(temp.location, 
-						temp.area / magnitude);
+			if ((float)(temp.value / magnitude) != 0.0f)
+				returnList.addNoChecks(temp.key, 
+						temp.value / magnitude);
 		}
 		return returnList;
 	}

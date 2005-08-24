@@ -102,7 +102,7 @@ public class ClusterFeature {
 		Iterator<BinnedPeak> iterator = list.iterator();
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			squareSums += peak.area*peak.area;
+			squareSums += peak.value*peak.value;
 		}
 	}
 	
@@ -157,7 +157,7 @@ public class ClusterFeature {
 		while (sumsA.hasNext()) {
 			peakA = sumsA.next();
 			peakB = sumsB.next();
-			if (peakA.area != peakB.area || peakA.location != peakB.location)
+			if (peakA.value != peakB.value || peakA.key != peakB.key)
 				return false;
 		}
 		return true;
@@ -223,7 +223,7 @@ public class ClusterFeature {
 		BinnedPeak next;
 		while (iterator.hasNext()) {
 			next = iterator.next();
-			list.addNoChecks(next.location, next.area / count);
+			list.addNoChecks(next.key, next.value / count);
 		}
 		list.normalize(DistanceMetric.CITY_BLOCK);
 		return list;

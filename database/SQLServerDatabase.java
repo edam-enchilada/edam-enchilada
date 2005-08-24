@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -59,6 +60,7 @@ import java.sql.*;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import analysis.BinnedPeakList;
+import analysis.clustering.ClusterInformation;
 import analysis.clustering.PeakList;
 import collection.*;
 import atom.ATOFMSAtomFromDB;
@@ -87,7 +89,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	private String url;
 	private String port;
 	private String database;
-	private static int instance = 0;
+	private int instance = 0;
 	private String tempdir = System.getenv("TEMP");
 	private Statement batchStatement;
 	
@@ -200,7 +202,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	/**
 	 * Creates an empty collection with no atomic analysis units in it.
-	 * @param parent	The location to add this collection under (0 
+	 * @param parent	The key to add this collection under (0 
 	 * 					to add at the root).
 	 * @param name		What to call this collection in the interface.
 	 * @param datatype collection's datatype
@@ -231,9 +233,9 @@ public class SQLServerDatabase implements InfoWarehouse
 							   "(CollectionID, Name, Comment, Description, Datatype)\n" +
 							   "VALUES (" +
 							   Integer.toString(nextID) + 
-							   ", '" + removeReservedCharacters(name) + "', '" 
-							   + removeReservedCharacters(comment) + "', '" + 
-							   removeReservedCharacters(description) + "', '" + datatype + "')");
+							   ", '" + name + "', '" 
+							   + comment + "', '" + 
+							   description + "', '" + datatype + "')");
 			stmt.executeUpdate("INSERT INTO CollectionRelationships\n" +
 							   "(ParentID, ChildID)\n" +
 							   "VALUES (" + Integer.toString(parent) +
@@ -305,7 +307,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * have yet to be inserted into the database.  Not used as far as
 	 * I can tell.
 	 * 
-	 * @param parentID	The location of the parent to insert this
+	 * @param parentID	The key of the parent to insert this
 	 * 					collection (0 to insert at root level)
 	 * @param name		What to call this collection
 	 * @param datatype  collection's datatype
@@ -1373,7 +1375,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (getCollectionSize(collectionID) > 0)
 					ret.add(collectionID);
 			}
-		} else if (collectionIDs.size() > 0) {
+		} else {
 			try {
 				ResultSet rs = con.createStatement().
 					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
@@ -2284,7 +2286,131 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/* Cursor classes */
-
+//TODO: need a memory clustering cursor.
+	private class ClusteringCursor implements CollectionCursor {
+		protected InstancedResultSet irs;
+		protected ResultSet rs;
+		protected Statement stmt = null;
+		private Collection collection;
+		private ClusterInformation cInfo;
+		private String datatype;
+		
+		public ClusteringCursor(Collection collection, ClusterInformation cInfo) {
+			super();
+			this.collection = collection;
+			datatype = collection.getDatatype();
+			this.cInfo = cInfo;
+			try {
+				stmt = con.createStatement();
+				irs = getAllAtomsRS(collection);
+				rs = stmt.executeQuery(
+						"SELECT AtomID FROM #TempParticles" + irs.instance +
+						" ORDER BY #TempParticles" + irs.instance + ".AtomID");
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error initializing a " +
+						"resultset " +
+				"for that collection:");
+				e.printStackTrace();
+			}
+		}
+		
+		public boolean next() {
+			try {
+				return rs.next();
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error checking the " +
+						"bounds of " +
+				"the ResultSet.");
+				e.printStackTrace();
+				return false;
+			}
+		}
+		
+		public ParticleInfo getCurrent() {
+			
+			ParticleInfo particleInfo = new ParticleInfo();
+			try {
+				particleInfo.setID(rs.getInt(1));
+				particleInfo.setBinnedList(getPeakListfromAtomID(particleInfo.getID()));
+			}catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error retrieving the " +
+				"next row");
+				e.printStackTrace();
+				return null;
+			}
+			return particleInfo; 
+		}
+		
+		public void close() {
+			try {
+				stmt.close();
+				rs.close();
+				con.createStatement().executeUpdate(
+						"DROP Table #TempParticles" + 
+						irs.instance);
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				e.printStackTrace();
+			}
+		}
+		
+		public void reset() {
+			try {
+				rs.close();
+				rs = stmt.executeQuery(
+						"SELECT AtomID FROM #TempParticles" + irs.instance +
+						" ORDER BY #TempParticles" + irs.instance + ".AtomID");
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error resetting a " +
+						"resultset " +
+				"for that collection:");
+				e.printStackTrace();
+			}	
+		}
+		
+		public ParticleInfo get(int i) throws NoSuchMethodException {
+			throw new NoSuchMethodException("Not implemented in disk based cursors.");
+		}
+		
+		public BinnedPeakList getPeakListfromAtomID(int id) {
+			BinnedPeakList peakList = new BinnedPeakList();
+			try {
+				ResultSet listRS;
+				Statement stmt2 = con.createStatement();
+				if (cInfo.automatic) {
+					listRS = stmt2.executeQuery("SELECT " + join(cInfo.valueColumns, ",") +
+							" FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, datatype) +
+							" WHERE AtomID = " + id);
+					listRS.next();
+					for (int i = 1; i <= cInfo.valueColumns.size(); i++) {
+						peakList.addNoChecks(i, listRS.getFloat(i));
+					}
+				}
+				else {
+					listRS = stmt2.executeQuery("SELECT " + 
+							cInfo.keyColumn + ", " + cInfo.valueColumns.iterator().next() +  
+							" FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse, datatype) + 
+							" WHERE AtomID = " + id);
+					while (listRS.next()) 
+						peakList.add(listRS.getFloat(1), listRS.getFloat(2));
+				} 
+				stmt2.close();
+				listRS.close();
+			}catch (SQLException e) {
+					new ExceptionDialog("SQL Exception retrieving data.");
+					System.err.println("Error retrieving the " +
+					"next row");
+					e.printStackTrace();
+					return null;
+			}
+				return peakList;		
+		}
+	}
+	
 	/**
 	 * AtomInfoOnly cursor.  Returns atom info.
 	 */
@@ -2589,10 +2715,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			ParticleInfo sPInfo = super.getCurrent();
 			
 			sPInfo.setBinnedList(bin(sPInfo.getPeakList().getPeakList()));
-			//TODO:  USED FOR BIRCH; DON"T KNOW HOW OTHER CLUSTERING ALGORITHMS WITH BE AFFECTED!!
-			//sPInfo.setPeakList(null);
-			//sPInfo.setParticleInfo(null);
-			//////////////TODO
 			return sPInfo;
 		}
 		
@@ -2819,6 +2941,14 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * get method for ClusteringCursor.
+	 */
+	public CollectionCursor getClusteringCursor(Collection collection, ClusterInformation cInfo)
+	{
+		return new ClusteringCursor(collection, cInfo);
+	}
+	
+	/**
 	 * Seeds the random number generator.
 	 */
 	public void seedRandom(int seed) {
@@ -2868,7 +2998,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			while (rs.next()) {
 				temp = new ArrayList<String>();
-				temp.add(rs.getString(1));
+				temp.add(rs.getString(1).substring(1,rs.getString(1).length()-1));
 				temp.add(rs.getString(2));
 				colNames.add(temp);
 			}
@@ -2915,7 +3045,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();		
 			ResultSet rs 
 				= stmt.executeQuery("SET NOCOUNT ON " +
-						"INSERT ValueMaps (Name) Values('" + removeReservedCharacters(name) + "') " +
+						"INSERT ValueMaps (Name) Values('" + name.replace("'", "''") + "') " +
 						"SELECT @@identity " +
 						"SET NOCOUNT OFF");
 			rs.next();
@@ -3027,124 +3157,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		return newCollectionID;
 	}
 	
-	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate) {
-		Set<Integer> allCollectionsWithChildren = new HashSet<Integer>();
-		for (Collection c : collections) {
-			allCollectionsWithChildren.addAll(c.getCollectionIDSubTree());
-		}
-		
-		String sqlStr = "select max(Time) as MaxTime, min(Time) as MinTime \n" +
-					    "from (\n" +
-					    "    select AtomID, Time from ATOFMSAtomInfoDense \n" +
-					    "    union \n" +
-					    "    select AtomID, Time from TimeSeriesAtomInfoDense \n" +
-					    ") AID \n" + 
-						"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-						"where CollectionID in (" + SQLServerDatabase.join(allCollectionsWithChildren, ",") + ")";
-		try{
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(sqlStr);
+	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, 
+			int[] mzValues, String timeBasisSetupStr, String timeBasisQueryStr) {
 
-			
-			if (rs.next()) {
-				Timestamp minT = rs.getTimestamp("MinTime");
-				if (!rs.wasNull())
-					minDate.setTime(minT);
-				
-				Timestamp maxT = rs.getTimestamp("MaxTime");
-				if (!rs.wasNull())
-					maxDate.setTime(maxT);
-			}
-			
-			rs.close();
-		} catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving max time for collections.");
-			System.err.println("SQL exception retrieving max time for collections");
-			e.printStackTrace();
-		}
-	}
-	
-	public void createTempAggregateBasis(Collection c) {
-		instance++;
-		String collectionIDs = "(" + SQLServerDatabase.join(c.getCollectionIDSubTree(), ",") + ")";
-		String timeSubstr = 
-			"    select distinct Time \n" +
-			"    from " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID \n" +
-			"    join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			"    where CollectionID in " + collectionIDs;
-		
-		String basisSql = 
-		       "insert #TempAggBasis" + instance + " (BasisTimeStart, BasisTimeEnd) \n" +
-		       "select T1.Time as BasisTimeStart, T1.Time + min(T2.Time - T1.Time) as BasisTimeEnd \n" +
-			   "from (\n" + timeSubstr + "\n) T1 " +
-			   "join (\n" + timeSubstr + "\n) T2 on (T1.Time < T2.Time) \n" +
-			   "group by T1.Time \n" +
-			   "union \n" +
-			   "select max(Time) as BasisTimeStart, null as BasisTimeEnd \n" +
-			   "from " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID \n" +
-			   "join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-			   "where CollectionID in " + collectionIDs;
-		
-		createTempAggregateBasis(basisSql);		
-	}
-	
-	public void createTempAggregateBasis(Calendar start, Calendar end, Calendar interval) {
-		instance++;
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		java.util.Date startTime, endTime;
-		String basisSql = "";
-		
-		while (start.before(end)) {
-			startTime = start.getTime();
-			
-			start.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
-			start.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
-			start.add(Calendar.SECOND, interval.get(Calendar.SECOND));
-			
-			if (!start.before(end))
-				start = end;
-			
-			endTime = start.getTime();
-			
-			basisSql += "insert #TempAggBasis" + instance + " (BasisTimeStart, BasisTimeEnd) values ('" + 
-						dateFormat.format(startTime) + "', '" + dateFormat.format(endTime) + "') \n";
-		}
-
-		createTempAggregateBasis(basisSql);	
-	}
-	
-	private void createTempAggregateBasis(String basisSQL) {
-		String sql = 
-			"CREATE TABLE #TempAggBasis" + instance + " ( \n" + 
-	        "   BasisTimeStart datetime, \n" +
- 	        "   BasisTimeEnd datetime \n" + 
-	        ")\n\n" + 
-		    basisSQL;
-		
-		try {
-			Statement stmt = con.createStatement();
-			stmt.execute(sql);
-		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception creating aggregate basis temp table");
-			System.err.println("SQL exception creating aggregate basis temp table");
-			e.printStackTrace();
-		}
-	}
-
-	public void deleteTempAggregateBasis() {
-		try {
-			Statement stmt = con.createStatement();
-			stmt.execute("DROP TABLE #TempAggBasis" + instance);
-			instance--;
-		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception deleting aggregate basis temp table");
-			System.err.println("SQL exception deleting aggregate basis temp table");
-			e.printStackTrace();
-		}
-	}
-	
-	
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) {
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
 		AggregationOptions options = curColl.getAggregationOptions();
@@ -3161,7 +3176,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 			} else {
-				String sql = 
+				String sql = timeBasisSetupStr +
 					"DECLARE @atoms TABLE ( \n" +
 					"   NewAtomID int IDENTITY(%d, 1), \n" +
 					"   Time DateTime, \n" +
@@ -3173,7 +3188,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"from ATOFMSAtomInfoDense AID \n" +
 					"join ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID) \n" +
 					"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
-					"join #TempAggBasis" + instance + " TB \n" +
+					"join " + timeBasisQueryStr + " TB  \n" +
 					"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
 					"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
 					"where AM.CollectionID in (" + join(collectionIDTree, ",") + ") \n" +

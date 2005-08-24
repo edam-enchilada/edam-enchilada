@@ -100,7 +100,7 @@ public class ChartArea extends JComponent {
 	}
 	
 	/**
-	 * Creates a chart area with the specified axis limits but no data.
+	 * Creates a chart value with the specified axis limits but no data.
 	 * @param xmin Minimum of x axis.
 	 * @param xmax Maximum of x axis.
 	 * @param ymin Minimum of y axis.
@@ -123,7 +123,7 @@ public class ChartArea extends JComponent {
 	}
 	
 	/**
-	 * Creates a chart area based on a dataset, setting bounds
+	 * Creates a chart value based on a dataset, setting bounds
 	 * to include all the data.
 	 * 
 	 * @param ds The dataset.
@@ -165,7 +165,7 @@ public class ChartArea extends JComponent {
 	/**
 	 * Sets a new dataset to be displayed.  Does not alter any other values.
 	 * @param ds The new dataset to be displayed.
-	 * @param index The index of the dataset in this area
+	 * @param index The index of the dataset in this value
 	 */
 	public void setDataset(int index, Dataset ds)
 	{
@@ -471,10 +471,10 @@ public class ChartArea extends JComponent {
 	
 	
 	/**
-	 * Tells whether a point is in the data area of the
+	 * Tells whether a point is in the data value of the
 	 * chartArea (not the title or axis areas).
 	 * @param p The point to check.
-	 * @return True if the point is in the data display area of
+	 * @return True if the point is in the data display value of
 	 * the chart.
 	 */
 	public boolean isInDataArea(Point p)
@@ -530,7 +530,7 @@ public class ChartArea extends JComponent {
 	 * Translates a point in screen space to chart coordinates.
 	 * @param p The point in screen coordinates.
 	 * @return The point translated to the chart's coordinate system,
-	 * or null if the point is not within the data area.
+	 * or null if the point is not within the data value.
 	 */
 	public Point2D.Double getDataValueForPoint(Point p)
 	{
@@ -541,7 +541,7 @@ public class ChartArea extends JComponent {
 		Rectangle dataArea = getDataAreaBounds();
 		
 		double x = p.x, y = p.y;
-		//translate to data area origin
+		//translate to data value origin
 		x = x - dataArea.x; 
 		y = dataArea.y + dataArea.height - y; //screen coordinate origin is at top,
 									// but data origin is at bottom, so we subtract.
@@ -566,7 +566,7 @@ public class ChartArea extends JComponent {
 //	 * corresponding to the given data value.
 //	 * @param x The data value to transform to screen coordinates.
 //	 * @return The X coordinate in screen space of x, relative to the chart's
-//	 * data area.  Returns -1 if x is not within the chart's bounds.
+//	 * data value.  Returns -1 if x is not within the chart's bounds.
 //	 */
 //	public int getXCoordForDataValue(double x)
 //	{
@@ -689,8 +689,8 @@ public class ChartArea extends JComponent {
 	
 	
 	/**
-	 * Indicates the portion of the chart area in which data is displayed.
-	 * @return A rectangle containing the data display area.
+	 * Indicates the portion of the chart value in which data is displayed.
+	 * @return A rectangle containing the data display value.
 	 */
 	public Rectangle getDataAreaBounds()
 	{
@@ -761,7 +761,7 @@ public class ChartArea extends JComponent {
 	 */
 	public void paintComponent(Graphics g)
 	{
-		//gets the bounds of the drawing area
+		//gets the bounds of the drawing value
 		Dimension size = this.getSize();
 		Insets insets = getInsets();
 		
@@ -832,7 +832,7 @@ public class ChartArea extends JComponent {
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(getColor(index));
-		g2d.clip(dataArea);	//constrains drawing to the data area
+		g2d.clip(dataArea);	//constrains drawing to the data value
 		g2d.setStroke(new BasicStroke(1.5f));
 		
 		double[] coords = new double[dataArea.width];
@@ -847,7 +847,7 @@ public class ChartArea extends JComponent {
 			double yCoord = (dataArea.y + dataArea.height 
 					- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
 			
-			if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
+			if (yCoord > 0 && yCoord < (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
 				if (coords[xCoord] == 0 || yCoord < coords[xCoord])
 					coords[xCoord] = yCoord;
 			}
