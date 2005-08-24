@@ -847,7 +847,7 @@ public class ChartArea extends JComponent {
 			double yCoord = (dataArea.y + dataArea.height 
 					- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
 			
-			if (yCoord > 0 && yCoord < (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
+			if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
 				if (coords[xCoord] == 0 || yCoord < coords[xCoord])
 					coords[xCoord] = yCoord;
 			}
