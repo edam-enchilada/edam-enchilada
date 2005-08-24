@@ -15,7 +15,7 @@ public class Aggregator {
 	private boolean baseOnCollection;
 	private InfoWarehouse db;
 	
-	private GregorianCalendar start, end, interval;
+	private Calendar start, end, interval;
 	private Collection basisCollection;
 	
 	private Aggregator(JFrame parentFrame, InfoWarehouse db, boolean baseOnCollection) {
@@ -30,8 +30,7 @@ public class Aggregator {
 		this.basisCollection = basisCollection;
 	}
 	
-	public Aggregator(JFrame parentFrame, InfoWarehouse db, 
-			GregorianCalendar start, GregorianCalendar end, GregorianCalendar interval) {
+	public Aggregator(JFrame parentFrame, InfoWarehouse db, Calendar start, Calendar end, Calendar interval) {
 		this(parentFrame, db, false);
 		
 		this.start = start;
@@ -63,6 +62,8 @@ public class Aggregator {
 				
 				if (options.produceParticleCountTS)
 					numSqlCalls++;
+			} else if (curColl.getDatatype().equals("TimeSeries")) {
+				numSqlCalls++;
 			}
 		}
 		

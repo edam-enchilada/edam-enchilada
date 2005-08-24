@@ -3150,6 +3150,12 @@ public class SQLServerDatabase implements InfoWarehouse
 		AggregationOptions options = curColl.getAggregationOptions();
 		
 		Set<Integer> collectionIDTree = getAllDescendantCollections(collectionID, true);
+		String tempAtomTableStr = 
+			"DECLARE @atoms TABLE ( \n" +
+		    "   NewAtomID int IDENTITY(%d, 1), \n" +
+		    "   Time DateTime, \n" +
+		    "   Value real \n" +
+		    ") \n\n";
 
 		if (curColl.getDatatype().equals("ATOFMS")) {				
 			if (mzValues == null) {
@@ -3162,12 +3168,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 			} else {
 				String sql = 
-					"DECLARE @atoms TABLE ( \n" +
-					"   NewAtomID int IDENTITY(%d, 1), \n" +
-					"   Time DateTime, \n" +
-					"   Value real \n" +
-					") \n\n" +
-				
+					tempAtomTableStr +
 					"insert @atoms (Time, Value) \n" +
 					"select BasisTimeStart, " + options.getGroupMethodStr() + "(PeakHeight) AS PeakHeight \n" +
 					"from ATOFMSAtomInfoDense AID \n" +
@@ -3208,6 +3209,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					fillAtomsFromMemoryTable(collectionName, combinedCollectionID, formattedSql);
 				}
 			}
+		} else if (curColl.getDatatype().equals("TimeSeries")) {
+			String sql = 
+				tempAtomTableStr + 
+				"";
 		}
 	}
 	
@@ -3303,7 +3308,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				columnsToReturn.add("C" + i + "Value");
 			}
 			
-			condStr += ") then %s else -99 end as %s";
+			condStr += ") then %s else -999 end as %s";
 		}
 		
 		selectStr += String.format(condStr, "T1.Value", "Ts1Value");

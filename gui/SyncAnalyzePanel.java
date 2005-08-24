@@ -211,7 +211,7 @@ public class SyncAnalyzePanel extends JPanel {
 					if (value > maxValue[i])
 						maxValue[i] = value;
 					
-					if (value != -99)
+					if (value != -999)
 						datasets[i].add(new DataPoint(lastTimePoint, value));
 				}
 			}

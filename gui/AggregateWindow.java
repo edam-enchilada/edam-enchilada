@@ -103,7 +103,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 
 		JLabel timeBasis = new JLabel("Time Basis:");
 	    ButtonGroup group = new ButtonGroup();
-	    group.add(selSeqRadio = new JRadioButton("Selected Sequence"));
+	    group.add(selSeqRadio = new JRadioButton("Selected Collection"));
 	    group.add(timesRadio = new JRadioButton("Times"));
 	    selSeqRadio.setSelected(true);
 	    
@@ -136,6 +136,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		
 		if (collection.getDatatype().equals("ATOFMS")) {
 			ret = getATOFMSPanel(collection);
+		} else if (collection.getDatatype().equals("TimeSeries")) {
+			ret = getTimeSeriesPanel(collection);
 		} else {
 			ret = new JPanel(); // Blank if unknown collection type...
 		}
@@ -256,6 +258,29 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		
 		return mainPanel;
 	}
+
+	private JPanel getTimeSeriesPanel(Collection collection) {
+		final AggregationOptions options = collection.getAggregationOptions();
+		
+	    JCheckBox isContinuousData = new JCheckBox();
+	    isContinuousData.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent evt) {
+				options.treatDataAsContinuous = (evt.getStateChange() == ItemEvent.SELECTED);
+			}
+		});
+	    isContinuousData.setSelected(options.treatDataAsContinuous);
+	    
+		JPanel continuousDataPanel = new JPanel(new BorderLayout(10, 0));
+		continuousDataPanel.add(isContinuousData, BorderLayout.WEST);
+		continuousDataPanel.add(new JLabel("<html>Treat Data as Continuous</html>"), BorderLayout.CENTER);
+		
+		JPanel mainPanel = new JPanel();
+		JPanel bottomHalf = addComponent(new JPanel(), mainPanel);
+		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName() + ":"), bottomHalf);
+		bottomHalf = addComponent(new JPanel(), bottomHalf);
+		bottomHalf = addComponent(continuousDataPanel, bottomHalf);
+		return mainPanel;
+	}
 	
 	private JPanel addComponent(JComponent newComponent, JPanel parent) {
 		JPanel bottomHalf = new JPanel();
@@ -288,10 +313,29 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
 				aggregator = new Aggregator(this, db, selectedCollection);
 			} else {
-				GregorianCalendar start = startTime.getDate();
-				GregorianCalendar end = endTime.getDate();
-				GregorianCalendar interval = intervalPeriod.getDate();
-
+				Calendar start = startTime.getDate();
+				Calendar end = endTime.getDate();
+				Calendar interval = intervalPeriod.getDate();
+			
+				if (end.before(start)) {
+					JOptionPane.showMessageDialog(
+	    					this, 
+	    					"Start time must come before end time...", 
+	    					"Invalid times used for aggregation basis", 
+	    					JOptionPane.ERROR_MESSAGE);
+	    			
+	    			return;
+				} else if (interval.get(Calendar.HOUR_OF_DAY) == 0 &&
+							interval.get(Calendar.MINUTE) == 0 &&
+							interval.get(Calendar.SECOND) == 0) {
+					JOptionPane.showMessageDialog(
+	    					this, 
+	    					"Time interval cannot be zero...", 
+	    					"Invalid times used for aggregation basis", 
+	    					JOptionPane.ERROR_MESSAGE);
+	    			
+	    			return;
+				}
 				aggregator = new Aggregator(this, db, start, end, interval);
 			}
 
