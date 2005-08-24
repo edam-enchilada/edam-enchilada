@@ -285,4 +285,6 @@ public interface InfoWarehouse {
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
 
 	public int getFirstAtomInCollection(Collection collection);
+	
+	public String getDynamicTableName(DynamicTable table, String datatype);
 }

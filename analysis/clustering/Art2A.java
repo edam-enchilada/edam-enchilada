@@ -76,7 +76,7 @@ public class Art2A extends Cluster
 	 * @param database
 	 */
 	public Art2A(int cID, InfoWarehouse database, float v, float lr, 
-			int passes,  DistanceMetric dMetric, String comment) {
+			int passes,  DistanceMetric dMetric, String comment, ClusterInformation c) {
 		super(cID, database, "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
 				passes + ",DMetric=" + dMetric, comment);
 		parameterString = "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
@@ -87,13 +87,8 @@ public class Art2A extends Cluster
 		distanceMetric = dMetric;
 		collectionID = cID;
 		totalDistancePerPass = new ArrayList<Double>();
-		size = db.getCollectionSize(collectionID);
-		
-		CopyOnWriteArraySet<String> set = new CopyOnWriteArraySet<String>();
-		set.add("ATOFMSAtomInfoDense.[LaserPower]");
-		set.add("ATOFMSAtomInfoDense.[Size]");
-		cInfo = new ClusterInformation(set, "Automatic",null);
-	
+		size = db.getCollectionSize(collectionID);	
+		cInfo = c;
 	}
 	
 	private BinnedPeakList adjustByLearningRate(

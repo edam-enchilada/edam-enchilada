@@ -2385,9 +2385,15 @@ public class SQLServerDatabase implements InfoWarehouse
 					listRS = stmt2.executeQuery("SELECT " + join(cInfo.valueColumns, ",") +
 							" FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, datatype) +
 							" WHERE AtomID = " + id);
+
 					listRS.next();
 					for (int i = 1; i <= cInfo.valueColumns.size(); i++) {
-						peakList.addNoChecks(i, listRS.getFloat(i));
+						//TODO: this is a hack; fix.
+						try {
+							peakList.addNoChecks(i, listRS.getFloat(i));
+						} catch (SQLException e) {
+							peakList.addNoChecks(i, listRS.getInt(i));
+						}
 					}
 				}
 				else {

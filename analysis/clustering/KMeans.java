@@ -73,10 +73,10 @@ public class KMeans extends ClusterK
 	 * @param comment -comment to enter
 	 */
 	public KMeans(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine) 
+			String name, String comment, boolean refine, ClusterInformation c) 
 			{
 				super(cID, database, k, 
-						name.concat("KMeans"), comment, refine);
+						name.concat("KMeans"), comment, refine, c);
 	}
 
 	/** 

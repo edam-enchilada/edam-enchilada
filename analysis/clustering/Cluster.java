@@ -122,7 +122,7 @@ public abstract class Cluster extends CollectionDivider {
 			BinnedPeakList inputList,
 			PrintWriter out)
 	{
-		out.println("Location:\tArea:");
+		out.println("Key:\tValue:");
 		Iterator<BinnedPeak> iter = inputList.iterator();
 		BinnedPeak tempPeak;
 		while (iter.hasNext())
@@ -385,8 +385,7 @@ public abstract class Cluster extends CollectionDivider {
 				if (outliers.numMembers == 0)
 					outliers.subCollectionNum = 
 						createSubCollection("Outliers", "Outliers");
-				putInSubCollectionBatch(thisParticleInfo.getParticleInfo().
-						getAtomID(),
+				putInSubCollectionBatch(thisParticleInfo.getID(),
 						outliers.subCollectionNum);
 				outliers.numMembers++;
 				System.out.println("Outlier #" + outliers.numMembers);

@@ -103,7 +103,7 @@ public abstract class ClusterK extends Cluster {
 	 * 
 	 */
 	public ClusterK(int cID, InfoWarehouse database, int k, 
-			String name, String comment, boolean refineCentroids) 
+			String name, String comment, boolean refineCentroids, ClusterInformation c) 
 	{
 		super(cID, database,name.concat(",K=" + k),comment);
 		this.k = k;
@@ -112,12 +112,8 @@ public abstract class ClusterK extends Cluster {
 		parameterString = name.concat(",K=" + k);
 		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
-		
-		CopyOnWriteArraySet<String> set = new CopyOnWriteArraySet<String>();
-		set.add("ATOFMSAtomInfoDense.[LaserPower]");
-		set.add("ATOFMSAtomInfoDense.[Size]");
-		cInfo = new ClusterInformation(set, "Automatic",null);
-	}
+		cInfo = c;
+		}
 	
 	/**
 	 * Divide refines the centroids if needed and calls the clustering method.

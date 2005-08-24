@@ -61,10 +61,10 @@ public class KMedians extends ClusterK {
 	 * @param database
 	 */
 	public KMedians(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine) 
+			String name, String comment, boolean refine, ClusterInformation c) 
 	{
 		super(cID, database, k, 
-				name.concat("KMedians"), comment, refine);
+				name.concat("KMedians"), comment, refine, c);
 	}
 
 	public int cluster() {

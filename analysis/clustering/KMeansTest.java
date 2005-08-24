@@ -40,6 +40,9 @@
 
 package analysis.clustering;
 
+import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 
@@ -79,7 +82,10 @@ public class KMeansTest extends TestCase {
         String name = "Test clustering";
         String comment = "Test comment";
         boolean refine = true;
-        kmeans = new KMeans(cID,db,k,name,comment,refine);
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false);
+        kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
     }
 
     /*
