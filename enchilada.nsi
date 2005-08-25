@@ -58,6 +58,7 @@ Section "EDAM Enchilada (required)"
   File "library.txt"
   File "MPL-1.1.txt"
   File "SQLServerRebuildDatabase.txt"
+  File "icon.ico"
   
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\EDAM_Enchilada "Install_Dir" "$INSTDIR"
@@ -76,13 +77,13 @@ Section "Start Menu Shortcuts"
 
   CreateDirectory "$SMPROGRAMS\EDAM Enchilada"
   CreateShortCut "$SMPROGRAMS\EDAM Enchilada\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\Enchilada.bat" 0
+  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\icon.ico" 0
   
 SectionEnd
 
 Section "Desktop Shortcut"
 
-	CreateShortCut "$DESKTOP\Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\Enchilada.bat" 0
+	CreateShortCut "$DESKTOP\Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\icon.ico" 0
 
 SectionEnd
 
@@ -109,6 +110,7 @@ Section "un.Uninstall"
   Delete $INSTDIR\*.par
   Delete $INSTDIR\*.set
   Delete $INSTDIR\uninstall.exe
+  Delete $INSTDIR\icon.ico
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\EDAM Enchilada\*.*"

@@ -162,9 +162,9 @@ public class MedianFinder {
 	}
 	
 	/**
-	 * Returns the minimum value that at least percent elements 
+	 * Returns the maximum value that at least some percent of the elements 
 	 * contain.
-	 * @param percent
+	 * @param percent (actually, percent / 100, a value between 0 and 1)
 	 * @return
 	 */
 	public BinnedPeakList getPercentElement(float percent)

@@ -71,6 +71,16 @@ public class DynamicTableGenerator extends DefaultHandler {
 		
 		DynamicTableGenerator handler = this;
 		
+		/* 
+		 * XXX: the parser looks in a dumb place for the DTD file.
+		 * On my system, it looks in the directory that the xml file is in
+		 * \temp\meta.dtd or whatever.  That is, it adds temp.  If that's
+		 * reliable, maybe we can put the dtd there before we parse.
+		 * 
+		 * It's unfortunate that the xml parser is dumb like that...
+		 */
+		
+		
 		try {
 			SAXParser parser = factory.newSAXParser();
 			parser.parse(fileName, handler);
