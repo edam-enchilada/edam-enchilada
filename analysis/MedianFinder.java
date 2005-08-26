@@ -207,11 +207,6 @@ public class MedianFinder {
 		// Get the median and calculate the starting magnitude
 		BinnedPeakList median = getMedian();
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
-		
-		/*assert(magnitude <= 1.001f) : "Median was larger than 1: " +
-			magnitude + " median: " + particles.size()/2 + " from: " + 
-			DEBUGprintMagnitudes() + " size = " + particles.size();*/
-		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)
 		{

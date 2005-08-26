@@ -86,6 +86,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	private JComboBox clusterDropDown, metricDropDown, averageClusterDropDown, infoTypeDropdown, denseKeyBox, sparseKeyBox;
 	private ArrayList<JRadioButton> denseButtons, sparseButtons, weightButtons;
 
+	// dropdown options
 	final static String ART2A = "Art2a";
 	final static String KCLUSTER = "K-Cluster";
 	final static String KMEANS = "K-Means / Euclidean Squared";
@@ -99,6 +100,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	final static String dense = "Dense Particle Information";
 	final static String sparse = "Sparse Particle Information";
 	final static String denseKey = " Key = Automatic (1, 2, 3, etc) ";
+	
 	private boolean refinedCentroids = true;
 	private String dMetric = CITY_BLOCK;
 	private String currentShowing = ART2A;
@@ -148,6 +150,10 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		setVisible(true);
 	}
 	
+	/**
+	 * creates panel that displays clustering algorithms.
+	 * @return JPanel
+	 */
 	public JPanel setClusteringAlgorithms() {
 		JLabel header = new JLabel("Cluster using: ");
 		
@@ -249,6 +255,10 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		return mainPanel;
 	}
 	
+	/**
+	 * creates the panel that displays the clustering specifications
+	 * @return JPanel
+	 */
 	public JPanel setClusteringSpecifications() {
 		// Set button arraylists
 		denseButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(), DynamicTable.AtomInfoDense);
@@ -335,6 +345,14 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		
 	}
 	
+	/**
+	 * gets the list of radio buttons in a scrollable pane; can be grouped
+	 * or ungrouped.
+	 * 
+	 * @param buttons - arraylist of buttons
+	 * @param grouped - true if grouped, false otherwise
+	 * @return JScrollPane
+	 */
 	public JScrollPane getButtonPane(ArrayList<JRadioButton> buttons, boolean grouped) {
 		JPanel pane = new JPanel();
 		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
@@ -421,6 +439,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		}
 		if (source == okButton) {
 			// TODO: error check here to make sure something is selected.
+			// TODO: make this more graceful.
 			// Get clustering specifications and create ClusterInformation object.
 			String infoType = (String)infoTypeDropdown.getSelectedItem();
 			ArrayList<String> list = new ArrayList<String>();
@@ -632,8 +651,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			}
 		}
 		if (source == advancedButton) {
-			//TODO:  Once AdvancedClusterDialog is in place, uncomment the line.
-			//new AdvancedClusterDialog((JDialog)this);
+			new AdvancedClusterDialog((JDialog)this);
 		}
 		else  
 			dispose();

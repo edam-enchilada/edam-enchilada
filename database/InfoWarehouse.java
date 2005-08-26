@@ -287,4 +287,6 @@ public interface InfoWarehouse {
 	public int getFirstAtomInCollection(Collection collection);
 	
 	public String getDynamicTableName(DynamicTable table, String datatype);
+	
+	public void addCompressedData(String datatype);
 }

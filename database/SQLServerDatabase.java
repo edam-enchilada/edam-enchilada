@@ -3428,5 +3428,22 @@ public class SQLServerDatabase implements InfoWarehouse
 		return atom;
 	}
 
+	public void addCompressedData(String datatype) {
+		try {
+			// add tables if they don't exist
+			if (!containsDatatype(datatype)) {
+				// insert columns into MetaData
+				//TODO;
+				Statement stmt = con.createStatement();
+				
+			}
+		}
+		catch(SQLException e) {
+			System.err.println("error creating compressed tables");
+		}
+		
+		
+	}
+
 }
 

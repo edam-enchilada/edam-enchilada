@@ -363,7 +363,7 @@ public abstract class ClusterK extends Cluster {
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
 				BinnedPeakList furthestPeakList = null;
-				double furthestGlobalDistance = Double.MIN_VALUE;
+				double furthestGlobalDistance = (double) 0;
 		        while (curs.next()) {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
 					BinnedPeakList thisBinnedPeakList =
@@ -383,8 +383,7 @@ public abstract class ClusterK extends Cluster {
 						if (distance < nearestDistance)
 							nearestDistance = distance;
 					}// end for each centroid
-					
-					if (nearestDistance > furthestGlobalDistance) {
+					if (nearestDistance >= furthestGlobalDistance) {
 					    furthestGlobalDistance = nearestDistance;
 					    furthestPeakList = thisBinnedPeakList;
 					}

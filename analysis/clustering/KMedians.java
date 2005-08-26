@@ -84,8 +84,9 @@ public class KMedians extends ClusterK {
 		{
 			// Using the atomID, find the atom's peak list.
 			atomID = particlesInCentroid.get(i).intValue();
-			curs.getPeakListfromAtomID(atomID).normalize(distanceMetric);
-			medianThis.add(curs.getPeakListfromAtomID(atomID));
+			BinnedPeakList temp = curs.getPeakListfromAtomID(atomID);
+			temp.normalize(distanceMetric);
+			medianThis.add(temp);
 		}
 		Centroid returnThis = null;
 		MedianFinder mf = null;

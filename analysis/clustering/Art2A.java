@@ -243,7 +243,6 @@ public class Art2A extends Cluster
 				else
 				{
 					System.out.println("Adding new centroid");
-
 					centroidList.add(new Centroid (thisBinnedPeakList,1));
 				}
 			}// end while there are particles remaining
