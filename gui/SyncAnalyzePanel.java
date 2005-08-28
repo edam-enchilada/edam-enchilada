@@ -29,6 +29,8 @@ public class SyncAnalyzePanel extends JPanel {
 	private JTextField[] conditionValue;
 	private JComboBox[] booleanOps;
 	
+	private Hashtable<Date, double[]> data;
+	private Dataset[] datasets;
 	private int numConditions = 2;
 	
 	private JButton exportToCSV, refresh;
@@ -70,7 +72,8 @@ public class SyncAnalyzePanel extends JPanel {
 		
 		exportToCSV.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
-				Hashtable<Date, double[]> data = setupBottomPane();
+				// Rebuild data, and show new graph before exporting...
+				setupBottomPane();
 				ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
 				Collections.sort(dateSet);
 				
@@ -81,13 +84,58 @@ public class SyncAnalyzePanel extends JPanel {
 						SimpleDateFormat dformat = new SimpleDateFormat("M/d/yyyy hh:mm:ss a");
 						File f = fc.getSelectedFile();
 						PrintWriter fWriter = new PrintWriter(f);
+
+						fWriter.println("R^2: " + datasets[0].getCorrelationStats(datasets[1]).r2);
 						
+						String condString = "";
+						for (int i = 0; i < numConditions; i++) {
+							Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
+							String condVal = conditionValue[i].getText().trim();
+							
+							if (condColl != null && conditionComp[i].getSelectedIndex() > 0 && !condVal.equals("")) {
+								if (condString.length() > 0)
+									condString += booleanOps[i - 1].getSelectedItem() + " ";
+								
+								condString += condColl + " " + conditionComp[i].getSelectedItem() + " " + condVal;
+							}
+						}
+						if (condString.length() == 0)
+							condString = "None";
+						else
+							condString = "\"" + condString + "\"";
+						
+						fWriter.println("Condition applied: " + condString);
+
+						Collection seq1 = (Collection) firstSeq.getSelectedItem();
+						Collection seq2 = (Collection) secondSeq.getSelectedItem();
+
+						String line1 = "";
+						String line2 = "Date";
+						if (seq1 != null) {
+							line1 += ",Sequence 1";
+							line2 += ",\"" + seq1.getName().replace("\"", "\"\"") + "\"";
+						}
+						if (seq2 != null) {
+							line1 += ",Sequence 2";
+							line2 += ",\"" + seq2.getName().replace("\"", "\"\"") + "\"";
+						}
+						int index = 1;
+						for (int i = 0; i < numConditions; i++) {
+							Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
+							if (condColl != null) {
+								line1 += ",Condition " + (index++);
+								line2 += ",\"" + condColl.getName().replace("\"", "\"\"") + "\"";
+							}
+						}
+						fWriter.println(line1);
+						fWriter.println(line2);
+								
 						for (Date d : dateSet)
 						{
 							double[] values = data.get(d);
 							fWriter.print(dformat.format(d));
 							for (int i = 0; i < values.length; i++)
-								fWriter.print(", " + values[i]);
+								fWriter.print("," + values[i]);
 							fWriter.println();
 						}
 						fWriter.close();
@@ -150,11 +198,10 @@ public class SyncAnalyzePanel extends JPanel {
 	}
 
 	
-	public Hashtable<Date, double[]> setupBottomPane() {		
+	public void setupBottomPane() {		
 		JPanel panePanel = new JPanel(new BorderLayout());
 		bottomPane.setViewportView(panePanel);
 		
-		Hashtable<Date, double[]> data = null;
 		Collection seq1 = (Collection) firstSeq.getSelectedItem();
 		Collection seq2 = (Collection) secondSeq.getSelectedItem();
 
@@ -187,7 +234,7 @@ public class SyncAnalyzePanel extends JPanel {
 			int numSequences = (seq2 != null ? 2 : 1);
 			int numSets = numSequences + condCollections.size();
 			
-			Dataset[] datasets = new Dataset[numSets];
+			datasets = new Dataset[numSets];
 			for (int i = 0; i < numSets; i++)
 				datasets[i] = new Dataset();
 			
@@ -268,7 +315,7 @@ public class SyncAnalyzePanel extends JPanel {
 			if (numSequences > 1) {
 				Chart scatterChart = new Chart(2, true);
 				scatterChart.setHasKey(false);
-				scatterChart.setTitle("<html><b>Time Series Scatter Plot</b></html>");
+				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
 				scatterChart.setTitleY(0, "Sequence 1 Value");
 				scatterChart.setTitleY(1, "Sequence 2 Value");
 				scatterChart.setAxisBounds(0, startTime - 1000, lastTimePoint + 1000, 0, maxValue[0]);
@@ -287,8 +334,6 @@ public class SyncAnalyzePanel extends JPanel {
 			textPanel.add(new JLabel("No data matches query"));
 			panePanel.add(textPanel, BorderLayout.CENTER);
 		}
-		
-		return data;
 	}
 	
 	private JPanel addComponent(JComponent newComponent, JPanel parent) {
