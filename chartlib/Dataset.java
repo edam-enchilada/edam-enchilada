@@ -51,6 +51,8 @@ import java.util.*;
  */
 public class Dataset extends TreeSet<DataPoint>
 {
+	private Statistics cachedStats = null;
+	private Dataset lastCorrelatedDataset = null;
 	
 	/**
 	 * Empty dataset.
@@ -122,4 +124,47 @@ public class Dataset extends TreeSet<DataPoint>
 		return get(x, 1);
 	}
 
+	public Statistics getCorrelationStats(Dataset dataset2) {
+		if (lastCorrelatedDataset == dataset2)
+			return cachedStats;
+		
+		double sumxx = 0, sumxy = 0, sumyy = 0, sumx = 0, sumy = 0;
+		int numValidPoints = 0;
+		
+		Iterator<DataPoint> iterator = iterator();
+		while(iterator.hasNext())
+		{
+			DataPoint dpX = iterator.next();
+			DataPoint dpY = dataset2.get(dpX.x);
+			
+			if (dpY != null) {
+				numValidPoints++;
+				double x = dpX.y, y = dpY.y;
+				
+				sumx += x;
+				sumy += y;
+				sumxx += x * x;
+				sumxy += x * y;
+				sumyy += y * y;
+			}
+		}
+
+		double Sxx = sumxx - (sumx * sumx / numValidPoints);
+		double Sxy = sumxy - (sumx * sumy / numValidPoints);
+		double Syy = sumyy - (sumy * sumy / numValidPoints);
+
+		Statistics ret = new Statistics();
+		ret.b = Sxy / Sxx;
+		ret.a = (sumy - ret.b * sumx) / numValidPoints;
+		ret.r2 = (Sxy * Sxy) / (Sxx * Syy);
+		
+		lastCorrelatedDataset = dataset2;
+		cachedStats = ret;
+		
+		return ret;
+	}
+	
+	public static class Statistics {
+		public double a, b, r2;
+	}
 }

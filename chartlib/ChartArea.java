@@ -878,9 +878,6 @@ public class ChartArea extends JComponent {
 		assert(dataset1 != null && dataset2 != null);
 		assert(dataset1.size() == dataset2.size());
 		
-		double sumxx = 0, sumxy = 0, sumx = 0, sumy = 0;
-		int numValidPoints = 0;
-		
 		GraphAxis xAxis = getYAxis(0);
 		GraphAxis yAxis = getYAxis(1);
 		Rectangle dataArea = getDataAreaBounds();
@@ -901,13 +898,7 @@ public class ChartArea extends JComponent {
 			DataPoint dpY = dataset2.get(dpX.x);
 			
 			if (dpY != null) {
-				numValidPoints++;
 				double x = dpX.y, y = dpY.y;
-				
-				sumx += x;
-				sumy += y;
-				sumxx += x * x;
-				sumxy += x * y;
 				
 				double xCoord = xAxis.relativePosition(x) * dataArea.width + dataArea.x;
 				double yCoord = dataArea.y + dataArea.height 
@@ -916,14 +907,11 @@ public class ChartArea extends JComponent {
 				g2d.draw(new Line2D.Double(xCoord, yCoord, xCoord, yCoord));
 			}
 		}
-
-		double Sxx = sumxx - (sumx * sumx / numValidPoints);
-		double Sxy = sumxy - (sumx * sumy / numValidPoints);
-		double b = Sxy / Sxx;
-		double a = (sumy - b * sumx) / numValidPoints;
 		
-		double leftSideY = b * xAxis.getMin() + a;
-		double rightSideY = b * xAxis.getMax() + a;
+		Dataset.Statistics stats = dataset1.getCorrelationStats(dataset2);
+		
+		double leftSideY = stats.b * xAxis.getMin() + stats.a;
+		double rightSideY = stats.b * xAxis.getMax() + stats.a;
 		
 		double startX = dataArea.x;
 		double startY = dataArea.y + dataArea.height 

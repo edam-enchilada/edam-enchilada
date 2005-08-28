@@ -582,6 +582,9 @@ public class Chart extends JPanel
 		assert(combineCharts);
 		
 		chartAreas[0].drawAsScatterPlot();
+
+		Dataset.Statistics stats = datasets[0].getCorrelationStats(datasets[1]);
+		setTitle(String.format(title, stats.r2));
 	}
 
 	/**
