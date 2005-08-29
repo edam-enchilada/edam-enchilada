@@ -158,25 +158,20 @@ public class CollectionTree extends JPanel
     
     
     public Collection[] getCollectionsUpFrom(Collection collection) {
-    	return getCollectionsUpFromRec(1, (Collection) treeModel.getRoot(), collection);
-    }
-
-    private Collection[] getCollectionsUpFromRec(int depth, Collection curNode, Collection collectionToFind) {
-    	Collection[] foundList = null;
+    	Collection root = (Collection) treeModel.getRoot();
     	
-		if (curNode.equals(collectionToFind)) 
-			foundList = new Collection[depth];
-		
-    	for (int i = 0; foundList == null && i < treeModel.getChildCount(curNode); i++) {
-    		Collection childNode = (Collection) treeModel.getChild(curNode, i);
-    		foundList = getCollectionsUpFromRec(depth + 1, childNode, collectionToFind);
+    	ArrayList<Collection> foundCollections = new ArrayList<Collection>();
+    	while (collection != root) {
+    		foundCollections.add(collection);
+    		collection = collection.getParentCollection();
     	}
+    	foundCollections.add(root);
     	
-		if (foundList != null)
-			foundList[depth - 1] = curNode;
-		
-    	return foundList;
-    	
+    	Collection[] ret = new Collection[foundCollections.size()];
+    	for (int i = 0; i < foundCollections.size(); i++)
+    		ret[i] = foundCollections.get(foundCollections.size() - i - 1);
+
+    	return ret;
     }
     
     public Collection[] getSelectedCollections() {

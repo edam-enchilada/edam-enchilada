@@ -173,6 +173,8 @@ public class CollectionModel implements TreeModel {
 
 	protected void fireTreeStructureChanged(Collection[] nodePathList)
 	{
+		collectionLookup.clear();
+		
 		Collection[] newNodeList = new Collection[nodePathList.length - 1];
 		for (int i = 0; i < newNodeList.length; i++)
 			newNodeList[i] = nodePathList[i];
@@ -186,6 +188,7 @@ public class CollectionModel implements TreeModel {
 		} else {
 			newNodeList[newNodeList.length - 1].clearCachedChildren();
 			e = new TreeModelEvent(this, newNodeList);
+			retouchCache(newNodeList[newNodeList.length - 1]);
 		}
 		
 
@@ -195,5 +198,10 @@ public class CollectionModel implements TreeModel {
 	     // those that are interested in this event
 	     for (int i = 0; i < listeners.length; i++) 
 	         listeners[i].treeStructureChanged(e);
+	}
+	
+	private void retouchCache(Collection c) {
+		for (int i = 0; i < getChildCount(c); i++)
+			retouchCache((Collection) getChild(c, i));
 	}
 }
