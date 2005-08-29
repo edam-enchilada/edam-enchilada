@@ -3213,7 +3213,16 @@ public class SQLServerDatabase implements InfoWarehouse
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
 			String sql = 
 				tempAtomTableStr + 
-				"";
+				"insert @atoms (Time, Value) \n" +
+				"select BasisTimeStart, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
+				"from TimeSeriesAtomInfoDense AID \n" +
+				"join AtomMembership AM on (AID.AtomID = AM.AtomID) \n" +
+				"join #TempAggBasis" + instance + " TB \n" +
+				"     on ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL) \n" +
+				"     and (AID.Time < TB.BasisTimeEnd    OR TB.BasisTimeEnd IS NULL)) \n" +
+				"where AM.CollectionID in (" + join(collectionIDTree, ",") + ") \n" +
+				"group by BasisTimeStart \n" +
+				"order by BasisTimeStart \n\n";
 
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 			int nextAtomID = getNextID();

@@ -174,29 +174,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		tolerancePanel.add(slider, BorderLayout.WEST);
 		tolerancePanel.add(peakTolerance, BorderLayout.CENTER);
 		
-		JRadioButton combWithSum = new JRadioButton("Sum");
-		JRadioButton combWithAverage = new JRadioButton("Average");
-		
-		combWithSum.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (((JRadioButton) e.getSource()).isSelected())
-					options.combMethod = AggregationOptions.CombiningMethod.SUM;
-			}
-		});
-		
-		combWithAverage.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (((JRadioButton) e.getSource()).isSelected())
-					options.combMethod = AggregationOptions.CombiningMethod.AVERAGE;
-			}
-		});
-		
-	    ButtonGroup group = new ButtonGroup();
-	    group.add(combWithSum);
-	    group.add(combWithAverage);
-	    combWithSum.setSelected(options.combMethod == AggregationOptions.CombiningMethod.SUM);
-	    combWithAverage.setSelected(options.combMethod == AggregationOptions.CombiningMethod.AVERAGE);
-
 	    JCheckBox partCount = new JCheckBox();
 	    partCount.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent evt) {
@@ -233,6 +210,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    	}
 	    });
 	    
+	    ButtonGroup bg = getValueCombiningButtons(options);
+	    Enumeration<AbstractButton> combiningButtons = bg.getElements();
+	    
 		JPanel mainPanel = new JPanel();
 		
 		JPanel partCountPanel = new JPanel(new BorderLayout(10, 0));
@@ -247,8 +227,10 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JLabel("Combining Method:"), bottomHalf);
-		bottomHalf = addComponent(combWithSum, bottomHalf);
-		bottomHalf = addComponent(combWithAverage, bottomHalf);
+		
+		while (combiningButtons.hasMoreElements())
+			bottomHalf = addComponent(combiningButtons.nextElement(), bottomHalf);
+		
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(partCountPanel, bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
@@ -258,7 +240,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		
 		return mainPanel;
 	}
-
+	
 	private JPanel getTimeSeriesPanel(Collection collection) {
 		final AggregationOptions options = collection.getAggregationOptions();
 		
@@ -270,6 +252,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		});
 	    isContinuousData.setSelected(options.treatDataAsContinuous);
 	    
+	    ButtonGroup bg = getValueCombiningButtons(options);
+	    Enumeration<AbstractButton> combiningButtons = bg.getElements();
+	    
 		JPanel continuousDataPanel = new JPanel(new BorderLayout(10, 0));
 		continuousDataPanel.add(isContinuousData, BorderLayout.WEST);
 		continuousDataPanel.add(new JLabel("<html>Treat Data as Continuous</html>"), BorderLayout.CENTER);
@@ -279,7 +264,41 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName() + ":"), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(continuousDataPanel, bottomHalf);
+		bottomHalf = addComponent(new JPanel(), bottomHalf);
+		bottomHalf = addComponent(new JPanel(), bottomHalf);
+		bottomHalf = addComponent(new JLabel("Combining Method:"), bottomHalf);
+		
+		while (combiningButtons.hasMoreElements())
+			bottomHalf = addComponent(combiningButtons.nextElement(), bottomHalf);
+		
 		return mainPanel;
+	}
+
+	private ButtonGroup getValueCombiningButtons(final AggregationOptions options) {
+		JRadioButton combWithSum = new JRadioButton("Sum");
+		JRadioButton combWithAverage = new JRadioButton("Average");
+		
+		combWithSum.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (((JRadioButton) e.getSource()).isSelected())
+					options.combMethod = AggregationOptions.CombiningMethod.SUM;
+			}
+		});
+		
+		combWithAverage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (((JRadioButton) e.getSource()).isSelected())
+					options.combMethod = AggregationOptions.CombiningMethod.AVERAGE;
+			}
+		});
+		
+	    ButtonGroup group = new ButtonGroup();
+	    group.add(combWithSum);
+	    group.add(combWithAverage);
+	    combWithSum.setSelected(options.combMethod == AggregationOptions.CombiningMethod.SUM);
+	    combWithAverage.setSelected(options.combMethod == AggregationOptions.CombiningMethod.AVERAGE);
+
+	    return group;
 	}
 	
 	private JPanel addComponent(JComponent newComponent, JPanel parent) {
