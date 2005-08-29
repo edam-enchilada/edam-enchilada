@@ -88,15 +88,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private SQLServerDatabase db;
 	private JTable particlesTable;
 	private int curRow;
-	private int numIonRows; 
 	
 	private LabelLoader labelLoader;
 	private AbstractTableModel peaksDataModel;
 	private ArrayList<ATOFMS.Peak> peaks;
 	private ArrayList<Peak> posPeaks;
 	private ArrayList<Peak> negPeaks;
-	private ArrayList<LabelingIon> negIons;
-	private ArrayList<LabelingIon> posIons;
 	private ArrayList<LabelingIon> posLabels;
 	private ArrayList<LabelingIon> negLabels;
 	private Dataset posSpecDS, negSpecDS;
@@ -105,6 +102,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private double selectedMZ = 0;
 	
 	private boolean spectrumLoaded = false;
+
+	private ArrayList<LabelingIon> negIons;
+	private ArrayList<LabelingIon> posIons;
+	
+	// Make sure that queued threads don't waste work 
+	// (since only last-queued thread in each window will matter)
+	private int numRunningThreads = 0;
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
 	private static final int DEFAULT_XMIN = 0;
@@ -116,6 +120,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	// Object to hold sync-lock to make sure that any calls to Lei's external labeling
 	// code are synchronized (since only one spectrum can be labeled at a time)
 	private static Object labelLock = new Object();
+	
+	private static ArrayList<LabelingIon> cachedNegIons;
+	private static ArrayList<LabelingIon> cachedPosIons;
+	private static int numIonRows;
 	
 	static {
 		File f = new File("config.ini");
@@ -148,9 +156,32 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * Both begin empty.
 	 * @param chart
 	 */
-	public ParticleAnalyzeWindow(SQLServerDatabase db, JTable dt, int curRow) {
+	public ParticleAnalyzeWindow(final SQLServerDatabase db, JTable dt, int curRow) {
 		super();
+		
+		// Do one-time loading of ion signature information from file, db
+		if (cachedNegIons == null) {
+			cachedPosIons = new ArrayList<LabelingIon>();
+			cachedNegIons = new ArrayList<LabelingIon>();
+			buildLabelSigs(labelingDir + "/pion-sigs.txt", cachedPosIons);
+			buildLabelSigs(labelingDir + "/nion-sigs.txt", cachedNegIons);
+		
+			numIonRows = Math.max(cachedPosIons.size(), cachedNegIons.size());
+			
+			db.syncWithIonsInDB(cachedPosIons, cachedNegIons);
+		}
 
+		// Fill in this window's array of ions. Note: most data is cached
+		// for efficiency, but ions still need to be per-window, since they hold
+		// onto their checkbox states per-window
+		posIons = new ArrayList<LabelingIon>(numIonRows);
+		for (LabelingIon ion : cachedPosIons)
+			posIons.add(new LabelingIon(ion));
+		
+		negIons = new ArrayList<LabelingIon>(numIonRows);
+		for (LabelingIon ion : cachedNegIons)
+			negIons.add(new LabelingIon(ion));
+		
 		setSize(800, 600);
 		setLocation(10, 10);
 		
@@ -225,13 +256,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		JPanel peaksPanel = new JPanel(new BorderLayout());
 		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
 		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
-        
-		negIons = new ArrayList<LabelingIon>();
-		posIons = new ArrayList<LabelingIon>();
-		buildLabelSigs(labelingDir + "/nion-sigs.txt", negIons);
-		buildLabelSigs(labelingDir + "/pion-sigs.txt", posIons);
-		
-		numIonRows = Math.max(negIons.size(), posIons.size());
 		
 		JPanel sigPanel = new JPanel(new BorderLayout());
 
@@ -240,12 +264,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		signatures.add(new JLabel("Positive Ions:"));
 		for (int i = 0; i < numIonRows; i++) {
 			if (i < negIons.size())
-				signatures.add(negIons.get(i).getCheckboxPanelForIon());
+				signatures.add(negIons.get(i).getCheckboxPanelForIon(this));
 			else
 				signatures.add(new JPanel());
 			
 			if (i < posIons.size())
-				signatures.add(posIons.get(i).getCheckboxPanelForIon());
+				signatures.add(posIons.get(i).getCheckboxPanelForIon(this));
 			else
 				signatures.add(new JPanel());
 		}
@@ -255,7 +279,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		labelText = new JTextPane();
 		labelText.setEditable(false);
-		labelText.setContentType("text/html");
+		labelText.setContentType("text/html");			
+		labelText.setText("Processing labels...");
 		JScrollPane labelScrollPane = new JScrollPane(labelText);
 		
 		JPanel labelPanel = new JPanel(new BorderLayout());
@@ -295,7 +320,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				labelingControlPane.setVisible(isSelected);
 				
 				if (isSelected) {
-					doLabeling();
+					doLabeling(false);
 					mainControlPane.setDividerLocation(lastDividerLocation);
 				} else {
 					lastDividerLocation = mainControlPane.getDividerLocation();
@@ -324,6 +349,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			labelPeaks.setEnabled(false);
 			labelPeaks.setToolTipText("Can't label -- label code/data not found in subfolder: '" + labelingDir + "'");
 		}
+		
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				db.saveAtomRemovedIons(atomID, posIons, negIons);
+			}
+		});
 	}
 	
 	private void buildLabelSigs(String fileName, ArrayList<LabelingIon> ionListToBuild) {
@@ -372,8 +403,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			}
 		}
 
-		labelLoader.invalidate();
-		doLabeling();
+		doLabeling(true);
 		
 		//sets up chart to detect mouse hits on peaks
 		double[] xCoords = new double[posPeaks.size()];
@@ -405,11 +435,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		unZoom();
 	}
 	
-	private void doLabeling() {
+	public void doLabeling(boolean forceLabeling) {
+		// Force Labeling means we want to make sure to always  
+		// label, even if valid labels are already loaded 
+		if (forceLabeling)
+			labelLoader.invalidate();
+		
 		if (!labelLoader.hasValidLabels() && labelPeaks.isSelected()) {
-			labelText.setText("Processing labels...");
 			// Fire up labeling process...
-			
 			labelLoader.loadLabels();
 		}
 	}
@@ -459,6 +492,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		System.out.println(peakString);
 		setPeaks(peaks, atomID, filename);		
+
+		db.buildAtomRemovedIons(atomID, posIons, negIons);
 	}
 	
 	/**
@@ -543,20 +578,19 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	public void actionPerformed(ActionEvent e)
 	{
-		if(peaks.size() == 0)
-		{
-			return;
-		}
-		
 		Object source = e.getSource();
 		if (source == peakButton)
 			displayPeaks();
 		else if (source == specButton)
 			displaySpectrum();
-		else if (source == prevButton)
-			showPreviousParticle();
-		else if (source == nextButton)
-			showNextParticle();
+		else if (source == prevButton || source == nextButton) {
+			db.saveAtomRemovedIons(atomID, posIons, negIons);
+			
+			if (source == prevButton)
+				showPreviousParticle();
+			else
+				showNextParticle();
+		}
 		else if (source == zoomOutButton)
 			unZoom();
 	}
@@ -728,7 +762,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		ArrayList<LabelingIon> ionList             = selectedMZ < 0 ? negIons : posIons;
 		Hashtable<LabelingIon, Double> labeledIons = selectedMZ < 0 ? labelLoader.foundNegIons : labelLoader.foundPosIons;
 		
-		int selectedMZRounded = (int) Math.abs(selectedMZ);
+		int selectedMZRounded = (int) Math.round(Math.abs(selectedMZ));
 		
 		for (int i = 0; i < ionList.size(); i++) {
 			LabelingIon ion = ionList.get(i);
@@ -761,7 +795,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		public Hashtable<LabelingIon, Double> foundNegIons;
 
 		private ParticleAnalyzeWindow callbackWindow;
-		private Thread runningThread = null;
 		
 		public LabelLoader(ParticleAnalyzeWindow callbackWindow) {
 			this.callbackWindow = callbackWindow;
@@ -770,8 +803,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		public void loadLabels() {
 			// Only run if signature data was found...
 			if (numIonRows > 0) {
-				runningThread = new Thread(this);
-				runningThread.start();
+				numRunningThreads++;
+				new Thread(this).start();
 			}
 		}
 		
@@ -781,75 +814,86 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		public void run() {
 			// Only one thread at a time should run...
 			synchronized (labelLock) {
-				ArrayList<LabelingIon> negWrittenIons = new ArrayList<LabelingIon>();
-				ArrayList<LabelingIon> posWrittenIons = new ArrayList<LabelingIon>();
-				try {
-					writeSpectrum(labelingDir + "/spc_positive.txt", posPeaks);
-					writeSpectrum(labelingDir + "/spc_negative.txt", negPeaks);
-					writeSignature(labelingDir + "/temp_pion-sigs.txt", posIons, posWrittenIons);
-					writeSignature(labelingDir + "/temp_nion-sigs.txt", negIons, negWrittenIons);
-					
-					// Run labeling program:
-					
-					ProcessBuilder pb = new ProcessBuilder(System.getProperty("user.dir") + "/" + labelingDir + "/run.bat");
-					pb.directory(new File(labelingDir));
-					Process p = pb.start();
-	
-				    BufferedReader br =
-				    	new BufferedReader(new InputStreamReader(p.getInputStream()));
-	
-				    while (br.readLine() != null) {}
-				    
-				    // And read in its output:
-				    
-				    foundPosIons = new Hashtable<LabelingIon, Double>();
-				    foundNegIons = new Hashtable<LabelingIon, Double>();
-					
-				    Scanner s = new Scanner(new File(labelingDir + "/label_positive.txt"));
-				    s.nextLine();
-					if (s.hasNext()) {
-						String[] tokens = s.nextLine().split(" ");
-	
-						for (int i = 0; i <  tokens.length / 2; i++) { 
-							foundPosIons.put(posWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
-									Double.parseDouble(tokens[2 * i + 1]));
-	
+				labelText.setText("Processing labels...");
+				if (numRunningThreads == 1) {
+					ArrayList<LabelingIon> negWrittenIons = new ArrayList<LabelingIon>();
+					ArrayList<LabelingIon> posWrittenIons = new ArrayList<LabelingIon>();
+					try {
+						writeSpectrum(labelingDir + "/spc_positive.txt", posPeaks);
+						writeSpectrum(labelingDir + "/spc_negative.txt", negPeaks);
+						writeSignature(labelingDir + "/temp_pion-sigs.txt", posIons, posWrittenIons);
+						writeSignature(labelingDir + "/temp_nion-sigs.txt", negIons, negWrittenIons);
+						
+						// Run labeling program:
+						
+						ProcessBuilder pb = new ProcessBuilder(System.getProperty("user.dir") + "/" + labelingDir + "/run.bat");
+						pb.directory(new File(labelingDir));
+						Process p = pb.start();
+		
+					    BufferedReader br =
+					    	new BufferedReader(new InputStreamReader(p.getInputStream()));
+		
+					    while (br.readLine() != null) {}
+					    
+					    // And read in its output:
+					    
+					    foundPosIons = new Hashtable<LabelingIon, Double>();
+					    foundNegIons = new Hashtable<LabelingIon, Double>();
+						
+					    Scanner s = new Scanner(new File(labelingDir + "/label_positive.txt"));
+					    if (s.hasNext()) {
+						    s.nextLine();
+							String[] tokens = s.nextLine().split(" ");
+		
+							for (int i = 0; i <  tokens.length / 2; i++) { 
+								foundPosIons.put(posWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
+										Double.parseDouble(tokens[2 * i + 1]));
+		
+							}
+					    }
+						s.close();
+						
+					    s = new Scanner(new File(labelingDir + "/label_negative.txt"));
+						if (s.hasNext()) {
+							s.nextLine();
+							String[] tokens = s.nextLine().split(" ");
+		
+							for (int i = 0; i <  tokens.length / 2; i++) { 
+								foundNegIons.put(negWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
+										Double.parseDouble(tokens[2 * i + 1]));
+		
+							}
 						}
-					}
-					s.close();
-					
-				    s = new Scanner(new File(labelingDir + "/label_negative.txt"));
-				    s.nextLine();
-					if (s.hasNext()) {
-						String[] tokens = s.nextLine().split(" ");
-	
-						for (int i = 0; i <  tokens.length / 2; i++) { 
-							foundNegIons.put(negWrittenIons.get(Integer.parseInt(tokens[2 * i])), 
-									Double.parseDouble(tokens[2 * i + 1]));
-	
-						}
-					}
-					s.close();
-	
-					hasValidLabels = true;
-					callbackWindow.setLabels();
-					
-					new File(labelingDir + "/spc_positive.txt").delete();
-					new File(labelingDir + "/spc_negative.txt").delete();
-					new File(labelingDir + "/temp_pion-sigs.txt").delete();
-					new File(labelingDir + "/temp_nion-sigs.txt").delete();
-					new File(labelingDir + "/label_negative.txt").delete();
-					new File(labelingDir + "/label_positive.txt").delete();
-				} 
-				catch (IOException e) { e.printStackTrace(); }
+						s.close();
+		
+						hasValidLabels = true;
+
+						// Other threads could have already started...
+						// Only update label window if this is the only (last) one.
+						if (numRunningThreads == 1)
+							callbackWindow.setLabels();
+						
+						new File(labelingDir + "/spc_positive.txt").delete();
+						new File(labelingDir + "/spc_negative.txt").delete();
+						new File(labelingDir + "/temp_pion-sigs.txt").delete();
+						new File(labelingDir + "/temp_nion-sigs.txt").delete();
+						new File(labelingDir + "/label_negative.txt").delete();
+						new File(labelingDir + "/label_positive.txt").delete();
+					} 
+					catch (IOException e) { e.printStackTrace(); }
+				} else {
+					System.out.println("Thread never ran... num queued: " + numRunningThreads);
+				}
 			}
+			
+			numRunningThreads--;
 		}
 		
 		private void writeSpectrum(String spectrumFileName, ArrayList<Peak> peaks) throws FileNotFoundException {
 			PrintStream writer = new PrintStream(new File(spectrumFileName));
 			writer.println("1");
 			for (Peak p : peaks)
-				writer.printf("%d %d ", (int) Math.abs(p.massToCharge), (int) p.area);
+				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.area);
 			writer.print("-1");
 			writer.close();
 		}
@@ -864,58 +908,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				}
 			}
 			writer.close();	
-		}
-	}
-	
-	private class LabelingIon {
-		private JCheckBox checkBox;
-		
-		public String name;
-		public int[] mzVals;
-		public double[] ratios;
-		
-		private boolean isValidIon = true;
-		private String stringRep;
-		
-		public LabelingIon(String stringRep) {
-			this.stringRep = stringRep;
-			try {
-				stringRep = stringRep.replaceAll("  ", " ");
-				String[] tokens = stringRep.split(" ");
-				name = tokens[0];
-				
-				int numMZVals = (tokens.length - 2) / 2;
-				mzVals = new int[numMZVals];
-				ratios = new double[numMZVals];
-	
-				for (int i = 0; i < numMZVals; i++) {
-					mzVals[i] = Integer.parseInt(tokens[i * 2 + 1]);
-					ratios[i] = Double.parseDouble(tokens[i * 2 + 1]);
-				}
-			} catch (NumberFormatException e) {
-				System.err.println("Invalid ion string: " + stringRep);
-				isValidIon = false;
-			}
-		}
-		
-		public boolean isValid() { return isValidIon; }
-		public boolean isChecked() { return checkBox.isSelected(); }
-		public String toString() { return stringRep; }
-		
-		public JPanel getCheckboxPanelForIon() {
-			JPanel ionPanel = new JPanel(new BorderLayout());
-			checkBox = new JCheckBox();
-			checkBox.setSelected(true);
-			ionPanel.add(checkBox, BorderLayout.WEST);
-			ionPanel.add(new JLabel(name), BorderLayout.CENTER);
-			
-			checkBox.addItemListener(new ItemListener() {
-				public void itemStateChanged(ItemEvent evt) {
-					labelLoader.invalidate();
-					doLabeling();
-				}
-			});
-			return ionPanel;
 		}
 	}
 	

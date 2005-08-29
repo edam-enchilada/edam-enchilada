@@ -75,3 +75,5 @@ CREATE TABLE TimeSeriesDataSetInfo([DataSetID] INT, OrigCollectionID INT NULL, [
 CREATE TABLE TimeSeriesAtomInfoDense([AtomID] INT, [Time] DATETIME, [Value] REAL, PRIMARY KEY ([AtomID]))
 CREATE TABLE ValueMaps(ValueMapID INT PRIMARY KEY IDENTITY, Name VARCHAR(100))
 CREATE TABLE ValueMapRanges(ValueMapID INT, Value INT, Low INT, High INT, FOREIGN KEY (ValueMapID) REFERENCES ValueMaps(ValueMapID))
+CREATE TABLE IonSignature(IonID INT PRIMARY KEY IDENTITY, IsPositive BIT, Name VARCHAR(7000))
+CREATE TABLE AtomIonSignaturesRemoved(AtomID INT, IonID INT, PRIMARY KEY (AtomID, IonID), FOREIGN KEY (IonID) REFERENCES IonSignature(IonID))

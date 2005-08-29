@@ -45,6 +45,7 @@
 package database;
 
 import gui.ProgressBarWrapper;
+import gui.LabelingIon;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -284,5 +285,8 @@ public interface InfoWarehouse {
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
 
+	public void syncWithIonsInDB(ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
+	public void saveAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
+	public void buildAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
 	public int getFirstAtomInCollection(Collection collection);
 }

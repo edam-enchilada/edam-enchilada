@@ -22,6 +22,7 @@
  * Ben J Anderson andersbe@gmail.com
  * David R Musicant dmusican@carleton.edu
  * Anna Ritz ritza@carleton.edu
+ * Greg Cipriano gregc@cs.wisc.edu
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -3213,6 +3214,14 @@ public class SQLServerDatabase implements InfoWarehouse
 			String sql = 
 				tempAtomTableStr + 
 				"";
+
+			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
+			int nextAtomID = getNextID();
+
+			String formattedSql = String.format(sql, nextAtomID);
+			
+			progressBar.increment("  " + collectionName);
+			fillAtomsFromMemoryTable(collectionName, newCollectionID, formattedSql);
 		}
 	}
 	
@@ -3333,11 +3342,112 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving time series data.");
-			System.err.println("Error time series data.");
+			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		}
 		
 		return retData;
+	}
+
+	public void syncWithIonsInDB(ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons) {
+		String sqlStr =
+			"SET NOCOUNT ON \n" + 
+ 			"DECLARE @sigs TABLE ( \n" +
+			"    Name varchar(8000), \n" +
+			"    IsPositive bit \n" +
+			")";
+	
+		for (LabelingIon ion : posIons)
+			sqlStr += "insert @sigs values ('" + ion.name + "', 1) \n";
+		
+		for (LabelingIon ion : negIons)
+			sqlStr += "insert @sigs values ('" + ion.name + "', 0) \n";
+	
+		// Add any new ions from file into database
+		sqlStr += 
+			"insert IonSignature (Name, IsPositive) \n" +
+			"select S.Name, S.IsPositive \n" +
+			"from @sigs S \n" +
+			"left outer join IonSignature IONS on (S.Name = IONS.Name and S.IsPositive = IONS.IsPositive) \n" +
+			"where IONS.IonID IS NULL \n\n" +
+	
+		// And then get all IonIDs in signature file back for later use...
+			"select IONS.IonID, IONS.Name, IONS.IsPositive \n" +
+			"from @sigs S \n" +
+			"join IonSignature IONS on (S.Name = IONS.Name and S.IsPositive = IONS.IsPositive) \n" + 
+			
+			"SET NOCOUNT OFF";
+		
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(sqlStr);
+
+			while (rs.next()) {
+				ArrayList<LabelingIon> arrToLookThrough = rs.getBoolean("IsPositive") ? posIons : negIons;
+				String ionName = rs.getString("Name");
+				for (LabelingIon ion : arrToLookThrough) {
+					if (ion.name.equals(ionName))
+						ion.ionID = rs.getInt("IonID");
+				}
+			}
+			
+			rs.close();
+		} catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving Ion data.");
+			System.err.println("Error retrieving Ion data.");
+			e.printStackTrace();
+		}
+	}
+	
+	public void saveAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons) {
+		String sqlStr =
+			"DECLARE @removedIons TABLE ( IonID int ) \n";
+		
+		for (LabelingIon ion : posIons)
+			if (!ion.isChecked())
+				sqlStr += "insert @removedIons values (" + ion.ionID + ") \n";
+		
+		for (LabelingIon ion : negIons)
+			if (!ion.isChecked())
+				sqlStr += "insert @removedIons values (" + ion.ionID + ") \n";
+		
+		sqlStr += "delete from AtomIonSignaturesRemoved where AtomID = " + atomID + "\n\n";
+		sqlStr += 
+			"insert AtomIonSignaturesRemoved (AtomID, IonID) \n" +
+			"select " + atomID + ", IonID from @removedIons";
+		
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute(sqlStr);
+		} catch (SQLException e){
+			new ExceptionDialog("SQL exception saving removed Ion data.");
+			System.err.println("Error saving removed Ion data.");
+			e.printStackTrace();
+		}	
+	}
+	
+	public void buildAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons) {
+		Set<Integer> removedIDs = new HashSet<Integer>();
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("select IonID from AtomIonSignaturesRemoved where AtomID = " + atomID);
+
+			while (rs.next())
+				removedIDs.add(rs.getInt("IonID"));
+			
+			rs.close();
+		} catch (SQLException e){
+			new ExceptionDialog("SQL exception retrieving removed Ion data.");
+			System.err.println("Error retrieving removed Ion data.");
+			e.printStackTrace();
+		}
+		
+		for (LabelingIon ion : posIons)
+			ion.setChecked(!removedIDs.contains(ion.ionID));
+
+		for (LabelingIon ion : negIons)
+			ion.setChecked(!removedIDs.contains(ion.ionID));
+		
 	}
 	
 	/**
