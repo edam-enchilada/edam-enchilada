@@ -169,6 +169,8 @@ public class MapValuesWindow extends JFrame implements ListSelectionListener, Ac
 			
 			if (selectedName == null)
 				selectedName = "Unnamed map";
+			else
+				selectedName = selectedName.substring(1, selectedName.length());
 			
 			db.applyMap("Map: \"" + selectedName + "\"", mapRangesDataModel.getCurrentMap(), collection);
 			parentFrame.updateSynchronizedTree(collection.getCollectionID());
