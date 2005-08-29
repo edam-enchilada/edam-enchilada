@@ -850,20 +850,28 @@ public class ChartArea extends JComponent {
 			if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
 				if (coords[xCoord] == 0 || yCoord < coords[xCoord])
 					coords[xCoord] = yCoord;
-			}
+			} else if (curPoint.y == -999)
+				coords[xCoord] = -999.0;
 		}
 		
 		// Then draws them:
-		int lastX = -1;
-		double lastY = 0;
+		int lastX = 0;
+		double lastY = -999.0;
 		for (int i = 0; i < coords.length; i++) {
 			if (coords[i] == 0)
 				continue;
-			
+
 			int xPos = dataArea.x + i;
 			
-			if (lastX != -1)
+			if (coords[i] != -999.0 && lastY != -999.0)
 				g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xPos, coords[i]));
+			else if (coords[i] != -999.0) {
+				// Point is valid, but last point wasn't... so just draw a large point:
+
+				g2d.setStroke(new BasicStroke(2.5f));
+				g2d.draw(new Line2D.Double((double) xPos, coords[i], (double) xPos, coords[i]));
+				g2d.setStroke(new BasicStroke(1.5f));
+			}
 			
 			lastX = xPos;
 			lastY = coords[i];
