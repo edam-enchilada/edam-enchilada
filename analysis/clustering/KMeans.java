@@ -52,6 +52,8 @@ import java.util.Iterator;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
+import analysis.DummyNormalizer;
+import analysis.Normalizer;
 
 import database.InfoWarehouse;
 import database.CollectionCursor;
@@ -104,7 +106,11 @@ public class KMeans extends ClusterK
 		Iterator<BinnedPeak> j;
 		
 		// newList will contain the new binned peak list for the moved centroid.
-		BinnedPeakList newList = new BinnedPeakList();
+		BinnedPeakList newList;
+		if (isNormalized)
+			newList = new BinnedPeakList(new Normalizer());
+		else
+			newList = new BinnedPeakList(new DummyNormalizer());
 		
 		// Loop through the particles in the centroid and add the areas together.
 		for (int i = 0; i < particlesInCentroid.size(); i++) {

@@ -9,6 +9,7 @@ import collection.Collection;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.Normalizer;
 
 
 import database.CreateTestDatabase;
@@ -35,7 +36,7 @@ public class Art2ATest extends TestCase{
 	        boolean refine = false;
 	        ArrayList<String> list = new ArrayList<String>();
 	        list.add("ATOFMSAtomInfoSparse.PeakArea");
-	    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false);
+	    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
 	    	art2a = new Art2A(cID,db,1.0f, 0.005f,25,DistanceMetric.CITY_BLOCK,comment,cInfo);
 	    }
 
@@ -52,8 +53,8 @@ public class Art2ATest extends TestCase{
 	    }
 
 	    public void testGetDistance() {
-	        BinnedPeakList list1 = new BinnedPeakList();
-	        BinnedPeakList list2 = new BinnedPeakList();
+	        BinnedPeakList list1 = new BinnedPeakList(new Normalizer());
+	        BinnedPeakList list2 = new BinnedPeakList(new Normalizer());
 	        list1.add(1,0.1f);
 	        list1.add(2,0.2f);
 	        list2.add(1,0.3f);

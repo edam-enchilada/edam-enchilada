@@ -105,7 +105,7 @@ public abstract class ClusterK extends Cluster {
 	public ClusterK(int cID, InfoWarehouse database, int k, 
 			String name, String comment, boolean refineCentroids, ClusterInformation c) 
 	{
-		super(cID, database,name.concat(",K=" + k),comment);
+		super(cID, database,name.concat(",K=" + k),comment, c.normalize);
 		this.k = k;
 		this.refineCentroids = refineCentroids;
 		collectionID = cID;
@@ -268,7 +268,7 @@ public abstract class ClusterK extends Cluster {
 			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
 		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
+		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), cInfo));
 		return true;
 		default :
 			return false;

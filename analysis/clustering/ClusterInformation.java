@@ -9,11 +9,13 @@ public class ClusterInformation {
 	public String keyColumn;
 	public String weightColumn;
 	public boolean automatic;
+	public boolean normalize;
 	
-	public ClusterInformation(ArrayList<String> v, String k, String w, boolean a) {
+	public ClusterInformation(ArrayList<String> v, String k, String w, boolean a, boolean n) {
 		valueColumns = v;
 		keyColumn = k;
 		weightColumn = w;
 		automatic = a;
+		normalize = n;
 	}
 }

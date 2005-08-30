@@ -67,9 +67,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * algorithm at a time.  When OK is clicked, a new collection is created with the
  * specified name, and the clusters are created as sub-collections of the new 
  * collection.
- * 
- * The window is currently modal - don't know if we want to keep it that way.
- *
  */
 public class ClusterDialog extends JDialog implements ItemListener, ActionListener 
 {
@@ -82,7 +79,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	private JPanel algorithmCards, specificationCards, clusteringInfo; 
 	private JButton okButton, cancelButton, advancedButton;
 	private JTextField commentField, passesText, vigText, learnText, kClusterText, otherText;
-	private JCheckBox refineCentroids;
+	private JCheckBox refineCentroids, normalizer;
 	private JComboBox clusterDropDown, metricDropDown, averageClusterDropDown, infoTypeDropdown, denseKeyBox, sparseKeyBox;
 	private ArrayList<JRadioButton> denseButtons, sparseButtons, weightButtons;
 
@@ -164,10 +161,12 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		clusterDropDown.setEditable(false);
 		clusterDropDown.addItemListener(this);
 		dropDown.add(clusterDropDown);
-		
+		normalizer = new JCheckBox("Normalize data");
+
 		JPanel headerAndDropDown = new JPanel();
 		headerAndDropDown.add(header);
 		headerAndDropDown.add(dropDown);
+		headerAndDropDown.add(normalizer);
 		
 		JLabel dividingLine = 
 			new JLabel("------------------------------------------" +
@@ -209,7 +208,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		parameters.setSize(400,200);
 		JLabel kLabel = new JLabel("Number of Clusters:");
 		kClusterText = new JTextField(5);
-		refineCentroids = new JCheckBox("Refine Centroids", true);
+		refineCentroids = new JCheckBox("Refine Centroids");
 		refineCentroids.addItemListener(this);
 		parameters.add(kLabel);
 		parameters.add(kClusterText);
@@ -445,6 +444,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			ArrayList<String> list = new ArrayList<String>();
 			String key = null, weight = null;
 			boolean auto = false;
+			boolean norm = normalizer.isSelected();
 			String denseTableName = db.getDynamicTableName(DynamicTable.AtomInfoDense, 
 					cTree.getSelectedCollection().getDatatype());
 			String sparseTableName = db.getDynamicTableName(DynamicTable.AtomInfoSparse, 
@@ -490,7 +490,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 				// TODO: iffy here, prone to bugs.
 				auto = false;
 			}
-			ClusterInformation cInfo = new ClusterInformation(list, key, weight, auto);
+			ClusterInformation cInfo = new ClusterInformation(list, key, weight, auto, norm);
 			
 			// Call the appropriate algorithm.
 			if (currentShowing == ART2A)

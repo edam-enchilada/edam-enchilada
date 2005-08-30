@@ -55,6 +55,8 @@ import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.DummyNormalizer;
+import analysis.Normalizer;
 
 /**
  * @author andersbe
@@ -75,6 +77,8 @@ public abstract class Cluster extends CollectionDivider {
 	protected int clusterCentroidIters = 0;
 	protected int sampleIters = 0;
 	
+	protected boolean isNormalized;
+	
 	/**
 	 * Builds the cluster name a bit, then sends information off
 	 * to the CollectionDivider constructor
@@ -84,8 +88,9 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param comment	A comment for the cluster.
 	 */
 	public Cluster(int cID, InfoWarehouse database, String name, 
-			String comment) {
+			String comment, boolean norm) {
 		super(cID,database,name.concat(",CLUST"),comment);
+		isNormalized = norm;
 	}
 	
 	/**
@@ -274,8 +279,12 @@ public abstract class Cluster extends CollectionDivider {
 	{
 		
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
-		for (int i = 0; i < centroidList.size(); i++)
-			sums.add(new BinnedPeakList());
+		if (isNormalized)
+			for (int i = 0; i < centroidList.size(); i++)
+				sums.add(new BinnedPeakList(new Normalizer()));
+		else
+			for (int i = 0; i < centroidList.size(); i++)
+				sums.add(new BinnedPeakList(new DummyNormalizer()));
 		
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;

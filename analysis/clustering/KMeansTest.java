@@ -47,6 +47,7 @@ import collection.Collection;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.Normalizer;
 
 
 import database.CreateTestDatabase;
@@ -88,7 +89,7 @@ public class KMeansTest extends TestCase {
         boolean refine = false;
         ArrayList<String> list = new ArrayList<String>();
         list.add("ATOFMSAtomInfoSparse.PeakArea");
-    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false);
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
         kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
     }
 
@@ -105,8 +106,8 @@ public class KMeansTest extends TestCase {
     }
 
     public void testGetDistance() {
-        BinnedPeakList list1 = new BinnedPeakList();
-        BinnedPeakList list2 = new BinnedPeakList();
+        BinnedPeakList list1 = new BinnedPeakList(new Normalizer());
+        BinnedPeakList list2 = new BinnedPeakList(new Normalizer());
         list1.add(1,0.1f);
         list1.add(2,0.2f);
         list2.add(1,0.3f);

@@ -258,6 +258,7 @@ public interface InfoWarehouse {
 	
 	public CollectionCursor getClusteringCursor(Collection collection, ClusterInformation cInfo);
 	
+	public CollectionCursor getMemoryClusteringCursor(Collection collection, ClusterInformation cInfo);
 	public CollectionCursor getMemoryBinnedCursor(Collection collection);
 	
 	public CollectionCursor getRandomizedCursor(Collection collection);

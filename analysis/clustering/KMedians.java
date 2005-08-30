@@ -93,14 +93,16 @@ public class KMedians extends ClusterK {
 		if (medianThis.size() == 0)
 		{
 			System.out.println("Centroid contains no particles");
-			returnThis = new Centroid(
-					new BinnedPeakList(),
-					0,
-					origCentroids.subCollectionNum);
+			if (isNormalized)
+				returnThis = new Centroid(new BinnedPeakList(new Normalizer()),
+					0,origCentroids.subCollectionNum);
+			else
+				returnThis = new Centroid(new BinnedPeakList(new DummyNormalizer()),
+						0,origCentroids.subCollectionNum);
 		}
 		else
 		{
-			mf = new MedianFinder(medianThis);
+			mf = new MedianFinder(medianThis, isNormalized);
 			//TODO: Simply use getMedian for this to work the old way
 			returnThis = new Centroid(mf.getMedianSumToOne(),
 					0,origCentroids.subCollectionNum);

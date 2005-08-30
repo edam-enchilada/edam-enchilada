@@ -78,7 +78,7 @@ public class Art2A extends Cluster
 	public Art2A(int cID, InfoWarehouse database, float v, float lr, 
 			int passes,  DistanceMetric dMetric, String comment, ClusterInformation c) {
 		super(cID, database, "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
-				passes + ",DMetric=" + dMetric, comment);
+				passes + ",DMetric=" + dMetric, comment, c.normalize);
 		parameterString = "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
 		passes + ",DMetric=" + dMetric;
 		vigilance = v;
@@ -95,7 +95,11 @@ public class Art2A extends Cluster
 			BinnedPeakList addedParticle,
 			BinnedPeakList centroid)
 	{
-		BinnedPeakList returnList = new BinnedPeakList();
+		BinnedPeakList returnList;
+		if (isNormalized)
+			returnList = new BinnedPeakList(new Normalizer());
+		else
+			returnList = new BinnedPeakList(new DummyNormalizer());
 		
 		BinnedPeak addedPeak;
 		// keep track of locations that are in both lists so we don't 
@@ -167,7 +171,7 @@ public class Art2A extends Cluster
 			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
+		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), cInfo));
 			return true;
 		default :
 			return false;

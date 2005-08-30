@@ -61,9 +61,12 @@ public class MedianFinder {
 	private float[][] sortedList;
 	private boolean [] locationsUsed = new boolean [DOUBLE_MAX];
 	
-	public MedianFinder(ArrayList<BinnedPeakList> particles)
+	private boolean isNormalized;
+	
+	public MedianFinder(ArrayList<BinnedPeakList> particles, boolean norm)
 	{
 		this.particles = particles;
+		isNormalized = norm;
 		if (particles.size() != 0)
 		{
 			sortedList = new float[DOUBLE_MAX][particles.size()];
@@ -107,7 +110,11 @@ public class MedianFinder {
 	{
 		if (particles.size() == 0)
 			return null;
-		BinnedPeakList returnThis = new BinnedPeakList();
+		BinnedPeakList returnThis;
+		if (isNormalized)
+			returnThis = new BinnedPeakList(new Normalizer());
+		else 
+			returnThis = new BinnedPeakList(new DummyNormalizer());
 		if (particles.size()%2 == 0)
 		{
 			double sum = 0.0;
@@ -148,7 +155,11 @@ public class MedianFinder {
 			throw new IndexOutOfBoundsException(
 					"k must be a number from 0 to " +
 					(particles.size()-1));
-		BinnedPeakList returnThis = new BinnedPeakList();
+		BinnedPeakList returnThis;
+		if (isNormalized)
+			returnThis = new BinnedPeakList(new Normalizer());
+		else 
+			returnThis = new BinnedPeakList(new DummyNormalizer());
 		for (int i = 0; i < DOUBLE_MAX; i++)
 		{
 			if (sortedList[i][k] == 0)

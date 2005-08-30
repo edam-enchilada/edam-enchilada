@@ -61,20 +61,28 @@ import java.util.*;
  * with no checks.
  */
 public class BinnedPeakList implements Iterable<BinnedPeak> {
-	private SortedMap<Integer, Float> peaks;
+	protected SortedMap<Integer, Float> peaks;
 
-	private static final int MAX_LOCATION = 2500;
-	private static int DOUBLE_MAX = MAX_LOCATION * 2;
-	private static float[] longerLists = new float[MAX_LOCATION * 2];
+	protected static final int MAX_LOCATION = 2500;
+	protected static int DOUBLE_MAX = MAX_LOCATION * 2;
+	protected static float[] longerLists = new float[MAX_LOCATION * 2];
+	
+	private Normalizable normalizable;
 
 	/**
 	 * A constructor for the peaklist, initializes the underlying
 	 * ArrayLists to a size of 20.
 	 */
-	public BinnedPeakList()
+	public BinnedPeakList(Normalizable norm)
 	{
 		peaks = new TreeMap<Integer, Float>();
+		normalizable = norm;
 	}
+	
+	/*public BinnedPeakList() {
+		peaks = new TreeMap<Integer, Float>();
+		normalizable = null;
+	}*/
 	
 	public float getMagnitude(DistanceMetric dMetric)
 	{
@@ -221,18 +229,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		if (dMetric == DistanceMetric.DOT_PRODUCT)
 		    distance = 1-distance;
 		
-		assert distance < 2.01 : 
-		    "Distance should be <= 2.0, actually is " + distance +"\n" 
-		   + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
-		  + getMagnitude(dMetric) + "\n";
-		
-		if (distance > 2) {
-			//System.out.println("Rounding off " + distance +
-			//		" to 2.0");
-			distance = 2.0f;
-		}
-		
-		return distance;
+		return normalizable.roundDistance(this, toList, dMetric, distance);
 	}
 	
 	/**
@@ -368,17 +365,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * from <0,0,0,....,0> to the vector represented by the list.
 	 * @param 	dMetric the distance metric to use to measure length
 	 */
-	public void normalize(DistanceMetric dMetric)
-	{
-		float magnitude = getMagnitude(dMetric);	
-		
-		Map.Entry<Integer,Float> entry;
-		Iterator<Map.Entry<Integer,Float>> iterator = peaks.entrySet().iterator();
-		
-		while (iterator.hasNext()) {
-			entry = iterator.next();
-			entry.setValue(entry.getValue() / magnitude);
-		}
+	public void normalize(DistanceMetric dMetric) {
+		normalizable.normalize(this,dMetric);
+	}
+	
+	public void setNormalizer(Normalizer norm) {
+		normalizable = norm;
 	}
 	
 	// used for testing BIRCH

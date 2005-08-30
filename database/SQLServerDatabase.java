@@ -59,7 +59,7 @@ import java.sql.*;
 
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
-import analysis.BinnedPeakList;
+import analysis.*;
 import analysis.clustering.ClusterInformation;
 import analysis.clustering.PeakList;
 import collection.*;
@@ -2286,7 +2286,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/* Cursor classes */
-//TODO: need a memory clustering cursor.
 	private class ClusteringCursor implements CollectionCursor {
 		protected InstancedResultSet irs;
 		protected ResultSet rs;
@@ -2333,7 +2332,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			ParticleInfo particleInfo = new ParticleInfo();
 			try {
 				particleInfo.setID(rs.getInt(1));
-				particleInfo.setBinnedList(getPeakListfromAtomID(particleInfo.getID()));
+				particleInfo.setBinnedList(this.getPeakListfromAtomID(particleInfo.getID()));
 			}catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				System.err.println("Error retrieving the " +
@@ -2377,7 +2376,11 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 		public BinnedPeakList getPeakListfromAtomID(int id) {
-			BinnedPeakList peakList = new BinnedPeakList();
+			BinnedPeakList peakList;
+			if (cInfo.normalize)
+				peakList = new BinnedPeakList(new Normalizer());
+			else
+				peakList = new BinnedPeakList(new DummyNormalizer());
 			try {
 				ResultSet listRS;
 				Statement stmt2 = con.createStatement();
@@ -2414,6 +2417,76 @@ public class SQLServerDatabase implements InfoWarehouse
 					return null;
 			}
 				return peakList;		
+		}
+		
+		public boolean isNormalized() {
+			return cInfo.normalize;
+		}
+	}
+	
+	/**
+	 * Memory Clustering Cursor.  Returns binned peak info for a given atom,
+	 * info kept in memory.
+	 */
+	private class MemoryClusteringCursor extends ClusteringCursor {
+		InfoWarehouse db;
+		boolean firstPass = true;
+		int position = -1;
+		
+		ArrayList<ParticleInfo> storedInfo = null;
+		
+		public MemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {
+			super (collection, cInfo);
+			storedInfo = new ArrayList<ParticleInfo>(100);
+		}
+		
+		public void reset()
+		{
+			if (firstPass) {
+				storedInfo.clear();
+				super.reset();
+			}
+			position = -1;
+		}
+		
+		public boolean next()
+		{
+			position++;
+			if (firstPass)
+			{
+				boolean superNext = super.next();
+				if (superNext)
+					storedInfo.add(super.getCurrent());
+				else
+				    firstPass = false;
+				return superNext;
+			}
+			else
+				return (position < storedInfo.size());
+		}
+		
+		public ParticleInfo getCurrent()
+		{
+			return storedInfo.get(position);
+		}
+		
+		public ParticleInfo get(int i)
+		{
+			if (firstPass)
+				if (i < position)
+					return storedInfo.get(i);
+				else
+					return null;
+			else
+				return storedInfo.get(i);
+		}
+		
+		public BinnedPeakList getPeakListfromAtomID(int atomID) {
+			for (ParticleInfo particleInfo : storedInfo) {
+				if (particleInfo.getID() == atomID)
+					return particleInfo.getBinnedList();
+			}
+			return super.getPeakListfromAtomID(atomID);
 		}
 	}
 	
@@ -2546,7 +2619,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public BinnedPeakList 
 		getPeakListfromAtomID(int atomID) {
-			BinnedPeakList peakList = new BinnedPeakList();
+			BinnedPeakList peakList = new BinnedPeakList(new Normalizer());
 			try {
 				ResultSet rs = 
 					con.createStatement().executeQuery(
@@ -2726,7 +2799,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		private BinnedPeakList bin(ArrayList<Peak> peakList)
 		{
-			BinnedPeakList bPList = new BinnedPeakList();
+			BinnedPeakList bPList = new BinnedPeakList(new Normalizer());
 			
 			Peak temp;
 			
@@ -2893,7 +2966,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (particleInfo.getID() == atomID)
 					return particleInfo.getBinnedList();
 			}
-			return new BinnedPeakList();
+			return new BinnedPeakList(new Normalizer());
 		}
 	}
 
@@ -3443,6 +3516,10 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 		
+	}
+
+	public CollectionCursor getMemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {
+		return new MemoryClusteringCursor(collection, cInfo);
 	}
 
 }
