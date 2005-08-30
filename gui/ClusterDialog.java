@@ -98,7 +98,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	final static String sparse = "Sparse Particle Information";
 	final static String denseKey = " Key = Automatic (1, 2, 3, etc) ";
 	
-	private boolean refinedCentroids = true;
+	private boolean refinedCentroids = false;
 	private String dMetric = CITY_BLOCK;
 	private String currentShowing = ART2A;
 	private String[] nameArray;

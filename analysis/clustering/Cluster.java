@@ -301,9 +301,7 @@ public abstract class Cluster extends CollectionDivider {
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
 			thisBinnedPeakList.normalize(distanceMetric);
-			// no centroid will be found further than the max distance (2.0)
-			// since that centroid would not be considered
-			nearestDistance = 3.0f;
+			nearestDistance = Float.MAX_VALUE;
 			for (int centroidIndex = 0; 
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
