@@ -100,6 +100,19 @@ public class KMedians extends ClusterK {
 		else
 		{
 			mf = new MedianFinder(medianThis);
+
+			// Experimental code to generate MPS file so that problem
+			// can be solved as an LP instead. Runs MUCH slower this way.
+//			System.out.println("Number of particles = " + medianThis.size());
+//			long start = System.currentTimeMillis();
+//			BinnedPeakList median = mf.getMedianSumToOne();
+//			long stop = System.currentTimeMillis();
+//			System.out.println("Elapsed time = " + (stop-start)/1000. + " seconds.");
+//			mf.displayError(median);
+//			median.printPeakList();
+//			mf.makeMPS();
+//			System.exit(0);
+			
 			//TODO: Simply use getMedian for this to work the old way
 			returnThis = new Centroid(mf.getMedianSumToOne(),
 					0,origCentroids.subCollectionNum);

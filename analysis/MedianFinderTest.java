@@ -59,7 +59,8 @@ import junit.framework.TestCase;
  */
 public class MedianFinderTest extends TestCase {
 	private BinnedPeakList bpl1,bpl2,bpl3,bpl4,bpl5;
-	private ArrayList<BinnedPeakList> allFive;
+	private BinnedPeakList nbpl1,nbpl2,nbpl3,nbpl4,nbpl5;
+	private ArrayList<BinnedPeakList> allFive,allFiveNorm;
 	private ArrayList<BinnedPeakList> firstFour;
 	private ArrayList<BinnedPeakList> onlyOne;
 	private ArrayList<BinnedPeakList> none;
@@ -108,7 +109,47 @@ public class MedianFinderTest extends TestCase {
 		firstFour.add(bpl4);
 		
 		onlyOne.add(bpl1);
+		
+		nbpl1 = new BinnedPeakList();
+		nbpl2 = new BinnedPeakList();
+		nbpl3 = new BinnedPeakList();
+		nbpl4 = new BinnedPeakList();
+		nbpl5 = new BinnedPeakList();
+		
+		allFiveNorm = new ArrayList<BinnedPeakList>(5);
+		
+		nbpl1.add(1,10);
+		nbpl1.add(-3,30);
+		nbpl1.add(-1,50);
+		nbpl1.normalize(DistanceMetric.CITY_BLOCK);
+		
+		nbpl2.add(1,20);
+		nbpl2.add(-3,60);
+		nbpl2.add(-2,50);
+		nbpl2.normalize(DistanceMetric.CITY_BLOCK);
+		
+		nbpl3.add(1,30);
+		nbpl3.add(-3,90);
+		nbpl3.add(3,50);
+		nbpl3.normalize(DistanceMetric.CITY_BLOCK);
+		
+		nbpl4.add(1,40);
+		nbpl4.add(-3,120);
+		nbpl4.add(-4,50);
+		nbpl4.normalize(DistanceMetric.CITY_BLOCK);
+		
+		nbpl5.add(1,50);
+		nbpl5.add(-3,150);
+		nbpl5.add(-5,50);
+		nbpl5.normalize(DistanceMetric.CITY_BLOCK);
+		
+		allFiveNorm.add(nbpl1);
+		allFiveNorm.add(nbpl2);
+		allFiveNorm.add(nbpl3);
+		allFiveNorm.add(nbpl4);
+		allFiveNorm.add(nbpl5);
 	}
+	
 	public void testGetMedian() {
 		MedianFinder mf = new MedianFinder(allFive);
 		
@@ -248,4 +289,17 @@ public class MedianFinderTest extends TestCase {
 		}
 		assertTrue(exception);
 	}
+
+	public void testmakeMPS() {
+		MedianFinder mf = new MedianFinder(allFiveNorm);
+		
+		mf.makeMPS();
+		long start = System.currentTimeMillis();
+		BinnedPeakList median = mf.getMedianSumToOne();
+		long stop = System.currentTimeMillis();
+		System.out.println("Elapsed time = " + (stop-start)/1000. + " seconds.");
+		mf.displayError(median);
+		median.printPeakList();
+	}
+
 }
