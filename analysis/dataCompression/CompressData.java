@@ -15,7 +15,7 @@ import database.InfoWarehouse;
  * @author ritza
  *
  */
-public abstract class CompressData {
+public class CompressData {
 
 	public static final int DISK_BASED = 0;
 	public static final int STORE_ON_FIRST_PASS = 1;
@@ -38,12 +38,13 @@ public abstract class CompressData {
 		db = database;
 		oldCollection = c;
 		oldDatatype = c.getDatatype();
-		newDatatype = "Compressed" + oldDatatype;		
+		newDatatype = "Compressed" + oldDatatype;
 		
+		setDatatype();
 	}
 	
-	public boolean setDatatype() {		
-		return false;
+	public void setDatatype() {
+		db.addCompressedData(newDatatype,oldDatatype);
 	}
 	
 	public void compress() {

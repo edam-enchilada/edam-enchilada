@@ -254,6 +254,12 @@ public class DynamicTableGenerator extends DefaultHandler {
 		 		 
 		 //read file and put info into MetaData
 		 read(file);
+		 
+		 return createDynamicTables(datatype, false);
+		 
+	 }
+	 
+	 public String createDynamicTables(String datatype, boolean fromCompressData) {
 		 		 
 		 String tableStr;
 		 
@@ -295,6 +301,13 @@ public class DynamicTableGenerator extends DefaultHandler {
 			 System.out.println(tableStr);
 			 stmt.execute(tableStr);
 	
+			 // if from CompressData, set variables.
+			 if (fromCompressData) {
+				 sparseCounter = DynamicTable.AtomInfoSparse.ordinal()+1;
+				 sparseNames.clear();
+				 sparseNames.put(new Integer(DynamicTable.AtomInfoSparse.ordinal()),"");
+			 }
+			 
 			 //create as many AtomInfoSparse tables as were specified in the .md
 			 for (int i=DynamicTable.AtomInfoSparse.ordinal(); i< sparseCounter; i++){
 				 tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse" +

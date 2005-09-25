@@ -3501,21 +3501,46 @@ public class SQLServerDatabase implements InfoWarehouse
 		return atom;
 	}
 
-	public void addCompressedData(String datatype) {
+	public void addCompressedData(String newDatatype, String oldDatatype) {
+		System.out.println();
 		try {
 			// add tables if they don't exist
-			if (!containsDatatype(datatype)) {
-				// insert columns into MetaData
-				//TODO;
+			if (!containsDatatype(newDatatype)) {
+				assert(containsDatatype(oldDatatype));
+				// insert metadata info.
 				Statement stmt = con.createStatement();
-				
+				ResultSet rs = stmt.executeQuery("SELECT * FROM MetaData WHERE " +
+						"Datatype = '" + oldDatatype + "'");
+	
+				while (rs.next()) {
+					String update = "INSERT INTO MetaData VALUES ('" +
+					newDatatype + "','" + rs.getString(2) + "','" + 
+					rs.getString(3) + "'," + rs.getInt(4) + "," +
+					rs.getInt(5) + "," + rs.getInt(6) + ")";
+					System.out.println(update);
+					stmt.addBatch(update);
+				}
+				stmt.executeBatch();
+				rs = stmt.executeQuery("SELECT MAX(ColumnOrder) FROM MetaData " +
+						"WHERE Datatype = '" + oldDatatype + "' AND TableID = 1");
+				assert(rs.next());
+				int nextColumnOrder = rs.getInt(1) + 1;
+				String numParts = "INSERT INTO MetaData VALUES ('" + 
+				newDatatype + "', '[NumParticles]', 'INT',0," + 
+				DynamicTable.AtomInfoDense.ordinal() + "," + nextColumnOrder +")";
+				System.out.println(numParts);
+				stmt.executeUpdate(numParts);
+				rs.close();
+				// create dynamic tables, skipping over the xml format.
+				DynamicTableGenerator generator = new DynamicTableGenerator(con);
+				String newName = generator.createDynamicTables(newDatatype,true);
+				assert(newName.equals(newDatatype));				
 			}
 		}
 		catch(SQLException e) {
 			System.err.println("error creating compressed tables");
+			e.printStackTrace();
 		}
-		
-		
 	}
 
 	public CollectionCursor getMemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {

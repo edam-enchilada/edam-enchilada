@@ -289,5 +289,5 @@ public interface InfoWarehouse {
 	
 	public String getDynamicTableName(DynamicTable table, String datatype);
 	
-	public void addCompressedData(String datatype);
+	public void addCompressedData(String newDatatype, String oldDatatype);
 }

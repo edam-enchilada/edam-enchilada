@@ -5,6 +5,7 @@ import java.util.Iterator;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
+import analysis.Normalizer;
 import database.*;
 
 public class Cheater {
@@ -60,7 +61,7 @@ public class Cheater {
 	protected static BinnedPeakList normalize(BinnedPeakList list)
 	{
 		float magnitude = list.getMagnitude(DistanceMetric.CITY_BLOCK);
-		BinnedPeakList returnList = new BinnedPeakList();
+		BinnedPeakList returnList = new BinnedPeakList(new Normalizer());
 		BinnedPeak temp;
 		Iterator<BinnedPeak> iter = list.iterator();
 		while (iter.hasNext()) {

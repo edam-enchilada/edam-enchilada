@@ -51,6 +51,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 
+import analysis.dataCompression.CompressData;
+
 import collection.*;
 
 import java.awt.*;
@@ -84,6 +86,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem MSAexportItem;
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
+	private JMenuItem compressItem;
 	private JMenuItem clusterItem;
 	private JMenuItem rebuildItem;
 	private JMenuItem exitItem;
@@ -278,6 +281,10 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
 		
+		else if (source == compressItem) {
+			new CompressData(collectionPane.getSelectedCollection(),db);
+		}
+		
 		
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
@@ -422,11 +429,14 @@ public class MainFrame extends JFrame implements ActionListener
 				KeyEvent.VK_F);
 		queryItem = new JMenuItem("Query. . . ", KeyEvent.VK_Q);
 		queryItem.addActionListener(this);
+		compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
+		compressItem.addActionListener(this);
 		
 		analysisMenu.add(clusterItem);
 		analysisMenu.add(labelItem);
 		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
+		analysisMenu.add(compressItem);
 		
 		//Add a collection menu to the menu bar.
 		JMenu collectionMenu = new JMenu("Collection");
