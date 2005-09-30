@@ -57,6 +57,7 @@ public abstract class CompressData {
 	 *
 	 */
 	public void setDatatype() {
+		System.out.println("setting datatype");
 		db.addCompressedData(newDatatype,oldDatatype);
 	}
 	
@@ -89,14 +90,26 @@ public abstract class CompressData {
 		tempTypes.clear();
 		
 		// Create new collection and dataset:
-		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,params); 
+		String compressedParams = getDatasetParams(oldDatatype);
+		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,compressedParams); 
 		int newCollectionID = IDs[0];
 		int newDatasetID = IDs[1];
 		
 		// insert each CF as a new atom.
-		int atomID = db.getNextID();
+
+		double[] dAggregates = new double[dInfo.length];
+		double[] sAggregates = new double[sInfo.length];
 		for (int i = 0; i < generalizedCompression.size(); i++) {
-		
+			int atomID = db.getNextID();
+			// get aggregates for aggregatable columns.
+			for (int j = 0; i < dInfo.length; j++)
+				if(dInfo[j])
+					dAggregates[j] = db.aggregateColumn(DynamicTable.AtomInfoDense,j,generalizedCompression.get(i), oldDatatype); 
+			for (int j = 0; i < sInfo.length; j++)
+				if(sInfo[j])
+					sAggregates[j] = db.aggregateColumn(DynamicTable.AtomInfoSparse,j,generalizedCompression.get(i), oldDatatype); 
+			// Now, add atom.
+			//db.insertParticle()
 		}
 	}
 	
@@ -104,6 +117,25 @@ public abstract class CompressData {
 		if (string.equals("INT") || string.equals("REAL"))
 			return true;
 		return false;
+	}
+	
+	public String getDatasetParams(String datatype) {
+		// get number of params:
+		ArrayList<ArrayList<String>> namesAndTypes = db.getColNamesAndTypes(
+				datatype, DynamicTable.DataSetInfo);
+		int num = namesAndTypes.size();
+		if (num <= 2)
+			return "";
+		String str = "";
+		
+		for (int i = 3; i <= num; i++) {
+				if (namesAndTypes.get(num).get(1).equals("INT") ||
+						namesAndTypes.get(num).get(1).equals("REAL"))
+					str = "0, ";
+				else
+					str = "'Compressed', ";
+			}
+		return str.substring(0,str.length()-2);
 	}
 	
 	private void printDescriptionToDB() {

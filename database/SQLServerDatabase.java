@@ -3503,8 +3503,9 @@ public class SQLServerDatabase implements InfoWarehouse
 
 	public void addCompressedData(String newDatatype, String oldDatatype) {
 		System.out.println();
-		try {
+		/*try {
 			// add tables if they don't exist
+			// Copies all columns of the tables:
 			if (!containsDatatype(newDatatype)) {
 				assert(containsDatatype(oldDatatype));
 				// insert metadata info.
@@ -3535,10 +3536,59 @@ public class SQLServerDatabase implements InfoWarehouse
 				DynamicTableGenerator generator = new DynamicTableGenerator(con);
 				String newName = generator.createDynamicTables(newDatatype,true);
 				assert(newName.equals(newDatatype));				
+				} */
+		// Copies only relevant columns into table
+		try {
+			if (!containsDatatype(newDatatype)) {
+				assert(containsDatatype(oldDatatype));
+				// insert metadata info.
+				Statement stmt = con.createStatement();
+				
+				// insert the dataset info.  
+				System.out.println("inserting DataSet info...");
+				stmt.addBatch("INSERT INTO MetaData VALUES ('" + newDatatype + "','[DataSet]','VARCHAR(8000)',0,0,2)");
+				stmt.addBatch("INSERT INTO MetaData VALUES ('" + newDatatype + "','[DataSetID]','INT',1,0,1)");
+				stmt.executeBatch();
+				// the following statement takes all the reals and ints from 
+				// atominfo dense and sparse and orders them by column number.
+				ResultSet rs = stmt.executeQuery("SELECT * FROM MetaData WHERE " +
+						"Datatype = '" + oldDatatype + "' AND TableID != 0 AND " +
+						"(ColumnType = 'INT' OR ColumnType = 'REAL') ORDER BY " +
+				"TableID, ColumnOrder");
+				int columnOrder = 1;
+				boolean firstloop = true;
+				while (rs.next()) {
+					if (rs.getInt(5) == 2 && firstloop) {
+						columnOrder = 1;
+						firstloop = false;
+					}
+					String update = "INSERT INTO MetaData VALUES ('" +
+					newDatatype + "','" + rs.getString(2) + "','" + 
+					rs.getString(3) + "'," + rs.getInt(4) + "," +
+					rs.getInt(5) + "," + columnOrder + ")";
+					System.out.println(update);
+					stmt.addBatch(update);
+					columnOrder++;
+				}
+				stmt.executeBatch();
+				rs = stmt.executeQuery("SELECT MAX(ColumnOrder) FROM MetaData " +
+						"WHERE Datatype = '" + newDatatype + "' AND TableID = 1");
+				assert(rs.next());
+				int nextColumnOrder = rs.getInt(1) + 1;
+				String numParts = "INSERT INTO MetaData VALUES ('" + 
+				newDatatype + "', '[NumParticles]', 'INT',0," + 
+				DynamicTable.AtomInfoDense.ordinal() + "," + nextColumnOrder +")";
+				System.out.println(numParts);
+				stmt.execute(numParts);
+				rs.close();
+				// create dynamic tables, skipping over the xml format.
+				DynamicTableGenerator generator = new DynamicTableGenerator(con);
+				String newName = generator.createDynamicTables(newDatatype,true);
+				assert(newName.equals(newDatatype));
 			}
 		}
-		catch(SQLException e) {
-			System.err.println("error creating compressed tables");
+			catch(SQLException e) {
+				System.err.println("error creating compressed tables");
 			e.printStackTrace();
 		}
 	}
@@ -3547,12 +3597,35 @@ public class SQLServerDatabase implements InfoWarehouse
 		return new MemoryClusteringCursor(collection, cInfo);
 	}
 
+	// assume columnNumber starts at 0,1,2,3,4...
+	public double aggregateColumn(DynamicTable t, int columnNumber, ArrayList<Integer> atomIDs, String datatype) {
+		assert (t.ordinal() != DynamicTable.DataSetInfo.ordinal()) : "Can't aggregate from DataSetInfo!";
+		double aggregate = 0;
+		try {
+			Statement stmt = con.createStatement();
+			String colName = getColNames(datatype, t).get(columnNumber);
+			String query = "SELECT " + colName + " FROM " + getDynamicTableName(t,datatype) + " WHERE ";
+			for (int i = 0; i < atomIDs.size(); i++) {
+				query += "AtomID = " + atomIDs.get(i) + " AND ";
+			}
+			query.substring(0,query.length()-5);
+			ResultSet rs = stmt.executeQuery(query);
+
+			while (rs.next()) 
+				aggregate += rs.getDouble(1);
+		} catch (SQLException e) {
+			System.err.println("Error aggregating column");
+			e.printStackTrace();
+		}
+		return aggregate;
+	}
+
 	/**
 	 * Gets the params for a given dataset, concat. in a string.
 	 * Doesn't include datasetID or dataset name.
 	 * 
 	 * TODO: just finished this method...
-	 */
+	 *
 	public String getDatasetParams(String datatype, int datasetID) {
 		// get number of params:
 		ArrayList<ArrayList<String>> namesAndTypes = getColNamesAndTypes(
@@ -3580,6 +3653,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			e.printStackTrace();
 		}
 		return str.substring(0,str.length()-2);
-	}
+	}*/
 }
 

@@ -295,5 +295,8 @@ public interface InfoWarehouse {
 	public int getNextID();
 	public int[] createEmptyCollectionAndDataset(String datatype, int parent,  
 			String datasetName, String comment, String params);
-	public String getDatasetParams(String datatype, int datasetID);
+	public double aggregateColumn(DynamicTable t, int columnNumber, ArrayList<Integer> atomIDs, String datatype);
+	public int insertParticle(String dense, ArrayList<String> sparse,
+			Collection collection,
+			int datasetID, int nextID);
 }
