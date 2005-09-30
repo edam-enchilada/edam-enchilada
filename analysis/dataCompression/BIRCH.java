@@ -37,10 +37,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package analysis.clustering.BIRCH;
+package analysis.dataCompression;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.util.ArrayList;
 import java.util.Date;
 
 import collection.Collection;
@@ -58,25 +59,25 @@ import database.*;
  * @author ritza
  *
  */
-public class BIRCH extends Cluster{
+public class BIRCH extends CompressData{
 	/* Class Variables */
 	private int branchingFactor;
-	private InfoWarehouse db;
 	private int collectionID;
 	private CFTree curTree;
 	private MemoryUsage mem;
 	private long start, end;
+
 	
 	/*
-	 * Constructor.  Calls The Cluster Class's constructor.
+	 * Constructor.  Calls the CompressData Class's constructor.
 	 */
-	public BIRCH(int cID, InfoWarehouse database, String name, String comment) 
+	public BIRCH(Collection c, InfoWarehouse database, String name, String comment, boolean n, DistanceMetric d) 
 	{
-		super(cID, database,name,comment);
+		super(c,database,name,comment, n, d);
 		// set parameters.
 		branchingFactor = 4;
-		collectionID = cID;
-		db = database;
+		collectionID = oldCollection.getCollectionID();
+		setCursorType(0);
 	}
 	
 	/**
@@ -93,7 +94,7 @@ public class BIRCH extends Cluster{
 		while(curs.next()) { 
 			particle = curs.getCurrent();
 			particle.getBinnedList().normalize(distanceMetric);
-			changedNode = curTree.insertEntry(particle.getBinnedList());
+			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());
 			
 			lastSplitNode = curTree.splitNodeIfPossible(changedNode);
 			
@@ -184,7 +185,7 @@ public class BIRCH extends Cluster{
 				if (!reinserted) {
 					ClusterFeature newLeaf = new ClusterFeature(
 							newCurNode, thisCF.getCount(), thisCF.getSums(), 
-							thisCF.getSumOfSquares());				
+							thisCF.getSumOfSquares(), thisCF.getAtomIDs());				
 					newCurNode.addCF(newLeaf);
 					newTree.updateNonSplitPath(newLeaf.curNode);
 				}
@@ -230,24 +231,38 @@ public class BIRCH extends Cluster{
 	}
 
 	@Override
-	public int divide() {
-		System.out.println("Accidentally dividing!");
-		return 0;
-	}
-	
-	public static void main(String[] args) {
-		InfoWarehouse db = new SQLServerDatabase("SpASMSdb");
-		db.openConnection();
-		BIRCH birch = new BIRCH(7, db, "BIRCH", "comment");
-		birch.setCursorType(0);
-		birch.setDistanceMetric(DistanceMetric.CITY_BLOCK);	
+	public void compress() {	
 		MemoryUsage mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 		System.out.println("memory used: " + mem.getUsed());
 		System.out.println("memory committed: " + mem.getCommitted());
 		System.out.println();
-		birch.buildTree(0.0f);
+		buildTree(0.0f);
 		System.out.println();
 		System.out.println("FINAL TREE:");
-		birch.curTree.countNodes();
+		curTree.countNodes();
+	}
+
+	@Override
+	/**
+	 * Now that the tree has been created, we need to get the leaves into a general
+	 * data compression format so the cluster features can be written to the db.
+	 */
+	public void generalizeCompressedData() {
+		// initialize generalizedCompression arraylist
+		generalizedCompression = new ArrayList<ArrayList<Integer>>();
+		
+		// for each Cluster Feature, add the atomIDs to the arraylist.
+		CFNode leaf = curTree.getFirstLeaf();
+		ClusterFeature thisCF;
+		ArrayList<ClusterFeature> cfs;
+		ArrayList<Integer> tempIDs;
+		int[] tempArray;
+		while (leaf != null) {
+			cfs = leaf.getCFs();
+			for (int i = 0; i < leaf.getSize(); i++) {
+				tempIDs = cfs.get(i).getAtomIDs();
+				generalizedCompression.add(tempIDs);
+			}
+		}
 	}	
 }

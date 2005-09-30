@@ -51,7 +51,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 
+import analysis.dataCompression.BIRCH;
 import analysis.dataCompression.CompressData;
+import analysis.DistanceMetric;
 
 import collection.*;
 
@@ -282,7 +284,8 @@ public class MainFrame extends JFrame implements ActionListener
 				collectionPane, db);}
 		
 		else if (source == compressItem) {
-			new CompressData(collectionPane.getSelectedCollection(),db);
+			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",false,DistanceMetric.EUCLIDEAN_SQUARED);
+			b.compress();
 		}
 		
 		

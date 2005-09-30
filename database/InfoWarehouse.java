@@ -290,4 +290,10 @@ public interface InfoWarehouse {
 	public String getDynamicTableName(DynamicTable table, String datatype);
 	
 	public void addCompressedData(String newDatatype, String oldDatatype);
+	
+	public ArrayList<ArrayList<String>> getColNamesAndTypes(String datatype, DynamicTable table);
+	public int getNextID();
+	public int[] createEmptyCollectionAndDataset(String datatype, int parent,  
+			String datasetName, String comment, String params);
+	public String getDatasetParams(String datatype, int datasetID);
 }

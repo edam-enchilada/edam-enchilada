@@ -3547,5 +3547,39 @@ public class SQLServerDatabase implements InfoWarehouse
 		return new MemoryClusteringCursor(collection, cInfo);
 	}
 
+	/**
+	 * Gets the params for a given dataset, concat. in a string.
+	 * Doesn't include datasetID or dataset name.
+	 * 
+	 * TODO: just finished this method...
+	 */
+	public String getDatasetParams(String datatype, int datasetID) {
+		// get number of params:
+		ArrayList<ArrayList<String>> namesAndTypes = getColNamesAndTypes(
+				datatype, DynamicTable.DataSetInfo);
+		int num = namesAndTypes.size();
+		if (num <= 2)
+			return "";
+		String str = "";
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + 
+					getDynamicTableName(DynamicTable.DataSetInfo, datatype) +
+					" WHERE DataSetID = " + datasetID);
+			assert(rs.next());
+		
+			for (int i = 3; i <= num; i++) {
+				if (namesAndTypes.get(num).get(1).equals("INT") ||
+						namesAndTypes.get(num).get(1).equals("REAL"))
+					str = rs.getString(i) + ", ";
+				else
+					str = "'" + rs.getString(i) + "', ";
+			}
+		} catch (SQLException e) {
+			System.err.println("Error copying dataset params");
+			e.printStackTrace();
+		}
+		return str.substring(0,str.length()-2);
+	}
 }
 

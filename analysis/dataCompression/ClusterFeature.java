@@ -38,13 +38,14 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-package analysis.clustering.BIRCH;
+package analysis.dataCompression;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
+import analysis.DummyNormalizer;
 
 /**
  * 
@@ -55,6 +56,8 @@ import analysis.DistanceMetric;
  * the particles, the sum of the squares of the particles, and a child node
  * (if there is one).
  * 
+ * TODO: All binnedPeakLists are automatically DummyNormalizer; is this right?
+ * 
  */
 
 public class ClusterFeature {
@@ -63,6 +66,7 @@ public class ClusterFeature {
 	private float squareSums;
 	public CFNode child = null;
 	public CFNode curNode;
+	private ArrayList<Integer> atomIDs;
 	
 	/**
 	 * Constructor
@@ -70,9 +74,10 @@ public class ClusterFeature {
 	 */
 	public ClusterFeature(CFNode cur) {
 		count = 0;
-		sums = new BinnedPeakList();
+		sums = new BinnedPeakList(new DummyNormalizer());
 		squareSums = 0;
 		curNode = cur;
+		atomIDs = new ArrayList<Integer>();
 	}
 	
 	/**
@@ -83,11 +88,12 @@ public class ClusterFeature {
 	 * @param s2 - sum of sqaures
 	 * @param ids - atomids
 	 */
-	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2) {
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, ArrayList<Integer> ids) {
 		curNode = cur;
 		count = c;
 		sums = s1;
 		squareSums = s2;
+		atomIDs = ids;
 	}
 	
 	/**
@@ -95,7 +101,7 @@ public class ClusterFeature {
 	 * @param list - binnedPeakList
 	 * @param atomID - atomID
 	 */
-	public void updateCF(BinnedPeakList list) {
+	public void updateCF(BinnedPeakList list, int atomID) {
 		count++;
 		sums.addAnotherParticle(list);
 		BinnedPeak peak;
@@ -104,6 +110,7 @@ public class ClusterFeature {
 			peak = iterator.next();
 			squareSums += peak.value*peak.value;
 		}
+		atomIDs.add(new Integer(atomID));
 	}
 	
 	/**
@@ -113,15 +120,16 @@ public class ClusterFeature {
 	public boolean updateCF() {
 		if (child == null || child.getCFs().size() == 0) 
 			return false;
-		
+		atomIDs.clear();
 		ArrayList<ClusterFeature> cfs = child.getCFs();
 		count = 0;
-		sums = new BinnedPeakList();
+		sums = new BinnedPeakList(new DummyNormalizer());
 		squareSums = 0;
 		for (int i = 0; i < cfs.size(); i++) {
 			count += cfs.get(i).count;
 			sums.addAnotherParticle(cfs.get(i).getSums());
 			squareSums += cfs.get(i).squareSums;
+			atomIDs.addAll(cfs.get(i).getAtomIDs());
 		}
 		return true;
 	}
@@ -218,7 +226,7 @@ public class ClusterFeature {
 	 * @return - cf's centroid
 	 */
 	public BinnedPeakList getCentroid() {
-		BinnedPeakList list = new BinnedPeakList();
+		BinnedPeakList list = new BinnedPeakList(new DummyNormalizer());
 		Iterator<BinnedPeak> iterator = sums.iterator();
 		BinnedPeak next;
 		while (iterator.hasNext()) {
@@ -227,6 +235,10 @@ public class ClusterFeature {
 		}
 		list.normalize(DistanceMetric.CITY_BLOCK);
 		return list;
+	}
+	
+	public ArrayList<Integer> getAtomIDs() {
+		return atomIDs;
 	}
 
 }
