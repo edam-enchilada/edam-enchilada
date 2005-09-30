@@ -87,6 +87,19 @@ Section "Desktop Shortcut"
 
 SectionEnd
 
+Section "MS SQL Desktop Environment (SQL Server Replacement)"
+
+	CreateDirectory "C:\MSDE-install-temp"
+	SetOutPath "C:\MSDE-install-temp"
+	File /r MSDERelA
+	
+	Exec '"C:\MSDE-install-temp\MSDERelA\setup.exe SAPWD="sa-account-password" TARGETDIR="$INSTDIR\db\" DATADIR="$INSTDIR\db\" DISABLENETWORKPROTOCOLS=0'
+	
+	Exec `"C:\Program Files\Microsoft SQL Server\80\Tools\Binn\osql.exe -U sa -P "sa-account-password" -Q "EXEC sp_addlogin 'SpASMS','finally' EXEC sp_addsrvrolemember 'SpASMS','bulkadmin' EXEC sp_addsrvrolemember 'SpASMS','dbcreator'"`	
+
+SectionEnd
+
+
 ;--------------------------------
 
 ; Uninstaller
