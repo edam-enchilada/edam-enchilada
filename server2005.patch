@@ -1,0 +1,60 @@
+Index: .classpath
+===================================================================
+RCS file: /cvsroot/edam-enchilada/edam-enchilada/.classpath,v
+retrieving revision 1.9
+diff -u -r1.9 .classpath
+--- .classpath	14 Jul 2005 14:04:41 -0000	1.9
++++ .classpath	7 Oct 2005 04:32:20 -0000
+@@ -3,8 +3,6 @@
+ 	<classpathentry kind="src" path=""/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry sourcepath="ECLIPSE_HOME/plugins/org.eclipse.jdt.source_3.1.0/src/org.junit_3.8.1/junitsrc.zip" kind="var" path="JUNIT_HOME/junit.jar"/>
+-	<classpathentry kind="lib" path="C:/Program Files/Microsoft SQL Server 2000 Driver for JDBC/lib/msbase.jar"/>
+-	<classpathentry kind="lib" path="C:/Program Files/Microsoft SQL Server 2000 Driver for JDBC/lib/msutil.jar"/>
+-	<classpathentry kind="lib" path="C:/Program Files/Microsoft SQL Server 2000 Driver for JDBC/lib/mssqlserver.jar"/>
++	<classpathentry kind="lib" path="C:/Program Files/Microsoft SQL Server 2005 JDBC Driver/sqljdbc_1.0/enu/sqljdbc.jar"/>
+ 	<classpathentry kind="output" path=""/>
+ </classpath>
+Index: database/SQLServerDatabase.java
+===================================================================
+RCS file: /cvsroot/edam-enchilada/edam-enchilada/database/SQLServerDatabase.java,v
+retrieving revision 1.27
+diff -u -r1.27 SQLServerDatabase.java
+--- database/SQLServerDatabase.java	29 Aug 2005 22:37:46 -0000	1.27
++++ database/SQLServerDatabase.java	7 Oct 2005 04:32:21 -0000
+@@ -158,7 +158,7 @@
+ 	{
+ 
+ 		try {
+-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
++			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver").newInstance();
+ 		} catch (Exception e) {
+ 			new ExceptionDialog("Failed to load current driver.");
+ 			System.err.println("Failed to load current driver.");
+@@ -166,7 +166,7 @@
+ 		} // end catch
+ 		con = null;
+ 		try {
+-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
++			con = DriverManager.getConnection("jdbc:sqlserver://" + url + ":" + port + ";databaseName=" + database + ";user=SpASMS;password=finally");
+ 		} catch (Exception e) {
+ 			new ExceptionDialog("Failed to establish a connection to SQL Server.");
+ 			System.err.println("Failed to establish a connection to SQL Server");
+@@ -599,7 +599,7 @@
+ 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
+ 
+ 			// Only bulk insert if client and server are on the same machine...
+-			if (url.equals("localhost")) {
++			if (false) {
+ 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+ 				PrintWriter bulkFile = null;
+ 				try {
+@@ -682,7 +682,7 @@
+ 			stmt.addBatch(insert);
+ 
+ 			// Only bulk insert if client and server are on the same machine...
+-			if (url.equals("localhost")) {
++			if (false) {
+ 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+ 				PrintWriter bulkFile = null;
+ 				try {
