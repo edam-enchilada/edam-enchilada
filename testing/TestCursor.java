@@ -48,6 +48,7 @@ import java.util.ArrayList;
 
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
+import analysis.Normalizer;
 import atom.ATOFMSAtomFromDB;
 import database.CollectionCursor;
 
@@ -70,7 +71,7 @@ public class TestCursor implements CollectionCursor {
 		ATOFMSAtomFromDB tempAPI = new ATOFMSAtomFromDB();
 		tempAPI.setAtomID(1);
 		tempPI.setParticleInfo(tempAPI);
-		BinnedPeakList tempBPL = new BinnedPeakList();
+		BinnedPeakList tempBPL = new BinnedPeakList(new Normalizer());
 		tempBPL.add(10,1.0f);
 		tempPI.setBinnedList(tempBPL);
 		particles.add(tempPI);
@@ -79,7 +80,7 @@ public class TestCursor implements CollectionCursor {
 		tempAPI = new ATOFMSAtomFromDB();
 		tempAPI.setAtomID(2);
 		tempPI.setParticleInfo(tempAPI);
-		tempBPL = new BinnedPeakList();
+		tempBPL = new BinnedPeakList(new Normalizer());
 		tempBPL.add(20,1.0f);
 		tempPI.setBinnedList(tempBPL);
 		particles.add(tempPI);
@@ -88,7 +89,7 @@ public class TestCursor implements CollectionCursor {
 		tempAPI = new ATOFMSAtomFromDB();
 		tempAPI.setAtomID(3);
 		tempPI.setParticleInfo(tempAPI);
-		tempBPL = new BinnedPeakList();
+		tempBPL = new BinnedPeakList(new Normalizer());
 		tempBPL.add(30,1.0f);
 		tempPI.setBinnedList(tempBPL);
 		particles.add(tempPI);

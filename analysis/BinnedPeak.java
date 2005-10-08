@@ -42,16 +42,16 @@ package analysis;
 /**
  * @author andersbe
  *
- * A convenience class for returning both an area and a location
+ * A convenience class for returning both an value and a key
  * of a given peak.
  */
 public class BinnedPeak {
-	public float area;
-	public int location;
+	public float value;
+	public int key;
 	
 	public BinnedPeak(int l, float a)
 	{
-		location = l;
-		area = a;
+		key = l;
+		value = a;
 	}
 }

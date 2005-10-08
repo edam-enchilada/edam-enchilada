@@ -205,7 +205,7 @@ public class Histogram {
 				System.out.println("*NONE*");
 			} else {
 				for (SplitRule rule : rules) {
-					System.out.println(rule.area+"\t"+rule.toString());
+					System.out.println(rule.value+"\t"+rule.toString());
 				}
 			}
 		}

@@ -524,7 +524,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	public void mouseMoved(MouseEvent e)
 	{
 		if(peaks.isEmpty()) return;
-		
+
 		Point mousePoint = e.getPoint();  //the mouse location
 		Peak peak;
 		int chartIndex = chart.getChartIndexAt(mousePoint); //the chart the mouse is point at

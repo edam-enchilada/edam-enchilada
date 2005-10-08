@@ -3,6 +3,7 @@ package analysis.clustering.o.tests;
 import java.util.*;
 
 import analysis.BinnedPeakList;
+import analysis.Normalizer;
 import analysis.clustering.o.StatSummary;
 
 import junit.framework.TestCase;
@@ -23,7 +24,7 @@ public class StatSummaryTest extends TestCase {
 		float[] sums = new float[NUM_PEAKS];
 		
 		for (int atom = 0; atom < 5000; atom++) {
-			tmp = new BinnedPeakList();
+			tmp = new BinnedPeakList(new Normalizer());
 			for (int i = 0; i < NUM_PEAKS; i++) {
 				tmp.add(i, area(i));
 				sums[i] += area(i);
@@ -49,7 +50,7 @@ public class StatSummaryTest extends TestCase {
 	}
 
 	private int binnedLocation(int peakno) {
-		BinnedPeakList tmp = new BinnedPeakList();
+		BinnedPeakList tmp = new BinnedPeakList(new Normalizer());
 		tmp.add(peakno, 5);
 		return tmp.getFirstLocation();
 	}
@@ -91,10 +92,10 @@ public class StatSummaryTest extends TestCase {
 	
 	public void testSimpleData() {
 		ArrayList<BinnedPeakList> a = new ArrayList<BinnedPeakList>();
-		BinnedPeakList b = new BinnedPeakList();
+		BinnedPeakList b = new BinnedPeakList(new Normalizer());
 		b.add(5, 10);
 		b.add(0, 0);
-		BinnedPeakList c = new BinnedPeakList();
+		BinnedPeakList c = new BinnedPeakList(new Normalizer());
 		c.add(5, 11);
 		c.add(0, 1);
 		a.add(b);

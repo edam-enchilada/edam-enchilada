@@ -50,7 +50,7 @@ public class HistogramTest extends TestCase {
 			fail("Iris data has one split point, not zero.");
 		} else {
 			// the split point should be greater than 0.5 and less than 1.
-			assertEquals(0.75f, splitRules.get(0).area, 0.24f);
+			assertEquals(0.75f, splitRules.get(0).value, 0.24f);
 		}
 	}
 	

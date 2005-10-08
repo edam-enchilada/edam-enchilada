@@ -51,6 +51,10 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 
+import analysis.dataCompression.BIRCH;
+import analysis.dataCompression.CompressData;
+import analysis.DistanceMetric;
+
 import collection.*;
 
 import java.awt.*;
@@ -84,6 +88,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem MSAexportItem;
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
+	private JMenuItem compressItem;
 	private JMenuItem clusterItem;
 	private JMenuItem rebuildItem;
 	private JMenuItem exitItem;
@@ -91,6 +96,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem copyItem;
 	private JMenuItem pasteItem;
 	private JMenuItem deleteAdoptItem;
+	private JMenuItem dataFormatItem;
 	private JMenuItem recursiveDeleteItem;
 	private CollectionTree collectionPane;
 	private CollectionTree synchronizedPane;
@@ -279,6 +285,11 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
 		
+		else if (source == compressItem) {
+			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",false,DistanceMetric.EUCLIDEAN_SQUARED);
+			b.compress();
+		}
+		
 		
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
@@ -317,6 +328,10 @@ public class MainFrame extends JFrame implements ActionListener
 				MapValuesWindow bw = new MapValuesWindow(this, db, selectedCollection);
 				bw.setVisible(true);
 			}
+		}
+		
+		else if (source == dataFormatItem) {
+			new DataFormatViewer(this);
 		}
 	}
 	
@@ -419,11 +434,14 @@ public class MainFrame extends JFrame implements ActionListener
 				KeyEvent.VK_F);
 		queryItem = new JMenuItem("Query. . . ", KeyEvent.VK_Q);
 		queryItem.addActionListener(this);
+		compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
+		compressItem.addActionListener(this);
 		
 		analysisMenu.add(clusterItem);
 		analysisMenu.add(labelItem);
 		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
+		analysisMenu.add(compressItem);
 		
 		//Add a collection menu to the menu bar.
 		JMenu collectionMenu = new JMenu("Collection");
@@ -444,6 +462,15 @@ public class MainFrame extends JFrame implements ActionListener
 		collectionMenu.add(recursiveDeleteItem);
 		collectionMenu.addSeparator();
 		collectionMenu.add(accessSelected);		
+		
+		// add a datatype menu to the menu bar.
+		JMenu datatypeMenu = new JMenu("Datatype");
+		datatypeMenu.setMnemonic(KeyEvent.VK_D);
+		menuBar.add(datatypeMenu);
+		dataFormatItem = new JMenuItem("Data Format Viewer", KeyEvent.VK_D);
+		dataFormatItem.addActionListener(this);
+
+		datatypeMenu.add(dataFormatItem);
 		
 		//Add a help menu to the menu bar.
 		JMenu helpMenu = new JMenu("Help");

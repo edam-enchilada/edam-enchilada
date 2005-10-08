@@ -2,6 +2,7 @@ package analysis.clustering.o.tests;
 
 import junit.framework.TestCase;
 import analysis.BinnedPeakList;
+import analysis.Normalizer;
 import analysis.clustering.o.*;
 
 public class IrisTest extends TestCase {
@@ -192,7 +193,7 @@ public class IrisTest extends TestCase {
 		BinnedPeakList temp;
 		irises = new DataWithSummary();
 		for (int iris = 0; iris < irisData.length; iris++) {
-			temp = new BinnedPeakList();
+			temp = new BinnedPeakList(new Normalizer());
 			for (int dim = 0; dim < 4; dim++) {
 				temp.add(dim, irisData[iris][dim]);
 			}

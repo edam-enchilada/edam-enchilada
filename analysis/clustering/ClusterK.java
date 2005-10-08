@@ -45,6 +45,7 @@
 package analysis.clustering;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -89,6 +90,8 @@ public abstract class ClusterK extends Cluster {
 	private JLabel errorLabel;
 	private JFrame container;
 	
+	private ClusterInformation cInfo;
+	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
 	 * @param cID - collection ID
@@ -100,17 +103,17 @@ public abstract class ClusterK extends Cluster {
 	 * 
 	 */
 	public ClusterK(int cID, InfoWarehouse database, int k, 
-			String name, String comment, boolean refineCentroids) 
+			String name, String comment, boolean refineCentroids, ClusterInformation c) 
 	{
-		super(cID, database,name.concat(",K=" + k),comment);
+		super(cID, database,name.concat(",K=" + k),comment, c.normalize);
 		this.k = k;
 		this.refineCentroids = refineCentroids;
 		collectionID = cID;
 		parameterString = name.concat(",K=" + k);
 		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
-		
-	}
+		cInfo = c;
+		}
 	
 	/**
 	 * Divide refines the centroids if needed and calls the clustering method.
@@ -262,10 +265,10 @@ public abstract class ClusterK extends Cluster {
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getBinnedCursor(db.getCollection(collectionID)));
+			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
 		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryBinnedCursor(db.getCollection(collectionID)));
+		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), cInfo));
 		return true;
 		default :
 			return false;
@@ -341,7 +344,7 @@ public abstract class ClusterK extends Cluster {
 		
 		// If the centroidList has no centroids in it, choose k random
 		// centroids. Only choose random peaks where at least one particle
-		// has a peak at that location.
+		// has a peak at that key.
 		if (centroidList.size() == 0) {
 		    
 		    // Take the first point as the first centroid. For each succeeding
@@ -360,12 +363,13 @@ public abstract class ClusterK extends Cluster {
 		    for (int i=1; i < k; i++) {
 		        curs.reset();
 				BinnedPeakList furthestPeakList = null;
-				double furthestGlobalDistance = Double.MIN_VALUE;
+				double furthestGlobalDistance = (double) 0;
 		        while (curs.next()) {
 					ParticleInfo thisParticleInfo = curs.getCurrent();
-					BinnedPeakList thisBinnedPeakList =
-						curs.getPeakListfromAtomID(thisParticleInfo.getID());
+					BinnedPeakList thisBinnedPeakList =	curs.getPeakListfromAtomID(thisParticleInfo.getID());
 					thisBinnedPeakList.normalize(distanceMetric);
+					thisBinnedPeakList.printPeakList();
+					System.out.println("***");
 					double nearestDistance = Double.MAX_VALUE;
 					
 					for (int curCent = 0; 
@@ -380,8 +384,8 @@ public abstract class ClusterK extends Cluster {
 						if (distance < nearestDistance)
 							nearestDistance = distance;
 					}// end for each centroid
-					
-					if (nearestDistance > furthestGlobalDistance) {
+					System.out.println("nearestDist: " + nearestDistance);
+					if (nearestDistance >= furthestGlobalDistance) {
 					    furthestGlobalDistance = nearestDistance;
 					    furthestPeakList = thisBinnedPeakList;
 					}

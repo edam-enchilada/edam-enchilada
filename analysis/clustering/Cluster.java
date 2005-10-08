@@ -55,6 +55,8 @@ import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
+import analysis.DummyNormalizer;
+import analysis.Normalizer;
 
 /**
  * @author andersbe
@@ -75,6 +77,8 @@ public abstract class Cluster extends CollectionDivider {
 	protected int clusterCentroidIters = 0;
 	protected int sampleIters = 0;
 	
+	protected boolean isNormalized;
+	
 	/**
 	 * Builds the cluster name a bit, then sends information off
 	 * to the CollectionDivider constructor
@@ -84,8 +88,9 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param comment	A comment for the cluster.
 	 */
 	public Cluster(int cID, InfoWarehouse database, String name, 
-			String comment) {
+			String comment, boolean norm) {
 		super(cID,database,name.concat(",CLUST"),comment);
+		isNormalized = norm;
 	}
 	
 	/**
@@ -122,13 +127,13 @@ public abstract class Cluster extends CollectionDivider {
 			BinnedPeakList inputList,
 			PrintWriter out)
 	{
-		out.println("Location:\tArea:");
+		out.println("Key:\tValue:");
 		Iterator<BinnedPeak> iter = inputList.iterator();
 		BinnedPeak tempPeak;
 		while (iter.hasNext())
 		{
 			tempPeak = iter.next();
-			out.println(tempPeak.location + "\t" + tempPeak.area);
+			out.println(tempPeak.key + "\t" + tempPeak.value);
 		}
 	}
 		
@@ -162,15 +167,15 @@ public abstract class Cluster extends CollectionDivider {
 		while (longIter.hasNext())
 		{
 			temp = longIter.next();
-			checkedLocations.add(new Integer(temp.location));
+			checkedLocations.add(new Integer(temp.key));
 			if (distanceMetric == DistanceMetric.CITY_BLOCK)
-				distance += Math.abs(temp.area - 
-						shorter.getAreaAt(temp.location));
+				distance += Math.abs(temp.value - 
+						shorter.getAreaAt(temp.key));
 			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 			{
-				shorterTemp = shorter.getAreaAt(temp.location);
-				distance += (temp.area - shorterTemp)
-				* (temp.area - shorterTemp);
+				shorterTemp = shorter.getAreaAt(temp.key);
+				distance += (temp.value - shorterTemp)
+				* (temp.value - shorterTemp);
 			}
 			else
 				distance = -1.0f;
@@ -183,19 +188,19 @@ public abstract class Cluster extends CollectionDivider {
 			temp = shortIter.next();
 			double longerTemp;
 			for (Integer loc : checkedLocations)
-				if (temp.location == loc.intValue())
+				if (temp.key == loc.intValue())
 					alreadyChecked = true;
 			if (!(alreadyChecked))
 			{
 				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-					distance += Math.abs(temp.area - 
-							longer.getAreaAt(temp.location));
+					distance += Math.abs(temp.value - 
+							longer.getAreaAt(temp.key));
 
 				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
-					longerTemp = longer.getAreaAt(temp.location);
-					distance += (temp.area - longerTemp) *
-					(temp.area - longerTemp);
+					longerTemp = longer.getAreaAt(temp.key);
+					distance += (temp.value - longerTemp) *
+					(temp.value - longerTemp);
 				}
 				else
 					distance = -1.0f;
@@ -274,8 +279,12 @@ public abstract class Cluster extends CollectionDivider {
 	{
 		
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
-		for (int i = 0; i < centroidList.size(); i++)
-			sums.add(new BinnedPeakList());
+		if (isNormalized)
+			for (int i = 0; i < centroidList.size(); i++)
+				sums.add(new BinnedPeakList(new Normalizer()));
+		else
+			for (int i = 0; i < centroidList.size(); i++)
+				sums.add(new BinnedPeakList(new DummyNormalizer()));
 		
 		int particleCount = 0;
 		ParticleInfo thisParticleInfo = null;
@@ -292,9 +301,7 @@ public abstract class Cluster extends CollectionDivider {
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
 			thisBinnedPeakList.normalize(distanceMetric);
-			// no centroid will be found further than the max distance (2.0)
-			// since that centroid would not be considered
-			nearestDistance = 3.0f;
+			nearestDistance = Float.MAX_VALUE;
 			for (int centroidIndex = 0; 
 			centroidIndex < centroidList.size(); 
 			centroidIndex++)
@@ -319,8 +326,7 @@ public abstract class Cluster extends CollectionDivider {
 					System.err.println(
 							"Problem creating sub collection");
 			}
-			putInSubCollectionBatch(thisParticleInfo.getParticleInfo().
-					getAtomID(), 
+			putInSubCollectionBatch(thisParticleInfo.getID(),
 					temp.subCollectionNum);
 			temp.numMembers++;
 			
@@ -386,8 +392,7 @@ public abstract class Cluster extends CollectionDivider {
 				if (outliers.numMembers == 0)
 					outliers.subCollectionNum = 
 						createSubCollection("Outliers", "Outliers");
-				putInSubCollectionBatch(thisParticleInfo.getParticleInfo().
-						getAtomID(),
+				putInSubCollectionBatch(thisParticleInfo.getID(),
 						outliers.subCollectionNum);
 				outliers.numMembers++;
 				System.out.println("Outlier #" + outliers.numMembers);
@@ -402,8 +407,7 @@ public abstract class Cluster extends CollectionDivider {
 					temp.subCollectionNum = createSubCollection();
 				}
 				putInSubCollectionBatch(
-						thisParticleInfo.getParticleInfo().
-						getAtomID(), 
+						thisParticleInfo.getID(), 
 						temp.subCollectionNum);
 				
 				temp.numMembers++;

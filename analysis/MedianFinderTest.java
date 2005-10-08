@@ -66,11 +66,11 @@ public class MedianFinderTest extends TestCase {
 	private ArrayList<BinnedPeakList> none;
 	protected void setUp()
 	{
-		bpl1 = new BinnedPeakList();
-		bpl2 = new BinnedPeakList();
-		bpl3 = new BinnedPeakList();
-		bpl4 = new BinnedPeakList();
-		bpl5 = new BinnedPeakList();
+		bpl1 = new BinnedPeakList(new Normalizer());
+		bpl2 = new BinnedPeakList(new Normalizer());
+		bpl3 = new BinnedPeakList(new Normalizer());
+		bpl4 = new BinnedPeakList(new Normalizer());
+		bpl5 = new BinnedPeakList(new Normalizer());
 		
 		allFive = new ArrayList<BinnedPeakList>(5);
 		firstFour = new ArrayList<BinnedPeakList>(4);
@@ -110,11 +110,11 @@ public class MedianFinderTest extends TestCase {
 		
 		onlyOne.add(bpl1);
 		
-		nbpl1 = new BinnedPeakList();
-		nbpl2 = new BinnedPeakList();
-		nbpl3 = new BinnedPeakList();
-		nbpl4 = new BinnedPeakList();
-		nbpl5 = new BinnedPeakList();
+		nbpl1 = new BinnedPeakList(new Normalizer());
+		nbpl2 = new BinnedPeakList(new Normalizer());
+		nbpl3 = new BinnedPeakList(new Normalizer());
+		nbpl4 = new BinnedPeakList(new Normalizer());
+		nbpl5 = new BinnedPeakList(new Normalizer());
 		
 		allFiveNorm = new ArrayList<BinnedPeakList>(5);
 		
@@ -151,7 +151,7 @@ public class MedianFinderTest extends TestCase {
 	}
 	
 	public void testGetMedian() {
-		MedianFinder mf = new MedianFinder(allFive);
+		MedianFinder mf = new MedianFinder(allFive, true);
 		
 		BinnedPeakList median = mf.getMedian();
 		assertTrue(median.getAreaAt(1) == 30);
@@ -162,7 +162,7 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(-4) == 0);
 		assertTrue(median.getAreaAt(-5) == 0);
 		
-		mf = new MedianFinder(firstFour);
+		mf = new MedianFinder(firstFour, true);
 		median = mf.getMedian();
 		assertTrue(median.getAreaAt(1) == 25);
 		assertTrue(median.getAreaAt(-3) == 75);
@@ -171,14 +171,14 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(3) == 0);
 		assertTrue(median.getAreaAt(-4) == 0);
 		
-		mf = new MedianFinder(onlyOne);
+		mf = new MedianFinder(onlyOne, true);
 		median = mf.getMedian();
 		assertTrue(median.getAreaAt(1) == 10);
 		assertTrue(median.getAreaAt(-3) == 30);
 		assertTrue(median.getAreaAt(-1) == 50);
 		boolean exception = false;
 		try{
-			mf = new MedianFinder(none);
+			mf = new MedianFinder(none, true);
 		}catch (IllegalArgumentException e)
 		{
 			exception = true;
@@ -187,7 +187,7 @@ public class MedianFinderTest extends TestCase {
 	}
 	
 	public void testGetKthElement() {
-		MedianFinder mf = new MedianFinder(allFive);
+		MedianFinder mf = new MedianFinder(allFive, true);
 		
 		BinnedPeakList median = mf.getKthElement(0);
 		assertTrue(median.getAreaAt(1) == 10);
@@ -207,7 +207,7 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(-4) == 50);
 		assertTrue(median.getAreaAt(-5) == 50);
 		
-		mf = new MedianFinder(firstFour);
+		mf = new MedianFinder(firstFour, true);
 		median = mf.getKthElement(2);
 		assertTrue(median.getAreaAt(1) == 30);
 		assertTrue(median.getAreaAt(-3) == 90);
@@ -216,7 +216,7 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(3) == 0);
 		assertTrue(median.getAreaAt(-4) == 0);
 		
-		mf = new MedianFinder(onlyOne);
+		mf = new MedianFinder(onlyOne, true);
 		median = mf.getKthElement(0);
 		assertTrue(median.getAreaAt(1) == 10);
 		assertTrue(median.getAreaAt(-3) == 30);
@@ -230,7 +230,7 @@ public class MedianFinderTest extends TestCase {
 		}
 		assertTrue(exception);
 		try{
-			mf = new MedianFinder(none);
+			mf = new MedianFinder(none, true);
 		}catch (IllegalArgumentException e)
 		{
 			exception = true;
@@ -239,7 +239,7 @@ public class MedianFinderTest extends TestCase {
 	}
 	
 	public void testGetPercentElement() {
-		MedianFinder mf = new MedianFinder(allFive);
+		MedianFinder mf = new MedianFinder(allFive, true);
 		
 		BinnedPeakList median = mf.getPercentElement(1.0f);
 		assertTrue(median.getAreaAt(1) == 10);
@@ -259,7 +259,7 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(-4) == 50);
 		assertTrue(median.getAreaAt(-5) == 50);
 		
-		mf = new MedianFinder(firstFour);
+		mf = new MedianFinder(firstFour, true);
 		median = mf.getPercentElement(.26f);
 		assertTrue(median.getAreaAt(1) == 30);
 		assertTrue(median.getAreaAt(-3) == 90);
@@ -268,7 +268,7 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(median.getAreaAt(3) == 0);
 		assertTrue(median.getAreaAt(-4) == 0);
 		
-		mf = new MedianFinder(onlyOne);
+		mf = new MedianFinder(onlyOne, true);
 		median = mf.getPercentElement(0);
 		assertTrue(median.getAreaAt(1) == 10);
 		assertTrue(median.getAreaAt(-3) == 30);
@@ -282,7 +282,7 @@ public class MedianFinderTest extends TestCase {
 		}
 		assertTrue(exception);
 		try{
-			mf = new MedianFinder(none);
+			mf = new MedianFinder(none, true);
 		}catch (IllegalArgumentException e)
 		{
 			exception = true;
@@ -291,7 +291,7 @@ public class MedianFinderTest extends TestCase {
 	}
 
 	public void testmakeMPS() {
-		MedianFinder mf = new MedianFinder(allFiveNorm);
+		MedianFinder mf = new MedianFinder(allFiveNorm, true);
 		
 		mf.makeMPS();
 		long start = System.currentTimeMillis();

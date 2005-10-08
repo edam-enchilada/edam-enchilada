@@ -58,7 +58,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 		
 		// Add random peaks.  Instead of placing them every
 		// 20 locations, we'll insert 20 peaks at random
-		// locations and then add a few in the same location to 
+		// locations and then add a few in the same key to 
 		// get a bigger peak.
 		
 		int peakLoc = 0;
@@ -88,7 +88,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 			// 150, etc. up to 300 (24 possible locations).
 			int index = -1;
 			for (int biggerPeak = 0; biggerPeak < 8; biggerPeak++) {
-				// choose location
+				// choose key
 				neg = randNum.nextBoolean();
 				peakLoc = randNum.nextInt(12) * 25;
 				if (neg)
@@ -103,7 +103,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 					(int)(Math.round(Math.abs(randNum.nextGaussian()) * amplitude));
 				if (heightAndArea < 0)
 					heightAndArea = 0;
-				// If a peak exists at that location, add to it.
+				// If a peak exists at that key, add to it.
 				if (index == -1)
 					peakList.add(new Peak(heightAndArea, heightAndArea, peakLoc));
 				else {

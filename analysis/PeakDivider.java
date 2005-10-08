@@ -110,7 +110,7 @@ public class PeakDivider extends CollectionDivider {
 			{
 				mustContain = peaks.iterator();
 				if (thisParticleList.getAreaAt(
-						mustContain.next().location) 
+						mustContain.next().key) 
 						== 0)
 					match = false;
 			}

@@ -234,7 +234,7 @@ public class AutoCalibrator {
 				
 				/////////////////////////////////////////////////////////////////////
 				// 1b. Find the integral mass value that has the biggest peak in the
-				// area described by this voltage value.
+				// value described by this voltage value.
 				/////////////////////////////////////////////////////////////////////
 				for (ThisMass = MIN_MASS;ThisMass <= MAX_MASS;++ThisMass)
 				{

@@ -62,9 +62,12 @@ public class MedianFinder {
 	private float[][] sortedList;
 	private boolean [] locationsUsed = new boolean [DOUBLE_MAX];
 	
-	public MedianFinder(ArrayList<BinnedPeakList> particles)
+	private boolean isNormalized;
+	
+	public MedianFinder(ArrayList<BinnedPeakList> particles, boolean norm)
 	{
 		this.particles = particles;
+		isNormalized = norm;
 		if (particles.size() != 0)
 		{
 			sortedList = new float[DOUBLE_MAX][particles.size()];
@@ -88,9 +91,9 @@ public class MedianFinder {
 			while (j.hasNext())
 			{
 				BinnedPeak peak = j.next();
-				sortedList[MAX_LOCATION+peak.location][i] = 
-					peak.area;
-				locationsUsed[MAX_LOCATION+peak.location] = true;
+				sortedList[MAX_LOCATION+peak.key][i] = 
+					peak.value;
+				locationsUsed[MAX_LOCATION+peak.key] = true;
 			}
 		}
 	}
@@ -168,7 +171,7 @@ public class MedianFinder {
 			while (j.hasNext())
 			{
 				BinnedPeak peak = j.next();
-				data[i][MAX_LOCATION+peak.location] = peak.area;
+				data[i][MAX_LOCATION+peak.key] = peak.value;
 			}
 		}
 		for (int i = 0; i < particles.size(); i++)
@@ -209,7 +212,11 @@ public class MedianFinder {
 	{
 		if (particles.size() == 0)
 			return null;
-		BinnedPeakList returnThis = new BinnedPeakList();
+		BinnedPeakList returnThis;
+		if (isNormalized)
+			returnThis = new BinnedPeakList(new Normalizer());
+		else 
+			returnThis = new BinnedPeakList(new DummyNormalizer());
 		if (particles.size()%2 == 0)
 		{
 			double sum = 0.0;
@@ -250,7 +257,11 @@ public class MedianFinder {
 			throw new IndexOutOfBoundsException(
 					"k must be a number from 0 to " +
 					(particles.size()-1));
-		BinnedPeakList returnThis = new BinnedPeakList();
+		BinnedPeakList returnThis;
+		if (isNormalized)
+			returnThis = new BinnedPeakList(new Normalizer());
+		else 
+			returnThis = new BinnedPeakList(new DummyNormalizer());
 		for (int i = 0; i < DOUBLE_MAX; i++)
 		{
 			if (sortedList[i][k] == 0)
@@ -309,15 +320,10 @@ public class MedianFinder {
 		// Get the median and calculate the starting magnitude
 		BinnedPeakList median = getMedian();
 		float magnitude = median.getMagnitude(DistanceMetric.CITY_BLOCK);
-		
-		/*assert(magnitude <= 1.001f) : "Median was larger than 1: " +
-			magnitude + " median: " + particles.size()/2 + " from: " + 
-			DEBUGprintMagnitudes() + " size = " + particles.size();*/
-		
 		// If the median is not normalized, normalize it already
 		if (magnitude < 0.999f)
 		{
-			// For each location, Find out how many spectra have peaks 
+			// For each key, Find out how many spectra have peaks 
 			// bigger than those in the median 
 			int [] numEntriesGreaterThanMedian = new int[DOUBLE_MAX];
 			int maxIndex = -1;
@@ -353,7 +359,7 @@ public class MedianFinder {
 				}
 				//assert (j != sortedList[i].length - 1) : 
 					//"j did not decrease";
-				// Find the location where the most peaklists have 
+				// Find the key where the most peaklists have 
 				// values higher than the median
 				if (numEntriesGreaterThanMedian[i] > maxNumEntries)
 				{
@@ -368,8 +374,8 @@ public class MedianFinder {
 			assert (maxNumEntries > 0) : 
 				"maxValue remained 0.  List size: " + sortedList[0].length;
 			
-			// Magnify the median at this location, adjust the count
-			// at this location for how many peaklists are bigger
+			// Magnify the median at this key, adjust the count
+			// at this key for how many peaklists are bigger
 			// than the median and go again until magnitude reaches 1.0f
 			while (magnitude < 1.0f && numEntriesGreaterThanMedian.length > 0)
 			{
@@ -451,7 +457,7 @@ public class MedianFinder {
 		}
 		else if (magnitude > 1.0001)
 		{
-//			 For each location, Find out how many spectra have peaks 
+//			 For each key, Find out how many spectra have peaks 
 			// less than those in the median 
 			int [] numEntriesLessThanMedian = new int[DOUBLE_MAX];
 			int maxIndex = -1;
@@ -486,7 +492,7 @@ public class MedianFinder {
 				}
 				//assert (j != sortedList[i].length - 1) : 
 					//"j did not decrease";
-				// Find the location where the most peaklists have 
+				// Find the key where the most peaklists have 
 				// values higher than the median
 				if (numEntriesLessThanMedian[i] > maxNumEntries)
 				{
@@ -500,8 +506,8 @@ public class MedianFinder {
 			assert (maxNumEntries > 0) : 
 				"maxValue remained 0.  List size: " + sortedList[0].length;
 			
-			// Minify the median at this location, adjust the count
-			// at this location for how many peaklists are bigger
+			// Minify the median at this key, adjust the count
+			// at this key for how many peaklists are bigger
 			// than the median and go again until magnitude reaches 1.0f
 			while (magnitude > 1.0f)
 			{

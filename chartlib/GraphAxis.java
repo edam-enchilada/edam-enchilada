@@ -223,7 +223,7 @@ public class GraphAxis {
 		
 		double range = max - min;
 		double relInc = bigTicksFactor / range;	//amount by which the relative
-												// location increases
+												// key increases
 		
 		//error check
 		if(range == 0 || bigTicksFactor == 0)

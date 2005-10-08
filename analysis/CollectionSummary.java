@@ -39,7 +39,7 @@ public class CollectionSummary {
 			i.next().normalize(DistanceMetric.CITY_BLOCK);
 		}
 		
-		medFinder = new MedianFinder(atoms);
+		medFinder = new MedianFinder(atoms, true);
 		
 		BinnedPeakList firstQuarter 
 			= medFinder.getPercentElement(0.75f);

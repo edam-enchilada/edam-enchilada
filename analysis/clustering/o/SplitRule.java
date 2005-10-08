@@ -18,7 +18,7 @@ public class SplitRule extends BinnedPeak {
 	}
 	
 	public boolean isAtomGreater(BinnedPeakList atom) {
-		return area < atom.getAreaAt(location);
+		return value < atom.getAreaAt(key);
 	}
 	
 	/**
@@ -53,7 +53,7 @@ public class SplitRule extends BinnedPeak {
 	}
 	
 	public String toString() {
-		return "Split along dimension " + location + " at value " + area +
+		return "Split along dimension " + key + " at value " + value +
 			" (goodness " + goodness + ")";
 	}
 }

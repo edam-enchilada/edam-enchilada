@@ -217,7 +217,7 @@ public class ATOFMSParticle {
 			
 			// if the index is above the baseline find where it 
 			// goes back below, this range (startLoc-endLoc) is 
-			// the peak's location
+			// the peak's key
 			while (i < MAX_BIN_NUMBER && posSpectrum[i] > baseline + currPeakParams.minHeight)
 			{
 				foundPeak = true;
@@ -292,7 +292,7 @@ public class ATOFMSParticle {
 			startLoc = i;
 			// if the index is above the baseline find where it 
 			// goes back below, this range (startLoc-endLoc) is 
-			// the peak's location
+			// the peak's key
 			//if (negSpectrum[i] < 0)
 			//	System.out.println(negSpectrum[i]);
 			while (i < MAX_BIN_NUMBER && negSpectrum[i] > (baseline
@@ -321,7 +321,7 @@ public class ATOFMSParticle {
 				
 				// lets see if we can pre cut a peak from the list
 				// In an effor to match the MSAnalyze results, I'm 
-				// reducing total area by the area of the peak as we 
+				// reducing total value by the value of the peak as we 
 				// cut it.  Nevermind.
 
 				peakList.add(new Peak(peakHeight, peakArea, getNegMZ(centerIndex)));

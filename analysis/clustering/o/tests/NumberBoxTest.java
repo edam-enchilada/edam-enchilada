@@ -2,6 +2,7 @@ package analysis.clustering.o.tests;
 
 import junit.framework.TestCase;
 import analysis.BinnedPeakList;
+import analysis.Normalizer;
 import analysis.clustering.o.*;
 
 public class NumberBoxTest extends TestCase {
@@ -16,7 +17,7 @@ public class NumberBoxTest extends TestCase {
 		BinnedPeakList temp;
 		irises = new DataWithSummary();
 		for (int iris = 0; iris < irisData.length; iris++) {
-			temp = new BinnedPeakList();
+			temp = new BinnedPeakList(new Normalizer());
 			for (int dim = 0; dim < 4; dim++) {
 				temp.add(dim, irisData[iris][dim]);
 			}
@@ -31,8 +32,8 @@ public class NumberBoxTest extends TestCase {
 		SplitRule r = nb.getBestSplit(95);
 		
 
-		assertEquals("Wrong dimension", 3, r.location);
-		assertEquals("Bad split point", 0.75f, r.area, 0.24f);
+		assertEquals("Wrong dimension", 3, r.key);
+		assertEquals("Bad split point", 0.75f, r.value, 0.24f);
 //		assertEquals("Wrong dimension", 2, r.location);
 //		assertEquals("Bad split point", 2.8f, r.area, 0.1f);
 

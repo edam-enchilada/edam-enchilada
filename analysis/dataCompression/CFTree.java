@@ -37,7 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package analysis.clustering.BIRCH;
+package analysis.dataCompression;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -82,14 +82,14 @@ public class CFTree {
 	 * @param atomID - particle's corresponding atomID (testing purposes)
 	 * @return node that particle is inserted into.
 	 */
-	public CFNode insertEntry(BinnedPeakList entry) {
+	public CFNode insertEntry(BinnedPeakList entry, int atomID) {
  		numDataPoints++;
 		//if (numDataPoints / 100.0 == numDataPoints / 100)
 			System.out.println("inserting particle # " + numDataPoints);
 		// If this is the first entry, make it the root.
 		if (root.getSize() == 0) {
 			ClusterFeature firstCF = new ClusterFeature(root);
-			firstCF.updateCF(entry);
+			firstCF.updateCF(entry, atomID);
 			root.addCF(firstCF);
 			return root;
 		}
@@ -98,7 +98,7 @@ public class CFTree {
 		// if distance is below the threshold, CF absorbs the new entry.
 		if (closestLeaf.getCentroid().getDistance(
 				entry, DistanceMetric.CITY_BLOCK) <= threshold) 
-			closestLeaf.updateCF(entry);
+			closestLeaf.updateCF(entry, atomID);
 		// else, add it to the closestNode as a new CF.
 		else {
 			ClusterFeature newEntry;
@@ -106,7 +106,7 @@ public class CFTree {
 				newEntry = new ClusterFeature(null);
 			else
 				newEntry = new ClusterFeature(closestNode.parentNode);
-			newEntry.updateCF(entry);
+			newEntry.updateCF(entry, atomID);
 			newEntry.updatePointers(null, closestNode);
 			closestNode.addCF(newEntry);
 		}

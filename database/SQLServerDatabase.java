@@ -59,8 +59,11 @@ import java.sql.*;
 
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
-import analysis.BinnedPeakList;
+import analysis.*;
+import analysis.clustering.ClusterInformation;
 import analysis.clustering.PeakList;
+import analysis.dataCompression.CFNode;
+import analysis.dataCompression.CFTree;
 import collection.*;
 import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
@@ -201,7 +204,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	/**
 	 * Creates an empty collection with no atomic analysis units in it.
-	 * @param parent	The location to add this collection under (0 
+	 * @param parent	The key to add this collection under (0 
 	 * 					to add at the root).
 	 * @param name		What to call this collection in the interface.
 	 * @param datatype collection's datatype
@@ -306,7 +309,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * have yet to be inserted into the database.  Not used as far as
 	 * I can tell.
 	 * 
-	 * @param parentID	The location of the parent to insert this
+	 * @param parentID	The key of the parent to insert this
 	 * 					collection (0 to insert at root level)
 	 * @param name		What to call this collection
 	 * @param datatype  collection's datatype
@@ -2285,7 +2288,210 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/* Cursor classes */
+	private class ClusteringCursor implements CollectionCursor {
+		protected InstancedResultSet irs;
+		protected ResultSet rs;
+		protected Statement stmt = null;
+		private Collection collection;
+		private ClusterInformation cInfo;
+		private String datatype;
+		
+		public ClusteringCursor(Collection collection, ClusterInformation cInfo) {
+			super();
+			this.collection = collection;
+			datatype = collection.getDatatype();
+			this.cInfo = cInfo;
+			try {
+				stmt = con.createStatement();
+				irs = getAllAtomsRS(collection);
+				rs = stmt.executeQuery(
+						"SELECT AtomID FROM #TempParticles" + irs.instance +
+						" ORDER BY #TempParticles" + irs.instance + ".AtomID");
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error initializing a " +
+						"resultset " +
+				"for that collection:");
+				e.printStackTrace();
+			}
+		}
+		
+		public boolean next() {
+			try {
+				return rs.next();
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error checking the " +
+						"bounds of " +
+				"the ResultSet.");
+				e.printStackTrace();
+				return false;
+			}
+		}
+		
+		public ParticleInfo getCurrent() {
+			
+			ParticleInfo particleInfo = new ParticleInfo();
+			try {
+				particleInfo.setID(rs.getInt(1));
+				particleInfo.setBinnedList(this.getPeakListfromAtomID(particleInfo.getID()));
+			}catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error retrieving the " +
+				"next row");
+				e.printStackTrace();
+				return null;
+			}
+			return particleInfo; 
+		}
+		
+		public void close() {
+			try {
+				stmt.close();
+				rs.close();
+				con.createStatement().executeUpdate(
+						"DROP Table #TempParticles" + 
+						irs.instance);
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				e.printStackTrace();
+			}
+		}
+		
+		public void reset() {
+			try {
+				rs.close();
+				rs = stmt.executeQuery(
+						"SELECT AtomID FROM #TempParticles" + irs.instance +
+						" ORDER BY #TempParticles" + irs.instance + ".AtomID");
+			} catch (SQLException e) {
+				new ExceptionDialog("SQL Exception retrieving data.");
+				System.err.println("Error resetting a " +
+						"resultset " +
+				"for that collection:");
+				e.printStackTrace();
+			}	
+		}
+		
+		public ParticleInfo get(int i) throws NoSuchMethodException {
+			throw new NoSuchMethodException("Not implemented in disk based cursors.");
+		}
+		
+		public BinnedPeakList getPeakListfromAtomID(int id) {
+			BinnedPeakList peakList;
+			if (cInfo.normalize)
+				peakList = new BinnedPeakList(new Normalizer());
+			else
+				peakList = new BinnedPeakList(new DummyNormalizer());
+			try {
+				ResultSet listRS;
+				Statement stmt2 = con.createStatement();
+				if (cInfo.automatic) {
+					listRS = stmt2.executeQuery("SELECT " + join(cInfo.valueColumns, ",") +
+							" FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, datatype) +
+							" WHERE AtomID = " + id);
 
+					listRS.next();
+					for (int i = 1; i <= cInfo.valueColumns.size(); i++) {
+						//TODO: this is a hack; fix.
+						try {
+							peakList.addNoChecks(i, listRS.getFloat(i));
+						} catch (SQLException e) {
+							peakList.addNoChecks(i, listRS.getInt(i));
+						}
+					}
+				}
+				else {
+					listRS = stmt2.executeQuery("SELECT " + 
+							cInfo.keyColumn + ", " + cInfo.valueColumns.iterator().next() +  
+							" FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse, datatype) + 
+							" WHERE AtomID = " + id);
+					while (listRS.next()) 
+						peakList.add(listRS.getFloat(1), listRS.getFloat(2));
+				} 
+				stmt2.close();
+				listRS.close();
+			}catch (SQLException e) {
+					new ExceptionDialog("SQL Exception retrieving data.");
+					System.err.println("Error retrieving the " +
+					"next row");
+					e.printStackTrace();
+					return null;
+			}
+				return peakList;		
+		}
+		
+		public boolean isNormalized() {
+			return cInfo.normalize;
+		}
+	}
+	
+	/**
+	 * Memory Clustering Cursor.  Returns binned peak info for a given atom,
+	 * info kept in memory.
+	 */
+	private class MemoryClusteringCursor extends ClusteringCursor {
+		InfoWarehouse db;
+		boolean firstPass = true;
+		int position = -1;
+		
+		ArrayList<ParticleInfo> storedInfo = null;
+		
+		public MemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {
+			super (collection, cInfo);
+			storedInfo = new ArrayList<ParticleInfo>(100);
+		}
+		
+		public void reset()
+		{
+			if (firstPass) {
+				storedInfo.clear();
+				super.reset();
+			}
+			position = -1;
+		}
+		
+		public boolean next()
+		{
+			position++;
+			if (firstPass)
+			{
+				boolean superNext = super.next();
+				if (superNext)
+					storedInfo.add(super.getCurrent());
+				else
+				    firstPass = false;
+				return superNext;
+			}
+			else
+				return (position < storedInfo.size());
+		}
+		
+		public ParticleInfo getCurrent()
+		{
+			return storedInfo.get(position);
+		}
+		
+		public ParticleInfo get(int i)
+		{
+			if (firstPass)
+				if (i < position)
+					return storedInfo.get(i);
+				else
+					return null;
+			else
+				return storedInfo.get(i);
+		}
+		
+		public BinnedPeakList getPeakListfromAtomID(int atomID) {
+			for (ParticleInfo particleInfo : storedInfo) {
+				if (particleInfo.getID() == atomID)
+					return particleInfo.getBinnedList();
+			}
+			return super.getPeakListfromAtomID(atomID);
+		}
+	}
+	
 	/**
 	 * AtomInfoOnly cursor.  Returns atom info.
 	 */
@@ -2415,7 +2621,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public BinnedPeakList 
 		getPeakListfromAtomID(int atomID) {
-			BinnedPeakList peakList = new BinnedPeakList();
+			BinnedPeakList peakList = new BinnedPeakList(new Normalizer());
 			try {
 				ResultSet rs = 
 					con.createStatement().executeQuery(
@@ -2590,16 +2796,12 @@ public class SQLServerDatabase implements InfoWarehouse
 			ParticleInfo sPInfo = super.getCurrent();
 			
 			sPInfo.setBinnedList(bin(sPInfo.getPeakList().getPeakList()));
-			//TODO:  USED FOR BIRCH; DON"T KNOW HOW OTHER CLUSTERING ALGORITHMS WITH BE AFFECTED!!
-			//sPInfo.setPeakList(null);
-			//sPInfo.setParticleInfo(null);
-			//////////////TODO
 			return sPInfo;
 		}
 		
 		private BinnedPeakList bin(ArrayList<Peak> peakList)
 		{
-			BinnedPeakList bPList = new BinnedPeakList();
+			BinnedPeakList bPList = new BinnedPeakList(new Normalizer());
 			
 			Peak temp;
 			
@@ -2766,7 +2968,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (particleInfo.getID() == atomID)
 					return particleInfo.getBinnedList();
 			}
-			return new BinnedPeakList();
+			return new BinnedPeakList(new Normalizer());
 		}
 	}
 
@@ -2820,6 +3022,14 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * get method for ClusteringCursor.
+	 */
+	public CollectionCursor getClusteringCursor(Collection collection, ClusterInformation cInfo)
+	{
+		return new ClusteringCursor(collection, cInfo);
+	}
+	
+	/**
 	 * Seeds the random number generator.
 	 */
 	public void seedRandom(int seed) {
@@ -2869,7 +3079,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			while (rs.next()) {
 				temp = new ArrayList<String>();
-				temp.add(rs.getString(1));
+				temp.add(rs.getString(1).substring(1,rs.getString(1).length()-1));
 				temp.add(rs.getString(2));
 				colNames.add(temp);
 			}
@@ -3531,5 +3741,148 @@ public class SQLServerDatabase implements InfoWarehouse
 		return atom;
 	}
 
+	/**
+	 * If the new, compressed datatype doesn't exist, add it.
+	 */
+	public void addCompressedDatatype(String newDatatype, String oldDatatype) {
+		System.out.println();
+		// Copies only relevant columns into table
+		try {
+			if (!containsDatatype(newDatatype)) {
+				assert(containsDatatype(oldDatatype));
+				// insert metadata info.
+				Statement stmt = con.createStatement();
+				
+				// insert the dataset info.  
+				System.out.println("inserting DataSet info...");
+				stmt.addBatch("INSERT INTO MetaData VALUES ('" + newDatatype + "','[DataSet]','VARCHAR(8000)',0,0,2)");
+				stmt.addBatch("INSERT INTO MetaData VALUES ('" + newDatatype + "','[DataSetID]','INT',1,0,1)");
+				stmt.executeBatch();
+				// the following statement takes all the reals and ints from 
+				// atominfo dense and sparse and orders them by column number.
+				ResultSet rs = stmt.executeQuery("SELECT * FROM MetaData WHERE " +
+						"Datatype = '" + oldDatatype + "' AND TableID != 0 AND " +
+						"(ColumnType = 'INT' OR ColumnType = 'REAL') ORDER BY " +
+				"TableID, ColumnOrder");
+				int columnOrder = 1;
+				boolean firstloop = true;
+				while (rs.next()) {
+					if (rs.getInt(5) == 2 && firstloop) {
+						columnOrder = 1;
+						firstloop = false;
+					}
+					String update = "INSERT INTO MetaData VALUES ('" +
+					newDatatype + "','" + rs.getString(2) + "','" + 
+					rs.getString(3) + "'," + rs.getInt(4) + "," +
+					rs.getInt(5) + "," + columnOrder + ")";
+					System.out.println(update);
+					stmt.addBatch(update);
+					columnOrder++;
+				}
+				stmt.executeBatch();
+				rs = stmt.executeQuery("SELECT MAX(ColumnOrder) FROM MetaData " +
+						"WHERE Datatype = '" + newDatatype + "' AND TableID = 1");
+				assert(rs.next());
+				int nextColumnOrder = rs.getInt(1) + 1;
+				String numParts = "INSERT INTO MetaData VALUES ('" + 
+				newDatatype + "', '[NumParticles]', 'INT',0," + 
+				DynamicTable.AtomInfoDense.ordinal() + "," + nextColumnOrder +")";
+				System.out.println(numParts);
+				stmt.execute(numParts);
+				rs.close();
+				// create dynamic tables, skipping over the xml format.
+				DynamicTableGenerator generator = new DynamicTableGenerator(con);
+				String newName = generator.createDynamicTables(newDatatype,true);
+				assert(newName.equals(newDatatype));
+			}
+		}
+			catch(SQLException e) {
+				System.err.println("error creating compressed tables");
+			e.printStackTrace();
+		}
+	}
+
+	public CollectionCursor getMemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {
+		return new MemoryClusteringCursor(collection, cInfo);
+	}
+
+	/**
+	 * TODO: ENDED HERE>> LOTS OF PROBLEMS WITH THIS.
+	 * @param curTree
+	 * @param oldDatatype
+	 * @param newDatatype
+	 */
+	public void addCompressedData(CFTree curTree, String oldDatatype, String newDatatype) {
+		Statement stmt;
+		CFNode leaf = curTree.getFirstLeaf();
+		try {
+			stmt = con.createStatement();
+			
+			// create temp table:
+			stmt.execute("IF (OBJECT_ID('#ClusterFeatureRelationships') " +
+					"IS NOT NULL)" +
+			" DROP TABLE #ClusterFeatureRelationships");
+			stmt.execute(" CREATE TABLE #ClusterFeatureRelationships " +
+			"(CF INT, AtomID INT, PRIMARY KEY (CF, AtomID))");
+			int counter = 1;
+			while (leaf != null) {
+				for (int i = 0; i < leaf.getCFs().size(); i++) {
+					stmt.addBatch("INSERT INTO " +
+							"#ClusterFeatureRelationships VALUES (" + 
+							counter + ", " + leaf.getCFs().get(i) + ")");
+				}
+				counter++;
+			}
+			stmt.executeBatch();
+			
+			// Get Result Set for dense atom info.
+			ArrayList<String> denseNames = getColNames(newDatatype, DynamicTable.AtomInfoDense);
+			String denseQuery = "SELECT CF, ";
+			for (int i = 0; i < denseNames.size(); i++) {
+				denseQuery += "SUM(" + denseNames.get(i) + "), ";
+			}
+			denseQuery.substring(0,denseQuery.length()-3);
+			denseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) +
+			"WHERE #ClusterFeatureRelationships.AtomID = " + 
+			getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) + ".AtomID ORDER BY CF";
+			ResultSet denseRS = stmt.executeQuery(denseQuery);
+			// get primary keys; we want to preserve these.
+			ResultSet densePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
+					"' AND TableID = " + DynamicTable.AtomInfoDense.ordinal());
+			
+			// get ResultSet for sparseAtomInfo.
+			ArrayList<String> sparseNames = getColNames(newDatatype, DynamicTable.AtomInfoSparse);
+			String sparseQuery = "SELECT CF, ";
+			for (int i = 0; i < sparseNames.size(); i++) {
+				sparseQuery += "SUM(" + sparseNames.get(i) + "), ";
+			}
+			sparseQuery.substring(0,sparseQuery.length()-3);
+			sparseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) +
+			"WHERE #ClusterFeatureRelationships.AtomID = " + 
+			getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) + ".AtomID GROUP BY ORDER BY CF";
+			ResultSet sparseRS = stmt.executeQuery(sparseQuery);
+			// get primary keys; we want to preserve these.
+			ResultSet sparsePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
+					"' AND TableID = " + DynamicTable.AtomInfoSparse.ordinal());
+			String denseStr, sparseStr;
+			// insert particles.
+			while (denseRS.next()) {
+				assert (sparseRS.next());
+			}
+			
+			denseRS.close();
+			sparseRS.close();
+			densePrimaryKeys.close();
+			sparsePrimaryKeys.close();
+			
+			stmt.execute("DROP TABLE #ClusterFeatureRelationships");		
+		} catch(SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 }
 

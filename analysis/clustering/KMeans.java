@@ -52,6 +52,8 @@ import java.util.Iterator;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
+import analysis.DummyNormalizer;
+import analysis.Normalizer;
 
 import database.InfoWarehouse;
 import database.CollectionCursor;
@@ -73,10 +75,10 @@ public class KMeans extends ClusterK
 	 * @param comment -comment to enter
 	 */
 	public KMeans(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine) 
+			String name, String comment, boolean refine, ClusterInformation c) 
 			{
 				super(cID, database, k, 
-						name.concat("KMeans"), comment, refine);
+						name.concat("KMeans"), comment, refine, c);
 	}
 
 	/** 
@@ -104,7 +106,11 @@ public class KMeans extends ClusterK
 		Iterator<BinnedPeak> j;
 		
 		// newList will contain the new binned peak list for the moved centroid.
-		BinnedPeakList newList = new BinnedPeakList();
+		BinnedPeakList newList;
+		if (isNormalized)
+			newList = new BinnedPeakList(new Normalizer());
+		else
+			newList = new BinnedPeakList(new DummyNormalizer());
 		
 		// Loop through the particles in the centroid and add the areas together.
 		for (int i = 0; i < particlesInCentroid.size(); i++) {
@@ -114,12 +120,12 @@ public class KMeans extends ClusterK
 			thisBinnedPeakList.normalize(distanceMetric);
 			
 			j = thisBinnedPeakList.iterator();
-			// For every location in the binned list, add that area to the new list.
+			// For every key in the binned list, add that value to the new list.
 			while (j.hasNext())
 			{
 				addedPeak = 
 					j.next();
-				newList.add(addedPeak.location, addedPeak.area);
+				newList.add(addedPeak.key, addedPeak.value);
 			}
 		}
 		// we have the sums - divide by the particle number to get mean.

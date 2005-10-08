@@ -61,10 +61,10 @@ public class KMedians extends ClusterK {
 	 * @param database
 	 */
 	public KMedians(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine) 
+			String name, String comment, boolean refine, ClusterInformation c) 
 	{
 		super(cID, database, k, 
-				name.concat("KMedians"), comment, refine);
+				name.concat("KMedians"), comment, refine, c);
 	}
 
 	public int cluster() {
@@ -84,22 +84,25 @@ public class KMedians extends ClusterK {
 		{
 			// Using the atomID, find the atom's peak list.
 			atomID = particlesInCentroid.get(i).intValue();
-			curs.getPeakListfromAtomID(atomID).normalize(distanceMetric);
-			medianThis.add(curs.getPeakListfromAtomID(atomID));
+			BinnedPeakList temp = curs.getPeakListfromAtomID(atomID);
+			temp.normalize(distanceMetric);
+			medianThis.add(temp);
 		}
 		Centroid returnThis = null;
 		MedianFinder mf = null;
 		if (medianThis.size() == 0)
 		{
 			System.out.println("Centroid contains no particles");
-			returnThis = new Centroid(
-					new BinnedPeakList(),
-					0,
-					origCentroids.subCollectionNum);
+			if (isNormalized)
+				returnThis = new Centroid(new BinnedPeakList(new Normalizer()),
+					0,origCentroids.subCollectionNum);
+			else
+				returnThis = new Centroid(new BinnedPeakList(new DummyNormalizer()),
+						0,origCentroids.subCollectionNum);
 		}
 		else
 		{
-			mf = new MedianFinder(medianThis);
+			mf = new MedianFinder(medianThis, isNormalized);
 
 			// Experimental code to generate MPS file so that problem
 			// can be solved as an LP instead. Runs MUCH slower this way.

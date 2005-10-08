@@ -37,7 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package analysis.clustering.BIRCH;
+package analysis.dataCompression;
 
 import java.util.ArrayList;
 import analysis.BinnedPeakList;
