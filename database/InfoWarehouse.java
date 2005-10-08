@@ -46,6 +46,7 @@ package database;
 
 import gui.ProgressBarWrapper;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -55,6 +56,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import analysis.clustering.ClusterInformation;
+import analysis.dataCompression.CFTree;
 import atom.GeneralAtomFromDB;
 
 import ATOFMS.Peak;
@@ -289,14 +291,10 @@ public interface InfoWarehouse {
 	
 	public String getDynamicTableName(DynamicTable table, String datatype);
 	
-	public void addCompressedData(String newDatatype, String oldDatatype);
-	
+	public void addCompressedDatatype(String newDatatype, String oldDatatype);
 	public ArrayList<ArrayList<String>> getColNamesAndTypes(String datatype, DynamicTable table);
 	public int getNextID();
-	public int[] createEmptyCollectionAndDataset(String datatype, int parent,  
-			String datasetName, String comment, String params);
-	public double aggregateColumn(DynamicTable t, int columnNumber, ArrayList<Integer> atomIDs, String datatype);
-	public int insertParticle(String dense, ArrayList<String> sparse,
-			Collection collection,
-			int datasetID, int nextID);
+	public int[] createEmptyCollectionAndDataset(String datatype, int parent, String datasetName, String comment, String params);
+	public void addCompressedData(CFTree curTree, String oldDatatype, String newDatatype);
+	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection,int datasetID, int nextID);
 }

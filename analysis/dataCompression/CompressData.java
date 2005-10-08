@@ -1,3 +1,4 @@
+
 package analysis.dataCompression;
 
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ public abstract class CompressData {
 	protected InfoWarehouse db;
 	protected boolean isNormalized;
 	protected DistanceMetric distanceMetric;
-	protected ArrayList<ArrayList<Integer>> generalizedCompression;
-	private String name, comment;
+	protected String name;
+	protected String comment;
 	
 	/**
 	 * The CollectionCursor used to access the atoms of the 
@@ -58,7 +59,7 @@ public abstract class CompressData {
 	 */
 	public void setDatatype() {
 		System.out.println("setting datatype");
-		db.addCompressedData(newDatatype,oldDatatype);
+		db.addCompressedDatatype(newDatatype,oldDatatype);
 	}
 	
 	/**
@@ -67,51 +68,7 @@ public abstract class CompressData {
 	 */
 	public abstract void compress();
 	
-	/**
-	 * Gets the compressed data into the format for putting in db.
-	 */
-	public abstract void generalizeCompressedData();
-	
-	private void putCollectionInDB() {
-		assert (generalizedCompression != null) : "haven't initialized gen. data!";
-		
-		// create array of booleans saying whether we can aggregate or not
-		// for dense and sparse atomInfo.
-		ArrayList<ArrayList<String>> tempTypes = db.getColNamesAndTypes(newDatatype,DynamicTable.AtomInfoDense);
-		boolean[] dInfo = new boolean[tempTypes.size()];
-		for (int i = 0; i < dInfo.length; i++)
-			dInfo[i] = canAggregate(tempTypes.get(i).get(1));
-		
-		tempTypes = db.getColNamesAndTypes(newDatatype,DynamicTable.AtomInfoSparse);
-		boolean[] sInfo = new boolean[tempTypes.size()];
-		for (int i = 0; i < sInfo.length; i++)
-			sInfo[i] = canAggregate(tempTypes.get(i).get(1));
-		
-		tempTypes.clear();
-		
-		// Create new collection and dataset:
-		String compressedParams = getDatasetParams(oldDatatype);
-		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,compressedParams); 
-		int newCollectionID = IDs[0];
-		int newDatasetID = IDs[1];
-		
-		// insert each CF as a new atom.
-
-		double[] dAggregates = new double[dInfo.length];
-		double[] sAggregates = new double[sInfo.length];
-		for (int i = 0; i < generalizedCompression.size(); i++) {
-			int atomID = db.getNextID();
-			// get aggregates for aggregatable columns.
-			for (int j = 0; i < dInfo.length; j++)
-				if(dInfo[j])
-					dAggregates[j] = db.aggregateColumn(DynamicTable.AtomInfoDense,j,generalizedCompression.get(i), oldDatatype); 
-			for (int j = 0; i < sInfo.length; j++)
-				if(sInfo[j])
-					sAggregates[j] = db.aggregateColumn(DynamicTable.AtomInfoSparse,j,generalizedCompression.get(i), oldDatatype); 
-			// Now, add atom.
-			//db.insertParticle()
-		}
-	}
+	protected abstract void putCollectionInDB(); 
 	
 	public boolean canAggregate(String string) {
 		if (string.equals("INT") || string.equals("REAL"))

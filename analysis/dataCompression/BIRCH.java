@@ -243,26 +243,40 @@ public class BIRCH extends CompressData{
 	}
 
 	@Override
-	/**
-	 * Now that the tree has been created, we need to get the leaves into a general
-	 * data compression format so the cluster features can be written to the db.
-	 */
-	public void generalizeCompressedData() {
-		// initialize generalizedCompression arraylist
-		generalizedCompression = new ArrayList<ArrayList<Integer>>();
+	protected void putCollectionInDB() {	
+		// Create new collection and dataset:
+		String compressedParams = getDatasetParams(oldDatatype);
+		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,compressedParams); 
+		int newCollectionID = IDs[0];
+		int newDatasetID = IDs[1];
 		
-		// for each Cluster Feature, add the atomIDs to the arraylist.
+		// insert each CF as a new atom.
+		int atomID;
+		Collection collection;
 		CFNode leaf = curTree.getFirstLeaf();
-		ClusterFeature thisCF;
-		ArrayList<ClusterFeature> cfs;
-		ArrayList<Integer> tempIDs;
-		int[] tempArray;
+		ArrayList<ClusterFeature> curCF;
+		ArrayList<Integer> curIDs;
 		while (leaf != null) {
-			cfs = leaf.getCFs();
-			for (int i = 0; i < leaf.getSize(); i++) {
-				tempIDs = cfs.get(i).getAtomIDs();
-				generalizedCompression.add(tempIDs);
+			curCF = leaf.getCFs();
+			for (int i = 0; i < curCF.size(); i++) {
+				atomID = db.getNextID();
+				collection = new Collection(newDatatype, newCollectionID, db);
+				// create denseAtomInfo string.
+				String denseStr = "";
+				curIDs = curCF.get(i).getAtomIDs();
+				ArrayList<String> denseNames = db.getColNames(newDatatype, DynamicTable.AtomInfoDense);
+				// start at 1 to skip AtomID column.
+				for (int j = 1; j < denseNames.size(); j++) {
+					denseStr += db.aggregateColumn(DynamicTable.AtomInfoDense,denseNames.get(j),curIDs,oldDatatype);
+					denseStr += ", ";
+				}
+				denseStr.substring(0,denseStr.length()-3);
+				// create sparseAtomInfo string arraylist.
+				ArrayList<String> sparseArray = new ArrayList<String>();
+				
+				//insert particle
+				db.insertParticle(denseStr,sparseArray,collection,newDatasetID,atomID);
 			}
 		}
-	}	
+	}
 }

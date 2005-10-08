@@ -62,6 +62,8 @@ import ATOFMS.Peak;
 import analysis.*;
 import analysis.clustering.ClusterInformation;
 import analysis.clustering.PeakList;
+import analysis.dataCompression.CFNode;
+import analysis.dataCompression.CFTree;
 import collection.*;
 import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
@@ -3501,42 +3503,11 @@ public class SQLServerDatabase implements InfoWarehouse
 		return atom;
 	}
 
-	public void addCompressedData(String newDatatype, String oldDatatype) {
+	/**
+	 * If the new, compressed datatype doesn't exist, add it.
+	 */
+	public void addCompressedDatatype(String newDatatype, String oldDatatype) {
 		System.out.println();
-		/*try {
-			// add tables if they don't exist
-			// Copies all columns of the tables:
-			if (!containsDatatype(newDatatype)) {
-				assert(containsDatatype(oldDatatype));
-				// insert metadata info.
-				Statement stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM MetaData WHERE " +
-						"Datatype = '" + oldDatatype + "'");
-	
-				while (rs.next()) {
-					String update = "INSERT INTO MetaData VALUES ('" +
-					newDatatype + "','" + rs.getString(2) + "','" + 
-					rs.getString(3) + "'," + rs.getInt(4) + "," +
-					rs.getInt(5) + "," + rs.getInt(6) + ")";
-					System.out.println(update);
-					stmt.addBatch(update);
-				}
-				stmt.executeBatch();
-				rs = stmt.executeQuery("SELECT MAX(ColumnOrder) FROM MetaData " +
-						"WHERE Datatype = '" + oldDatatype + "' AND TableID = 1");
-				assert(rs.next());
-				int nextColumnOrder = rs.getInt(1) + 1;
-				String numParts = "INSERT INTO MetaData VALUES ('" + 
-				newDatatype + "', '[NumParticles]', 'INT',0," + 
-				DynamicTable.AtomInfoDense.ordinal() + "," + nextColumnOrder +")";
-				System.out.println(numParts);
-				stmt.executeUpdate(numParts);
-				rs.close();
-				// create dynamic tables, skipping over the xml format.
-				DynamicTableGenerator generator = new DynamicTableGenerator(con);
-				String newName = generator.createDynamicTables(newDatatype,true);
-				assert(newName.equals(newDatatype));				
-				} */
 		// Copies only relevant columns into table
 		try {
 			if (!containsDatatype(newDatatype)) {
@@ -3597,62 +3568,83 @@ public class SQLServerDatabase implements InfoWarehouse
 		return new MemoryClusteringCursor(collection, cInfo);
 	}
 
-	// assume columnNumber starts at 0,1,2,3,4...
-	public double aggregateColumn(DynamicTable t, int columnNumber, ArrayList<Integer> atomIDs, String datatype) {
-		assert (t.ordinal() != DynamicTable.DataSetInfo.ordinal()) : "Can't aggregate from DataSetInfo!";
-		double aggregate = 0;
-		try {
-			Statement stmt = con.createStatement();
-			String colName = getColNames(datatype, t).get(columnNumber);
-			String query = "SELECT " + colName + " FROM " + getDynamicTableName(t,datatype) + " WHERE ";
-			for (int i = 0; i < atomIDs.size(); i++) {
-				query += "AtomID = " + atomIDs.get(i) + " AND ";
-			}
-			query.substring(0,query.length()-5);
-			ResultSet rs = stmt.executeQuery(query);
-
-			while (rs.next()) 
-				aggregate += rs.getDouble(1);
-		} catch (SQLException e) {
-			System.err.println("Error aggregating column");
-			e.printStackTrace();
-		}
-		return aggregate;
-	}
-
 	/**
-	 * Gets the params for a given dataset, concat. in a string.
-	 * Doesn't include datasetID or dataset name.
-	 * 
-	 * TODO: just finished this method...
-	 *
-	public String getDatasetParams(String datatype, int datasetID) {
-		// get number of params:
-		ArrayList<ArrayList<String>> namesAndTypes = getColNamesAndTypes(
-				datatype, DynamicTable.DataSetInfo);
-		int num = namesAndTypes.size();
-		if (num <= 2)
-			return "";
-		String str = "";
+	 * TODO: ENDED HERE>> LOTS OF PROBLEMS WITH THIS.
+	 * @param curTree
+	 * @param oldDatatype
+	 * @param newDatatype
+	 */
+	public void addCompressedData(CFTree curTree, String oldDatatype, String newDatatype) {
+		Statement stmt;
+		CFNode leaf = curTree.getFirstLeaf();
 		try {
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + 
-					getDynamicTableName(DynamicTable.DataSetInfo, datatype) +
-					" WHERE DataSetID = " + datasetID);
-			assert(rs.next());
-		
-			for (int i = 3; i <= num; i++) {
-				if (namesAndTypes.get(num).get(1).equals("INT") ||
-						namesAndTypes.get(num).get(1).equals("REAL"))
-					str = rs.getString(i) + ", ";
-				else
-					str = "'" + rs.getString(i) + "', ";
+			stmt = con.createStatement();
+			
+			// create temp table:
+			stmt.execute("IF (OBJECT_ID('#ClusterFeatureRelationships') " +
+					"IS NOT NULL)" +
+			" DROP TABLE #ClusterFeatureRelationships");
+			stmt.execute(" CREATE TABLE #ClusterFeatureRelationships " +
+			"(CF INT, AtomID INT, PRIMARY KEY (CF, AtomID))");
+			int counter = 1;
+			while (leaf != null) {
+				for (int i = 0; i < leaf.getCFs().size(); i++) {
+					stmt.addBatch("INSERT INTO " +
+							"#ClusterFeatureRelationships VALUES (" + 
+							counter + ", " + leaf.getCFs().get(i) + ")");
+				}
+				counter++;
 			}
-		} catch (SQLException e) {
-			System.err.println("Error copying dataset params");
+			stmt.executeBatch();
+			
+			// Get Result Set for dense atom info.
+			ArrayList<String> denseNames = getColNames(newDatatype, DynamicTable.AtomInfoDense);
+			String denseQuery = "SELECT CF, ";
+			for (int i = 0; i < denseNames.size(); i++) {
+				denseQuery += "SUM(" + denseNames.get(i) + "), ";
+			}
+			denseQuery.substring(0,denseQuery.length()-3);
+			denseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) +
+			"WHERE #ClusterFeatureRelationships.AtomID = " + 
+			getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) + ".AtomID ORDER BY CF";
+			ResultSet denseRS = stmt.executeQuery(denseQuery);
+			// get primary keys; we want to preserve these.
+			ResultSet densePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
+					"' AND TableID = " + DynamicTable.AtomInfoDense.ordinal());
+			
+			// get ResultSet for sparseAtomInfo.
+			ArrayList<String> sparseNames = getColNames(newDatatype, DynamicTable.AtomInfoSparse);
+			String sparseQuery = "SELECT CF, ";
+			for (int i = 0; i < sparseNames.size(); i++) {
+				sparseQuery += "SUM(" + sparseNames.get(i) + "), ";
+			}
+			sparseQuery.substring(0,sparseQuery.length()-3);
+			sparseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) +
+			"WHERE #ClusterFeatureRelationships.AtomID = " + 
+			getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) + ".AtomID GROUP BY ORDER BY CF";
+			ResultSet sparseRS = stmt.executeQuery(sparseQuery);
+			// get primary keys; we want to preserve these.
+			ResultSet sparsePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
+					"' AND TableID = " + DynamicTable.AtomInfoSparse.ordinal());
+			String denseStr, sparseStr;
+			// insert particles.
+			while (denseRS.next()) {
+				assert (sparseRS.next());
+			}
+			
+			denseRS.close();
+			sparseRS.close();
+			densePrimaryKeys.close();
+			sparsePrimaryKeys.close();
+			
+			stmt.execute("DROP TABLE #ClusterFeatureRelationships");		
+		} catch(SQLException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return str.substring(0,str.length()-2);
-	}*/
+		
+	}
 }
 
