@@ -1,5 +1,7 @@
 package database;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -12,6 +14,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -42,6 +45,21 @@ public class DynamicTableGenerator extends DefaultHandler {
 	private ResultSet rs;
 	private Statement stmt;
 	
+	@Override
+	public InputSource resolveEntity(String publicId, String systemId)
+			throws FileNotFoundException 
+	{
+		if (systemId.endsWith("meta.dtd")) {
+			// XXX: make this sensitive to where the application actually gets put.
+			return new InputSource(new FileInputStream(
+					"C:\\program files\\edam-enchilada\\meta.dtd"));
+		} else {
+			return null;
+		}
+	}
+	
+	
+	
 	/**
 	 * Constructor requires a connection to the SQLServer database.
 	 * @param connection
@@ -70,16 +88,6 @@ public class DynamicTableGenerator extends DefaultHandler {
 		factory.setValidating(true);
 		
 		DynamicTableGenerator handler = this;
-		
-		/* 
-		 * XXX: the parser looks in a dumb place for the DTD file.
-		 * On my system, it looks in the directory that the xml file is in
-		 * \temp\meta.dtd or whatever.  That is, it adds temp.  If that's
-		 * reliable, maybe we can put the dtd there before we parse.
-		 * 
-		 * It's unfortunate that the xml parser is dumb like that...
-		 */
-		
 		
 		try {
 			SAXParser parser = factory.newSAXParser();
