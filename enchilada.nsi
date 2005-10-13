@@ -8,6 +8,8 @@
 ;;; the compiler for this file, which makes an installer executable, is
 ;;; available from http://nsis.sourceforge.net/
 
+SetCompressor /solid lzma
+
 ;--------------------------------
 
 ; The name of the installer

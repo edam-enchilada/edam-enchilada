@@ -52,7 +52,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 		if (systemId.endsWith("meta.dtd")) {
 			// XXX: make this sensitive to where the application actually gets put.
 			return new InputSource(new FileInputStream(
-					"C:\\program files\\edam-enchilada\\meta.dtd"));
+					"meta.dtd"));
 		} else {
 			return null;
 		}

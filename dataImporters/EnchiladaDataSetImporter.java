@@ -338,7 +338,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		if (systemId.endsWith("enchilada.dtd")) {
 			// XXX: make this sensitive to where Enchilada is installed.
 			return new InputSource(new FileInputStream(
-				"C:\\program files\\edam-enchilada\\enchilada.dtd"));
+				"enchilada.dtd"));
 		} else {
 			return null;
 		}
