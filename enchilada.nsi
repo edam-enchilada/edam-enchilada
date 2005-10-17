@@ -95,7 +95,6 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	SetOutPath "C:\MSDE-install-temp"
 	File /r MSDERelA
 	
-	; XXX - no errors are detected or anything.  Meep!  (return 0 is good).
 	; XXX - can't yet uninstall MSSQLSERVER.  maybe in uninstall page, do a 
 	; messagebox as a callback at the end?
 	
@@ -104,11 +103,22 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	ExecWait `"C:\MSDE-install-temp\MSDERelA\setup.exe" SAPWD="sa-account-password" TARGETDIR="$INSTDIR\dbt\" DATADIR="$INSTDIR\dbd\" DISABLENETWORKPROTOCOLS=0 SECURITYMODE=SQL` $0
 	DetailPrint "setup.exe returned $0"
 	
-	ExecWait "net start MSSQLSERVER"
+	IntCmp $0 0 setup_success
+		Abort "MSDE SQL Server failed to install!  Try enabling the File and Print Sharing protocol."
+	setup_success:
+	
+	ExecWait "net start MSSQLSERVER" $0
+	IntCmp $0 0 netstart_success
+		Abort "Failed to start SQL server---something must be wrong with its installation!"
+	netstart_success:
 	
     ; XXX - password
     ExecWait `"C:\Program Files\Microsoft SQL Server\80\Tools\Binn\osql.exe" -U sa -P "sa-account-password" -Q "EXEC sp_addlogin 'SpASMS','finally' EXEC sp_addsrvrolemember 'SpASMS','bulkadmin' EXEC sp_addsrvrolemember 'SpASMS','dbcreator'"` $0
 	DetailPrint "osql returned $0"
+
+	IntCmp $0 0 makeusers_success
+		Abort "failed to make Enchilada users in the database!"
+	makeusers_success
 
 	SetOutPath "$INSTDIR"
 	RMDir /r "C:\MSDE-install-temp"

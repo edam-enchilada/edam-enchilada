@@ -101,22 +101,22 @@ public class FilePickerEditor extends AbstractCellEditor
 	public FilePickerEditor(String filetype, 
 			String title, 
 			Component pDialog) 
-{
-fileChooser = new JFileChooser();
-fileChooser.setDialogTitle(title);
-fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-CustomFileFilter customFilter = new CustomFileFilter();
-customFilter.addFileFilter(filetype);
-fileChooser.setFileFilter(customFilter);
-
-button = new JButton(oldFilename);
-button.setActionCommand(EDIT);
-button.addActionListener(this);
-button.setBorderPainted(false);
-button.setBackground(Color.WHITE);
-
-parent = pDialog;
-}
+	{
+		fileChooser = new JFileChooser();
+		fileChooser.setDialogTitle(title);
+		fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+		CustomFileFilter customFilter = new CustomFileFilter();
+		customFilter.addFileFilter(filetype);
+		fileChooser.setFileFilter(customFilter);
+		
+		button = new JButton(oldFilename);
+		button.setActionCommand(EDIT);
+		button.addActionListener(this);
+		button.setBorderPainted(false);
+		button.setBackground(Color.WHITE);
+		
+		parent = pDialog;
+	}
 	
 	public void actionPerformed(ActionEvent e) 
 	{

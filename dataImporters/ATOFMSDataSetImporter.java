@@ -332,7 +332,7 @@ public class ATOFMSDataSetImporter {
 								// TODO: test this stuff
 								currentParticle = read.getParticle();
 								db.insertParticle(
-
+										
 										currentParticle.particleInfoDenseString(),
 										currentParticle.particleInfoSparseString(),
 										destination,id[1],nextID);
@@ -383,7 +383,7 @@ public class ATOFMSDataSetImporter {
 									public void run()
 									{
 										String[] s = 
-										{"Corrupt particle: " + particleName + ": ", exception};
+										{"Corrupt .set file or particle: " + particleName + ": ", exception};
 										ipd.displayException(s);
 									}
 								});
