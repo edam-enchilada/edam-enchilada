@@ -323,6 +323,13 @@ public class ATOFMSDataSetImporter {
 							Collection curCollection = db.getCollection(id[0]);
 							while (readSet.ready()) { // repeat until end of file.
 								token = new StringTokenizer(readSet.readLine(), ",");
+
+								// .set files are sometimes made with really strange line delims,
+								// so we ignore empty lines.
+								if (! token.hasMoreTokens()) {
+									continue;
+								}
+								
 								token.nextToken();
 								particleName = token.nextToken().replace('\\', File.separatorChar);
 								particleFileName = grandParent.toString() + File.separator + particleName;
