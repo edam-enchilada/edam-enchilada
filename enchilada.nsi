@@ -8,15 +8,27 @@
 ;;; the compiler for this file, which makes an installer executable, is
 ;;; available from http://nsis.sourceforge.net/
 
-SetCompressor /solid lzma
+!define WITH_MSDE
+;!define RELEASE
+
 
 ;--------------------------------
 
 ; The name of the installer
 Name "EDAM-Enchilada Installer"
 
-; The file to write
+
+!ifdef WITH_MSDE
+
+!ifdef RELEASE
+; MSDE is huge, so use special compression when building with it.
+SetCompressor /solid lzma
+!endif
+
+Outfile "EDAM-Enchilada-MSDE-install.exe"
+!else
 OutFile "EDAM-Enchilada-install.exe"
+!endif
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\EDAM-Enchilada
@@ -26,13 +38,17 @@ InstallDir $PROGRAMFILES\EDAM-Enchilada
 InstallDirRegKey HKLM "Software\EDAM_Enchilada" "Install_Dir"
 
 ; License text to display
-; LicenseText "MPL-1.1.txt"
+!ifdef WITH_MSDE
+LicenseData "MSDE-EULA.txt"
+!else
+LicenseData "MPL-1.1.txt"
+!endif
 
 ;--------------------------------
 
 ; Pages
 
-; Page license
+Page license
 Page components
 Page directory
 Page instfiles
@@ -51,6 +67,8 @@ Section "EDAM Enchilada (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
+  File MSDE-EULA.txt
+  File "MPL-1.1.txt"
   File "edam-enchilada.jar"
   File "importation files\meta.dtd"
   File "importation files\enchilada.dtd"
@@ -89,6 +107,7 @@ Section "Desktop Shortcut"
 
 SectionEnd
 
+!ifdef WITH_MSDE
 Section "MS SQL Desktop Environment (SQL Server Replacement)"
 
 	CreateDirectory "C:\MSDE-install-temp"
@@ -104,12 +123,13 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	DetailPrint "setup.exe returned $0"
 	
 	IntCmp $0 0 setup_success
-		Abort "MSDE SQL Server failed to install!  Try enabling the File and Print Sharing protocol."
-	setup_success:
+    	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
+        Abort 'MSSQL failed to install.'
+    setup_success:
 	
 	ExecWait "net start MSSQLSERVER" $0
 	IntCmp $0 0 netstart_success
-		Abort "Failed to start SQL server---something must be wrong with its installation!"
+        Abort "Failed to start SQL server---something must be wrong with its installation!"
 	netstart_success:
 	
     ; XXX - password
@@ -118,13 +138,13 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 
 	IntCmp $0 0 makeusers_success
 		Abort "failed to make Enchilada users in the database!"
-	makeusers_success
+	makeusers_success:
 
 	SetOutPath "$INSTDIR"
 	RMDir /r "C:\MSDE-install-temp"
 
 SectionEnd
-
+!endif
 
 ;--------------------------------
 
@@ -132,8 +152,12 @@ SectionEnd
 
 Section "un.Uninstall"
   
+!ifdef WITH_MSDE
   ExecWait "net stop MSSQLSERVER"
   
+  MessageBox MB_OK "Since you are uninstalling Enchilada, it is likely that you should also uninstall SQL Server.  You can do this from the Add/Remove Programs dialog in the Control Panel."
+!endif
+
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\EDAM_Enchilada"
   DeleteRegKey HKLM SOFTWARE\EDAM_Enchilada
@@ -162,3 +186,4 @@ Section "un.Uninstall"
   RMDir "$INSTDIR"
 
 SectionEnd
+
