@@ -1,7 +1,9 @@
 package database;
 
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -89,6 +91,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 		
 		DynamicTableGenerator handler = this;
 		
+
 		try {
 			SAXParser parser = factory.newSAXParser();
 			parser.parse(fileName, handler);

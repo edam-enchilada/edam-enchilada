@@ -2,9 +2,12 @@ package dataImporters;
 
 import gui.EnchiladaDataTableModel;
 
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -57,7 +60,6 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		try {
 			stmt = con.createStatement();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			System.err.println("SQL problems creating statement.");
 			e.printStackTrace();
 		}
@@ -113,6 +115,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	public void read(String fileName) {
 	
 		SAXParserFactory factory = SAXParserFactory.newInstance();
+
 		//validate the XML to make sure it's all nice and legal
 		factory.setValidating(true);
 		
@@ -343,5 +346,4 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			return null;
 		}
 	}
-	
 }

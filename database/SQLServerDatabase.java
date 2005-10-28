@@ -3884,5 +3884,26 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 	}
+	
+	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable table) {
+		ArrayList<String> strings = new ArrayList<String>();	
+		Statement stmt;
+		try {
+			stmt = con.createStatement();
+			
+			ResultSet rs = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
+					"WHERE PrimaryKey = 1 AND Datatype = '" + datatype + 
+					"' AND TableID = " + table.ordinal());
+			while (rs.next()) {
+				if (!rs.getString(1).equals("[AtomID]") && !rs.getString(1).equals("[DatasetID]")) 
+					strings.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	 
+		
+		return strings;
+	}
 }
 

@@ -304,4 +304,5 @@ public interface InfoWarehouse {
 	public int[] createEmptyCollectionAndDataset(String datatype, int parent, String datasetName, String comment, String params);
 	public void addCompressedData(CFTree curTree, String oldDatatype, String newDatatype);
 	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection,int datasetID, int nextID);
+	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable table);
 }

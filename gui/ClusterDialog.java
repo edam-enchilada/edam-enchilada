@@ -80,8 +80,10 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	private JButton okButton, cancelButton, advancedButton;
 	private JTextField commentField, passesText, vigText, learnText, kClusterText, otherText;
 	private JCheckBox refineCentroids, normalizer;
-	private JComboBox clusterDropDown, metricDropDown, averageClusterDropDown, infoTypeDropdown, denseKeyBox, sparseKeyBox;
-	private ArrayList<JRadioButton> denseButtons, sparseButtons, weightButtons;
+	private JComboBox clusterDropDown, metricDropDown, averageClusterDropDown, infoTypeDropdown;
+	private JLabel denseKeyLabel,sparseKeyLabel;
+	private ArrayList<JRadioButton> sparseButtons;
+	private ArrayList<JCheckBox> denseButtons; 
 
 	// dropdown options
 	final static String ART2A = "Art2a";
@@ -97,6 +99,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	final static String dense = "Dense Particle Information";
 	final static String sparse = "Sparse Particle Information";
 	final static String denseKey = " Key = Automatic (1, 2, 3, etc) ";
+	private static ArrayList<String> sparseKey;
 	
 	private boolean refinedCentroids = false;
 	private String dMetric = CITY_BLOCK;
@@ -260,10 +263,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	 */
 	public JPanel setClusteringSpecifications() {
 		// Set button arraylists
-		denseButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(), DynamicTable.AtomInfoDense);
-		sparseButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoSparse);
-		weightButtons = getColumnNames(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoDense);
-		weightButtons.add(0, new JRadioButton("None"));
+		denseButtons = getDenseColumnNames(cTree.getSelectedCollection().getDatatype());
+		sparseButtons = getSparseColumnNames(cTree.getSelectedCollection().getDatatype());
 
 		// Set dropdown for dense and sparse information
 		String[] infoNames = {init, dense, sparse};
@@ -275,16 +276,15 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		SpringLayout denseLayout = new SpringLayout();
 		densePanel.setLayout(denseLayout);	
 		densePanel.setPreferredSize(new Dimension(250,300));
-		String[] denseNames = {denseKey};
-		denseKeyBox = new JComboBox(denseNames);
-		densePanel.add(denseKeyBox);
+		denseKeyLabel = new JLabel(denseKey);
+		densePanel.add(denseKeyLabel);
 		JLabel denseChoose = new JLabel("Choose one or more values below:");
 		densePanel.add(denseChoose);
-		denseLayout.putConstraint(SpringLayout.WEST, denseKeyBox, 10, SpringLayout.WEST, densePanel);
-		denseLayout.putConstraint(SpringLayout.NORTH, denseKeyBox, 10, SpringLayout.NORTH, densePanel);
+		denseLayout.putConstraint(SpringLayout.WEST, denseKeyLabel, 10, SpringLayout.WEST, densePanel);
+		denseLayout.putConstraint(SpringLayout.NORTH, denseKeyLabel, 10, SpringLayout.NORTH, densePanel);
 		denseLayout.putConstraint(SpringLayout.WEST, denseChoose, 20, SpringLayout.WEST, densePanel);
-		denseLayout.putConstraint(SpringLayout.NORTH, denseChoose, 10, SpringLayout.SOUTH, denseKeyBox);
-		JScrollPane denseButtonPane = getButtonPane(denseButtons, false);
+		denseLayout.putConstraint(SpringLayout.NORTH, denseChoose, 10, SpringLayout.SOUTH, denseKeyLabel);
+		JScrollPane denseButtonPane = getDenseButtonPane(denseButtons);
 		densePanel.add(denseButtonPane);
 		denseLayout.putConstraint(SpringLayout.WEST, denseButtonPane, 10, SpringLayout.WEST, densePanel);
 		denseLayout.putConstraint(SpringLayout.NORTH, denseButtonPane, 20, SpringLayout.SOUTH, denseChoose);
@@ -294,36 +294,20 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		SpringLayout sparseLayout = new SpringLayout();
 		sparsePanel.setLayout(sparseLayout);	
 		sparsePanel.setPreferredSize(new Dimension(250,300));
-		String[] boxNames = new String[sparseButtons.size()];
-		for (int j = 0; j < sparseButtons.size(); j++)
-			boxNames[j] = "Key = " + sparseButtons.get(j).getText();
-		sparseKeyBox = new JComboBox(boxNames);
-		sparsePanel.add(sparseKeyBox);
+		sparseKey = db.getPrimaryKey(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoSparse);
+		assert (sparseKey.size() == 1) : "More than one sparse key!";
+		sparseKeyLabel = new JLabel("key = " + sparseKey.get(0));
+		sparsePanel.add(sparseKeyLabel);
 		JLabel sparseChoose = new JLabel("Choose one value below:");
 		sparsePanel.add(sparseChoose);
-		sparseLayout.putConstraint(SpringLayout.WEST, sparseKeyBox, 10, SpringLayout.WEST, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.NORTH, sparseKeyBox, 10, SpringLayout.NORTH, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.WEST, sparseKeyLabel, 10, SpringLayout.WEST, sparsePanel);
+		sparseLayout.putConstraint(SpringLayout.NORTH, sparseKeyLabel, 10, SpringLayout.NORTH, sparsePanel);
 		sparseLayout.putConstraint(SpringLayout.WEST, sparseChoose, 20, SpringLayout.WEST, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.NORTH, sparseChoose, 10, SpringLayout.SOUTH, sparseKeyBox);
-		JScrollPane sparseButtonPane = getButtonPane(sparseButtons, true);
+		sparseLayout.putConstraint(SpringLayout.NORTH, sparseChoose, 10, SpringLayout.SOUTH, sparseKeyLabel);
+		JScrollPane sparseButtonPane = getSparseButtonPane(sparseButtons);
 		sparsePanel.add(sparseButtonPane);
 		sparseLayout.putConstraint(SpringLayout.WEST, sparseButtonPane, 10, SpringLayout.WEST, sparsePanel);
 		sparseLayout.putConstraint(SpringLayout.NORTH, sparseButtonPane, 20, SpringLayout.SOUTH, sparseChoose);
-		
-		// set weight panel
-		JPanel weightPanel = new JPanel();
-		SpringLayout weightLayout = new SpringLayout();
-		weightPanel.setLayout(weightLayout);	
-		weightPanel.setPreferredSize(new Dimension(210,300));
-		JLabel weightChoose = new JLabel("Choose a weight:");
-		weightPanel.add(weightChoose);
-		weightLayout.putConstraint(SpringLayout.WEST, weightChoose, 0, SpringLayout.WEST, weightPanel);
-		weightLayout.putConstraint(SpringLayout.NORTH, weightChoose, 47, SpringLayout.NORTH, weightPanel);
-		JScrollPane weightButtonPane = getButtonPane(weightButtons, true);
-		weightButtons.get(0).setSelected(true);
-		weightPanel.add(weightButtonPane);
-		weightLayout.putConstraint(SpringLayout.WEST, weightButtonPane, 0, SpringLayout.WEST, weightPanel);
-		weightLayout.putConstraint(SpringLayout.NORTH, weightButtonPane, 20, SpringLayout.SOUTH, weightChoose);
 		
 		// Add dense and sparse panels to cards
 		specificationCards = new JPanel(new CardLayout());
@@ -338,27 +322,20 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		panel.add(new JLabel("Choose Type of Particle Information to Cluster on: "));
 		panel.add(infoTypeDropdown);
 		panel.add(specificationCards);
-		panel.add(weightPanel);
 	
 		return panel;
 		
 	}
 	
 	/**
-	 * gets the list of radio buttons in a scrollable pane; can be grouped
-	 * or ungrouped.
+	 * gets the list of dense check boxes
 	 * 
 	 * @param buttons - arraylist of buttons
-	 * @param grouped - true if grouped, false otherwise
 	 * @return JScrollPane
 	 */
-	public JScrollPane getButtonPane(ArrayList<JRadioButton> buttons, boolean grouped) {
+	public JScrollPane getDenseButtonPane(ArrayList<JCheckBox> buttons) {
 		JPanel pane = new JPanel();
 		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
-		ButtonGroup group = new ButtonGroup();
-		if (grouped) 
-			for (int i = 0; i < buttons.size(); i++) 
-				group.add(buttons.get(i));
 		for (int i = 0; i < buttons.size(); i++) 
 			pane.add(buttons.get(i));
 		JScrollPane scrollPane = new JScrollPane(pane);
@@ -366,10 +343,43 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		return scrollPane;	
 	}
 	
-	public ArrayList<JRadioButton> getColumnNames(String datatype, DynamicTable table) {
+	/**
+	 * gets the list of grouped sparse radio buttons in a scrollable pane.
+	 * 
+	 * @param buttons - arraylist of buttons
+	 * @return JScrollPane
+	 */
+	public JScrollPane getSparseButtonPane(ArrayList<JRadioButton> buttons) {
+		JPanel pane = new JPanel();
+		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
+		ButtonGroup group = new ButtonGroup(); 
+		for (int i = 0; i < buttons.size(); i++) {
+			group.add(buttons.get(i));
+			pane.add(buttons.get(i));
+		}
+		JScrollPane scrollPane = new JScrollPane(pane);
+		scrollPane.setPreferredSize(new Dimension(200, 200));
+		return scrollPane;	
+	}
+	
+	public ArrayList<JCheckBox> getDenseColumnNames(String datatype) {
+		ArrayList<JCheckBox> buttonsToCheck = new ArrayList<JCheckBox>();
+		ArrayList<ArrayList<String>> namesAndTypes = 
+			MainFrame.db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoDense);
+		for (int i = 0; i < namesAndTypes.size(); i++) {
+			if ((namesAndTypes.get(i).get(1).equals("INT") || 
+					namesAndTypes.get(i).get(1).equals("REAL")) && 
+					!namesAndTypes.get(i).get(0).equals("AtomID")) 
+			buttonsToCheck.add(new JCheckBox(namesAndTypes.get(i).get(0) + 
+					" : " + namesAndTypes.get(i).get(1)));
+		}
+		return buttonsToCheck;
+	}
+	
+	public ArrayList<JRadioButton> getSparseColumnNames(String datatype) {
 		ArrayList<JRadioButton> buttonsToCheck = new ArrayList<JRadioButton>();
 		ArrayList<ArrayList<String>> namesAndTypes = 
-			MainFrame.db.getColNamesAndTypes(datatype, table);
+			MainFrame.db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoSparse);
 		for (int i = 0; i < namesAndTypes.size(); i++) {
 			if ((namesAndTypes.get(i).get(1).equals("INT") || 
 					namesAndTypes.get(i).get(1).equals("REAL")) && 
@@ -450,31 +460,14 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			String sparseTableName = db.getDynamicTableName(DynamicTable.AtomInfoSparse, 
 					cTree.getSelectedCollection().getDatatype());
 			Scanner scan;
-			for (int i = 0; i < weightButtons.size(); i++)
-				if (weightButtons.get(i).isSelected()) {
-					scan = new Scanner(weightButtons.get(i).getText());
-					weight = scan.next();
-					if (weight.equals("None"))
-						weight = null;
-					else weight = denseTableName + "." + weight;
-					break;
-				}
 			if (infoType.equals(dense)) {
 				for (int i = 0; i < denseButtons.size(); i++)
 					if (denseButtons.get(i).isSelected()) {
 						scan = new Scanner(denseButtons.get(i).getText());
 						list.add(denseTableName + "." + scan.next());
 					}
-				key = (String)denseKeyBox.getSelectedItem();
-				if (key.equals(denseKey))
-					auto = true;
-				else {
-					scan = new Scanner(key);
-					scan.next();
-					scan.next();
-					key = scan.next();
-					auto = false;
-				}
+				key = denseKey;
+				auto = true;
 			}
 			else if (infoType.equals(sparse)) {
 				for (int i = 0; i <sparseButtons.size(); i++)
@@ -483,12 +476,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 						list.add(sparseTableName + "." + scan.next());
 						break;
 					}
-				scan = new Scanner((String)sparseKeyBox.getSelectedItem());
-				scan.next();
-				scan.next();
-				key = scan.next();
-				// TODO: iffy here, prone to bugs.
-				auto = false;
+				key = sparseKey.get(0);
 			}
 			ClusterInformation cInfo = new ClusterInformation(list, key, weight, auto, norm);
 			

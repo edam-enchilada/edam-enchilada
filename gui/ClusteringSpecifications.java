@@ -82,19 +82,6 @@ public class ClusteringSpecifications extends JDialog implements ActionListener,
 			keyGroup.add(auto);
 			keyPanel.add(auto);
 			
-			/*valuePanel.setLayout(new BoxLayout(valuePanel, BoxLayout.PAGE_AXIS));		
-			valuePanel.add(new JLabel("Choose one value if key is not automatic \n or one or more values if key is automatic"));
-			for (int j = 0; j < buttons.size(); j++) 
-				valuePanel.add(buttons.get(j));
-			
-			weightPanel.setLayout(new BoxLayout(weightPanel, BoxLayout.PAGE_AXIS));		
-			weightPanel.add(new JLabel("Choose a weight (optional)"));
-			ButtonGroup weightGroup = new ButtonGroup();
-			for (int j = 0; j < buttons.size(); j++) {
-				weightGroup.add(buttons.get(j));
-				weightPanel.add(buttons.get(j));
-			}*/
-			
 			panel.add(keyPanel);
 			panel.add(valuePanel);
 			panel.add(weightPanel);

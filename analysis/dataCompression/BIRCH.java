@@ -210,14 +210,6 @@ public class BIRCH extends CompressData{
 		return newTree;
 	}
 	
-	public void clusterLeaves() {
-		
-	}
-	
-	public void refineClusters() {
-		
-	}
-	
 	/**
 	 * @Override
 	 * 
@@ -243,6 +235,11 @@ public class BIRCH extends CompressData{
 	}
 
 	@Override
+	/**
+	 * This method is for ATOFMS particles only.  The SQL stmts. are MUCH
+	 * easier to write, and we're not looking to generalize this method until
+	 * we've restructured the db to accomodate generalizations. - AR
+	 */
 	protected void putCollectionInDB() {	
 		// Create new collection and dataset:
 		String compressedParams = getDatasetParams(oldDatatype);
