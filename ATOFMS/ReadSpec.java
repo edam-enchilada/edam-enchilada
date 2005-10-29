@@ -61,7 +61,7 @@ import java.nio.*;
  */
 public class ReadSpec {
 	private static final DateFormat dFormat = 
-		new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+		new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	
 	private  byte[] byteArray;
 	private ByteBuffer byteBuff;
