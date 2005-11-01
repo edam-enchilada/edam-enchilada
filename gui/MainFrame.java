@@ -60,6 +60,7 @@ import collection.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.Vector;
 
 import database.*;
@@ -101,12 +102,13 @@ public class MainFrame extends JFrame implements ActionListener
 	private CollectionTree collectionPane;
 	private CollectionTree synchronizedPane;
 	private JTextArea descriptionTA;
-
+	private JComboBox chooseParticleSet;
+	
 	private CollectionTree selectedCollectionTree = null;
 	
 	private int copyID = -1;
 	private boolean cutBool = false;
-
+	
 	private JTable particlesTable = null;
 	private Vector<Vector<Object>> data = null;
 	
@@ -123,7 +125,7 @@ public class MainFrame extends JFrame implements ActionListener
 	public MainFrame()
 	{
 		super("Enchilada");
-
+		
 		/* "If you are going to set the look and feel, you should do it as the 
 		 * very first step in your application. Otherwise you run the risk of 
 		 * initializing the Java look and feel regardless of what look and feel 
@@ -139,7 +141,7 @@ public class MainFrame extends JFrame implements ActionListener
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		
 		setSize(800, 600);
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -180,21 +182,21 @@ public class MainFrame extends JFrame implements ActionListener
 				SpringLayout.EAST, mainSplitPane);
 		layout.putConstraint(SpringLayout.SOUTH, contentPane, 5,
 				SpringLayout.SOUTH, mainSplitPane);
-	
+		
 		//Display the window.
 		setVisible(true);
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-		       db.closeConnection();
-		    }
+				db.closeConnection();
+			}
 		});
 	}
 	
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
-
+		
 		if (source == importEnchiladaDataButton ||
 				source == loadEnchiladaDataItem) {
 			new ImportEnchiladaDataDialog(this);
@@ -209,7 +211,7 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.updateTree();
 			validate();
 		}
-
+		
 		
 		else if (source == emptyCollButton || source == emptyCollection) {
 			new EmptyCollectionDialog(this);
@@ -225,20 +227,20 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == deleteAdoptItem)
 		{
 			Collection c = getSelectedCollection();
-	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.orphanAndAdopt(c);
-	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree(c.getCollectionID());
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			selectedCollectionTree.updateTree(c.getCollectionID());
 			validate();
 		}
 		
 		else if (source == recursiveDeleteItem)
 		{
 			Collection c = getSelectedCollection();
-	        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.recursiveDelete(getSelectedCollection());
-	        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-	        selectedCollectionTree.updateTree(c.getCollectionID());
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			selectedCollectionTree.updateTree(c.getCollectionID());
 			validate();
 		}
 		
@@ -277,10 +279,10 @@ public class MainFrame extends JFrame implements ActionListener
 			}
 			else
 				System.err.println("Cannot copy/paste to the same " +
-						"destination as the source");
+				"destination as the source");
 		}
 		else if (source == queryItem) {new QueryDialog(this, 
-											collectionPane, db, getSelectedCollection());}
+				collectionPane, db, getSelectedCollection());}
 		
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
@@ -293,13 +295,13 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
-					"Are you sure? This will destroy all data in your database.") ==
+			"Are you sure? This will destroy all data in your database.") ==
 				JOptionPane.YES_OPTION) {
 				db.closeConnection();
 				SQLServerDatabase.rebuildDatabase("SpASMSdb");
 				JOptionPane.showMessageDialog(this,
 						"The program will now shut down to reset itself. " +
-						"Start it up again to continue.");
+				"Start it up again to continue.");
 				dispose();
 			}			
 		}
@@ -332,6 +334,10 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == dataFormatItem) {
 			new DataFormatViewer(this);
+		}
+		
+		else if (source == chooseParticleSet) {
+			setTable();
 		}
 	}
 	
@@ -469,7 +475,7 @@ public class MainFrame extends JFrame implements ActionListener
 		menuBar.add(datatypeMenu);
 		dataFormatItem = new JMenuItem("Data Format Viewer", KeyEvent.VK_D);
 		dataFormatItem.addActionListener(this);
-
+		
 		datatypeMenu.add(dataFormatItem);
 		
 		//Add a help menu to the menu bar.
@@ -534,12 +540,16 @@ public class MainFrame extends JFrame implements ActionListener
 		collectionViewPanel = new JTabbedPane();
 		
 		Vector<String> columns = new Vector<String>(1);
-		columns.add("Click on a collection to see information.");
+		columns.add("");
 		
 		data = new Vector<Vector<Object>>(1000);
 		Vector<Object> row = new Vector<Object>(1);
 		row.add("");
 		data.add(row);
+		
+		String[] blank = {"Click on a collection to see information."};
+		chooseParticleSet = new JComboBox(blank);
+		chooseParticleSet.addActionListener(this);
 		
 		particlesTable = new JTable(data, columns);
 		
@@ -547,11 +557,14 @@ public class MainFrame extends JFrame implements ActionListener
 		analyzeParticleButton.setEnabled(false);
 		analyzeParticleButton.addActionListener(this);
 		
+		JPanel comboPane = new JPanel(new FlowLayout());
+		comboPane.add(chooseParticleSet, BorderLayout.CENTER);
 		particlePanel = new JPanel(new BorderLayout());
 		particleTablePane = new JScrollPane(particlesTable);
 		JPanel partOpsPane = new JPanel(new FlowLayout());
 		partOpsPane.add(analyzeParticleButton, BorderLayout.CENTER);
 		
+		particlePanel.add(comboPane, BorderLayout.NORTH);
 		particlePanel.add(particleTablePane, BorderLayout.CENTER);
 		particlePanel.add(partOpsPane, BorderLayout.SOUTH);
 		
@@ -582,7 +595,7 @@ public class MainFrame extends JFrame implements ActionListener
 		bottomLeftPanel.add(bottomLeftButtonPanel, BorderLayout.SOUTH);
 		
 		JSplitPane leftPane 
-			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, topLeftPanel, bottomLeftPanel);
+		= new JSplitPane(JSplitPane.VERTICAL_SPLIT, topLeftPanel, bottomLeftPanel);
 		leftPane.setMinimumSize(new Dimension(170,64));
 		leftPane.setDividerLocation(200);
 		
@@ -602,8 +615,8 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		selectedCollectionTree = colTree;
 		
-        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		
 		int dividerLocation = mainSplitPane.getDividerLocation();
 		boolean panelChanged = false;
 		
@@ -621,39 +634,58 @@ public class MainFrame extends JFrame implements ActionListener
 			// Bah. Java can't just remember this... need to remind it.
 			mainSplitPane.setDividerLocation(dividerLocation);
 			
-	        validate();
+			validate();
 		}
 		
-        editText(MainFrame.DESCRIPTION, collection.getDescription());
-        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+		editText(MainFrame.DESCRIPTION, collection.getDescription());
+		setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 	}
-
+	
 	private boolean setupRightWindowForCollection(Collection collection) {
 		mainSplitPane.setBottomComponent(collectionViewPanel);
 		
-        String dataType = collection.getDatatype();
-        ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
-        
+		String dataType = collection.getDatatype();
+		ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
+		
+		
+		// use combo box to display particles in chunks of 1000 particles.
+		int numParticles = collection.getParticleIDs().size();
+		int numLines = numParticles/1000;
+		if (numParticles%1000 != 0)
+			numLines++;
+		int low = 1; 
+		int high = 1000;
+		int counter = 0;
+		chooseParticleSet.removeAllItems();
+		while (high < numParticles) {
+			chooseParticleSet.addItem("Particle Index: " + low + " - " + high);
+			counter++;
+			low += 1000;
+			high += 1000;
+		}
+		chooseParticleSet.addItem("Particle Index: " + low + " - " + numParticles);
+		
+		
 		Vector<Object> columns = new Vector<Object>(colnames.size());
 		for (int i = 0; i < colnames.size(); i++) {
 			String temp = colnames.get(i);
 			temp = temp.substring(1,temp.length()-1);
 			columns.add(temp);
 		}
-				
+		
 		data = new Vector<Vector<Object>>(1000);
 		Vector<Object> row = new Vector<Object>(colnames.size());
 		for (int i = 0; i < colnames.size(); i++) 
 			row.add("");
 		
 		data.add(row);
-
+		
 		particlesTable = new JTable(data, columns);
 		particlesTable.setDefaultEditor(Object.class, null);
 		
 		if (dataType.equals("ATOFMS")) {
 			particleTablePane.setViewportView(particlesTable);
-			 
+			
 			particlesTable.setEnabled(true);
 			ListSelectionModel lModel = 
 				particlesTable.getSelectionModel();
@@ -663,9 +695,9 @@ public class MainFrame extends JFrame implements ActionListener
 			lModel.addListSelectionListener(new ListSelectionListener() {
 				public void valueChanged(ListSelectionEvent arg0) {		
 					/*	// If collection isn't ATOFMS, don't display anything.
-					if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
-						return;
-				*/
+					 if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
+					 return;
+					 */
 					int row = particlesTable.getSelectedRow();
 					
 					analyzeParticleButton.setEnabled(row != -1);
@@ -678,25 +710,28 @@ public class MainFrame extends JFrame implements ActionListener
 						showAnalyzeParticleWindow();
 				}
 			});
-
+			
 			collectionViewPanel.setComponentAt(0, particlePanel);
 			collectionViewPanel.repaint();
 		} else {
 			particlesTable.setEnabled(false);
-			
 			// Change to just show table (no button)...
 			collectionViewPanel.setComponentAt(0, new JScrollPane(particlesTable));
 		}
 		
-		data.clear();
-		data = db.updateParticleTable(collection, data);
-	    
-		particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
-        particlesTable.doLayout();
+		//call setTable, which populates the table.
+		setTable();
+		//old code
+		//data.clear();
+		//data = db.updateParticleTable(collection, data, low, high);
+		
+		
+		
+
 		
 		return true;
 	}
-
+	
 	private boolean setupRightWindowForSynchronization(Collection collection) {
 		Component rightWindow = mainSplitPane.getBottomComponent();
 		
@@ -708,7 +743,7 @@ public class MainFrame extends JFrame implements ActionListener
 				return false;
 			}
 		}
-			
+		
 		mainSplitPane.setBottomComponent(new SyncAnalyzePanel(this, db, synchronizedPane, collection));
 		return true;
 	}
@@ -739,12 +774,12 @@ public class MainFrame extends JFrame implements ActionListener
 			descriptionTA.setText(text);
 			descriptionTA.setCaretPosition(0);
 			/*
-			int docLength = descriptionTA.getDocument().getLength();
-			
-			descriptionTA.replaceRange(text, 0,docLength);*/
+			 int docLength = descriptionTA.getDocument().getLength();
+			 
+			 descriptionTA.replaceRange(text, 0,docLength);*/
 		}
 	}
-
+	
 	public void updateSynchronizedTree(int collectionID) {
 		synchronizedPane.updateTree(collectionID);
 	}
@@ -759,7 +794,7 @@ public class MainFrame extends JFrame implements ActionListener
 	}
 	
 	public static void main(String[] args) {
-
+		
 		// Verify that database exists, and give user opportunity to create
 		// if it does not.
 		if (!SQLServerDatabase.isPresent("SpASMSdb")) {
@@ -768,7 +803,7 @@ public class MainFrame extends JFrame implements ActionListener
 					"Make sure to select yes only if there is no database already present,\n"
 					+ "since this will remove any pre-existing Enchilada database.") ==
 						JOptionPane.YES_OPTION) {
-
+				
 				SQLServerDatabase.rebuildDatabase("SpASMSdb");
 			}			
 		}
@@ -776,7 +811,7 @@ public class MainFrame extends JFrame implements ActionListener
 		//Open database connection:
 		db = new SQLServerDatabase("SpASMSdb");
 		db.openConnection();
-
+		
 		//Schedule a job for the event-dispatching thread:
 		//creating and showing this application's GUI.
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
@@ -793,7 +828,7 @@ public class MainFrame extends JFrame implements ActionListener
 	{
 		return data;
 	}
-
+	
 	/**
 	 * @return Returns the particlesTable.
 	 */
@@ -821,9 +856,38 @@ public class MainFrame extends JFrame implements ActionListener
 	 */
 	public void valueChanged(ListSelectionEvent arg0) {
 		int row = particlesTable.getSelectedRow();
-
+		
 		analyzeParticleButton.setEnabled(row != -1);
-
-	
 	}	
+	
+	/**
+	 * This sets the particle table according to the particle
+	 * set seleced in the combo box above the table.
+	 * 
+	 * It is called by the setupRightWindow method and by the actionlistener
+	 * when the combo box is chosen.
+	 *
+	 */
+	public void setTable() {
+		String text = (String)chooseParticleSet.getSelectedItem();
+		if (text != null) {
+			// extract the two integers.
+			Scanner scan = new Scanner(text);
+			scan.next();
+			scan.next();
+			int low = scan.nextInt();
+			scan.next();
+			int high = scan.nextInt();
+			// convert integers into atomIDs for the given collection.
+			low = db.getIthID(low, getSelectedCollection());
+			high = db.getIthID(high, getSelectedCollection());
+			
+			//clear data in table and repopulate it with appropriate 
+			// data.
+			data.clear();
+			db.updateParticleTable(getSelectedCollection(),data,low,high);
+			particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+			particlesTable.doLayout();
+		}
+	}
 }

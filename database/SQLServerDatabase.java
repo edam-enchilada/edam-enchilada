@@ -1604,8 +1604,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * particles table.  All items are taken from AtomInfoDense, and all 
 	 * items are strings except for the atomID, which is used to produce 
 	 * graphs.
+	 * 
+	 * This will only return 1000 particles at a time.
 	 */
-	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo) {
+	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo, int lowAtomID, int highAtomID) {
 		particleInfo.clear();
 		int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
 		// This isn't a registered datatype... oops
@@ -1623,6 +1625,8 @@ public class SQLServerDatabase implements InfoWarehouse
 					+"\n" +
 					"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #TempParticles" + 
 					irs.instance + ".AtomID\n" +
+					"AND " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID\n" +
+					"BETWEEN " + lowAtomID + " AND " + highAtomID + "\n" +
 					"ORDER BY #TempParticles" + irs.instance + 
 					".AtomID");
 			
@@ -3904,6 +3908,24 @@ public class SQLServerDatabase implements InfoWarehouse
 		}	 
 		
 		return strings;
+	}
+	
+	// gets the Ith atomID from a collection.
+	// returns -1 if index is out of bounds.
+	public int getIthID(int index, Collection collection) {
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership" +
+					" WHERE CollectionID = " + collection.getCollectionID() + 
+					" ORDER BY AtomID");
+			for (int i = 0; i < index-1; i++)
+				rs.next();
+			if (rs.next()) 
+				return rs.getInt(1);			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return -1;
 	}
 }
 

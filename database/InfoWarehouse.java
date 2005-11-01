@@ -272,7 +272,7 @@ public interface InfoWarehouse {
 	
 	public ArrayList<String> getColNames(String datatype, DynamicTable table);
 	
-	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleTable);
+	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleTable, int lowAtomID, int hightAtomID);
 	
 	public int saveMap(String name, Vector<int[]> mapRanges);
 	public Hashtable<Integer, String> getValueMaps();
