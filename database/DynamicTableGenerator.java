@@ -53,9 +53,8 @@ public class DynamicTableGenerator extends DefaultHandler {
 	{
 		if ((systemId != null && systemId.endsWith("meta.dtd"))
 				|| (publicId != null && publicId.endsWith("meta.dtd"))) {
-			// XXX: make this sensitive to where the application actually gets put.
-			return new InputSource(new FileInputStream(
-					"meta.dtd"));
+			// the current directory is the application install directory.  yay!
+			return new InputSource(new FileInputStream("meta.dtd"));
 		} else {
 			return null;
 		}
