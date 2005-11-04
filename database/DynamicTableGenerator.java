@@ -51,7 +51,8 @@ public class DynamicTableGenerator extends DefaultHandler {
 	public InputSource resolveEntity(String publicId, String systemId)
 			throws FileNotFoundException 
 	{
-		if (systemId.endsWith("meta.dtd")) {
+		if ((systemId != null && systemId.endsWith("meta.dtd"))
+				|| (publicId != null && publicId.endsWith("meta.dtd"))) {
 			// XXX: make this sensitive to where the application actually gets put.
 			return new InputSource(new FileInputStream(
 					"meta.dtd"));
