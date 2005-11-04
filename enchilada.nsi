@@ -8,8 +8,8 @@
 ;;; the compiler for this file, which makes an installer executable, is
 ;;; available from http://nsis.sourceforge.net/
 
-!define WITH_MSDE
-;!define RELEASE
+;!define WITH_MSDE
+!define RELEASE
 
 
 ;--------------------------------
@@ -67,7 +67,9 @@ Section "EDAM Enchilada (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
+!ifdef WITH_MSDE
   File MSDE-EULA.txt
+!endif
   File "MPL-1.1.txt"
   File "edam-enchilada.jar"
   File "importation files\meta.dtd"
