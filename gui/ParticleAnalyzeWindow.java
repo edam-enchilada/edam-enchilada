@@ -51,6 +51,7 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.*;
+import javax.swing.text.html.*;
 
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.CalInfo;
@@ -82,6 +83,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JRadioButton peakButton, specButton;
 	private JButton nextButton, zoomOutButton, prevButton;
 	private JTextPane labelText;
+	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
 	
 	//Data elements
@@ -257,8 +259,19 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
 		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
 		
+		labelText = new JTextPane();
+		labelText.setEditable(false);
+		labelText.setContentType("text/html");			
+		labelText.setText("Processing labels...");
+		
+		labelScrollPane = new JScrollPane(labelText);
+		
+		JPanel labelPanel = new JPanel(new BorderLayout());
+		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
+		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
+		labelPanel.setPreferredSize(new Dimension(300, 200));
+		
 		JPanel sigPanel = new JPanel(new BorderLayout());
-
 		JPanel signatures = new JPanel(new GridLayout(numIonRows + 1, 2));
 		signatures.add(new JLabel("Negative Ions:"));
 		signatures.add(new JLabel("Positive Ions:"));
@@ -276,24 +289,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		sigPanel.add(new JLabel("Signature", SwingConstants.CENTER), BorderLayout.NORTH);
 		sigPanel.add(new JScrollPane(signatures), BorderLayout.CENTER);
+		sigPanel.setPreferredSize(new Dimension(100, 150));
 		
-		labelText = new JTextPane();
-		labelText.setEditable(false);
-		labelText.setContentType("text/html");			
-		labelText.setText("Processing labels...");
-		JScrollPane labelScrollPane = new JScrollPane(labelText);
-		
-		JPanel labelPanel = new JPanel(new BorderLayout());
-		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
-		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
-		labelPanel.setPreferredSize(new Dimension(300, 200));
-
 		final JSplitPane labelingControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, labelPanel, sigPanel);
 
 		final JSplitPane mainControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, labelingControlPane);
-
+		
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
 
@@ -305,7 +308,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		peakButton.addActionListener(this);
 		bg.add(specButton);
 		bg.add(peakButton);
-		specButton.setSelected(true);
+		peakButton.setSelected(true);
 		buttonPanel.add(specButton);
 		buttonPanel.add(peakButton);
 		
@@ -762,22 +765,30 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		ArrayList<LabelingIon> ionList             = selectedMZ < 0 ? negIons : posIons;
 		Hashtable<LabelingIon, Double> labeledIons = selectedMZ < 0 ? labelLoader.foundNegIons : labelLoader.foundPosIons;
 		
+		if (labeledIons == null)
+			return;
+		
 		int selectedMZRounded = (int) Math.round(Math.abs(selectedMZ));
 		
-		for (int i = 0; i < ionList.size(); i++) {
-			LabelingIon ion = ionList.get(i);
-			int[] mzVals = ion.mzVals;
-			
-			for (int j = 0; j < mzVals.length; j++) {
-				if (mzVals[j] == selectedMZRounded && ion.ratios[j] > labelingThreshold) {
-					String color = "black";
-
-					if (labeledIons.containsKey(ion))
-						color = "red";
-					else if (!ion.isChecked())
-						color = "#98AFC7";
-					
-					sb.append("<b><font color='" + color + "'>" + ion.name + "</font>");
+		for (int labelType = 0; labelType < 3; labelType++) {
+			for (int i = 0; i < ionList.size(); i++) {
+				LabelingIon ion = ionList.get(i);
+				int[] mzVals = ion.mzVals;
+				
+				for (int j = 0; j < mzVals.length; j++) {
+					if (mzVals[j] == selectedMZRounded && ion.ratios[j] > labelingThreshold) {
+						String color = null;
+						
+						if (labelType == 0 && labeledIons.containsKey(ion))
+							color = "red";
+						else if (labelType == 1)
+							color = "black";
+						else if (labelType == 2 && !ion.isChecked())
+							color = "#98AFC7";
+						
+						if (color != null)
+							sb.append("<b><font color='" + color + "'>" + ion.name + "</font><br>");
+					}
 				}
 			}
 		}
@@ -786,6 +797,15 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			labelText.setText("<html>" + sb.toString() + "</html>");
 		else
 			labelText.setText("No labels found for this peak!");
+		
+		// Total hack... make sure label textarea scrolls to top after setting text...
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				labelScrollPane.getViewport().setViewPosition(new Point(0, 0));
+			}
+		});		
 	}
 	
 	private class LabelLoader implements Runnable {
