@@ -3531,16 +3531,18 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		if (conditionStrs.size() > 0) {
 			condStr = ", case when (";
-		
-			for (int i = 0; i < conditionStrs.size(); i++) {
+			
+			for (int i = 0; i < conditionStrs.size(); i++)
+				condStr += conditionStrs.get(i);
+			
+			condStr += ") then %s else -999 end as %s";
+			
+			for (int i = 0; i < conditionalSeqs.size(); i++) {
 				tableJoinStr += "join (" + atomSelStr + ") C" + i + " on (C" + i + ".Time = T1.Time) \n";
 				selectStr += ", C" + i + ".Value as C" + i + "Value";
 				collCondStr += "and C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + " \n";
-				condStr += conditionStrs.get(i);
 				columnsToReturn.add("C" + i + "Value");
 			}
-			
-			condStr += ") then %s else -999 end as %s";
 		}
 		
 		selectStr += String.format(condStr, "T1.Value", "Ts1Value");
@@ -3551,6 +3553,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		String sqlStr = selectStr + " \n" + tableJoinStr + collCondStr;
 		
 		Hashtable<java.util.Date, double[]> retData = new Hashtable<java.util.Date, double[]>();
+		
 		try{
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(sqlStr);
