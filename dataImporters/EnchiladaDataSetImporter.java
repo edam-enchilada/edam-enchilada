@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -98,7 +99,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * 
 	 * @param fileNames
 	 */
-	public void importFiles(ArrayList<String> fileNames){
+	public void importFiles(List<String> fileNames){
 				
 		for (String eachFile : fileNames)
 			read(eachFile);
@@ -338,7 +339,8 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	public InputSource resolveEntity(String publicId, String systemId)
 	throws FileNotFoundException
 	{
-		if (systemId.endsWith("enchilada.dtd")) {
+		if ((systemId != null && systemId.endsWith("enchilada.dtd"))
+				|| (publicId != null && publicId.endsWith("enchilada.dtd"))) {
 			// XXX: make this sensitive to where Enchilada is installed.
 			return new InputSource(new FileInputStream(
 				"enchilada.dtd"));
