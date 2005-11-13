@@ -79,6 +79,7 @@ public class MainFrame extends JFrame implements ActionListener
 	
 	private JButton importEnchiladaDataButton;
 	private JButton importParsButton;
+	private JButton importFlatButton;
 	private JButton exportParsButton;
 	private JButton emptyCollButton;
 	private JButton analyzeParticleButton;
@@ -212,6 +213,12 @@ public class MainFrame extends JFrame implements ActionListener
 			validate();
 		}
 		
+		else if (source == importFlatButton) {
+			new FlatImportGUI(this, db);
+			
+			collectionPane.updateTree();
+			validate();
+		}
 		
 		else if (source == emptyCollButton || source == emptyCollection) {
 			new EmptyCollectionDialog(this);
@@ -513,6 +520,10 @@ public class MainFrame extends JFrame implements ActionListener
 		importEnchiladaDataButton.setBorder(new EtchedBorder());
 		importEnchiladaDataButton.addActionListener(this);
 		
+		importFlatButton = new JButton("Import CSV");
+		importFlatButton.setBorder(new EtchedBorder());
+		importFlatButton.addActionListener(this);
+		
 		emptyCollButton = new JButton("New Empty Collection");
 		emptyCollButton.setBorder(new EtchedBorder());
 		emptyCollButton.addActionListener(this);
@@ -523,6 +534,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		buttonPanel.add(emptyCollButton);
 		buttonPanel.add(importParsButton);
+		buttonPanel.add(importFlatButton);
 		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(exportParsButton);
 		add(buttonPanel);
