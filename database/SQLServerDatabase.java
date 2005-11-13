@@ -1582,9 +1582,6 @@ public class SQLServerDatabase implements InfoWarehouse
 					"ORDER BY #TempParticles" + irs.instance + 
 					".AtomID");
 			
-			DateFormat dFormat = 
-				new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-			
 			while(rs.next())
 			{
 				particleInfo.add(new GeneralAtomFromDB(rs.getInt(1)));
