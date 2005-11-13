@@ -10,12 +10,18 @@ import java.util.*;
  */
 
 public class TSConvert{
-
+	private List<String> outFileNames;
+	
     static String usage = "USAGE: java TSConvert task_file\n"+
                           " E.g., java TSConvert upload.task\n";
 
     static SimpleDateFormat dateformatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    public TSConvert() {
+    	super();
+    	outFileNames = new ArrayList<String>();
+    }
+    
     public static void main(String[] argv){
         if(argv.length < 1){
             System.out.println(usage+"Please specify the task file!");
@@ -30,6 +36,8 @@ public class TSConvert{
     }
     
     public void convert(String task_file) throws Exception{
+    	File task = new File(task_file);
+    	String prefix = task.getParent();
         BufferedReader in = new BufferedReader(new FileReader(task_file));
         int line_no = 0;
         String line;
@@ -37,7 +45,7 @@ public class TSConvert{
             line_no++;
             line = line.trim();
             if(line.charAt(0) == '#') continue;
-            process(line.split("\\s*,\\s*"), task_file, line_no);
+            process(line.split("\\s*,\\s*"), task_file, line_no, prefix);
         }
 
     }
@@ -45,11 +53,12 @@ public class TSConvert{
     // args[0]: file name
     // args[1]: time-series column
     // args[2 ...]: value columns
-    void process(String[] args, String task_file, int line_no) throws Exception{
+    void process(String[] args, String task_file, int line_no, String prefix)
+    throws Exception{
         System.out.println("Processing "+args[0]+" ...");
         if(args.length < 3)
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
-        BufferedReader in = new BufferedReader(new FileReader(args[0]));
+        BufferedReader in = new BufferedReader(new FileReader(prefix+File.separator+args[0]));
         String line = in.readLine();
         if(line == null || line.trim().equals(""))
             throw new Exception("Error in "+args[0]+" at line 1: The first line should be the list of column names\n");
@@ -73,7 +82,9 @@ public class TSConvert{
             for(int i=1; i<values.length; i++)
                 values[i].add(v[colIndex[i]]);
         }
-        PrintStream out = new PrintStream(args[0]+".ed");
+        String outFName = prefix+File.separator+args[0]+".ed";
+        outFileNames.add(outFName);
+        PrintStream out = new PrintStream(outFName);
         printBegin(out);
         for(int i=2; i<values.length; i++){
             output(out,args[i],values[1],values[i]);
@@ -110,5 +121,8 @@ public class TSConvert{
     void printEnd(PrintStream out){
         out.print("</enchiladadata>\n");
     }
-
+    
+    public List<String> getOutFiles() {
+    	return outFileNames;
+    }
 }
