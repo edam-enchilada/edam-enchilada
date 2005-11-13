@@ -659,7 +659,7 @@ public class SQLServerDatabase implements InfoWarehouse
 								Collection collection,
 								int datasetID, int nextID){
 		
-		System.out.println("Inserting new particle:");
+		//System.out.println("Inserting new particle:");
 		
 		try {
 			Statement stmt = con.createStatement();
@@ -667,21 +667,21 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			String insert = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
 			nextID + ", " + dense + ")";
-			System.out.println(insert); //debugging
+			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
 			insert = "INSERT INTO AtomMembership" +
 			  "(CollectionID, AtomID)" +
 			  "VALUES (" +
 			  collection.getCollectionID() + ", " +
 			  nextID + ")";
-			System.out.println(insert); //debugging
+			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
 			insert = "INSERT INTO DataSetMembers" +
 			  "(OrigDataSetID, AtomID)" +
 			  " VALUES (" +
 			  datasetID + ", " + 
 			  nextID + ")";
-			System.out.println(insert); //debugging
+			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
 
 			// Only bulk insert if client and server are on the same machine...
