@@ -86,9 +86,9 @@ public class TSConvert{
         final ArrayList[] values = new ArrayList[args.length];
         for(int i=1; i<values.length; i++)
             values[i] = new ArrayList<String>(1000);
-        Thread readThr = new Thread() {
-		    public void run() {
-		    	String line;
+//        Thread readThr = new Thread() {
+//		    public void run() {
+//		    	String line;
 		    	try {
 		        	while((line = in.readLine()) != null){
 				            if(line.trim().equals("")) continue;
@@ -99,9 +99,12 @@ public class TSConvert{
 		    	} catch (IOException i) {
 		    		System.out.println(i.getMessage());
 		    	}
-		    }
-        };
-        readThr.start();
+//		    	return;
+//		    }
+//        };
+//        readThr.start();
+//        // this sucks, yes.
+//        readThr.join();
         String outFName = prefix+File.separator+args[0]+".ed";
         outFileNames.add(outFName);
         PrintStream out = new PrintStream(outFName);
