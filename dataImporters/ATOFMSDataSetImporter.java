@@ -406,12 +406,14 @@ public class ATOFMSDataSetImporter {
 				};
 				worker.start();
 				
-				waitBarDialog = new JDialog((JFrame)parentContainer, "Processing dataset #" + 
-						positionInBatch + " of " + totalInBatch, true);
-				waitBarDialog.setLayout(new FlowLayout());
 				pBar = new JProgressBar(0,totalParticles);
 				pBar.setValue(0);
 				pBar.setStringPainted(true);
+				
+				waitBarDialog = new JDialog((JFrame)parentContainer, "Processing dataset #" + 
+						positionInBatch + " of " + totalInBatch, true);
+				waitBarDialog.setLayout(new FlowLayout());
+
 				pLabel = new JLabel("       Processing particle 1 of " 
 						+ totalParticles + ".                 ");
 				pLabel.setLabelFor(pBar);
