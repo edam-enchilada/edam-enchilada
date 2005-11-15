@@ -1,8 +1,11 @@
 package dataImporters;
 
+import java.awt.Component;
 import java.io.*;
 import java.text.*;
 import java.util.*;
+
+import javax.swing.ProgressMonitorInputStream;
 
 /* Conversion from time-series files to the XML format
    The major method is convert(String task_file), where the task_file specifies
@@ -10,6 +13,8 @@ import java.util.*;
  */
 
 public class TSConvert{
+	private Component parent;
+	
 	private List<String> outFileNames;
 	
     static String usage = "USAGE: java TSConvert task_file\n"+
@@ -58,12 +63,17 @@ public class TSConvert{
         System.out.println("Processing "+args[0]+" ...");
         if(args.length < 3)
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
-        BufferedReader in = new BufferedReader(new FileReader(prefix+File.separator+args[0]));
+        final BufferedReader in = new BufferedReader(
+        		new InputStreamReader(
+        				new ProgressMonitorInputStream(
+        						parent,
+        						"Reading csv file: "+args[0],
+        						new FileInputStream(prefix+File.separator+args[0]))));
         String line = in.readLine();
         if(line == null || line.trim().equals(""))
             throw new Exception("Error in "+args[0]+" at line 1: The first line should be the list of column names\n");
         String[] column = line.split("\\s*,\\s*");
-        int[] colIndex = new int[args.length];
+        final int[] colIndex = new int[args.length];
         for(int i=1; i<args.length; i++){
             boolean found = false;
             for(int j=0; j<column.length; j++){
@@ -73,15 +83,25 @@ public class TSConvert{
             }
             if(!found) throw new Exception("Error in "+args[0]+" at line 1: Cannot find column name "+args[i]+", which is defined in "+task_file+" at line "+line_no+"\n");
         }
-        ArrayList[] values = new ArrayList[args.length];
+        final ArrayList[] values = new ArrayList[args.length];
         for(int i=1; i<values.length; i++)
             values[i] = new ArrayList<String>(1000);
-        while((line = in.readLine()) != null){
-            if(line.trim().equals("")) continue;
-            String[] v = line.split("\\s*,\\s*");
-            for(int i=1; i<values.length; i++)
-                values[i].add(v[colIndex[i]]);
-        }
+        Thread readThr = new Thread() {
+		    public void run() {
+		    	String line;
+		    	try {
+		        	while((line = in.readLine()) != null){
+				            if(line.trim().equals("")) continue;
+				            String[] v = line.split("\\s*,\\s*");
+				            for(int i=1; i<values.length; i++)
+				                values[i].add(v[colIndex[i]]);
+		        	}
+		    	} catch (IOException i) {
+		    		System.out.println(i.getMessage());
+		    	}
+		    }
+        };
+        readThr.start();
         String outFName = prefix+File.separator+args[0]+".ed";
         outFileNames.add(outFName);
         PrintStream out = new PrintStream(outFName);
@@ -125,4 +145,8 @@ public class TSConvert{
     public List<String> getOutFiles() {
     	return outFileNames;
     }
+
+	public void setParent(Component parent) {
+		this.parent = parent;
+	}
 }
