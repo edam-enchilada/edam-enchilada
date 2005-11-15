@@ -3,6 +3,8 @@ package dataImporters;
 import gui.EnchiladaDataTableModel;
 
 
+import java.awt.Component;
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
+import javax.swing.ProgressMonitorInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -53,6 +56,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	private int datasetID;
 	private TreeMap<String, ArrayList<String>> AISinfo;
 	private static final String quote = "'";
+	private Component parent;
 	
 	public EnchiladaDataSetImporter(SQLServerDatabase sqlsdb){
 		
@@ -124,7 +128,12 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		
 		try {
 			SAXParser parser = factory.newSAXParser();
-			parser.parse(fileName, handler);
+			parser.parse(new BufferedInputStream(
+					new ProgressMonitorInputStream(
+							parent,
+							"Reading data from " + fileName,
+							new FileInputStream(
+							fileName))), handler);
 			
 		} catch (ParserConfigurationException e) {
 			// TODO make GUI
@@ -347,5 +356,9 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		} else {
 			return null;
 		}
+	}
+
+	public void setParent(Component parent) {
+		this.parent = parent;
 	}
 }
