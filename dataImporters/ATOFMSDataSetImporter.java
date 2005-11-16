@@ -155,6 +155,8 @@ public class ATOFMSDataSetImporter {
 				processDataSet(i);
 				readParFileAndCreateEmptyCollection();
 				readSpectraAndCreateParticle();
+				// update the internal atom order table;
+				db.updateAncestors(db.getCollection(id[0]));
 			} catch (Exception e) {
 				e.printStackTrace();
 				String[] s = {name + " failed to import.", "Exception: ", 
@@ -236,6 +238,7 @@ public class ATOFMSDataSetImporter {
 	/**
 	 * Reads the pertinent information from the '.par' file and creates
 	 * an empty collection ready to populate with that dataset's particles.
+	 *
 	 */
 	public void readParFileAndCreateEmptyCollection() 
 	throws IOException, NullPointerException, DataFormatException {

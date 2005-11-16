@@ -211,7 +211,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testCopyCollection() {
 		db.openConnection();
 		
-		int newLocation = db.copyCollection(db.getCollection(2),db.getCollection(1));
+		int newLocation = db.copyCollection(db.getCollection(3),db.getCollection(2));
 		try {
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
@@ -220,7 +220,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					"USE TestDB\n" +
 					"SELECT Name, Comment\n" +
 					"FROM Collections\n" +
-					"WHERE CollectionID = 2");
+					"WHERE CollectionID = 3");
 			Statement stmt2 = con.createStatement();
 			
 			ResultSet rs2 = stmt2.executeQuery(

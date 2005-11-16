@@ -62,6 +62,7 @@ import atom.ATOFMSAtomFromDB;
 public class Collection {
 	private int collectionID;
 	private Collection parentCollection;
+	private boolean parentCollectionInitialized = false;
 	
 	private InfoWarehouse db = null;
 	private String datatype;
@@ -78,6 +79,7 @@ public class Collection {
 		collectionID = cID;
 		datatype = type;
 		db = database;
+		
 	}
 	
 	public Collection(String name, String type, int cID, InfoWarehouse database)
@@ -92,13 +94,13 @@ public class Collection {
 		cachedSubCollectionIDs = null;
 		cachedCollectionIDSubTree = null;
 		cachedSubCollections = null;
+		parentCollectionInitialized = false;
 	}
 	
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
 		if (cachedSubCollectionIDs == null)
 			cachedSubCollectionIDs = db.getImmediateSubCollections(this);
-		
 		return cachedSubCollectionIDs;
 	}
 	
@@ -132,7 +134,20 @@ public class Collection {
 		return cachedSubCollections[index];
 	}
 	
+	
+	/**
+	 * Since parent collection might not have been initialized, you must 
+	 * make sure that it doesn't have a parent in the db.  Then boolean
+	 * is set to true, and the parentCollection is in the cache.
+	 * @return
+	 */
 	public Collection getParentCollection() {
+		if (!parentCollectionInitialized) {
+			int temp = db.getParentCollectionID(collectionID);
+			if (temp != -1)
+				parentCollection = db.getCollection(temp);
+			parentCollectionInitialized = true;
+		}
 		return parentCollection;
 	}
 	
@@ -303,5 +318,9 @@ public class Collection {
 			return false;
 		}
 		return true;
+	}
+	
+	public void updateParent(Collection p) {
+		parentCollection = p;
 	}
 }
