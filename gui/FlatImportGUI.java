@@ -25,7 +25,8 @@ public class FlatImportGUI {
 		importer = new EnchiladaDataSetImporter(db);
 		importer.setParent(parent);
 		
-		ProgressTask task = new ProgressTask(parent, "Importing CSV Files") {
+		ProgressTask task = 
+			new ProgressTask(parent, "Importing CSV Files", true) {
 			public void run() {				
 				try {
 					progressBar.setMaximum(2);
@@ -39,10 +40,8 @@ public class FlatImportGUI {
 				}
 			}
 		};
-		System.out.println("Done creating task, about to start");
+		
 		task.start();
-		System.out.println("Done starting task.");
-		task.setVisible(true);
 	}
 
 	

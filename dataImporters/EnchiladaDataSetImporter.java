@@ -248,7 +248,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		 * Because the parser checks to make sure the elements are in order,
 		 * we can check in reverse-heirarchical order to reduce if statements.
 		 */
-		if (! data.equals("")){
+		if (qName.equals("field")){
 			//if it's a sparse info field, add it to the last sparse entry for this
 			//sparse table
 			if (inAtomInfoSparse){
@@ -270,7 +270,6 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			} 
 			data = "";
 		}
-		
 		
 		/*at the end of the document, push all the information to the database*/
 		if (qName.equals("enchiladadata")){
