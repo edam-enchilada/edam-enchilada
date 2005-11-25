@@ -665,15 +665,17 @@ public class SQLServerDatabase implements InfoWarehouse
 								int datasetID, int nextID){
 		
 		//System.out.println("Inserting new particle:");
+		String insert = "";
 		
 		try {
 			Statement stmt = con.createStatement();
 			//System.out.println("Adding batches");
 			
-			String insert = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+			insert = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
 			nextID + ", " + dense + ")";
 			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
+			stmt.executeBatch();
 			insert = "INSERT INTO AtomMembership" +
 			  "(CollectionID, AtomID)" +
 			  "VALUES (" +
@@ -681,6 +683,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			  nextID + ")";
 			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
+			stmt.executeBatch();
 			insert = "INSERT INTO DataSetMembers" +
 			  "(OrigDataSetID, AtomID)" +
 			  " VALUES (" +
@@ -688,7 +691,8 @@ public class SQLServerDatabase implements InfoWarehouse
 			  nextID + ")";
 			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
-
+			stmt.executeBatch();
+			
 			// Only bulk insert if client and server are on the same machine...
 			if (url.equals("localhost")) {
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
@@ -759,6 +763,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
+			System.err.println("value of insert:" + insert);
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 			
