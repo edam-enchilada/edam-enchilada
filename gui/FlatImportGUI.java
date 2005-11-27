@@ -14,7 +14,7 @@ public class FlatImportGUI {
 	private FilePicker fp;
 	private TSConvert conv;
 	private EnchiladaDataSetImporter importer;
-	private Component parent;
+	private Frame parent;
 	
 	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
 		this.parent = parent;
@@ -25,46 +25,25 @@ public class FlatImportGUI {
 		importer = new EnchiladaDataSetImporter(db);
 		importer.setParent(parent);
 		
-		ProgressTask task = 
-			new ProgressTask(parent, "Importing CSV Files", true) {
-			public void run() {				
-				try {
-					progressBar.setMaximum(2);
-					progressBar.setValue(1);
-					statusText.setText("Doing shit");
-					doImport();
-					statusText.setText("done!");
-					progressBar.setValue(2);
-				} catch (Exception e){
-					System.out.println(e.toString());
-				}
-			}
-		};
-		
-		task.start();
+		try {
+			doImport();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Exception importing (generally)");
+			// TODO: more handling of this exception.
+		}
 	}
 
 	
 	
 	public void doImport() throws Exception {
 		File task = new File(fp.getFileName());
-//		Runnable convRunner = new Runnable() {
-//			public void run() {
-//				try {
-				conv.convert(fp.getFileName());
-//				} catch (Exception e) {
-//					// XXX do something intelligent with this exception
-//					System.out.println(e.getMessage());
-//				}
-//			}
-//		};
-//		Thread convThread = new Thread(convRunner);
-//		convThread.run();
-//		convThread.join();
+		conv.convert(fp.getFileName());
 		
 		System.out.println("I seem to have converted the following files:");
 		System.out.println(conv.getOutFiles());
 
-		importer.importFiles(conv.getOutFiles());
+		importer.importFilesThreaded(conv.getOutFiles());
+		
 	}
 }
