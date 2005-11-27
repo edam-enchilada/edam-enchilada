@@ -4,6 +4,7 @@ import gui.EnchiladaDataTableModel;
 
 
 import java.awt.Component;
+import java.awt.Frame;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,6 +30,7 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import database.SQLServerDatabase;
+import externalswing.ProgressTask;
 
 /**
  * 
@@ -56,7 +58,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	private int datasetID;
 	private TreeMap<String, ArrayList<String>> AISinfo;
 	private static final String quote = "'";
-	private Component parent;
+	private Frame parent;
 	
 	public EnchiladaDataSetImporter(SQLServerDatabase sqlsdb){
 		
@@ -111,6 +113,27 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	}
 	
 	/**
+	 * Imports a list of filenames like importFiles, but with a cute GUI
+	 * and makes sure not keep the GUI from redrawing (if you're doing that
+	 * yourself, use importFiles()).
+	 * 
+	 * @param fileNames
+	 */
+	public void importFilesThreaded(List<String> fileNames) {
+		final List<String> fNames = fileNames;
+		ProgressTask task = new ProgressTask(parent, "Importing Enchilada Data",true) {
+			public void run() {
+				pSetMax(fNames.size());
+				pSetVal(0);
+				for (String eachFile : fNames) {
+					read(eachFile);
+					pInc();
+				}
+			}
+		};
+	}
+	
+	/**
 	 * Given a .ed filename, sets up to parse that xml file and stores the 
 	 * information in the relevant tables in the database.  
 	 * Helper function for importFiles().
@@ -129,11 +152,11 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		try {
 			SAXParser parser = factory.newSAXParser();
 			parser.parse(new BufferedInputStream(
-					new ProgressMonitorInputStream(
-							parent,
-							"Reading data from " + fileName,
+//					new ProgressMonitorInputStream(
+//							parent,
+//							"Reading data from " + fileName,
 							new FileInputStream(
-							fileName))), handler);
+							fileName)), handler);
 			
 		} catch (ParserConfigurationException e) {
 			// TODO make GUI
@@ -357,7 +380,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		}
 	}
 
-	public void setParent(Component parent) {
+	public void setParent(Frame parent) {
 		this.parent = parent;
 	}
 }

@@ -1,11 +1,13 @@
 package dataImporters;
 
-import java.awt.Component;
+import java.awt.Frame;
 import java.io.*;
 import java.text.*;
 import java.util.*;
 
 import javax.swing.ProgressMonitorInputStream;
+
+import externalswing.ProgressTask;
 
 /* Conversion from time-series files to the XML format
    The major method is convert(String task_file), where the task_file specifies
@@ -13,7 +15,7 @@ import javax.swing.ProgressMonitorInputStream;
  */
 
 public class TSConvert{
-	private Component parent;
+	private Frame parent;
 	
 	private List<String> outFileNames;
 	
@@ -41,18 +43,37 @@ public class TSConvert{
     }
     
     public void convert(String task_file) throws Exception{
-    	File task = new File(task_file);
-    	String prefix = task.getParent();
-        BufferedReader in = new BufferedReader(new FileReader(task_file));
-        int line_no = 0;
-        String line;
-        while((line = in.readLine()) != null){
-            line_no++;
-            line = line.trim();
-            if(line.charAt(0) == '#') continue;
-            process(line.split("\\s*,\\s*"), task_file, line_no, prefix);
-        }
-
+    	final String tf = task_file;
+    	final File task = new File(task_file);
+    	final String prefix = task.getParent();
+        final BufferedReader in = new BufferedReader(new FileReader(task_file));
+        ProgressTask convTask = new ProgressTask(parent, 
+        		"Converting CSV files to Enchilada Data", true) {
+        	public void run() {
+        		pSetInd(true);
+        		this.pack();
+        		int line_no = 0;
+        		String line;
+        		try {
+        			while((line = in.readLine()) != null){
+        				line_no++;
+        				line = line.trim();
+        				if(line.charAt(0) == '#') continue;
+        				setStatus(("Importing CSV "+line_no+": "+line)
+        							.substring(0,25));
+        				process(line.split("\\s*,\\s*"), tf, line_no, prefix);
+        			}
+        		} catch (Exception e) {
+        			System.err.println(e.toString());
+        			System.err.println("Exception while converting data!");
+        			// TODO: a little more handling of this exception.
+        		}
+        	}
+        };
+        // Since we called ProgressTask as a modal dialog, this call to .start()
+        // does not return until the task is completed, but the GUI gets 
+        // redrawn as needed anyway.  
+        convTask.start();
     }
 
     // args[0]: file name
@@ -65,10 +86,10 @@ public class TSConvert{
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
         final BufferedReader in = new BufferedReader(
         		new InputStreamReader(
-        				new ProgressMonitorInputStream(
-        						parent,
-        						"Reading csv file: "+args[0],
-        						new FileInputStream(prefix+File.separator+args[0]))));
+//        				new ProgressMonitorInputStream(
+//        						parent,
+//        						"Reading csv file: "+args[0],
+        						new FileInputStream(prefix+File.separator+args[0])));
         String line = in.readLine();
         if(line == null || line.trim().equals(""))
             throw new Exception("Error in "+args[0]+" at line 1: The first line should be the list of column names\n");
@@ -85,26 +106,17 @@ public class TSConvert{
         }
         final ArrayList[] values = new ArrayList[args.length];
         for(int i=1; i<values.length; i++)
-            values[i] = new ArrayList<String>(1000);
-//        Thread readThr = new Thread() {
-//		    public void run() {
-//		    	String line;
-		    	try {
-		        	while((line = in.readLine()) != null){
-				            if(line.trim().equals("")) continue;
-				            String[] v = line.split("\\s*,\\s*");
-				            for(int i=1; i<values.length; i++)
-				                values[i].add(v[colIndex[i]]);
-		        	}
-		    	} catch (IOException i) {
-		    		System.out.println(i.getMessage());
-		    	}
-//		    	return;
-//		    }
-//        };
-//        readThr.start();
-//        // this sucks, yes.
-//        readThr.join();
+        	values[i] = new ArrayList<String>(1000);
+        try {
+        	while((line = in.readLine()) != null){
+        		if(line.trim().equals("")) continue;
+        		String[] v = line.split("\\s*,\\s*");
+        		for(int i=1; i<values.length; i++)
+        			values[i].add(v[colIndex[i]]);
+        	}
+        } catch (IOException i) {
+        	System.out.println(i.getMessage());
+        }
         String outFName = prefix+File.separator+args[0]+".ed";
         outFileNames.add(outFName);
         PrintStream out = new PrintStream(outFName);
@@ -149,7 +161,7 @@ public class TSConvert{
     	return outFileNames;
     }
 
-	public void setParent(Component parent) {
+	public void setParent(Frame parent) {
 		this.parent = parent;
 	}
 }
