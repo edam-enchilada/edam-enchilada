@@ -24,7 +24,7 @@ public class ProgressTaskTest extends TestCase {
 		};
 		
 		myTask.start();
-//		try{Thread.sleep(1000);}catch (InterruptedException e) {}
+		try{Thread.sleep(1000);}catch (InterruptedException e) {}
 		
 	}
 

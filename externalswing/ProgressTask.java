@@ -22,6 +22,8 @@ public abstract class ProgressTask extends JDialog {
 	private JProgressBar progressBar;
 	private JLabel statusText;
 	private Thread task;
+	private boolean disposable = false;
+	private boolean modal;
 	
 	/**
 	 * These are just the same parameters that a Dialog takes in its
@@ -32,6 +34,7 @@ public abstract class ProgressTask extends JDialog {
 	 */
 	public ProgressTask(Frame owner, String title, boolean modal) {
 		super(owner, title, modal);
+		this.modal = modal;
 		this.setLayout(new FlowLayout());
 		
 		statusText = new JLabel("Initializing...");
@@ -42,6 +45,9 @@ public abstract class ProgressTask extends JDialog {
 		add(progressBar);
 		
 		this.pack();
+		
+		// see the overridden dispose() method.
+		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 	}
 	
 	/**
@@ -56,18 +62,36 @@ public abstract class ProgressTask extends JDialog {
 		
 		Runnable r = new Runnable() {
 			public void run() {
-				pSetInd(false);
-				setStatus("Running.");
-				
-				doRun();				
-				
-		
-				// we have to wait until setVisible is called before we dispose().
-				// If not, setVisible will happen after, and the dialog will 
-				// *never* close!  How cute!
-				while (!isVisible()) {
+				/*
+				 * Wait until the window has appeared, so we can be sure that
+				 * we close it later on.
+				 */
+				while (true) {
+					if (isVisible()) {
+						/*
+						 * The window is visible, so now let's start running
+						 * our task.
+						 */
+						setStatus("Running.");
+						
+						// accomplish our task!!
+						doRun();
+						
+						break;
+					} else if (Thread.interrupted()) {
+						/*
+						 * interrupted() implies that either the window has been
+						 * closed (see overridden dispose()), or the thread
+						 * has been interrupted for some other reason.  Either
+						 * way, we don't do the task, and we do make sure the
+						 * window is gone.
+						 */
+						break;
+					}
 					Thread.yield();
 				}
+		
+				// GUI commands should get run by the EventDispatcher thread.
 				SwingUtilities.invokeLater(
 						new Runnable() {public void run(){dispose();}});
 			}
@@ -95,18 +119,42 @@ public abstract class ProgressTask extends JDialog {
 	 * 
 	 * You will need to set the bounds and, obviously, the current value of 
 	 * the progressBar.
+	 * 
+	 * See the dispose() method for important information about premature
+	 * termination of the task.
 	 *
 	 */
 	public abstract void run();
 	
+	/**
+	 * dispose() - close the dialog box and stop the task that is running.
+	 * 
+	 * This overridden dispose() method calls interrupt() on the thread that
+	 * contains the running task.  See Thread.interrupt().  If the thread is
+	 * waiting for something, like I/O, it will get an exception thrown, which
+	 * should stop it.  If not, i.e. it is doing computations, it will only get
+	 * its interrupted() status set.  Therefore, it would be a good idea to
+	 * check whether this is the case periodically during heavy computations in
+	 * your threaded job, using the static method Thread.interrupted().
+	 */
+	public void dispose() {
+		task.interrupt();
+		super.dispose();
+	}	
 	
 	
-	
+
 	/*
 	 * These methods are here because the progressBar and statusText have
 	 * to be modified from the EventDispatcher thread.  If they get modified
 	 * from the worker thread that's started, race conditions and bad things
-	 * happen.
+	 * happen.  So they simply access the progress bar asynchronously, and
+	 * return immediately.
+	 * 
+	 * Feel free to add more if you feel like you need to.
+	 */
+	/**
+	 * Set the Indeterminate-ness of the jprogressbar.
 	 */
 	protected void pSetInd(boolean state) {
 		final boolean s = state;
@@ -117,6 +165,10 @@ public abstract class ProgressTask extends JDialog {
 		});	
 	}
 	
+	/**
+	 * Set the maximum value of the progress bar.
+	 * @param maxVal
+	 */
 	protected void pSetMax(int maxVal) {
 		final int val = maxVal;
 		SwingUtilities.invokeLater(new Runnable() {
@@ -126,6 +178,9 @@ public abstract class ProgressTask extends JDialog {
 		});	
 	}
 	
+	/**
+	 * Increment the value of the progress bar by one.
+	 */
 	protected void pInc() {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -134,10 +189,23 @@ public abstract class ProgressTask extends JDialog {
 		});	
 	}
 	
+	/*
+	 * I'm guessing that it's ok to do this reading operation synchronously.
+	 * 
+	 * Also, it would be a bother to get a result from one thread to another.
+	 */
+	/**
+	 * Get the current value of the progress bar.
+	 */
 	protected void pGetVal() {
 		progressBar.getValue();
 	}
 	
+	/**
+	 * Set the current value of the progress bar.  You should set the maximum
+	 * first.
+	 * @param value
+	 */
 	protected void pSetVal(int value) {
 		final int val = value;
 		SwingUtilities.invokeLater(new Runnable() {
@@ -147,7 +215,11 @@ public abstract class ProgressTask extends JDialog {
 		});		
 	}
 	
-	
+	/**
+	 * Set the status text that is displayed in the dialog box, near the
+	 * progress bar.
+	 * @param text
+	 */
 	protected void setStatus(String text) {
 		final String t = text;
 		SwingUtilities.invokeLater(new Runnable() {
@@ -157,6 +229,4 @@ public abstract class ProgressTask extends JDialog {
 			}
 		});	
 	}
-
-
 }
