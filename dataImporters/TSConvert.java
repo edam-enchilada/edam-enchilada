@@ -56,11 +56,11 @@ public class TSConvert{
         		String line;
         		try {
         			while((line = in.readLine()) != null){
-        				line_no++;
         				line = line.trim();
         				if(line.charAt(0) == '#') continue;
-        				setStatus(("Importing CSV "+line_no+": "+line)
-        							.substring(0,25));
+        				line_no++;
+        				setStatus(("CSV "+line_no+": "+line)
+        							.substring(0,25)+"...");
         				process(line.split("\\s*,\\s*"), tf, line_no, prefix);
         			}
         		} catch (Exception e) {
