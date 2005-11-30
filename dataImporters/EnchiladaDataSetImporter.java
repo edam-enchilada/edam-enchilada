@@ -131,6 +131,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				}
 			}
 		};
+		task.start();
 	}
 	
 	/**
