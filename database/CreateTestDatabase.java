@@ -46,6 +46,7 @@ package database;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Connection;
@@ -225,7 +226,9 @@ public class CreateTestDatabase {
 					"INSERT INTO Datatype2AtomInfoSparse VALUES(21,1,0)\n"+ 
 					"INSERT INTO Datatype2AtomInfoSparse VALUES(21,2,0)\n"+ 
 					"INSERT INTO Datatype2AtomInfoSparse VALUES(21,3,0)\n"); 
-		} catch (SQLException e) {
+		
+			updateInternalAtomOrderTestTable();
+	    } catch (SQLException e) {
 			e.printStackTrace();
 		}
 		tempDB.closeConnection();
@@ -470,4 +473,55 @@ public class CreateTestDatabase {
 		return files;
 	}
 	
+	private void updateInternalAtomOrderTestTable() {
+		try {
+			Statement stmt = con.createStatement();
+			// updateInternalAtomOrderTable for CID=2
+			ResultSet rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
+					" CollectionID = 2");
+			int order = 1;
+			while(rs.next())
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",2,"+(order++)+")");
+			stmt.executeBatch();
+			// updateInternalAtomOrderTable for CID=3
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
+					" CollectionID = 3");
+			order = 1;
+			while(rs.next())
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",3,"+(order++)+")");
+			stmt.executeBatch();
+			// updateInternalAtomOrderTable for CID=4
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
+					" CollectionID = 4");
+			order = 1;
+			while(rs.next())
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",4,"+(order++)+")");
+			stmt.executeBatch();
+			// updateInternalAtomOrderTable for CID=5
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
+					" CollectionID = 5 OR CollectionID = 6");
+			order = 1;
+			while(rs.next())
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",5,"+(order++)+")");
+			stmt.executeBatch();
+			// updateInternalAtomOrderTable for CID=6
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
+					" CollectionID = 6");
+			order = 1;
+			while(rs.next())
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",6,"+(order++)+")");
+			stmt.executeBatch();
+			rs.close();
+			stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+			
+	}
+	
+	public static void main(String[] args) {
+		new CreateTestDatabase();
+	}
 }

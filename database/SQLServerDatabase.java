@@ -144,6 +144,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while (!foundDatabase && rs.next())
 				if (rs.getString(1).equals(dbName))
 					foundDatabase = true;
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog(new String[] {"Error in testing if ", dbName,
 					" is present."});
@@ -1286,6 +1287,7 @@ public class SQLServerDatabase implements InfoWarehouse
 									collectionID);
 		rs.next();
 		name = rs.getString("Name");
+		stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog(new String[]{"Error retrieving the collection name for collectionID ",
 					Integer.toString(collectionID)});
@@ -1308,6 +1310,7 @@ public class SQLServerDatabase implements InfoWarehouse
 									collectionID);
 		rs.next();
 		comment = rs.getString("Comment");
+		stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog(new String[]{"Error retrieving the collection comment for collectionID ",
 					Integer.toString(collectionID)});
@@ -1322,22 +1325,24 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public String getCollectionDescription(int collectionID)
 	{
+		String descrip = "";
 		try {
-			ResultSet rs = 
-				con.createStatement().executeQuery(
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
 						"SELECT Description\n" +
 						"FROM Collections\n" +
 						"WHERE CollectionID = " + collectionID);
 			rs.next();
-			return rs.getString("Description");
+			descrip = rs.getString("Description");
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog(new String[]{"Error retrieving the collection description for collectionID ",
 					Integer.toString(collectionID)});
 			System.err.println("Error retrieving Collection " +
 					"Description.");
 			e.printStackTrace();
-			return null;
 		}
+		return descrip;
 	}
 		
 	/**
@@ -1351,6 +1356,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"SELECT COUNT(AtomID) FROM InternalAtomOrder WHERE CollectionID = " + collectionID);
 			assert(rs.next()) : "error getting atomID count.";
 			returnThis = rs.getInt(1);
+			stmt.close();
 		} catch (SQLException e1) {
 			new ExceptionDialog(new String[]{"Error retrieving the collection size for collectionID ",
 					Integer.toString(collectionID)});
@@ -1372,12 +1378,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		} else if (collectionIDs.size() > 0) {
 			try {
-				ResultSet rs = con.createStatement().
-					executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
+				Statement stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
 				
 				while (rs.next())
 					ret.add(rs.getInt("CollectionID"));
 				rs.close();
+				stmt.close();
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving collections with atoms.");
 				System.err.println("Error retrieving collections with atoms.");
@@ -1438,6 +1445,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				parentID = rs.getInt("ParentID");
 			
 			rs.close();
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving parentID of the collection.");
 			System.err.println("Error retrieving parentID of the collection.");
@@ -1504,7 +1512,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		    //NOTE: Atoms are already ordered by AtomID, and this might be
 		    // redundant.  If needed, you can take this out to optimize and 
 		    // only order when needed in each method. - AR
-		   // stmt.close();
+		    //stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving children of the collection.");
 			e.printStackTrace();
@@ -1571,6 +1579,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					vtemp.add(rs.getString(i));
 				particleInfo.add(vtemp);
 			}
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception collecting particle information.");
 			System.err.println("Error collecting particle " +
@@ -1615,6 +1624,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			"AtomMembership.CollectionID");	
 			rs.next();
 			datatype = rs.getString(1);
+			stmt.close();
 			} catch (SQLException e) {
 				new ExceptionDialog(new String[] {"SQL Exception getting the datatype for atom ",
 						Integer.toString(atomID)});
@@ -1635,10 +1645,12 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		description = removeReservedCharacters(description);
 		try {
-			con.createStatement().executeUpdate(
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate(
 					"UPDATE Collections\n" +
 					"SET Description = '" + description + "'\n" +
 					"WHERE CollectionID = " + collection.getCollectionID());
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception updating collection description.");
 			System.err.println("Error updating collection " +
@@ -1929,6 +1941,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			odbcStmt.executeBatch();
 			stmt.execute("DROP TABLE #PeaksToExport");
 			odbcCon.close();
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception exporting to MSAccess database.");
 			System.err.println("SQL error exporting to " +
@@ -1946,7 +1959,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	public boolean checkAtomParent(int AtomID, int isMemberOf)
 	{
 		try {
-			ResultSet rs = con.createStatement().executeQuery(
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
 					"Select *\n" +
 					"FROM AtomMembership\n" +
 					"WHERE AtomID = " + AtomID + 
@@ -1957,6 +1971,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				rs.close();
 				return true;
 			}
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception checking atom's parentage.");
 			System.err.println("Error checking parentage:");
@@ -2065,47 +2080,57 @@ public class SQLServerDatabase implements InfoWarehouse
 			db = new SQLServerDatabase();
 			db.database = dbName;
 			db.openConnection();
-			con = db.getCon();
-			String q = "CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))" +
-" INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')" +
-" INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')" +
-" CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))" +
-" CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))" +
-" CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)" +
-" CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[DataSetID]', '1', 1, 0, 1)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[DataSet]', 'VARCHAR(8000)', 0, 0, 2)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[MassCalFile]','VARCHAR(8000)',0, 0, 3)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[SizeCalFile]','VARCHAR(8000)',0, 0, 4)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[MinHeight]','INT',0,0,5)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[MinArea]','INT',0,0,6)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[MinRelArea]','REAL',0,0,7)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[Autocal]','BIT',0,0,8)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]', 'INT',1, 1,1)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[Time]','DATETIME',0,1,2)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[LaserPower]','REAL',0,1,3)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[Size]','REAL',0,1,4)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[ScatDelay]','INT',0,1,5)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[OrigFilename]','VARCHAR(8000)',0,1,6)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]','INT',1, 2, 1)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[PeakLocation]','REAL',1,2,2)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[PeakArea]','INT',0,2,3)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[RelPeakArea]','REAL',0,2,4)" +
-" INSERT INTO MetaData VALUES ('ATOFMS','[PeakHeight]','INT',0,2,5)" +
-" INSERT INTO MetaData VALUES ('TimeSeries','[DataSetID]','INT',1,0,1)" +
-" INSERT INTO MetaData VALUES ('TimeSeries','[AtomID]','INT',1,1,1)" +
-" INSERT INTO MetaData VALUES ('TimeSeries','[Time]','DATETIME',0,1,2)" +
-" INSERT INTO MetaData VALUES ('TimeSeries','[Value]','REAL',0,1,3)" +
-" CREATE TABLE ATOFMSDataSetInfo ([DataSetID] INT, [DataSet] VARCHAR(8000), [MassCalFile] VARCHAR(8000), [SizeCalFile] VARCHAR(8000), [MinHeight] INT, [MinArea] INT, [MinRelArea] REAL, [Autocal] BIT,  PRIMARY KEY ([DataSetID]))" +
-" CREATE TABLE ATOFMSAtomInfoDense ([AtomID] INT, [Time] DATETIME, [LaserPower] REAL, [Size] REAL, [ScatDelay] INT, [OrigFilename] VARCHAR(8000),  PRIMARY KEY ([AtomID]))" +
-" CREATE TABLE ATOFMSAtomInfoSparse ([AtomID] INT, [PeakLocation] REAL, [PeakArea] INT, [RelPeakArea] REAL, [PeakHeight] INT, PRIMARY KEY ([AtomID], [PeakLocation]))" +
-" CREATE TABLE TimeSeriesDataSetInfo([DataSetID] INT, OrigCollectionID INT NULL, [IsSynchronized] bit, PRIMARY KEY ([DataSetID]))" +
-" CREATE TABLE TimeSeriesAtomInfoDense([AtomID] INT, [Time] DATETIME, [Value] REAL, PRIMARY KEY ([AtomID]))" +
-" CREATE TABLE ValueMaps(ValueMapID INT PRIMARY KEY IDENTITY, Name VARCHAR(100))" +
-" CREATE TABLE ValueMapRanges(ValueMapID INT, Value INT, Low INT, High INT, FOREIGN KEY (ValueMapID) REFERENCES ValueMaps(ValueMapID))";
-			try {
-				con.createStatement().executeUpdate(q);
-			} catch (SQLException e1) {
+			 con = db.getCon();
+				 String q = 
+				 	"CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))"+
+				" INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')"+
+				" INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')"+
+				" CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))"+
+				" CREATE INDEX atom_membership_collection ON AtomMembership (CollectionID)"+
+				" CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))"+
+				" CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)"+
+				" CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[DataSetID]', 'INT', 1, 0, 1)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[DataSet]', 'VARCHAR(8000)', 0, 0, 2)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[MassCalFile]','VARCHAR(8000)',0, 0, 3)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[SizeCalFile]','VARCHAR(8000)',0, 0, 4)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[MinHeight]','INT',0,0,5)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[MinArea]','INT',0,0,6)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[MinRelArea]','REAL',0,0,7)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[Autocal]','BIT',0,0,8)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]', 'INT',1, 1,1)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[Time]','DATETIME',0,1,2)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[LaserPower]','REAL',0,1,3)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[Size]','REAL',0,1,4)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[ScatDelay]','INT',0,1,5)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[OrigFilename]','VARCHAR(8000)',0,1,6)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]','INT',1, 2, 1)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[PeakLocation]','REAL',1,2,2)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[PeakArea]','INT',0,2,3)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[RelPeakArea]','REAL',0,2,4)"+
+				" INSERT INTO MetaData VALUES ('ATOFMS','[PeakHeight]','INT',0,2,5)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[DataSetID]','INT',1,0,1)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[OrigCollectionID]','INT',0,0,2)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[IsSynchronized]','BIT',0,0,3)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[AtomID]','INT',1,1,1)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[Time]','DATETIME',0,1,2)"+
+				" INSERT INTO MetaData VALUES ('TimeSeries','[Value]','REAL',0,1,3)"+
+				" CREATE TABLE ATOFMSDataSetInfo ([DataSetID] INT, [DataSet] VARCHAR(8000), [MassCalFile] VARCHAR(8000), [SizeCalFile] VARCHAR(8000), [MinHeight] INT, [MinArea] INT, [MinRelArea] REAL, [Autocal] BIT,  PRIMARY KEY ([DataSetID]))"+
+				" CREATE TABLE ATOFMSAtomInfoDense ([AtomID] INT, [Time] DATETIME, [LaserPower] REAL, [Size] REAL, [ScatDelay] INT, [OrigFilename] VARCHAR(8000),  PRIMARY KEY ([AtomID]))"+
+				" CREATE TABLE ATOFMSAtomInfoSparse ([AtomID] INT, [PeakLocation] REAL, [PeakArea] INT, [RelPeakArea] REAL, [PeakHeight] INT, PRIMARY KEY ([AtomID], [PeakLocation]))"+
+				" CREATE TABLE TimeSeriesDataSetInfo([DataSetID] INT, [DataSet] VARCHAR(8000), [OrigCollectionID] INT NULL, [IsSynchronized] bit, PRIMARY KEY ([DataSetID]))"+
+				" CREATE TABLE TimeSeriesAtomInfoDense([AtomID] INT, [Time] DATETIME, [Value] REAL, PRIMARY KEY ([AtomID]))"+
+				" CREATE TABLE ValueMaps(ValueMapID INT PRIMARY KEY IDENTITY, Name VARCHAR(100))"+
+				" CREATE TABLE ValueMapRanges(ValueMapID INT, Value INT, Low INT, High INT, FOREIGN KEY (ValueMapID) REFERENCES ValueMaps(ValueMapID))"+
+				" CREATE TABLE IonSignature(IonID INT PRIMARY KEY IDENTITY, IsPositive BIT, Name VARCHAR(7000))"+
+				" CREATE TABLE AtomIonSignaturesRemoved(AtomID INT, IonID INT, PRIMARY KEY (AtomID, IonID), FOREIGN KEY (IonID) REFERENCES IonSignature(IonID))"+
+				" CREATE TABLE InternalAtomOrder(AtomID INT, CollectionID INT, OrderNumber INT, PRIMARY KEY (AtomID, CollectionID))"+
+				" CREATE INDEX Order_Index ON InternalAtomOrder(CollectionID, OrderNumber)";
+				try {
+					Statement stmt = con.createStatement();
+					stmt.executeUpdate(q);
+					stmt.close();
+				} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				new ExceptionDialog("NOPE, THis Didn't Work");
 				e1.printStackTrace();
@@ -2181,9 +2206,11 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		ResultSet rs = null;
 		try {
-			rs = con.createStatement().executeQuery(
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery(
 				"SELECT * FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + " WHERE AtomID = " +
 				atomID);
+			stmt.close();
 		} catch (SQLException e) {
 			System.err.println("Error selecting peaks");
 			e.printStackTrace();
@@ -2941,6 +2968,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	        Statement stmt = con.createStatement();
 	        ResultSet rs = stmt.executeQuery("SELECT RAND()");
 	        rs.next();
+	        stmt.close();
 	        return rs.getDouble(1);
 	    } catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving data.");
@@ -2972,7 +3000,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				temp.add(rs.getString(2));
 				colNames.add(temp);
 			}
-			
+			stmt.close();
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving column names.");
 				System.err.println("Error retrieving column names");
@@ -3000,7 +3028,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while (rs.next()) 
 				colNames.add(rs.getString(1));
 			
-			
+			stmt.close();
 			} catch (SQLException e) {
 			System.err.println("Error retrieving column names");
 			e.printStackTrace();
@@ -3029,6 +3057,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"INSERT ValueMapRanges (ValueMapID, Value, Low, High) " +
 						"VALUES ("+valueMapID+","+range[0]+","+range[1]+","+range[2]+")");
 			}
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception inserting new value map range.");
 			System.err.println("Error inserting new value map range");
@@ -3047,6 +3076,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while (rs.next())
 				valueMaps.put(rs.getInt("ValueMapID"), rs.getString("Name"));
 			rs.close();
+			stmt.close();
 		}
 		catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving value vaps");
@@ -3070,6 +3100,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while (rs.next())
 				valueMapRanges.add(new int[] {rs.getInt("ValueMapID"), rs.getInt("Value"), rs.getInt("Low"), rs.getInt("High") });
 			rs.close();
+			stmt.close();
 		}
 		catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving value map ranges");
@@ -3118,6 +3149,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			stmt.execute(query);
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception creating new mapped collection");
 			System.err.println("Error creating new mapped collection.");
@@ -3157,6 +3189,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			
 			rs.close();
+			stmt.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving max time for collections.");
 			System.err.println("SQL exception retrieving max time for collections");
@@ -3224,6 +3257,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			stmt.execute(sql);
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception creating aggregate basis temp table");
 			System.err.println("SQL exception creating aggregate basis temp table");
@@ -3236,6 +3270,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			stmt.execute("DROP TABLE #TempAggBasis" + instance);
 			instance--;
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception deleting aggregate basis temp table");
 			System.err.println("SQL exception deleting aggregate basis temp table");
@@ -3346,6 +3381,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			stmt.execute(memoryTableSqlStr + insertSql);
+			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
 			System.err.println("SQL exception aggregating collection: " + collectionName);
@@ -3376,6 +3412,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while (rs.next())
 				peakLocs.add(rs.getInt("RoundedPeakLocation"));
 			rs.close();
+			stmt.close();
 			
 			int[] ret = new int[peakLocs.size()];
 			int i = 0;
@@ -3450,6 +3487,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				
 				retData.put(rs.getTimestamp("Time"), retValues);	
 			}
+			stmt.close();
 			rs.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving time series data.");
@@ -3503,6 +3541,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			
 			rs.close();
+			stmt.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving Ion data.");
 			System.err.println("Error retrieving Ion data.");
@@ -3530,6 +3569,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			stmt.execute(sqlStr);
+			stmt.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception saving removed Ion data.");
 			System.err.println("Error saving removed Ion data.");
@@ -3547,6 +3587,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				removedIDs.add(rs.getInt("IonID"));
 			
 			rs.close();
+			stmt.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving removed Ion data.");
 			System.err.println("Error retrieving removed Ion data.");
@@ -3578,6 +3619,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					knownTypes.add(currentType);
 				}
 			}
+			stmt.close();
 		}
 		catch (SQLException e){
 			new ExceptionDialog("SQL exception retrieving known datatypes.");
@@ -3600,12 +3642,11 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT Datatype FROM MetaData"
 					+" WHERE Datatype = '" + type +"'");
-			
+			stmt.close();
 			if (rs.next()){
 				return true;}
 			else
 				return false;
-			
 		}
 		catch (SQLException e){
 			new ExceptionDialog(new String[]{"SQL Exception checking for the existence of datatype ",
@@ -3616,6 +3657,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 	}
 	
+	/** 
+	 * Gets first atom for top-leve particles in collection.
+	 */
 	public int getFirstAtomInCollection(Collection collection) {
 		int atom = -1;
 		try{
@@ -3624,7 +3668,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			if (rs.next())
 				atom = rs.getInt(1);
-			
+			stmt.close();
 		}
 		catch (SQLException e){
 			new ExceptionDialog(new String[]{"SQL Exception getting first atom in collection"});
@@ -3682,6 +3726,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.out.println(numParts);
 				stmt.execute(numParts);
 				rs.close();
+				stmt.close();
 				// create dynamic tables, skipping over the xml format.
 				DynamicTableGenerator generator = new DynamicTableGenerator(con);
 				String newName = generator.createDynamicTables(newDatatype,true);
@@ -3790,6 +3835,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (!rs.getString(1).equals("[AtomID]") && !rs.getString(1).equals("[DatasetID]")) 
 					strings.add(rs.getString(1));
 			}
+			stmt.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -3812,9 +3858,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param collection
 	 */
 	public void updateInternalAtomOrder(Collection collection) {
-		System.out.println("updating InternalAtomOrder for collection " + collection.getCollectionID());
+		//System.out.println("updating InternalAtomOrder for collection " + collection.getCollectionID());
 		int cID = collection.getCollectionID();
-		assert (cID != 0 && cID != 1) : "trying to update ROOT collections!";
+		if (cID == 0 || cID == 1) 
+			return;
 		try {
 			Statement stmt = con.createStatement();
 			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);

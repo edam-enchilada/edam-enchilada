@@ -665,9 +665,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		
 		// use combo box to display particles in chunks of 1000 particles.
-		int numParticles = db.getAllDescendedAtoms(collection).size();
-		//System.out.println("collectionID: " + collection.getCollectionID());
-		//System.out.println("number: " + numParticles);
+		int numParticles = db.getCollectionSize(collection.getCollectionID());
 		int numLines = numParticles/1000;
 		if (numParticles%1000 != 0)
 			numLines++;

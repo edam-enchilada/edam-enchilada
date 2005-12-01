@@ -208,6 +208,10 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 
+	/**
+	 * Copies CollectionID = 3 to CollectionID = 2
+	 *
+	 */
 	public void testCopyCollection() {
 		db.openConnection();
 		
@@ -243,7 +247,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					"FROM CollectionRelationships\n" +
 					"WHERE ChildID = " + newLocation);
 			assertTrue(rs.next());
-			assertTrue(rs.getInt(1) == 1);
+			assertTrue(rs.getInt(1) == 0);
 			assertFalse(rs.next());
 			rs.close();
 			rs = stmt.executeQuery(
@@ -258,6 +262,17 @@ public class SQLServerDatabaseTest extends TestCase {
 					"FROM AtomMembership\n" +
 					"WHERE CollectionID = " + newLocation +
 					"ORDER BY AtomID");
+			while (rs.next())
+			{
+				assertTrue(rs2.next());
+				assertTrue(rs.getInt(1) == rs2.getInt(1));
+			}
+			assertFalse(rs2.next());
+			
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE " +
+					"CollectionID = 2 OR CollectionID = 3 ORDER BY AtomID");
+			rs2 = stmt.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder WHERE " +
+					"CollectionID = 2");
 			while (rs.next())
 			{
 				assertTrue(rs2.next());
