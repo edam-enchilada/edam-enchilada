@@ -237,7 +237,9 @@ public class MainFrame extends JFrame implements ActionListener
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.orphanAndAdopt(c);
 			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			selectedCollectionTree.updateTree(c.getCollectionID());
+			//System.out.println("this: " + c.getCollectionID());
+			//System.out.println("parent: " + c.getParentCollection().getCollectionID());
+			selectedCollectionTree.updateTree(c.getParentCollection().getCollectionID());
 			validate();
 		}
 		
@@ -247,7 +249,8 @@ public class MainFrame extends JFrame implements ActionListener
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			db.recursiveDelete(getSelectedCollection());
 			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			selectedCollectionTree.updateTree(c.getCollectionID());
+			selectedCollectionTree.updateTree(c.getParentCollection().getCollectionID());
+			clearTable();
 			validate();
 		}
 		
@@ -560,6 +563,7 @@ public class MainFrame extends JFrame implements ActionListener
 		data.add(row);
 		
 		String[] blank = {"Click on a collection to see information."};
+		
 		chooseParticleSet = new JComboBox(blank);
 		chooseParticleSet.addActionListener(this);
 		
@@ -874,6 +878,28 @@ public class MainFrame extends JFrame implements ActionListener
 		analyzeParticleButton.setEnabled(row != -1);
 	}	
 	
+	/** This clears the particle table, both at initialization and
+	 * at when a collection is deleted.  
+	 *
+	 */
+	public void clearTable() {
+		data = new Vector<Vector<Object>>(1000);
+		Vector<Object> row = new Vector<Object>(1);
+		row.add("");
+		data.add(row);
+	
+		particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+		particlesTable.doLayout();
+		
+		chooseParticleSet.removeAllItems();
+		chooseParticleSet.addItem("Click on a collection to see information.");
+		
+		analyzeParticleButton.setEnabled(false);
+		
+		particlesTable.validate();
+		analyzeParticleButton.validate();
+	}
+	
 	/**
 	 * This sets the particle table according to the particle
 	 * set seleced in the combo box above the table.
@@ -884,7 +910,7 @@ public class MainFrame extends JFrame implements ActionListener
 	 */
 	public void setTable() {
 		String text = (String)chooseParticleSet.getSelectedItem();
-		if (text != null) {
+		if (text != null && !text.equals("Click on a collection to see information.")) {
 			// extract the two integers.
 			Scanner scan = new Scanner(text);
 			scan.next();

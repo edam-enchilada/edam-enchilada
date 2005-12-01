@@ -161,7 +161,7 @@ public class CollectionTree extends JPanel
     	Collection root = (Collection) treeModel.getRoot();
     	
     	ArrayList<Collection> foundCollections = new ArrayList<Collection>();
-    	while (collection != root) {
+    	while (collection.getCollectionID() != root.getCollectionID()) {
     		foundCollections.add(collection);
     		collection = collection.getParentCollection();
     	}

@@ -160,7 +160,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public boolean openConnection()
 	{
-
 		try {
 			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
 		} catch (Exception e) {
@@ -384,26 +383,28 @@ public class SQLServerDatabase implements InfoWarehouse
 						")");
 			}
 			stmt.executeBatch();
-			
+			rs.close();
 			// Get Children
-			rs = stmt.executeQuery("SELECT ChildID\n" +
-								   "FROM CollectionRelationships\n" +
-								   "WHERE ParentID = " + collection.getCollectionID());
-			while (rs.next())
-				copyCollection(newCollection,getCollection(rs.getInt("ChildID")));
+			ArrayList<Integer> children = getImmediateSubCollections(collection);
+			for (int i = 0; i < children.size(); i++) {
+				copyCollection(getCollection(children.get(i)), newCollection);			
+			}
+			
+			//updates the internal atom order for each child collection.  
+			// this can be optimized.
+			updateInternalAtomOrder(newCollection);
+			
 			stmt.close();
+			
+			// update new collection's ancestors.
+			updateAncestors(newCollection.getParentCollection());
+			return newID;
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception copying collection.");
 			System.err.println("Exception copying collection: ");
 			e.printStackTrace();
 			return -1;
 		}
-		
-		// update InternalAtomOrder table
-		Collection newCollection = getCollection(newID);
-		updateInternalAtomOrder(newCollection);
-		updateAncestors(newCollection.getParentCollection());
-		return newID;
 	}
 	
 	/**
@@ -426,14 +427,18 @@ public class SQLServerDatabase implements InfoWarehouse
 		try { 
 			int col = collection.getCollectionID();
 			int toCol = toCollection.getCollectionID();
+				
 			Statement stmt = con.createStatement();
 			stmt.executeUpdate("UPDATE CollectionRelationships\n" +
 							   "SET ParentID = " + toCol + "\n" +
 							   "WHERE ChildID = " + col);
 			
 			// update InternalAtomOrder table.
+			// update toCollection from collection to leaves
+			updateInternalAtomOrder(toCollection);
+			// update collection and toCollection's parent up to root.
 			updateAncestors(collection);
-			updateAncestors(toCollection);
+			updateAncestors(toCollection.getParentCollection());
 			stmt.close();
 		} catch (SQLException e){
 			new ExceptionDialog("SQL Exception moving the collection.");
@@ -884,8 +889,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			// Find the child collections of this collection and 
 			// move them to the parent.  
-			ArrayList<Integer> subChildren = 
-				getImmediateSubCollections(collection);
+			ArrayList<Integer> subChildren = getImmediateSubCollections(collection);
 			for (int i = 0; i < subChildren.size(); i++)
 			{
 				moveCollection(getCollection(subChildren.get(i).intValue()), 
@@ -914,7 +918,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * deletes all direct descendents.
 	 * 
 	 * Updates the ancestors of the InternalAtomORder table on the deleted
-	 * collection's parent.
+	 * collection's ancestors.
 	 * 
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
@@ -928,7 +932,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			rDelete(collection, collection.getDatatype());
 			// Update the InternalAtomOrder table:  Assumes that subcollections
 			// are already updated for the parentCollection.
-			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + parent.getCollectionID());
+			// clear InternalAtomOrder table of the deleted collection and all subcollections.
+			Iterator allsubcollections = getAllDescendantCollections(collection.getCollectionID(), false).iterator();
+			String subCols = "";
+			while (allsubcollections.hasNext())
+				subCols += " OR CollectionID = " + allsubcollections.next();
+			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + 
+					collection.getCollectionID() + subCols);	
 			updateAncestors(parent);
 			stmt.close();
 		} catch (Exception e){
@@ -1023,7 +1033,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				 "		SELECT AtomID\n" +
 				 "		FROM AtomMembership\n" +
 				 "		)\n" +
-				 "	)\n");
+				 "	)\n");		
 		stmt.close();
 	}
 	
@@ -3799,20 +3809,25 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * Implements the bulk insert method from Greg Cipriano, since the client
 	 * and the server have to be on the same machine.
 	 * 
-	 * @param insertedCollection
+	 * @param collection
 	 */
 	public void updateInternalAtomOrder(Collection collection) {
-		assert (collection.getCollectionID() != 0 && collection.getCollectionID() != 1) : "trying to update ROOT collections!";
+		System.out.println("updating InternalAtomOrder for collection " + collection.getCollectionID());
+		int cID = collection.getCollectionID();
+		assert (cID != 0 && cID != 1) : "trying to update ROOT collections!";
 		try {
 			Statement stmt = con.createStatement();
-			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = "+collection.getCollectionID();
-			Iterator<Integer> subCollections = getAllDescendantCollections(collection.getCollectionID(),false).iterator();
+			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
+			
+			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = "+cID;
+			Iterator<Integer> subCollections = getAllDescendantCollections(cID,false).iterator();
 			while (subCollections.hasNext())
 				query += " OR CollectionID = " + subCollections.next();
-			query += "ORDER BY AtomID";
+			query += " ORDER BY AtomID";
+			//System.out.println(query);
 			ResultSet rs = stmt.executeQuery(query);
 			int order = 1;
-			int cID = collection.getCollectionID();
+
 		// Only bulk insert if client and server are on the same machine...
 		if (url.equals("localhost")) {
 			String tempFilename = tempdir + File.separator + "bulkfile.txt";
@@ -3822,9 +3837,9 @@ public class SQLServerDatabase implements InfoWarehouse
 			} catch (IOException e) {
 				System.err.println("Trouble creating " + tempFilename);
 				e.printStackTrace();
-				// XXX: do something else here
 			}
 			while (rs.next()) {
+				//System.out.println(rs.getInt(1) + "," + cID + "," + order);
 				bulkFile.println(rs.getInt(1) + "," + cID + "," + order);
 				order++;
 			}
@@ -3833,11 +3848,12 @@ public class SQLServerDatabase implements InfoWarehouse
 					      "FROM '" + tempFilename + "'\n" +
 						  "WITH (FIELDTERMINATOR=',')");
 		} else {
-			while (rs.next()) {
+			while (rs.next()) {			
 				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES("+rs.getInt(1)+","+cID+","+order+")");
 				order++;
 			}
 		}		
+		//System.out.println("inserted " + (order-1) + " atoms into cID " + 4);
 		stmt.executeBatch();
 		stmt.close();
 	} catch (SQLException e) {
@@ -3868,10 +3884,12 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void updateAncestors(Collection collection) {
 		if (collection.getCollectionID() != 0 && collection.getCollectionID() != 1) {
 			int cID = collection.getCollectionID();
+			//System.out.println("updating InternalAtomOrder Table for: " + cID);
 			try {
 				Statement stmt = con.createStatement();
 
 				// Repopulate InternalAtomOrder table.
+				//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 				stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 				String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
 						"WHERE CollectionID = "+cID;
