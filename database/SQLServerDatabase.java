@@ -166,7 +166,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	public boolean openConnection()
 	{
 		try {
-			Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver").newInstance();
+			Class.forName("net.sourceforge.jtds.jdbc.Driver").newInstance();
 		} catch (Exception e) {
 			new ExceptionDialog("Failed to load current driver.");
 			System.err.println("Failed to load current driver.");
@@ -174,7 +174,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		} // end catch
 		con = null;
 		try {
-			con = DriverManager.getConnection("jdbc:microsoft:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
+			con = DriverManager.getConnection("jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
 		} catch (Exception e) {
 			new ExceptionDialog("Failed to establish a connection to SQL Server.");
 			System.err.println("Failed to establish a connection to SQL Server");
