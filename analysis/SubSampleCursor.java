@@ -105,7 +105,7 @@ public class SubSampleCursor implements CollectionCursor {
 	 */
 	public ParticleInfo getCurrent() {
 	    ParticleInfo particleInfo = storedInfo.get(storedPosition);
-		particleInfo.setID(particleInfo.getParticleInfo().getAtomID());
+		particleInfo.setID(curs.getCurrent().getID());
 		return particleInfo; 
 	}
 

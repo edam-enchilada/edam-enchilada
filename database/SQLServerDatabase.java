@@ -2707,7 +2707,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			// This should get overridden in other classes,
 			//however, its results from here should be used.
 			
-			ParticleInfo pInfo = null;
+			ParticleInfo pInfo = new ParticleInfo();
 			PeakList pList = new PeakList();
 			ArrayList<Peak> aPeakList = new ArrayList<Peak>();
 			try {

@@ -682,14 +682,14 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
-	public void testMoveAtomBatch() {
+	/*public void testMoveAtomBatch() {
 		db.openConnection();
 		db.atomBatchInit();
 		assertTrue(db.moveAtomBatch(1,1,2));
 		assertTrue(db.moveAtomBatch(1,2,1));
 		db.atomBatchExecute();
 		db.closeConnection();
-	}
+	}*/
 	
 	/**
 	 * Tests AddAtom and DeleteAtomBatch
