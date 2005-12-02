@@ -213,9 +213,11 @@ public interface InfoWarehouse {
 	 * @param collectionID	The id of the collection you want
 	 * 						to find particles descended from
 	 * @return An array list of particle info.
-	 */
+	 *
+	 *DEPRECIATED 12/05 - AR
 	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection);
-
+	*/
+	
 	public Set<Integer> getAllDescendantCollections(int collectionID, boolean includeTopLevel);
 	
 	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);
@@ -224,7 +226,7 @@ public interface InfoWarehouse {
 	
 	public boolean moveAtom(int atomID, int fromParentID, int toCollectionID);
 	
-	public boolean moveAtomBatch(int atomID, int fromParentID, int toCollectionID);
+	//public boolean moveAtomBatch(int atomID, int fromParentID, int toCollectionID);
 	
 	public boolean checkAtomParent(int atomID, int isMemberOf);
 	
@@ -236,7 +238,7 @@ public interface InfoWarehouse {
 	
 	public boolean deleteAtomBatch(int atomID, Collection collection);
 	
-	public void executeBatch();
+	public void atomBatchExecute();
 	
 	public String getCollectionDescription(int collectionID);
 	

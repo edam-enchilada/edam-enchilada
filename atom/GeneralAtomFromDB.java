@@ -17,8 +17,8 @@ public class GeneralAtomFromDB {
 	protected int atomID;
 	protected SQLServerDatabase db;
 	
-	public GeneralAtomFromDB(int atomID) {
-		db = MainFrame.db;
+	public GeneralAtomFromDB(int atomID,SQLServerDatabase database) {
+		db = database;
 		this.atomID = atomID;
 		datatype = db.getAtomDatatype(atomID);
 		ArrayList<ArrayList<String>> temp = db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoDense);

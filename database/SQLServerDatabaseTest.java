@@ -247,14 +247,14 @@ public class SQLServerDatabaseTest extends TestCase {
 					"FROM CollectionRelationships\n" +
 					"WHERE ChildID = " + newLocation);
 			assertTrue(rs.next());
-			assertTrue(rs.getInt(1) == 0);
+			assertTrue(rs.getInt(1) == 2);
 			assertFalse(rs.next());
 			rs.close();
 			rs = stmt.executeQuery(
 					"USE TestDB\n" +
 					"SELECT AtomID\n" +
 					"FROM AtomMembership\n" +
-					"WHERE CollectionID = 2\n" +
+					"WHERE CollectionID = 3\n" +
 					"ORDER BY AtomID");
 			rs2 = stmt2.executeQuery(
 					"USE TestDB\n" +
@@ -268,11 +268,10 @@ public class SQLServerDatabaseTest extends TestCase {
 				assertTrue(rs.getInt(1) == rs2.getInt(1));
 			}
 			assertFalse(rs2.next());
-			
-			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE " +
-					"CollectionID = 2 OR CollectionID = 3 ORDER BY AtomID");
-			rs2 = stmt.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder WHERE " +
-					"CollectionID = 2");
+			rs = stmt.executeQuery("USE TestDB SELECT DISTINCT AtomID FROM AtomMembership WHERE " +
+					"CollectionID = "+newLocation+" OR CollectionID = 2 ORDER BY AtomID");
+			rs2 = stmt2.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder WHERE " +
+					"CollectionID = 2 ORDER BY AtomID");
 			while (rs.next())
 			{
 				assertTrue(rs2.next());
@@ -293,22 +292,37 @@ public class SQLServerDatabaseTest extends TestCase {
 
 	public void testMoveCollection() {
 		db.openConnection();
-		assertTrue(db.moveCollection(db.getCollection(2),db.getCollection(1)));
+		assertTrue(db.moveCollection(db.getCollection(3),db.getCollection(2)));
 		try {
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
+			Statement stmt2 = con.createStatement();
 			
 			ResultSet rs = stmt.executeQuery(
 					"USE TestDB\n" +
 					"SELECT ParentID\n" +
 					"FROM CollectionRelationships\n" +
-					"WHERE ChildID = 2");
+					"WHERE ChildID = 3");
 			
 			assertTrue(rs.next());
-			assertTrue(rs.getInt(1) == 1);
+			assertTrue(rs.getInt(1) == 2);
 			assertFalse(rs.next());
+
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership " +
+					"WHERE CollectionID = 2 OR CollectionID = 3 ORDER BY AtomID");
+			ResultSet rs2 = stmt2.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder" +
+					" WHERE CollectionID = 2");
+			while (rs.next())
+			{
+				assertTrue(rs2.next());
+				assertTrue(rs.getInt(1) == rs2.getInt(1));
+			}
+			assertFalse(rs2.next());
+			db.closeConnection();
 			rs.close();
 			stmt.close();
+			rs2.close();
+			stmt2.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -443,19 +457,32 @@ public class SQLServerDatabaseTest extends TestCase {
 		try {
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("USE TestDB\n" +
+			Statement stmt2 = con.createStatement();
+			
+			ResultSet rs = stmt.executeQuery("USE TestDB SELECT * FROM InternalAtomOrder WHERE" +
+			" CollectionID = 6");
+			assertFalse(rs.next());
+	
+			rs = stmt.executeQuery("USE TestDB\n" +
 			"SELECT AtomID\n" +
 			"FROM AtomMembership\n" +
-			"WHERE CollectionID = 5");
-			while (rs.next()){
-				collection5Info.add(rs.getInt(1));
+			"WHERE CollectionID = 5 ORDER BY AtomID");
+
+			ResultSet rs2 = stmt2.executeQuery("USE TestDB SELECT AtomID" +
+					" FROM InternalAtomOrder WHERE CollectionID = 5 ORDER BY AtomID");
+			
+			int count = 0;
+			while (rs.next()) {
+				assertTrue(rs2.next());
+				assertTrue(rs.getInt(1) == rs2.getInt(1));
+				count++;
 			}
+			assertFalse(rs2.next());
+			assertTrue(count == 6);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		assertTrue(collection5Info.contains(new Integer(21)));
 		
 		// removed an assert false here - changed the code to give an error 
 		// if a collectionID is passed that isn't really a collection in the db.
@@ -497,6 +524,9 @@ public class SQLServerDatabaseTest extends TestCase {
 				rs = stmt.executeQuery("USE TestDB\n" +
 						"SELECT * FROM ATOFMSAtomInfoSparse\n"
 						+ " WHERE AtomID = " + atomID);
+				assertFalse(rs.next());
+				rs = stmt.executeQuery("USE TestDB SELECT * FROM InternalAtomOrder WHERE" +
+				" CollectionID = 6");
 				assertFalse(rs.next());
 			}
 			//make sure collection info and relationship info is gone
@@ -553,12 +583,13 @@ public class SQLServerDatabaseTest extends TestCase {
 		ArrayList<String> sparseData = new ArrayList<String>();
 		int collectionID = 2;
 		int datasetID = 1;
-		assertTrue( db.getCollectionSize(collectionID) == 5);
+		System.out.println(db.getCollectionSize(collectionID));
+		assertTrue(db.getCollectionSize(collectionID) == 5);
 		
 		db.insertParticle(dateString + "," + laserPower + "," + digitRate + ","	
 				+ scatterDelay + ", " + filename, sparseData, db.getCollection(collectionID),datasetID,db.getNextID()+1);
-		
-		assertTrue( db.getCollectionSize(collectionID) == 6);
+		System.out.println(db.getCollectionSize(collectionID));
+		assertTrue(db.getCollectionSize(collectionID) == 6);
 			
 		db.closeConnection();
 	}
@@ -583,6 +614,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 
+	/** Depreciated 12/05 - AR
 	public void testGetCollectionParticles(){
 		db.openConnection();
 		
@@ -599,6 +631,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			
 		db.closeConnection();
 	}
+	*/
 	
 	public void testRebuildDatabase() {
 
@@ -636,7 +669,7 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testExportToMSAnalyzeDatabase() {
 		db.openConnection();
 		java.util.Date date = db.exportToMSAnalyzeDatabase(db.getCollection(2),"MSAnalyzeDB","MS-Analyze");
-		assertTrue(date.toString().equals("2003-09-02"));
+		assertTrue(date.toString().equals("Tue Sep 02 17:30:38 CDT 2003"));
 		db.closeConnection();
 	}
 	
@@ -654,7 +687,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.atomBatchInit();
 		assertTrue(db.moveAtomBatch(1,1,2));
 		assertTrue(db.moveAtomBatch(1,2,1));
-		db.executeBatch();
+		db.atomBatchExecute();
 		db.closeConnection();
 	}
 	
@@ -666,7 +699,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.openConnection();
 		db.atomBatchInit();
 		assertTrue(db.deleteAtomBatch(1,db.getCollection(1)));
-		db.executeBatch();
+		db.atomBatchExecute();
 		assertTrue(db.addAtom(1,1));
 		db.closeConnection();		
 	}
@@ -680,7 +713,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.atomBatchInit();
 		assertTrue(db.deleteAtomsBatch("1",db.getCollection(1)));
 		assertTrue(db.addAtomBatch(1,1));
-		db.executeBatch();
+		db.atomBatchExecute();
 		db.closeConnection();
 	}
 	
@@ -739,14 +772,28 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
-	
+	// TODO: ERROR WITH SEED RANDOM!! DON'T KNOW WHY - AR
 	public void testSeedRandom()
 	{
 	    db.openConnection();
+	    //db.getNumber();
 	    db.seedRandom(12345);
 	    double rand1 = db.getNumber();
+	    db.getNumber();
+	    db.getNumber();
+	    
+	    System.out.println();
 	    db.seedRandom(12345);
 	    double rand2 = db.getNumber();
+	    db.getNumber();
+	    db.getNumber();
+	    
+	    System.out.println();
+	    db.seedRandom(12345);
+	    db.getNumber();
+	    db.getNumber();
+	    db.getNumber();
+	    
 	    assertTrue(rand1==rand2);
 	    db.closeConnection();
 	    
@@ -805,9 +852,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		//int aID, String fname, int sDelay, float lPower, Date tStamp
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
-		
-		
-		
+
 		partInfo.add(temp);
 		
 		int[] ids = new int[5];
@@ -817,7 +862,6 @@ public class SQLServerDatabaseTest extends TestCase {
 			assertTrue(curs.getCurrent()!= null);
 			ids[i] = curs.getCurrent().getID();
 		}
-		
 		assertFalse(curs.next());	
 		curs.reset();
 		

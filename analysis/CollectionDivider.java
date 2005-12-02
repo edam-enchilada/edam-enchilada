@@ -238,7 +238,7 @@ public abstract class CollectionDivider {
 	{
 		//System.out.println("About to execute INSERTs.");
 		//System.out.println((new Date()).toString());
-		db.executeBatch();
+		db.atomBatchExecute();
 		//System.out.println("Done with INSERTS, about to do DELETE");
 		//System.out.println((new Date()).toString());
 		db.atomBatchInit();
@@ -254,7 +254,7 @@ public abstract class CollectionDivider {
 				db.deleteAtomBatch(atomIDs.nextInt(), collection);
 			}
 		}
-		db.executeBatch();
+		db.atomBatchExecute();
 		//System.out.println("Done with DELETEs.");
 		//System.out.println((new Date()).toString());
 	}

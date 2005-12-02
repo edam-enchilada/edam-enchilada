@@ -49,6 +49,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -94,7 +95,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	private String database;
 	private static int instance = 0;
 	private String tempdir = System.getenv("TEMP");
+	
+	// for batch stuff
 	private Statement batchStatement;
+	private ArrayList<Integer> alteredCollections;
 	
 	public SQLServerDatabase()
 	{
@@ -362,8 +366,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			assert (rs.next()) : "Error copying collection information";
 			newID = createEmptyCollection(collection.getDatatype(),
 					toCollection.getCollectionID(), 
-					rs.getString("Name"),
-					rs.getString("Comment"),rs.getString("Description"));
+					rs.getString(1), rs.getString(2),rs.getString(3));
 			Collection newCollection = getCollection(newID);
 			String description = getCollectionDescription(collection.getCollectionID());
 			if (description  != null)
@@ -638,6 +641,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			
 			stmt.executeBatch();
+			
+			// update internal atom table.
+			addSingleInternalAtomToTable(nextID, collection.getCollectionID());
+			
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
@@ -765,6 +772,17 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			
 			stmt.executeBatch();
+			
+			// update internal atom table.  We can assume that the inserted particle
+			// has the highest number, so this is a simple insert statement.  If
+			// the inserted particle doesn't have the highest number, then this 
+			// is much more tedious.
+			ResultSet rs = stmt.executeQuery("SELECT MAX(OrderNumber) FROM InternalAtomOrder " +
+					"WHERE CollectionID = " + collection.getCollectionID());
+			rs.next();
+			stmt.execute("INSERT INTO InternalAtomOrder VALUES ("+nextID+","+
+					collection.getCollectionID()+","+(rs.getInt(1)+1)+")");
+			
 			stmt.close();
 			
 		} catch (SQLException e) {
@@ -848,6 +866,8 @@ public class SQLServerDatabase implements InfoWarehouse
 			e.printStackTrace();
 			return false;
 		}
+		if (!alteredCollections.contains(new Integer(parentID)))
+			alteredCollections.add(new Integer(parentID));
 		return true;
 	}
 
@@ -1133,6 +1153,11 @@ public class SQLServerDatabase implements InfoWarehouse
 					"SET CollectionID = " + toParentID + "\n" +
 					"WHERE AtomID = " + atomID + " AND CollectionID = " +
 					fromParentID);
+			stmt.execute("DELETE FROM InternalAtomOrder WHERE AtomID = " + 
+					atomID + " AND CollectionID = " + fromParentID);
+			addSingleInternalAtomToTable(atomID, toParentID);
+			updateAncestors(getCollection(fromParentID));
+			updateAncestors(getCollection(toParentID));
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception updating AtomMembership table.");
@@ -1141,11 +1166,46 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return true;
 	}
+	
+	public void addSingleInternalAtomToTable(int atomID, int toParentID) {
+//		 update InternalAtomOrder; have to iterate through all
+		// atoms sequentially in order to insert it. 
+		Statement stmt;
+		try {
+			stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery("SELECT AtomID FROM" +
+				" InternalAtomOrder WHERE CollectionID = "+toParentID + " ORDER BY AtomID");
+		int order = 1;
+		boolean looking = true;
+		if (!rs.next())
+			stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+",1)");
+		else {
+			while (atomID < rs.getInt(1) && rs.next()) {
+				order++;
+				// jump to spot in db where atomID fits.
+			}
+			if (atomID != rs.getInt(1)) {
+				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+","+order+")");
+				while(rs.next()) {
+					order++;
+					stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + order + " WHERE AtomID = "+rs.getInt(1));
+				}
+			}
+		}
+		stmt.executeBatch();
+		stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * adds a move-atom call to a batch statement.
 	 * @return true if successful
-	 */
+	 * 
+	 * NOT USED AS OF 12/05
+	 
 	public boolean moveAtomBatch(int atomID, int fromParentID, int toParentID)
 	{
 		if (toParentID == 0)
@@ -1172,6 +1232,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return true;
 	}
+	*/
 
 	/* Atom Batch Init and Execute */
 	
@@ -1181,6 +1242,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void atomBatchInit() {
 		try {
 			batchStatement = con.createStatement();
+			alteredCollections = new ArrayList<Integer>();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception occurred.");
 			e.printStackTrace();
@@ -1190,9 +1252,13 @@ public class SQLServerDatabase implements InfoWarehouse
 	/**
 	 * Executes the current batch
 	 */
-	public void executeBatch() {
+	public void atomBatchExecute() {
 		try {
 			batchStatement.executeBatch();
+			for (int i = 0; i < alteredCollections.size(); i++)
+				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
+			for (int i = 0; i < alteredCollections.size(); i++) 
+				updateAncestors(getCollection(alteredCollections.get(i)).getParentCollection());
 			batchStatement.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception executing batch atom adds and inserts.");
@@ -1524,7 +1590,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * gets an arraylist of ATOFMS Particles for the given collection.
 	 * Unique to ATOFMS data - not used anymore except for unit tests.  
 	 *
-	 */
+	 *DEPRECIATED 12/05 - AR
+	 *
 	public ArrayList<GeneralAtomFromDB> getCollectionParticles(Collection collection)
 	{
 		ArrayList<GeneralAtomFromDB> particleInfo = 
@@ -1533,8 +1600,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			ResultSet rs = getAllAtomsRS(collection);
 			DateFormat dFormat = 
 				new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-			while(rs.next())
-				particleInfo.add(new GeneralAtomFromDB(rs.getInt(1)));
+			while(rs.next()) {
+				System.out.println(rs.getInt(1));
+				particleInfo.add(new GeneralAtomFromDB(rs.getInt(1),this));
+			}
 		} catch (SQLException e) {
 			System.err.println("Error collecting particle " +
 					"information:");
@@ -1542,6 +1611,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return particleInfo;
 	}
+	*/
 	
 	/**
 	 * update particle table returns a vector<vector<Object>> for the gui's 
@@ -2210,7 +2280,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs = stmt.executeQuery(
 				"SELECT * FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + " WHERE AtomID = " +
 				atomID);
-			stmt.close();
+			//stmt.close();
 		} catch (SQLException e) {
 			System.err.println("Error selecting peaks");
 			e.printStackTrace();
@@ -2231,6 +2301,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					relArea,
 					location));
 		} 
+		
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving peaks.");
 			System.err.println("Error using the result set");
@@ -2253,7 +2324,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			this.collection = collection;
 			datatype = collection.getDatatype();
 			this.cInfo = cInfo;
-			
 			rs = getAllAtomsRS(collection);
 		}
 		
@@ -2275,7 +2345,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			ParticleInfo particleInfo = new ParticleInfo();
 			try {
 				particleInfo.setID(rs.getInt(1));
-				particleInfo.setBinnedList(this.getPeakListfromAtomID(particleInfo.getID()));
+				particleInfo.setBinnedList(getPeakListfromAtomID(rs.getInt(1)));
 			}catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				System.err.println("Error retrieving the " +
@@ -2288,11 +2358,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public void close() {
 			try {
-				stmt.close();
 				rs.close();
-				con.createStatement().executeUpdate(
-						"DROP Table #TempParticles" + 
-						irs.instance);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				e.printStackTrace();
@@ -2302,9 +2368,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		public void reset() {
 			try {
 				rs.close();
-				rs = stmt.executeQuery(
-						"SELECT AtomID FROM #TempParticles" + irs.instance +
-						" ORDER BY #TempParticles" + irs.instance + ".AtomID");
+				rs = getAllAtomsRS(collection);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				System.err.println("Error resetting a " +
@@ -2445,30 +2509,34 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public AtomInfoOnlyCursor(Collection col) {
 			super();
-			
 			assert(col.getDatatype().equals("ATOFMS")) : "Wrong datatype for cursor.";
-			
 			collection = col;
-			partInfRS = getAllAtomsRS(collection);		
+			try {
+				stmt = con.createStatement();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+							" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+							" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
+							" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		public void reset()
 		{		
 			try {
 				partInfRS.close();
-				partInfRS = stmt.executeQuery(
-						"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID, " +
-						"OrigFilename, ScatDelay, LaserPower, [Time]\n" +
-						"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ", #TempParticles" + 
-						irs.instance + 
-						"\n" +
-						"WHERE #TempParticles" + 
-						irs.instance + 
-						".AtomID = " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID\n" +
-						"ORDER BY #TempParticles" + 
-						irs.instance + 
-						".AtomID");
-			} catch (SQLException e) {
+				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
+						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
+		} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				System.err.println("SQL Error resetting " +
 						"cursor: ");
@@ -2494,8 +2562,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		 */
 		public ParticleInfo getCurrent() {
 			try {
-				ParticleInfo particleInfo = 
-					new ParticleInfo();
+				ParticleInfo particleInfo = new ParticleInfo();
 				particleInfo.setParticleInfo(
 						new ATOFMSAtomFromDB(
 						partInfRS.getInt(1),
@@ -2504,9 +2571,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						partInfRS.getFloat(4), 
 						new Date(partInfRS.getTimestamp(5).
 								getTime())));
-				particleInfo.setID(
-						particleInfo.getParticleInfo().
-						getAtomID());
+				particleInfo.setID(particleInfo.getParticleInfo().getAtomID());
 				return particleInfo; 
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
@@ -2521,9 +2586,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			try {
 				stmt.close();
 				partInfRS.close();
-				con.createStatement().executeUpdate(
-						"DROP Table #TempParticles" + 
-						irs.instance);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				e.printStackTrace();
@@ -2532,12 +2594,10 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public ParticleInfo get(int i) 
 		throws NoSuchMethodException {
-			throw new NoSuchMethodException(
-					"Not implemented in disk based cursors.");
+			throw new NoSuchMethodException("Not implemented in disk based cursors.");
 		}
 		
-		public BinnedPeakList 
-		getPeakListfromAtomID(int atomID) {
+		public BinnedPeakList getPeakListfromAtomID(int atomID) {
 			BinnedPeakList peakList = new BinnedPeakList(new Normalizer());
 			try {
 				ResultSet rs = 
@@ -2581,14 +2641,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			this.db = db;
 			try {
 				stmt = con.createStatement();
-				partInfRS = stmt.executeQuery(
-						"SELECT ATOFMSAtomInfoDense.AtomID, " +
-						"OrigFilename, ScatDelay, " +
-						"LaserPower, " +
-						"[Time]\n" +
-						"FROM ATOFMSAtomInfoDense, InternalAtomOrder\n" +
-						"WHERE InternalAtomOrder.AtomID = ATOFMSAtomInfoDense.AtomID" +
-						" AND InternalAtomOrder.CollectionID = " + col.getCollectionID() +
+				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
+						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
@@ -2598,8 +2654,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		public void close() {
 			try {
-				con.createStatement().executeUpdate(
-				"DROP Table #TempParticles" + irs.instance);
+				stmt.close();
 				super.close();
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
@@ -2611,17 +2666,11 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			try {
 				partInfRS.close();
-				partInfRS = stmt.executeQuery(
-						"SELECT " + db.getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID, " +
-						"OrigFilename, ScatDelay, " +
-						"LaserPower, " +
-						"[Time]\n" +
-						"FROM " + db.getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ", #TempParticles" + 
-						irs.instance + "\n" +
-						"WHERE #TempParticles" + 
-						irs.instance + 
-						".AtomID = " + db.getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID " +
-						"AND " + where);
+				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
+						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
+						" AND " + where);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
 				System.err.println("SQL Error resetting cursor: ");
@@ -2658,12 +2707,11 @@ public class SQLServerDatabase implements InfoWarehouse
 			// This should get overridden in other classes,
 			//however, its results from here should be used.
 			
-			ParticleInfo pInfo = super.getCurrent();
+			ParticleInfo pInfo = null;
 			PeakList pList = new PeakList();
 			ArrayList<Peak> aPeakList = new ArrayList<Peak>();
-			pList.setAtomID(pInfo.getParticleInfo().getAtomID());
-			
 			try {
+				pList.setAtomID(partInfRS.getInt(1));
 				peakRS = stmt.executeQuery("SELECT PeakHeight, PeakArea, " +
 						"RelPeakArea, PeakLocation\n" +
 						"FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype()) + "\n" +
@@ -2710,7 +2758,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		public ParticleInfo getCurrent()
 		{
 			ParticleInfo sPInfo = super.getCurrent();
-			
 			sPInfo.setBinnedList(bin(sPInfo.getPeakList().getPeakList()));
 			return sPInfo;
 		}
@@ -2735,6 +2782,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	 *
 	 * NOTE:  Randomization cursor info found at 
 	 * http://www.sqlteam.com/item.asp?ItemID=217
+	 * 
+	 * Updated 12/05 at http://www.sqlteam.com/item.asp?ItemID=217
 	 */
 	private class RandomizedCursor extends BinnedCursor {
 		protected Statement stmt = null;
@@ -2754,30 +2803,24 @@ public class SQLServerDatabase implements InfoWarehouse
 						 "IS NOT NULL)\n" +
 						 "	DROP TABLE #TempRand\n");
 				//These strings constitute the entire SQL query for randomization.
-				String createTable = "CREATE TABLE " +
-						"#TempRand (AtomID int NOT NULL," +
-				"RandNum float NULL)";
+				String createTable = "CREATE TABLE #TempRand (AtomID int NOT NULL,RandNum float NULL)";
 				String insertAtoms = "INSERT #TempRand (AtomID) SELECT AtomID " 
-					+ "FROM #TempParticles" + irs.instance
-					+ " ORDER BY #TempParticles" + irs.instance + ".AtomID";
-				String randomize = "DECLARE @rand_holder float\n" +
-				"DECLARE Randomizer CURSOR FOR " +
-				"SELECT RandNum FROM #TempRand\n" +
-				"OPEN Randomizer FETCH NEXT FROM Randomizer " +
-				"INTO @rand_holder\n" +
-				"WHILE @@Fetch_Status != -1\n" +
-				"BEGIN \n" +
-				"UPDATE #TempRand SET RandNum = RAND() \n" +
-				"WHERE CURRENT OF Randomizer\n" +
-				"FETCH NEXT FROM Randomizer \n" +
-				"INTO @rand_holder\n" +
-				"END\n" +
-				"CLOSE Randomizer\n" +
-				"DEALLOCATE Randomizer\n";
-				String cursorQuery = "SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID, OrigFilename, ScatDelay, LaserPower, [Time]\n" +
-				"FROM #TempRand, " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " " +
-				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #TempRand.AtomID\n" +
-				"ORDER BY RandNum";
+					+ "FROM InternalAtomOrder WHERE CollectionID = " + col.getCollectionID()+ " ORDER BY AtomID";
+				String randomize = "DECLARE Randomizer CURSOR" +
+				" FOR SELECT RandNum FROM #TempRand" +
+				" OPEN Randomizer"+
+				" FETCH NEXT FROM Randomizer" +
+				" WHILE @@Fetch_Status != -1" +
+				" BEGIN UPDATE #TempRand SET RandNum = rand()" +
+				" WHERE CURRENT OF Randomizer"+
+				" FETCH NEXT FROM Randomizer" +
+				" END"+
+				" CLOSE Randomizer"+
+				" DEALLOCATE Randomizer";
+				String cursorQuery = "SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", #TempRand WHERE " +
+						getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = #TempRand.AtomID"+
+						" ORDER BY RandNum";
 				//System.out.println(createTable);
 				stmt.execute(createTable);
 				//System.out.println(insertAtoms);
@@ -2808,11 +2851,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			try {
 				partInfRS.close();
-				String cursorQuery = "SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID, OrigFilename, " +
-						"ScatDelay, LaserPower, [Time]\n" +
-				"FROM #TempRand, " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " " +
-				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = #TempRand.AtomID\n" +
-				"ORDER BY RandNum";
+				String cursorQuery = "SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+				" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", #TempRand WHERE " +
+				getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = #TempRand.AtomID"+
+				" ORDER BY RandNum";
 				partInfRS = stmt.executeQuery(cursorQuery);
 			} catch (SQLException e) {
 				new ExceptionDialog("SQL Exception retrieving data.");
@@ -2951,7 +2993,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void seedRandom(int seed) {
 		try {
 			Statement stmt = con.createStatement();
-			stmt.execute("SELECT RAND(" + seed + ")\n");
+			stmt.executeQuery("SELECT RAND(" + seed + ")\n");
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving data.");
@@ -2964,18 +3006,20 @@ public class SQLServerDatabase implements InfoWarehouse
 	 *  Used for testing random number seeding 
 	 */
 	public double getNumber() {
-	    try {
+	    double num = -1;
+		try {
 	        Statement stmt = con.createStatement();
 	        ResultSet rs = stmt.executeQuery("SELECT RAND()");
 	        rs.next();
+	        num = rs.getDouble(1);
+	        System.out.println(num);
 	        stmt.close();
-	        return rs.getDouble(1);
 	    } catch (SQLException e) {
 			new ExceptionDialog("SQL Exception retrieving data.");
 	        System.err.println("Error in generating single number.");
 	        e.printStackTrace();
 	    }
-	    return -1;
+	    return num;
 	}
 
 	/**
@@ -3929,41 +3973,45 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param collection
 	 */
 	public void updateAncestors(Collection collection) {
-		if (collection.getCollectionID() != 0 && collection.getCollectionID() != 1) {
-			int cID = collection.getCollectionID();
-			//System.out.println("updating InternalAtomOrder Table for: " + cID);
-			try {
-				Statement stmt = con.createStatement();
-
-				// Repopulate InternalAtomOrder table.
-				//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
-				stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
-				String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
-						"WHERE CollectionID = "+cID;
-				ArrayList<Integer> children = collection.getSubCollectionIDs();
-				if (children.size() != 0) {
-					query += " UNION SELECT AtomID FROM InternalAtomOrder WHERE CollectionID = " + children.get(0);
-					for (int i = 1; i < children.size(); i++) 
-						query += " OR CollectionID = " + children.get(i);
-					
-				}
-				query += " ORDER BY AtomID";
-				ResultSet rs = stmt.executeQuery(query);
-				int order = 1;
+		// if you try to update a null collection or one of the root collections,
+		// return.
+		if (collection == null || 
+				collection.getCollectionID() == 0 || 
+				collection.getCollectionID() == 1) 
+			return;
+		int cID = collection.getCollectionID();
+		//System.out.println("updating InternalAtomOrder Table for: " + cID);
+		try {
+			Statement stmt = con.createStatement();
+			
+			// Repopulate InternalAtomOrder table.
+			//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
+			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
+			String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
+			"WHERE CollectionID = "+cID;
+			ArrayList<Integer> children = collection.getSubCollectionIDs();
+			if (children.size() != 0) {
+				query += " UNION SELECT AtomID FROM InternalAtomOrder WHERE CollectionID = " + children.get(0);
+				for (int i = 1; i < children.size(); i++) 
+					query += " OR CollectionID = " + children.get(i);
 				
-				while (rs.next()) {
-					//System.out.println("inserting...");
-					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-							rs.getInt(1) + ","+cID+","+order+")");
-					order++;
-				}
-				stmt.executeBatch();
-				stmt.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
 			}
-			updateAncestors(collection.getParentCollection());
+			query += " ORDER BY AtomID";
+			ResultSet rs = stmt.executeQuery(query);
+			int order = 1;
+			
+			while (rs.next()) {
+				//System.out.println("inserting...");
+				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
+						rs.getInt(1) + ","+cID+","+order+")");
+				order++;
+			}
+			stmt.executeBatch();
+			stmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+		updateAncestors(collection.getParentCollection());
 	}
 }
 
