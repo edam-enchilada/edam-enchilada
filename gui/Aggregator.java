@@ -72,13 +72,12 @@ public class Aggregator {
 		final SwingWorker worker = new SwingWorker() {
 			public Object construct() {
 				progressBar.increment("Constructing time basis... (this could take a while)");
-				
 				if (baseOnCollection)
 					db.createTempAggregateBasis(basisCollection);
 				else
 					db.createTempAggregateBasis(start, end, interval);
-
-				
+			
+				// iterates through the collections and creates the time series for them.
 				for (int i = 0; i < collections.length; i++)
 					db.createAggregateTimeSeries(progressBar, rootCollectionID, collections[i], mzValues[i]);
 

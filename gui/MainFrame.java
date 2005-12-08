@@ -52,7 +52,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 
 import analysis.dataCompression.BIRCH;
-import analysis.dataCompression.CompressData;
 import analysis.DistanceMetric;
 
 import collection.*;
@@ -78,6 +77,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JSplitPane mainSplitPane;
 	
 	private JButton importEnchiladaDataButton;
+	private JButton importAMSDataButton;
 	private JButton importParsButton;
 	private JButton importFlatButton;
 	private JButton exportParsButton;
@@ -86,6 +86,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JButton aggregateButton;
 	private JButton mapValuesButton;
 	private JMenuItem loadEnchiladaDataItem;
+	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem MSAexportItem;
 	private JMenuItem emptyCollection;
@@ -211,6 +212,12 @@ public class MainFrame extends JFrame implements ActionListener
 			
 			collectionPane.updateTree();
 			validate();
+		}
+		
+		if (source == importAMSDataButton || source == loadAMSDataItem) {
+				new ImportAMSDataDialog(this);
+				collectionPane.updateTree();
+				validate();
 		}
 		
 		else if (source == importFlatButton) {
@@ -394,9 +401,12 @@ public class MainFrame extends JFrame implements ActionListener
 		loadATOFMSItem.addActionListener(this);
 		loadEnchiladaDataItem = new JMenuItem("from Enchilada data. . .");
 		loadEnchiladaDataItem.addActionListener(this);
+		loadAMSDataItem = new JMenuItem("from AMS data. . .");
+		loadAMSDataItem.addActionListener(this); 
 		importMenu.setMnemonic(KeyEvent.VK_I);
 		importMenu.add(loadATOFMSItem);
 		importMenu.add(loadEnchiladaDataItem);
+		importMenu.add(loadAMSDataItem);
 		
 		JMenu exportMenu = new JMenu("Export Collection. . .");
 		MSAexportItem = new JMenuItem("to MS-Analyze. . .");
@@ -523,6 +533,10 @@ public class MainFrame extends JFrame implements ActionListener
 		importEnchiladaDataButton.setBorder(new EtchedBorder());
 		importEnchiladaDataButton.addActionListener(this);
 		
+		importAMSDataButton = new JButton("Import AMS Data Sets");
+		importAMSDataButton.setBorder(new EtchedBorder());
+		importAMSDataButton.addActionListener(this);
+		
 		importFlatButton = new JButton("Import CSV");
 		importFlatButton.setBorder(new EtchedBorder());
 		importFlatButton.addActionListener(this);
@@ -539,6 +553,7 @@ public class MainFrame extends JFrame implements ActionListener
 		buttonPanel.add(importParsButton);
 		buttonPanel.add(importFlatButton);
 		buttonPanel.add(importEnchiladaDataButton);
+		buttonPanel.add(importAMSDataButton);
 		buttonPanel.add(exportParsButton);
 		add(buttonPanel);
 	}

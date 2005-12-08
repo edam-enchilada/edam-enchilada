@@ -526,7 +526,7 @@ public class SQLServerDatabaseTest extends TestCase {
 						+ " WHERE AtomID = " + atomID);
 				assertFalse(rs.next());
 				rs = stmt.executeQuery("USE TestDB SELECT * FROM InternalAtomOrder WHERE" +
-				" CollectionID = 6");
+				" CollectionID = "+atomID);
 				assertFalse(rs.next());
 			}
 			//make sure collection info and relationship info is gone

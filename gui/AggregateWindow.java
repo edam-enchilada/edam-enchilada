@@ -313,6 +313,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	{
 		Object source = e.getSource();
 		if (source == createSeries) {
+			long timingStart = new Date().getTime();
 			String newSeriesName = descriptionField.getText().trim().replace("'", "''");			
 			if (newSeriesName.equals("")) {
     			JOptionPane.showMessageDialog(
@@ -361,6 +362,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			int collectionID = aggregator.createAggregateTimeSeries(newSeriesName, collections);
 			parentFrame.updateSynchronizedTree(collectionID);
 			setVisible(false);
+			long timingEnd = new Date().getTime();
+			System.out.println("Aggregation Time: " + (timingEnd-timingStart));
 			dispose();
 		} else if (source == cancel) {
 			setVisible(false);
