@@ -166,5 +166,3 @@ get user to type in the sa password, and mess with it ourselves.
 alternate:
 osql -U sa -P "sapwd" -Q "EXEC sp_addlogin 'SpASMS','finally' EXEC sp_addsrvrolemember 'SpASMS','bulkadmin' EXEC sp_addsrvrolemember 'SpASMS','dbcreator'"
 
-5:45 8:00
-7:45 10:15
