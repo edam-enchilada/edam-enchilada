@@ -1,14 +1,30 @@
 package gui;
 
-// monday, 11:30--12:45 tues 10:30-11 11:30 
 import java.awt.*;
-import java.io.File;
+import java.util.concurrent.*;
+import java.io.*;
+
 import javax.swing.*;
 
 import dataImporters.*;
 import database.SQLServerDatabase;
 
 import externalswing.*;
+
+
+
+/*
+ * Actually, a LinkedBlockingQueue is perfect.
+ * 
+ * OK, so:  to do.
+ * in TSConvert, add support within the ProgressTask to stick things on the
+ * queue instead of just adding them to the array.
+ * 
+ * here, create the fileQueue and pass it to each thing
+ * 
+ * think about how closing one dialog will influence the other.  bleah.
+ * maybe override dispose in the implementations
+ */
 
 public class FlatImportGUI {
 	private FilePicker fp;
@@ -21,7 +37,7 @@ public class FlatImportGUI {
 		fp = new FilePicker("Choose .task file", "task", parent);
 		conv = new TSConvert();
 		conv.setParent(parent);
-
+		
 		importer = new EnchiladaDataSetImporter(db);
 		importer.setParent(parent);
 		
@@ -36,14 +52,27 @@ public class FlatImportGUI {
 
 	
 	
-	public void doImport() throws Exception {
-		File task = new File(fp.getFileName());
-		conv.convert(fp.getFileName());
+	public void doImport() throws Exception {		
+		PipedInputStream pinput = new PipedInputStream();
+		final PipedOutputStream poutput = new PipedOutputStream(pinput);
+	
+		// uncomment these, and comment out the pipe versions, if you need
+		// to see what's getting passed between the converter and importer.
+//		FileOutputStream poutput = new FileOutputStream(new File("temp.xml"));
 		
-		System.out.println("I seem to have converted the following files:");
-		System.out.println(conv.getOutFiles());
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					conv.convert(fp.getFileName(), poutput);
+				} catch (Exception e) {
+					e.printStackTrace();
+					// TODO: exception handling.  as usual.
+				}
+			}
+		});
 
-		importer.importFilesThreaded(conv.getOutFiles());
 		
+//		InputStream pinput = new FileInputStream(new File("temp.xml"));
+		importer.importStreamThreaded(new BufferedInputStream(pinput));
 	}
 }
