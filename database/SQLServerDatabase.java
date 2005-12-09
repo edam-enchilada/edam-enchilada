@@ -640,9 +640,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.executeBatch();
 			
-			// update internal atom table.
-			addSingleInternalAtomToTable(nextID, collection.getCollectionID());
-			
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
@@ -769,18 +766,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				
 			}
 			
-			stmt.executeBatch();
-			
-			// update internal atom table.  We can assume that the inserted particle
-			// has the highest number, so this is a simple insert statement.  If
-			// the inserted particle doesn't have the highest number, then this 
-			// is much more tedious.
-			ResultSet rs = stmt.executeQuery("SELECT MAX(OrderNumber) FROM InternalAtomOrder " +
-					"WHERE CollectionID = " + collection.getCollectionID());
-			rs.next();
-			stmt.execute("INSERT INTO InternalAtomOrder VALUES ("+nextID+","+
-					collection.getCollectionID()+","+(rs.getInt(1)+1)+")");
-			
+			stmt.executeBatch();			
 		stmt.close();
 			
 		} catch (SQLException e) {
@@ -1273,7 +1259,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	/**
 	 * Gets immediate subcollections for a given collection
 	 * @param collections
-	 * @return arraylist of atomIDs
+	 * @return arraylist of collectionIDs
 	 */
 	public ArrayList<Integer> getImmediateSubCollections(
 			ArrayList<Integer> collections)
@@ -1433,16 +1419,12 @@ public class SQLServerDatabase implements InfoWarehouse
 		return returnThis;
 	}
 	
-	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs, boolean includeChildren) {
+	// returns an arraylist of non-empty collection ids from the original collection of collectionIDs.
+	// If you want to include children, then include them in the Set that is passed.
+	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs) {
 		ArrayList<Integer> ret = new ArrayList<Integer>();
 		
-		if (includeChildren) {
-			// This is *really* slow... oh well. 
-			for (Integer collectionID : collectionIDs) {
-				if (getCollectionSize(collectionID) > 0)
-					ret.add(collectionID);
-			}
-		} else if (collectionIDs.size() > 0) {
+		if (collectionIDs.size() > 0) {
 			try {
 				Statement stmt = con.createStatement();
 				ResultSet rs = stmt.executeQuery("SELECT DISTINCT CollectionID FROM AtomMembership WHERE CollectionID in (" + join(collectionIDs, ",") + ")");
@@ -3347,20 +3329,16 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * This creates the empty collections and the queries and sends it to fillAtomsFromMemory 
 	 * method.  This only handles ATOFMS and TIME SERIES data, which will need to
 	 * be changed.
+	 * 
+	 * @return the list of CIDs that need to be updated in InternalAtomORder.
 	 */
 	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) {
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
 		AggregationOptions options = curColl.getAggregationOptions();
-		Set<Integer> collectionIDTree = getAllDescendantCollections(collectionID, true);
+		
 		try {
 		Statement stmt = con.createStatement();
-		
-		//create and insert MZ Values into temporary #mz table.
-		stmt.addBatch("CREATE TABLE #mz (Value INT)\n");
-		for (int i = 0; i < mzValues.length; i++)
-			stmt.addBatch("INSERT INTO #mz VALUES("+mzValues[i]+")\n");
-		stmt.executeBatch();
 		
 		// Create and Populate #atoms table with appropriate information.
 		/* IF DATATYPE IS ATOFMS */
@@ -3373,30 +3351,41 @@ public class SQLServerDatabase implements InfoWarehouse
 				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 			} else {
+				//create and insert MZ Values into temporary #mz table.
+				stmt.addBatch("CREATE TABLE #mz (Value INT)\n");
+				for (int i = 0; i < mzValues.length; i++)
+					stmt.addBatch("INSERT INTO #mz VALUES("+mzValues[i]+")\n");
+				stmt.executeBatch();
+				
 				//	create #atoms table
 				stmt.addBatch("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 				" Time DateTime, \n MZLocation int, \n Value real)\n");
+				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
 				stmt.addBatch("insert #atoms (Time, MZLocation, Value) \n" +
-						"SELECT BasisTimeStart, cast(round(AIS.PeakLocation, 0) as int) AS Location,"+options.getGroupMethodStr()+"(DISTINCT PeakHeight) AS PeakHeight FROM ATOFMSAtomInfoDense AID,\n" +
-						"ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #TempAggBasis"+instance+" TB, #mz MZ\n"+
-						"WHERE IAO.CollectionID = "+collectionID+"\n" +
-						"AND IAO.AtomID = AID.AtomID\n"+ 
-						"AND AID.AtomID = AIS.AtomID\n"+ 
-						"AND ((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL)\n"+ 
-						"AND (AID.Time < TB.BasisTimeEnd OR TB.BasisTimeEnd IS NULL))\n"+
+						"SELECT BasisTimeStart, cast(round(AIS.PeakLocation, 0) as int) AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
+						"FROM ATOFMSAtomInfoDense AID \n" +
+						"JOIN ATOFMSAtomInfoSparse AIS on (AID.AtomID = AIS.AtomID)\n"+
+						"JOIN InternalAtomOrder IAO on(AID.AtomID = IAO.AtomID)\n"+
+						"JOIN #TempAggBasis"+instance+" TB on\n"+
+						"((AID.Time >= TB.BasisTimeStart OR TB.BasisTimeStart IS NULL)\n"+ 
+						"AND (AID.Time < TB.BasisTimeEnd OR TB.BasisTimeEnd IS NULL))"+
+						"JOIN #mz MZ on (cast(round(AIS.PeakLocation, 0) as int) = MZ.Value)\n"+
+						"WHERE IAO.CollectionID = "+collectionID+"\n"+
 						"AND abs(AIS.PeakLocation - round(AIS.PeakLocation, 0)) < "+options.peakTolerance+"\n"+
-						"AND (cast(round(AIS.PeakLocation, 0) as int) = MZ.Value)\n"+
 						"GROUP BY BasisTimeStart,cast(round(AIS.PeakLocation, 0) as int)\n"+
-				"ORDER BY Location, BasisTimeStart\n");
+						"ORDER BY Location, BasisTimeStart\n");
+								
+				stmt.executeBatch();
 				
 				// build 2 child collections - one for time series, one for M/Z values.
 				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
 				
+				int mzPeakLoc, mzCollectionID;
 				// for each mz value specified, make a new child collection and populate it.
 				for (int j = 0; j < mzValues.length; j++) {	
-					int mzPeakLoc = mzValues[j];
-					int mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
+					mzPeakLoc = mzValues[j];
+					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
 					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
 					stmt.addBatch("insert AtomMembership (CollectionID, AtomID) \n" +
 							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
@@ -3407,6 +3396,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				stmt.addBatch("DROP TABLE #mz");
 				stmt.addBatch("DROP TABLE #atoms");
+				progressBar.increment("  Executing M/Z Queries...");
 				stmt.executeBatch();
 					
 					// if the particle count is selected, produce that time series as well.
@@ -3414,7 +3404,6 @@ public class SQLServerDatabase implements InfoWarehouse
 					// it now tracks number of particles instead of sum of m/z particles.
 					if (options.produceParticleCountTS) {
 						int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-						
 						/* NOTE: DIFFERENT THAN ORIGINAL QUERY  
 						stmt.addBatch("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 						" Time DateTime, \n Value real)\n" +
@@ -3441,13 +3430,13 @@ public class SQLServerDatabase implements InfoWarehouse
 								"AND (AID.Time < TB.BasisTimeEnd OR TB.BasisTimeEnd IS NULL))\n"+
 								"GROUP BY BasisTimeStart\n"+
 								"ORDER BY BasisTimeStart\n");
+						stmt.executeBatch();
 						
 						stmt.addBatch("insert AtomMembership (CollectionID, AtomID) \n" +
 						"select " + combinedCollectionID + ", NewAtomID from #atoms \n");
-						
 						stmt.addBatch("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
 						"select NewAtomID, Time, Value from #atoms \n");
-
+						
 						stmt.addBatch("DROP TABLE #atoms");
 						
 						progressBar.increment("  " + collectionName + ", Particle Counts");
@@ -3459,7 +3448,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
 			stmt.addBatch("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 			" Time DateTime, \n Value real)\n");
-			stmt.addBatch("insert @atoms (Time, Value) \n" +
+			stmt.addBatch("insert #atoms (Time, Value) \n" +
 					"select BasisTimeStart, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
 					"from TimeSeriesAtomInfoDense AID \n" +
 					"join InternalAtomOrder IAO on (AID.AtomID = IAO.AtomID) \n" +
@@ -3477,11 +3466,12 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			stmt.addBatch("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
 			"select NewAtomID, Time, Value from #atoms \n");
+			
 			stmt.addBatch("DROP TABLE #atoms");
 			progressBar.increment("  " + collectionName);
 			stmt.executeBatch();
 		}
-
+		
 		stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
@@ -3579,6 +3569,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		try{
 			Statement stmt = con.createStatement();
+			//System.out.println(sqlStr);
 			ResultSet rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {

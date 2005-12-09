@@ -57,9 +57,11 @@ import ATOFMS.*;
 
 import java.awt.Container;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.Window;
 import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
+import java.util.zip.ZipException;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JDialog;
@@ -301,22 +303,22 @@ public class ATOFMSDataSetImporter {
 				countSet.close();
 				
 				totalParticles = tParticles;
-				
+				final ProgressBarWrapper progressBar = 
+					new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
 				final SwingWorker worker = new SwingWorker() {
-					
 					public Object construct() {
-						try{
-							//Read spectra & create particle.  
-							File parent = parFile.getParentFile();
-							File grandParent = parent.getParentFile();
-							//System.out.println("Data set: " + parent.toString());
-							
-							String name = parent.getName();
-							name = parent.toString()+ File.separator + name + ".set";
-							
-							Collection destination = db.getCollection(id[0]);
-							ATOFMSParticle currentParticle;
-							
+						
+						//Read spectra & create particle.  
+						File parent = parFile.getParentFile();
+						File grandParent = parent.getParentFile();
+						//System.out.println("Data set: " + parent.toString());
+						
+						String name = parent.getName();
+						name = parent.toString()+ File.separator + name + ".set";
+						
+						Collection destination = db.getCollection(id[0]);
+						ATOFMSParticle currentParticle;
+						try {
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
 							StringTokenizer token;
 							String particleFileName;
@@ -326,7 +328,7 @@ public class ATOFMSDataSetImporter {
 							Collection curCollection = db.getCollection(id[0]);
 							while (readSet.ready()) { // repeat until end of file.
 								token = new StringTokenizer(readSet.readLine(), ",");
-
+								
 								// .set files are sometimes made with really strange line delims,
 								// so we ignore empty lines.
 								if (! token.hasMoreTokens()) {
@@ -337,9 +339,13 @@ public class ATOFMSDataSetImporter {
 								particleName = token.nextToken().replace('\\', File.separatorChar);
 								particleFileName = grandParent.toString() + File.separator + particleName;
 								
-								read = new ReadSpec(particleFileName);
+								try {
+									read = new ReadSpec(particleFileName);
+								} catch (ZipException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
 								
-								// TODO: test this stuff
 								currentParticle = read.getParticle();
 								db.insertParticle(
 										
@@ -349,84 +355,23 @@ public class ATOFMSDataSetImporter {
 								nextID++;
 								particleNum++;
 								//doDisplay++;
-								if(particleNum % 5 == 0)
-									//doDisplay = 0;
-									try {
-										SwingUtilities.invokeAndWait(new Runnable() {											
-											public void run()
-											{
-												if (waitBarDialog != null)
-												{
-													pBar.setValue(particleNum);
-													pLabel.setText("Processing particle " +
-															particleNum + " of " 
-															+ totalParticles + ".");
-													waitBarDialog.validate();
-												}
-											}
-										});
-									} catch (InvocationTargetException e) {
-										String[] s = {"Progress Bar Error: ", e.toString()};
-										ipd.displayException(s);
-									} catch (InterruptedException e){
-										String[] s = {"Progress Bar Error: ", e.toString()};
-										ipd.displayException(s);
-									}
-							}
-							SwingUtilities.invokeLater(new Runnable() {
+								if(particleNum % 10 == 0 && particleNum >= 10)
+									progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
 								
-								
-								
-								public void run()
-								{
-									waitBarDialog.setVisible(false);
-									waitBarDialog = null;
-								}
-							});
-							readSet.close();
-							final String exceptionFile = particleName;
-						}catch (Exception e) {
-							try {
-								e.printStackTrace();
-								final String exception = e.toString();
-								SwingUtilities.invokeAndWait(new Runnable() {
-									public void run()
-									{
-										String[] s = 
-										{"Corrupt .set file or particle: " + particleName + ": ", exception};
-										ipd.displayException(s);
-									}
-								});
-							} catch (Exception e2) {
-								e2.printStackTrace();
-								String[] s = {"ParticleException: ", e2.toString()};
-								ipd.displayException(s);
-							}
 						}
-						return null;
+							db.updateAncestors(curCollection);
+							readSet.close();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						final String exceptionFile = particleName;
+						progressBar.disposeThis();
+						return null;	
 					}
-					
 				};
 				worker.start();
-				
-				pBar = new JProgressBar(0,totalParticles);
-				pBar.setValue(0);
-				pBar.setStringPainted(true);
-				
-				waitBarDialog = new JDialog((JFrame)parentContainer, "Processing dataset #" + 
-						positionInBatch + " of " + totalInBatch, true);
-				waitBarDialog.setLayout(new FlowLayout());
-
-				pLabel = new JLabel("       Processing particle 1 of " 
-						+ totalParticles + ".                 ");
-				pLabel.setLabelFor(pBar);
-				waitBarDialog.add(pBar);
-				waitBarDialog.add(pLabel);
-				
-				waitBarDialog.pack();
-				waitBarDialog.validate();
-				waitBarDialog.setVisible(true);
-				
+				progressBar.constructThis();				
 			} else System.out.println("Dataset has no hits.");
 		}
 	}

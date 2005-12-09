@@ -248,7 +248,8 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			if (source == okButton) {
 				EnchiladaDataSetImporter importer = new EnchiladaDataSetImporter(db);
 				ArrayList<String> files = importer.collectTableInfo(eTableModel);
-				importer.importFiles(files);
+				int cID = importer.importFiles(files);
+				db.updateAncestors(db.getCollection(cID));
 				dispose();
 			}
 			else if (source == cancelButton)

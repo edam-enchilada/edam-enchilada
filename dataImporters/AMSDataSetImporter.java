@@ -186,10 +186,8 @@ public class AMSDataSetImporter {
 								ams.displayException(s);
 							}
 					}
+					db.updateAncestors(destination);
 					SwingUtilities.invokeLater(new Runnable() {
-						
-						
-						
 						public void run()
 						{
 							waitBarDialog.setVisible(false);

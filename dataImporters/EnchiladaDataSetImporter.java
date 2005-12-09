@@ -106,11 +106,13 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * Takes in a list of filenames and imports each file in turn.
 	 * 
 	 * @param fileNames
+	 * @return the collectionID
 	 */
-	public void importFiles(List<String> fileNames){
+	public int importFiles(List<String> fileNames){
 				
 		for (String eachFile : fileNames)
 			read(eachFile);
+		return collectionID;
 		
 	}
 	
@@ -120,8 +122,9 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * yourself, use importFiles()).
 	 * 
 	 * @param fileNames
+	 * @return the collectionID
 	 */
-	public void importFilesThreaded(List<String> fileNames) {
+	public int importFilesThreaded(List<String> fileNames) {
 		final List<String> fNames = fileNames;
 		ProgressTask task = new ProgressTask(parent, "Importing Enchilada Data",true)
 		{
@@ -136,6 +139,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			}
 		};
 		task.start();
+		return collectionID;
 	}
 	
 	public void importStreamThreaded(final InputStream in) {
@@ -398,7 +402,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				|| (publicId != null && publicId.endsWith("enchilada.dtd"))) {
 			// XXX: make this sensitive to where Enchilada is installed.
 			return new InputSource(new FileInputStream(
-				"enchilada.dtd"));
+				"importation files\\enchilada.dtd"));
 		} else {
 			return null;
 		}

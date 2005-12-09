@@ -67,20 +67,21 @@ public class Aggregator {
 		}
 		
 		final ProgressBarWrapper progressBar = 
-			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls);
+			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls+1);
 		
 		final SwingWorker worker = new SwingWorker() {
 			public Object construct() {
-				progressBar.increment("Constructing time basis... (this could take a while)");
+				progressBar.increment("Constructing time basis...");
 				if (baseOnCollection)
 					db.createTempAggregateBasis(basisCollection);
 				else
 					db.createTempAggregateBasis(start, end, interval);
 			
 				// iterates through the collections and creates the time series for them.
-				for (int i = 0; i < collections.length; i++)
+				ArrayList<Integer> updates;
+				for (int i = 0; i < collections.length; i++) {
 					db.createAggregateTimeSeries(progressBar, rootCollectionID, collections[i], mzValues[i]);
-
+				}
 				progressBar.disposeThis();
 				
 				return null;

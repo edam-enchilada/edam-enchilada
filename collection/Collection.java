@@ -166,7 +166,7 @@ public class Collection {
 	
 	public boolean containsData() {
 		if (cachedContainsData == -1)
-			cachedContainsData = db.getCollectionIDsWithAtoms(getCollectionIDSubTree(), false).size();
+			cachedContainsData = db.getCollectionIDsWithAtoms(getCollectionIDSubTree()).size();
 	
 		return cachedContainsData > 0;
 	}

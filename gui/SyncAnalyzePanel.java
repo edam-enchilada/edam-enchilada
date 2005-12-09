@@ -483,7 +483,7 @@ public class SyncAnalyzePanel extends JPanel {
 				collectionIDs
 						.add(allCollectionsInTree.get(i).getCollectionID());
 
-			collectionIDs = db.getCollectionIDsWithAtoms(collectionIDs, false);
+			collectionIDs = db.getCollectionIDsWithAtoms(collectionIDs);
 
 			collections = new Collection[collectionIDs.size()];
 

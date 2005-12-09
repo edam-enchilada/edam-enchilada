@@ -205,7 +205,7 @@ public interface InfoWarehouse {
 	 */
 	public int getCollectionSize(int collectionID);
 	
-	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs, boolean includeChildren);
+	public ArrayList<Integer> getCollectionIDsWithAtoms(java.util.Collection<Integer> collectionIDs);
 	
 	/**
 	 * Returns an array list of ATOFMSAtomFromDB's describing
@@ -308,4 +308,5 @@ public interface InfoWarehouse {
 	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection,int datasetID, int nextID);
 	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable table);
 	public int getParentCollectionID(int collectionID);
+	public void updateAncestors(Collection collection);
 }

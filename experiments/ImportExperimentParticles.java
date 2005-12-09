@@ -117,6 +117,7 @@ public class ImportExperimentParticles {
 				db.insertParticle(readSpec.getParticle().particleInfoDenseString(),
 						readSpec.getParticle().particleInfoSparseString(), db.getCollection(id[0]),id[1],newAtomID++);
 			}
+			db.updateAncestors(db.getCollection(id[0]));
 		}catch (Exception exception) {
 			System.out.println("Caught exception");
 			exception.printStackTrace();
