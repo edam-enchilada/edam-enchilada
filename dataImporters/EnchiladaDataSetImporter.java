@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,6 +18,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
 
 import javax.swing.ProgressMonitorInputStream;
 import javax.xml.parsers.ParserConfigurationException;
@@ -121,11 +123,13 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 */
 	public void importFilesThreaded(List<String> fileNames) {
 		final List<String> fNames = fileNames;
-		ProgressTask task = new ProgressTask(parent, "Importing Enchilada Data",true) {
+		ProgressTask task = new ProgressTask(parent, "Importing Enchilada Data",true)
+		{
 			public void run() {
 				pSetMax(fNames.size());
 				pSetVal(0);
 				for (String eachFile : fNames) {
+					setStatus("Importing "+eachFile);
 					read(eachFile);
 					pInc();
 				}
@@ -134,6 +138,18 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		task.start();
 	}
 	
+	public void importStreamThreaded(final InputStream in) {
+		ProgressTask task = new ProgressTask(parent, "Importing Enchilada Data",true)
+		{
+			public void run() {
+				pSetInd(true);
+				setStatus("Importing...");
+				read(in);
+			}
+		};
+		task.start();
+	}
+
 	/**
 	 * Given a .ed filename, sets up to parse that xml file and stores the 
 	 * information in the relevant tables in the database.  
@@ -142,7 +158,19 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * @param fileName - the xml (.ed) file to read
 	 */
 	public void read(String fileName) {
+		try {
+			read(new BufferedInputStream(
+//					new ProgressMonitorInputStream(
+//							parent,
+//							"Reading data from " + fileName,
+							new FileInputStream(fileName)));			
+		} catch (IOException e) {
+			e.printStackTrace();
+			// TODO gui.
+		}
+	}
 	
+	public void read(InputStream inStream) {
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 
 		//validate the XML to make sure it's all nice and legal
@@ -152,12 +180,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		
 		try {
 			SAXParser parser = factory.newSAXParser();
-			parser.parse(new BufferedInputStream(
-//					new ProgressMonitorInputStream(
-//							parent,
-//							"Reading data from " + fileName,
-							new FileInputStream(
-							fileName)), handler);
+			parser.parse(inStream, handler);
 			
 		} catch (ParserConfigurationException e) {
 			// TODO make GUI

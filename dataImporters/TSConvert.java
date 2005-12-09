@@ -9,6 +9,7 @@ import javax.swing.ProgressMonitorInputStream;
 
 import externalswing.ProgressTask;
 
+
 /* Conversion from time-series files to the XML format
    The major method is convert(String task_file), where the task_file specifies
    the conversion task (see upload.task for example). 
@@ -29,20 +30,20 @@ public class TSConvert{
     	outFileNames = new ArrayList<String>();
     }
     
-    public static void main(String[] argv){
-        if(argv.length < 1){
-            System.out.println(usage+"Please specify the task file!");
-            return;
-        }
-        try{
-            TSConvert converter = new TSConvert();
-            converter.convert(argv[0]);
-        }catch(Exception e){
-            System.out.print(e.getMessage()+"\n");
-        }
-    }
+//    public static void main(String[] argv){
+//        if(argv.length < 1){
+//            System.out.println(usage+"Please specify the task file!");
+//            return;
+//        }
+//        try{
+//            TSConvert converter = new TSConvert();
+//            converter.convert(argv[0]);
+//        }catch(Exception e){
+//            System.out.print(e.getMessage()+"\n");
+//        }
+//    }
     
-    public void convert(String task_file) throws Exception{
+    public void convert(String task_file, final OutputStream outStream) throws Exception{
     	final String tf = task_file;
     	final File task = new File(task_file);
     	final String prefix = task.getParent();
@@ -54,6 +55,7 @@ public class TSConvert{
         		this.pack();
         		int line_no = 0;
         		String line;
+        		printBegin(new PrintStream(outStream));
         		try {
         			while((line = in.readLine()) != null){
         				line = line.trim();
@@ -61,25 +63,27 @@ public class TSConvert{
         				line_no++;
         				setStatus(("CSV "+line_no+": "+line)
         							.substring(0,25)+"...");
-        				process(line.split("\\s*,\\s*"), tf, line_no, prefix);
+        				process(outStream, line.split("\\s*,\\s*"), tf, line_no, prefix);
         			}
         		} catch (Exception e) {
         			System.err.println(e.toString());
         			System.err.println("Exception while converting data!");
         			// TODO: a little more handling of this exception.
         		}
+        		printEnd(new PrintStream(outStream));
         	}
         };
         // Since we called ProgressTask as a modal dialog, this call to .start()
         // does not return until the task is completed, but the GUI gets 
         // redrawn as needed anyway.  
         convTask.start();
+        outStream.close();
     }
 
     // args[0]: file name
     // args[1]: time-series column
     // args[2 ...]: value columns
-    void process(String[] args, String task_file, int line_no, String prefix)
+    void process(OutputStream outStream, String[] args, String task_file, int line_no, String prefix)
     throws Exception{
         System.out.println("Processing "+args[0]+" ...");
         if(args.length < 3)
@@ -117,15 +121,10 @@ public class TSConvert{
         } catch (IOException i) {
         	System.out.println(i.getMessage());
         }
-        String outFName = prefix+File.separator+args[0]+".ed";
-        outFileNames.add(outFName);
-        PrintStream out = new PrintStream(outFName);
-        printBegin(out);
+        PrintStream out = new PrintStream(outStream);
         for(int i=2; i<values.length; i++){
             output(out,args[i],values[1],values[i]);
         }
-        printEnd(out);
-        out.close();
     }
 
     void output(PrintStream out, String name, ArrayList time, ArrayList value){
@@ -146,10 +145,13 @@ public class TSConvert{
     }
 
     void printBegin(PrintStream out){
-        out.print(
-                  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+
-                  "<!DOCTYPE enchiladadata SYSTEM \"temp/enchilada.dtd\">\n"+
-                  "<enchiladadata datatype=\"TimeSeries\">\n"
+    	out.print(
+    			"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+
+    			"<!DOCTYPE enchiladadata SYSTEM \"temp/enchilada.dtd\">\n"
+    	);
+    
+    	out.print(
+                   "<enchiladadata datatype=\"TimeSeries\">\n"
         );
     }
 
