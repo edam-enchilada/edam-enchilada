@@ -68,6 +68,7 @@ public class TSConvert{
         		} catch (Exception e) {
         			System.err.println(e.toString());
         			System.err.println("Exception while converting data!");
+        			e.printStackTrace();
         			// TODO: a little more handling of this exception.
         		}
         		printEnd(new PrintStream(outStream));

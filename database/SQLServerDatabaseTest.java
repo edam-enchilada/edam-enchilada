@@ -226,7 +226,6 @@ public class SQLServerDatabaseTest extends TestCase {
 					"FROM Collections\n" +
 					"WHERE CollectionID = 3");
 			Statement stmt2 = con.createStatement();
-			
 			ResultSet rs2 = stmt2.executeQuery(
 					"USE TestDB\n" +
 					"SELECT Name, Comment\n" +
@@ -589,7 +588,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.insertParticle(dateString + "," + laserPower + "," + digitRate + ","	
 				+ scatterDelay + ", " + filename, sparseData, db.getCollection(collectionID),datasetID,db.getNextID()+1);
 		System.out.println(db.getCollectionSize(collectionID));
-		assertTrue(db.getCollectionSize(collectionID) == 6);
+		assertTrue(db.getCollectionSize(collectionID) == 5);
 			
 		db.closeConnection();
 	}

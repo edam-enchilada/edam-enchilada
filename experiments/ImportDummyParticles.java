@@ -7,11 +7,12 @@
  */
 package experiments;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Random;
+
 import java.sql.*;
 
 import database.SQLServerDatabase;
@@ -23,10 +24,11 @@ public class ImportDummyParticles {
 	private Statement stmt;
 	private int newCollectionID, newDatasetID;
 	private int newAtomID;
+	private Random random;
 	
 	public ImportDummyParticles() {
 		collectionIDs = new ArrayList<Integer>();
-		
+		random = new Random(12345678);
 		//Open database connection:
 		db = new SQLServerDatabase();
 		db.openConnection();
@@ -39,8 +41,8 @@ public class ImportDummyParticles {
 			newCollectionID = rs.getInt(1)+1;
 			rs.close();
 			
-			/***Swap the method here to change importing particles:***/
-			import2MillionParticles();
+			/***TODO Swap the method here to change importing particles:***/
+			import100000particles();
 			
 			stmt.close();
 			// update InternalAtomOrderTable;
@@ -53,9 +55,9 @@ public class ImportDummyParticles {
 		}
 	}
 	
-	// 6 collections, 1 peak per particle; takes about 10-15 minutes
-	public void import200000particles() throws SQLException {
-		System.out.println("IMPORTING ~200,000 PARTICLES ");
+	public void import100000particles() throws SQLException {
+		String[] array;
+		System.out.println("IMPORTING ~100,000 PARTICLES ");
 		System.out.println();
 		System.out.println("Collection 1: 10,000");
 		newDatasetID = newCollectionID;
@@ -64,14 +66,16 @@ public class ImportDummyParticles {
 		stmt.addBatch("INSERT INTO CollectionRelationships VALUES (0,"+newCollectionID+")");
 		int parent = newCollectionID;
 		newCollectionID++;
+		newDatasetID = newCollectionID;
 		stmt.addBatch("INSERT INTO Collections VALUES ("+newCollectionID+",'Collection1','','','ATOFMS')");
 		stmt.addBatch("INSERT INTO CollectionRelationships VALUES ("+parent+","+newCollectionID+")");
 		stmt.addBatch("INSERT INTO ATOFMSDataSetInfo VALUES ("+newDatasetID+",'Dataset1','mass.cal','size.noz',10,20,0.01,1)");
+		array = generateTimeArray(10000);
 		for (int i = 1; i <= 10000; i++) {
 			stmt.addBatch("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")");
 			stmt.addBatch("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'',0.005,1.5,20,'Atom"+newAtomID+"')");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+",100.0,10,0.05,10)");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+array[i-1]+"',0.005,1.5,20,'Atom"+newAtomID+"')");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+random.nextDouble()*100+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")");
 			newAtomID++;
 		}
 		System.out.println("     executing batch...");
@@ -84,11 +88,12 @@ public class ImportDummyParticles {
 		stmt.addBatch("INSERT INTO Collections VALUES ("+newCollectionID+",'Collection2','','','ATOFMS')");
 		stmt.addBatch("INSERT INTO CollectionRelationships VALUES ("+parent+","+newCollectionID+")");
 		stmt.addBatch("INSERT INTO ATOFMSDataSetInfo VALUES ("+newDatasetID+",'Dataset2','mass.cal','size.noz',10,20,0.01,1)");
+		array = generateTimeArray(20000);
 		for (int i = 1; i <= 20000; i++) {
 			stmt.addBatch("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")");
 			stmt.addBatch("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'',0.005,1.5,20,'Atom"+newAtomID+"')");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+",100.0,10,0.05,10)");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+array[i-1]+"',0.005,1.5,20,'Atom"+newAtomID+"')");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+random.nextDouble()*100+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")");
 			newAtomID++;
 		}
 		System.out.println("     executing batch...");
@@ -101,13 +106,14 @@ public class ImportDummyParticles {
 		stmt.addBatch("INSERT INTO Collections VALUES ("+newCollectionID+",'Collection3','','','ATOFMS')");
 		stmt.addBatch("INSERT INTO CollectionRelationships VALUES ("+parent+","+newCollectionID+")");
 		stmt.addBatch("INSERT INTO ATOFMSDataSetInfo VALUES ("+newDatasetID+",'Dataset3','mass.cal','size.noz',10,20,0.01,1)");
+		array = generateTimeArray(30000);
 		for (int i = 1; i <= 30000; i++) {
 			stmt.addBatch("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")");
 			stmt.addBatch("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'',0.005,1.5,20,'Atom"+newAtomID+"')");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+",100.0,10,0.05,10)");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+array[i-1]+"',0.005,1.5,20,'Atom"+newAtomID+"')");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+random.nextDouble()*100+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")");
 			newAtomID++;
-		}			
+		}		
 		System.out.println("     executing batch...");
 		stmt.executeBatch();
 		System.out.println("Collection 4: 40,000");
@@ -118,16 +124,17 @@ public class ImportDummyParticles {
 		stmt.addBatch("INSERT INTO Collections VALUES ("+newCollectionID+",'Collection4','','','ATOFMS')");
 		stmt.addBatch("INSERT INTO CollectionRelationships VALUES ("+parent+","+newCollectionID+")");
 		stmt.addBatch("INSERT INTO ATOFMSDataSetInfo VALUES ("+newDatasetID+",'Dataset4','mass.cal','size.noz',10,20,0.01,1)");
+		array = generateTimeArray(40000);
 		for (int i = 1; i <= 40000; i++) {
 			stmt.addBatch("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")");
 			stmt.addBatch("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'',0.005,1.5,20,'Atom"+newAtomID+"')");
-			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+",100.0,10,0.05,10)");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+array[i-1]+"',0.005,1.5,20,'Atom"+newAtomID+"')");
+			stmt.addBatch("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+random.nextDouble()*100+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")");
 			newAtomID++;
 		}
 		System.out.println("     executing batch...");
 		stmt.executeBatch();
-		System.out.println("Collection 5: 50,000");
+	/*System.out.println("Collection 5: 50,000");
 		newCollectionID++;
 		newDatasetID = newCollectionID;
 		collectionIDs.add(newCollectionID);
@@ -161,7 +168,25 @@ public class ImportDummyParticles {
 			newAtomID++;
 		}
 		System.out.println("     executing batch...");
-		stmt.executeBatch();
+		stmt.executeBatch();*/
+	}
+	
+	public String[] generateTimeArray(int length) {
+		String[] array = new String[length];
+		int count = 0;
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		GregorianCalendar time = new GregorianCalendar(2005,12,1,8,0,0);
+		while (count < length) {
+			time.add(Calendar.SECOND,1);
+			int rand = (int) (random.nextInt(500));
+			if (count+rand > length)
+				rand = length - count;
+			for (int i = 0; i < rand; i++) {
+				array[count] = dateFormat.format(time.getTime());
+				count++;
+			}
+		}
+		return array;
 	}
 	
 	// 1 parent collection, 20 peaks per particle

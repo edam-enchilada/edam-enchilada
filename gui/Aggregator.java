@@ -45,53 +45,66 @@ public class Aggregator {
 
 	public int createAggregateTimeSeries(final int rootCollectionID, final Collection[] collections) {	
 		final int[][] mzValues = new int[collections.length][];
-		int numSqlCalls = 1;
+		final int[] numSqlCalls = {1};
 
-		for (int i = 0; i < collections.length; i++) {
-			Collection curColl = collections[i];
-			AggregationOptions options = curColl.getAggregationOptions();
-			if (options == null)
-				curColl.setAggregationOptions(options = new AggregationOptions());
-			
-			if (curColl.getDatatype().equals("ATOFMS")) {
-				mzValues[i] = db.getValidMZValuesForCollection(curColl);
-				
-				if (mzValues[i] != null)
-					numSqlCalls += mzValues[i].length;
-				
-				if (options.produceParticleCountTS)
-					numSqlCalls++;
-			} else if (curColl.getDatatype().equals("TimeSeries")) {
-				numSqlCalls++;
-			}
-		}
+		final ProgressBarWrapper progressBar1 = 
+			new ProgressBarWrapper(parentFrame, "Retreiving Valid M/Z Values", collections.length);
 		
-		final ProgressBarWrapper progressBar = 
-			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls+1);
-		
-		final SwingWorker worker = new SwingWorker() {
+		final SwingWorker worker2 = new SwingWorker() {
 			public Object construct() {
-				progressBar.increment("Constructing time basis...");
-				if (baseOnCollection)
-					db.createTempAggregateBasis(basisCollection);
-				else
-					db.createTempAggregateBasis(start, end, interval);
-			
-				// iterates through the collections and creates the time series for them.
-				ArrayList<Integer> updates;
 				for (int i = 0; i < collections.length; i++) {
-					db.createAggregateTimeSeries(progressBar, rootCollectionID, collections[i], mzValues[i]);
+					progressBar1.increment("Retreiving Valid M/Z Values for Collection # "+(i+1)+" out of "+collections.length);
+					Collection curColl = collections[i];
+					AggregationOptions options = curColl.getAggregationOptions();
+					if (options == null)
+						curColl.setAggregationOptions(options = new AggregationOptions());				
+					if (curColl.getDatatype().equals("ATOFMS")) {
+						mzValues[i] = db.getValidMZValuesForCollection(curColl);				
+						if (mzValues[i] != null)
+							numSqlCalls[0] += mzValues[i].length;		
+						if (options.produceParticleCountTS)
+							numSqlCalls[0]++;
+					} else if (curColl.getDatatype().equals("TimeSeries")) {
+						numSqlCalls[0]++;
+					}
 				}
-				progressBar.disposeThis();
+				progressBar1.disposeThis();
 				
 				return null;
 			}
 		};
-		worker.start();
+		worker2.start();
+		progressBar1.constructThis();
 		
-		progressBar.constructThis();
+		final ProgressBarWrapper progressBar2 = 
+			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls[0]+1);
 		
-		db.deleteTempAggregateBasis();
+		final SwingWorker worker1 = new SwingWorker() {
+			public Object construct() {
+				// iterates through the collections and creates the time series for them.
+				for (int i = 0; i < collections.length; i++) {
+					String name = collections[i].getName();
+					progressBar2.increment("Constructing time basis for "+name);
+					if (baseOnCollection)
+						db.createTempAggregateBasis(collections[i],basisCollection.getCollectionID());
+					else {
+						//System.out.println("** START ** "+ start.getTimeInMillis());
+						//System.out.println("** END ** "+ end.getTimeInMillis());
+						//System.out.println("** INTERVAL ** "+ interval.getTimeInMillis());
+						db.createTempAggregateBasis(collections[i],start,end,interval);
+					}
+					System.out.println("AGGREGATING COLLECTION "+name);
+					db.createAggregateTimeSeries(progressBar2, rootCollectionID, collections[i], mzValues[i]);
+					db.deleteTempAggregateBasis();				
+					}
+				progressBar2.disposeThis();
+				
+				return null;
+			}
+		};
+		worker1.start();
+		progressBar2.constructThis();
+		
 		return rootCollectionID;
 	}
 }

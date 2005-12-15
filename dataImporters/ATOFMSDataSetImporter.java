@@ -305,6 +305,7 @@ public class ATOFMSDataSetImporter {
 				totalParticles = tParticles;
 				final ProgressBarWrapper progressBar = 
 					new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
+				
 				final SwingWorker worker = new SwingWorker() {
 					public Object construct() {
 						
