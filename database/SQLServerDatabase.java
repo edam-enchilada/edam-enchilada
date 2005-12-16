@@ -1406,7 +1406,8 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(
 					"SELECT COUNT(AtomID) FROM InternalAtomOrder WHERE CollectionID = " + collectionID);
-			assert(rs.next()) : "error getting atomID count.";
+			boolean test = rs.next();
+			assert (test): "error getting atomID count.";
 			returnThis = rs.getInt(1);
 			stmt.close();
 		} catch (SQLException e1) {
@@ -3207,19 +3208,21 @@ public class SQLServerDatabase implements InfoWarehouse
 		assert (infoDenseNames.size() > 0):"no datatypes defined.";
 		
 		try{
-			
-		//TODO:  This query needs to include all datatypes of the collections, 
-		// not just ATOFMS and TimeSeries.
-		String sqlStr = "CREATE INDEX iao_index ON InternalAtomOrder (CollectionID)\n"+
-		"SELECT MAX(Time) as MaxTime, MIN(Time) as MinTime\n"+
-		"FROM ATOFMSAtomInfoDense AID, InternalAtomOrder IAO\n"+
-		"WHERE IAO.CollectionID in ("+cIDs+") AND AID.AtomID = IAO.AtomID\n"+
-		"DROP INDEX InternalAtomOrder.iao_index\n";
+			StringBuilder sqlStr = new StringBuilder();
+			sqlStr.append("CREATE INDEX iao_index ON InternalAtomOrder (CollectionID)\n"+
+		"SELECT MAX(Time) as MaxTime, MIN(Time) as MinTime\nFROM(\n");
+			sqlStr.append("SELECT AtomID, Time FROM "+ infoDenseNames.get(0)+"\n");
+			for (int i = 1; i < infoDenseNames.size(); i++)
+				sqlStr.append("UNION SELECT AtomID, Time FROM " + infoDenseNames.get(i)+"\n");
+			sqlStr.append(") AID, InternalAtomOrder IAO\n"+
+					"WHERE IAO.CollectionID in ("+cIDs+")\n" +
+							"AND AID.AtomID = IAO.AtomID\n");
+			sqlStr.append("DROP INDEX InternalAtomOrder.iao_index\n");
 			Statement stmt = con.createStatement();
 			long start = new Date().getTime();
 			//System.out.println("start get max min date in collection");
 			//System.out.println(sqlStr);
-			ResultSet rs = stmt.executeQuery(sqlStr);
+			ResultSet rs = stmt.executeQuery(sqlStr.toString());
 			long end = new Date().getTime();
 			System.out.println("end get max min date in collection: time = "+(end-start)/1000);
 			if (rs.next()) {
@@ -3248,7 +3251,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * 
 	 * NOTE:  ALSO HAS A LIST OF ALL ATOM IDS IN COLLECTION!
 	 */
-	public void createTempAggregateBasis(Collection c, int basisCID) {
+	public void createTempAggregateBasis(Collection c, Collection basis) {
 		//System.out.println("collectionID = " + c.getCollectionID()+ ", basisID = "+basisCID);
 		// grabbing the times for all subcollectionIDs
 		try {
@@ -3259,7 +3262,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID))\n");
 			
 			// if aggregation is based on this collection, copy table
-			if (c.getCollectionID() == basisCID) {	
+			if (c.getCollectionID() == basis.getCollectionID()) {	
 				System.out.println("copying table...");
 				tempTable.append("INSERT #TimeBins (AtomID, BinnedTime)\n"+
 						"SELECT AID.AtomID, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype())+" AID,\n"+
@@ -3276,10 +3279,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 				// get distinct times from basis collection
 				ResultSet basisRS = stmt.executeQuery("SELECT DISTINCT [Time] \n" +
-						"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID,\n" +
+						"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, basis.getDatatype()) + " AID,\n" +
 						"InternalAtomOrder IAO \n"+
 						"WHERE IAO.AtomID = AID.AtomID\n" +
-						"AND CollectionID = "+basisCID+"\n"+
+						"AND CollectionID = "+basis.getCollectionID()+"\n"+
 				"ORDER BY Time\n");
 				// get all times from collection to bin.
 				ResultSet collectionRS = stmt2.executeQuery("SELECT AID.AtomID, [Time] \n" +
@@ -3291,7 +3294,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				
 				// initialize first values:
 				Timestamp nextBin = null;
-				basisRS.next();
+				boolean test = basisRS.next();
+				assert (test) : "no basis times for collection!";
 				Timestamp currentBin = basisRS.getTimestamp(1);
 				collectionRS.next();
 				int atomID = collectionRS.getInt(1);
@@ -3344,7 +3348,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			long startTime = new Date().getTime();
 			//System.out.println("start creating #TimeBins table");
-			//System.out.println(tempTable);
+			System.out.println(tempTable);
 			stmt.execute(tempTable.toString());
 			long endTime = new Date().getTime();
 			System.out.println("done creating #TimeBins table: time = "+(endTime-startTime)/1000);
@@ -3388,6 +3392,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			// if there are times before the first bin, dump them as NULL.
 			while (basisTime.compareTo((Date)collectionTime)> 0) {
+				//System.out.println("basisTime: " + basisTime);
 				tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",NULL)\n");
 				lastID = atomID;
 				next = collectionRS.next();
@@ -3432,7 +3437,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 			}
 			
-			//System.out.println(tempTable);
+			System.out.println(tempTable);
 			stmt.execute(tempTable.toString());
 			stmt.close();	
 		} catch (SQLException e) {
@@ -3490,11 +3495,10 @@ public class SQLServerDatabase implements InfoWarehouse
 				for (int i = 0; i < mzValues.length; i++)
 					createTables.append("INSERT INTO #mz VALUES("+mzValues[i]+")\n");
 				long start = new Date().getTime();
-				//System.out.println(createTables);
+				System.out.println(createTables);
 				stmt.execute(createTables.toString());
 				long end = new Date().getTime();
 				System.out.println("done creating m/z table: time = "+(end-start)/1000);
-				System.out.println();
 				//	create #atoms table
 				createTables = new StringBuilder("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 				" Time DateTime, \n MZLocation int, \n Value real)\n");
@@ -3507,7 +3511,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"GROUP BY BinnedTime,MZ.Value\n"+
 						"ORDER BY Location, BinnedTime\n");
 				start = new Date().getTime();
-				//System.out.println(createTables);
+				System.out.println(createTables);
 				stmt.execute(createTables.toString());
 				end = new Date().getTime();
 				System.out.println("done creating atoms table: time = "+(end-start)/1000);
@@ -3571,7 +3575,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			" Time DateTime, \n Value real)\n");
 			ts.append("insert #atoms (Time, Value) \n" +
 					"select BinnedTime, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
-					"from #TimeBins TB" +
+					"from #TimeBins TB \n" +
 					"join TimeSeriesAtomInfoDense AID on (TB.AtomID = AID.AtomID) \n"+
 					"group by BinnedTime \n" +
 			"order by BinnedTime \n");
@@ -3580,11 +3584,12 @@ public class SQLServerDatabase implements InfoWarehouse
 			ts.append("insert AtomMembership (CollectionID, AtomID) \n" +
 					"select " + newCollectionID + ", NewAtomID from #atoms \n");
 			
-			ts.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
+			ts.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
 			"select NewAtomID, Time, Value from #atoms \n");
 			ts.append("DROP TABLE #atoms");
 			progressBar.increment("  " + collectionName);
 			long start = new Date().getTime();
+			//System.out.println(ts);
 			stmt.execute(ts.toString());
 			long end = new Date().getTime();
 			System.out.println("done aggregating collection: time = " + (end-start)/1000);
@@ -4031,7 +4036,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			String denseStr, sparseStr;
 			// insert particles.
 			while (denseRS.next()) {
-				assert (sparseRS.next());
+				sparseRS.next();
 			}
 			
 			denseRS.close();

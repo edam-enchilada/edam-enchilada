@@ -86,7 +86,7 @@ public class Aggregator {
 					String name = collections[i].getName();
 					progressBar2.increment("Constructing time basis for "+name);
 					if (baseOnCollection)
-						db.createTempAggregateBasis(collections[i],basisCollection.getCollectionID());
+						db.createTempAggregateBasis(collections[i],basisCollection);
 					else {
 						//System.out.println("** START ** "+ start.getTimeInMillis());
 						//System.out.println("** END ** "+ end.getTimeInMillis());

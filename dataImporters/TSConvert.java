@@ -57,8 +57,10 @@ public class TSConvert{
         		String line;
         		printBegin(new PrintStream(outStream));
         		try {
-        			while((line = in.readLine()) != null){
-        				line = line.trim();
+        			// Made it so if a "" is encountered, while loop ends 
+        			// (i.e. lines at the end of the 
+        			while((line = in.readLine()) != null && (line = line.trim()) != null){
+        				//line = line.trim();
         				if(line.charAt(0) == '#') continue;
         				line_no++;
         				setStatus(("CSV "+line_no+": "+line)

@@ -281,7 +281,7 @@ public interface InfoWarehouse {
 	public Vector<int[]> getValueMapRanges();
 	
 	public int applyMap(String mapName, Vector<int[]> map, Collection collection);
-	public void createTempAggregateBasis(Collection c, int basisCID);
+	public void createTempAggregateBasis(Collection c, Collection basis);
 	public void createTempAggregateBasis(Collection c, Calendar start, Calendar end, Calendar interval);
 	public void deleteTempAggregateBasis();
 	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate);
