@@ -1,6 +1,7 @@
 package gui;
 
 import java.util.*;
+
 import javax.swing.*;
 
 import collection.AggregationOptions;
@@ -52,6 +53,7 @@ public class Aggregator {
 		
 		final SwingWorker worker2 = new SwingWorker() {
 			public Object construct() {
+				Date s,e; // start and end dates.
 				for (int i = 0; i < collections.length; i++) {
 					progressBar1.increment("Retreiving Valid M/Z Values for Collection # "+(i+1)+" out of "+collections.length);
 					Collection curColl = collections[i];
@@ -59,7 +61,19 @@ public class Aggregator {
 					if (options == null)
 						curColl.setAggregationOptions(options = new AggregationOptions());				
 					if (curColl.getDatatype().equals("ATOFMS")) {
-						mzValues[i] = db.getValidMZValuesForCollection(curColl);				
+						if (baseOnCollection) {
+							Calendar startDate = new GregorianCalendar();
+							Calendar endDate = new GregorianCalendar();
+							Collection[] array = {basisCollection};
+							db.getMaxMinDateInCollections(array,startDate,endDate);
+							s = startDate.getTime();
+							e = endDate.getTime();
+						}
+						else {
+							s = start.getTime();
+							e = end.getTime();
+						}
+						mzValues[i] = db.getValidMZValuesForCollection(curColl, s, e);				
 						if (mzValues[i] != null)
 							numSqlCalls[0] += mzValues[i].length;		
 						if (options.produceParticleCountTS)

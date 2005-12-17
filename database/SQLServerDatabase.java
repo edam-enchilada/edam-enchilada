@@ -3275,7 +3275,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			// else, perform a join merge on the two collections.
 			else {
 				Statement stmt2 = con.createStatement();
-				System.out.println("truncating/binning time as appropriate...");
+				//System.out.println("truncating/binning time as appropriate...");
 	
 				// get distinct times from basis collection
 				ResultSet basisRS = stmt.executeQuery("SELECT DISTINCT [Time] \n" +
@@ -3302,11 +3302,11 @@ public class SQLServerDatabase implements InfoWarehouse
 				Timestamp collectionTime = collectionRS.getTimestamp(2);
 				boolean next = true;
 				
-				// if there are times before the first bin, dump them as NULL.
+				// We want to skip the times before the first bin.
 				//System.out.println("before the first bin...");
 				while (collectionTime.compareTo(currentBin) < 0) {
 					//System.out.println("atomID: "+atomID+", collectionTime: NULL");
-					tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",NULL)\n");
+					//tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",NULL)\n");
 					next = collectionRS.next();
 					if (!next)
 						break;
@@ -3317,8 +3317,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				//	while the next time bin is legal...
 				//System.out.println("binning...");
-				boolean endOfCollection = false;
-				while (!endOfCollection && next && basisRS.next()) { 
+				while (next && basisRS.next()) { 
 					//System.out.println("currentBin: "+currentBin);
 					nextBin = basisRS.getTimestamp(1);
 					//System.out.println("nextBin: " + nextBin);
@@ -3326,29 +3325,29 @@ public class SQLServerDatabase implements InfoWarehouse
 					while (collectionTime.compareTo(nextBin) < 0) {
 						//System.out.println("     inserting atomID: "+atomID+", collectionTime: "+collectionTime);
 						tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"')\n");
-						if (!collectionRS.next()) {
-							endOfCollection = true;
+						next = collectionRS.next();
+						if (!next)
 							break;
-						}
+						else { 
 						atomID = collectionRS.getInt(1);
 						collectionTime = collectionRS.getTimestamp(2);
+						}
 					}
 					currentBin = nextBin;
 				}
-				currentBin = nextBin;
-				// if there are still more times, dump them as the largest bin
-				//System.out.println("after binning...");
-				if (!endOfCollection) { 
+//				 We want to skip the times after the last bin.
+			/*	//System.out.println("after binning...");
+				if (next) { 
 					tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"')\n");
 					while (collectionRS.next()) {
 						tempTable.append("INSERT INTO #TimeBins VALUES ("+collectionRS.getInt(1)+",'"+currentBin+"')\n");
 					}
-				}
+				}*/
 				stmt2.close();
 			}
 			long startTime = new Date().getTime();
 			//System.out.println("start creating #TimeBins table");
-			System.out.println(tempTable);
+			//System.out.println(tempTable);
 			stmt.execute(tempTable.toString());
 			long endTime = new Date().getTime();
 			System.out.println("done creating #TimeBins table: time = "+(endTime-startTime)/1000);
@@ -3437,7 +3436,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 			}
 			
-			System.out.println(tempTable);
+			//System.out.println(tempTable);
 			stmt.execute(tempTable.toString());
 			stmt.close();	
 		} catch (SQLException e) {
@@ -3495,7 +3494,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				for (int i = 0; i < mzValues.length; i++)
 					createTables.append("INSERT INTO #mz VALUES("+mzValues[i]+")\n");
 				long start = new Date().getTime();
-				System.out.println(createTables);
+				//System.out.println(createTables);
 				stmt.execute(createTables.toString());
 				long end = new Date().getTime();
 				System.out.println("done creating m/z table: time = "+(end-start)/1000);
@@ -3511,7 +3510,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"GROUP BY BinnedTime,MZ.Value\n"+
 						"ORDER BY Location, BinnedTime\n");
 				start = new Date().getTime();
-				System.out.println(createTables);
+				//System.out.println(createTables);
 				stmt.execute(createTables.toString());
 				end = new Date().getTime();
 				System.out.println("done creating atoms table: time = "+(end-start)/1000);
@@ -3602,9 +3601,10 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 	}
 	
-	public int[] getValidMZValuesForCollection(Collection collection) {
+	public int[] getValidMZValuesForCollection(Collection collection, Date startDate, Date endDate) {
 		Set<Integer> collectionIDs = collection.getCollectionIDSubTree();
 		AggregationOptions options = collection.getAggregationOptions();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		
 		StringBuilder sql = new StringBuilder();
 		// if there's a list of mz values:
@@ -3615,18 +3615,25 @@ public class SQLServerDatabase implements InfoWarehouse
 			for (int i = 0; i < options.mzValues.size(); i++)
 				sql.append("INSERT INTO #mz VALUES ("+options.mzValues.get(i)+")\n");
 			sql.append("select distinct MZ.Value as RoundedPeakLocation " +
-					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ \n"+
+					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, ATOFMSAtomInfoDense AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 					"AND IAO.AtomID = AIS.AtomID \n" +
+					"AND IAO.AtomID = AID.AtomID \n"+
 					"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
+					"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
+					"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
 			"ORDER BY MZ.Value\n");
 			sql.append("DROP TABLE #mz\n");
 		} else { // if we want to get all mz values:
 			sql.append("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
-					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO \n"+
+					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, ATOFMSAtomInfoDense AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 					"AND IAO.AtomID = AIS.AtomID \n" +
-					"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n");
+					"AND IAO.AtomID = AID.AtomID \n" +
+					"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
+					"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
+					"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
+					"ORDER BY RoundedPeakLocation");
 		}
 		
 		try {
@@ -3640,8 +3647,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			long end = new Date().getTime();
 			System.out.println("end get valid MZ values: time = "+(end-start)/1000);
 			
-			while (rs.next())
+			while (rs.next()){
 				peakLocs.add(rs.getInt("RoundedPeakLocation"));
+				//System.out.println(rs.getInt("RoundedPeakLocation"));
+			}
 			rs.close();
 			stmt.close();
 			
@@ -3708,7 +3717,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		try{
 			Statement stmt = con.createStatement();
-		//	System.out.println(sqlStr);
+			//System.out.println(sqlStr);
 			ResultSet rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
