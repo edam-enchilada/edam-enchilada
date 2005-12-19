@@ -22,8 +22,6 @@ public abstract class ProgressTask extends JDialog {
 	private JProgressBar progressBar;
 	private JLabel statusText;
 	private Thread task;
-	private boolean disposable = false;
-	private boolean modal;
 	
 	/**
 	 * These are just the same parameters that a Dialog takes in its
@@ -34,7 +32,6 @@ public abstract class ProgressTask extends JDialog {
 	 */
 	public ProgressTask(Frame owner, String title, boolean modal) {
 		super(owner, title, modal);
-		this.modal = modal;
 		this.setLayout(new FlowLayout());
 		
 		statusText = new JLabel("Initializing...");
