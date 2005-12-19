@@ -16,6 +16,7 @@ import java.util.Random;
 import java.sql.*;
 
 import database.SQLServerDatabase;
+import java.io.*;
 
 public class ImportDummyParticles {
 	private ArrayList<Integer> collectionIDs;
@@ -209,7 +210,7 @@ public class ImportDummyParticles {
 	}
 	
 	// 1 parent collection, 20 peaks per particle
-	public void import2MillionParticles() throws SQLException {
+	public void import2MillionParticles() throws IOException, SQLException {
 		System.out.println("IMPORTING 2 MILLION PARTICLES ");
 		System.out.println();
 		System.out.println("Collection 1: 2,000,000");
@@ -224,31 +225,73 @@ public class ImportDummyParticles {
 		time = 0;
 		timeArray = generateTimeArray(50000);
 		particleInfo = new StringBuilder();
+		PrintWriter dsm = new PrintWriter(new File("C:\\temp\\dsm"));
+		PrintWriter am = new PrintWriter(new File("C:\\temp\\am"));
+		PrintWriter aid = new PrintWriter(new File("C:\\temp\\aid"));
+		PrintWriter iao = new PrintWriter(new File("C:\\temp\\iao"));
+		PrintWriter ais = new PrintWriter(new File("C:\\temp\\ais"));
+		
 		
 		System.out.println("     Beginning to insert particles...");
 		for (int i = 1; i <= 2000000; i++) {
+		//for (int i = 1; i <= 5000; i++) {
 			if (time == 49999) {
 				timeArray = generateTimeArray(50000);
 				time = 0;
 			}
-			locations = new ArrayList<Double>();
-			while (locations.size() != 20) {
-				rand = random.nextDouble();
-				if (!locations.contains(new Double(rand)));
-					locations.add(rand);
+			ArrayList<Integer> ilocations = new ArrayList<Integer>();
+			while (ilocations.size() != 20) {
+				int irand = random.nextInt(500);
+				if (!ilocations.contains(irand))
+					ilocations.add(irand);
 			}
-			stmt.execute("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")\n");
-			stmt.execute("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")\n");
-			stmt.execute("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+timeArray[time]+"',0.005,1.5,20,'Atom"+newAtomID+"')\n");
-			stmt.execute("INSERT INTO InternalAtomOrder VALUES ("+newAtomID+","+newCollectionID+","+i+")\n");
-			for (int j = 0; j < 20; j++) 
-				stmt.execute("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+locations.get(j)+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")\n");
-			if (i%100==0 && i>=100) 
-				System.out.println("     finished executing query for particle # "+i);
+			//stmt.execute("INSERT INTO DataSetMembers VALUES ("+newDatasetID+","+newAtomID+")\n");
+			//stmt.execute("INSERT INTO AtomMembership VALUES ("+newCollectionID+","+newAtomID+")\n");
+			//stmt.execute("INSERT INTO ATOFMSAtomInfoDense VALUES ("+newAtomID+",'"+timeArray[time]+"',0.005,1.5,20,'Atom"+newAtomID+"')\n");
+			//stmt.execute("INSERT INTO InternalAtomOrder VALUES ("+newAtomID+","+newCollectionID+","+i+")\n");
+			dsm.println(newDatasetID+","+newAtomID);
+			am.println(newCollectionID+","+newAtomID);
+			aid.println(newAtomID+","+timeArray[time]+",0.005,1.5,20,'Atom"+newAtomID+"'");
+			iao.println(newAtomID+","+newCollectionID+","+i);
+			for (int j = 0; j < 20; j++) {
+				//stmt.execute("INSERT INTO ATOFMSAtomInfoSparse VALUES ("+newAtomID+","+ilocations.get(j)+","+random.nextInt(25)+",0.05,"+random.nextInt(25)+")\n");
+				ais.println(newAtomID+","+ilocations.get(j)+","+random.nextInt(25)+",0.05,"+random.nextInt(25));
+			}
+			if (i%1000==0 && i>=1000) {
+				//stmt.execute(particleInfo.toString());
+				//particleInfo = new StringBuilder();
+				dsm.close();
+				am.close();
+				aid.close();
+				iao.close();
+				ais.close();
+				stmt.execute("BULK INSERT DataSetMembers FROM 'C:\\temp\\dsm' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+				stmt.execute("BULK INSERT AtomMembership FROM 'C:\\temp\\am' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+				stmt.execute("BULK INSERT ATOFMSAtomInfoDense FROM 'C:\\temp\\aid' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+				stmt.execute("BULK INSERT InternalAtomOrder FROM 'C:\\temp\\iao' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+				stmt.execute("BULK INSERT ATOFMSAtomInfoSparse FROM 'C:\\temp\\ais' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+				dsm = new PrintWriter(new File("C:\\temp\\dsm"));
+				am = new PrintWriter(new File("C:\\temp\\am"));
+				aid = new PrintWriter(new File("C:\\temp\\aid"));
+				iao = new PrintWriter(new File("C:\\temp\\iao"));
+				ais = new PrintWriter(new File("C:\\temp\\ais"));
+				System.out.println("     wrote particle # "+i);
+			}
 
 			newAtomID++;
 			time++;
 		}
+		dsm.close();
+		am.close();
+		aid.close();
+		iao.close();
+		ais.close();
+		stmt.execute("BULK INSERT DataSetMembers FROM 'C:\\temp\\dsm' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+		stmt.execute("BULK INSERT AtomMembership FROM 'C:\\temp\\am' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+		stmt.execute("BULK INSERT ATOFMSAtomInfoDense FROM 'C:\\temp\\aid' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+		stmt.execute("BULK INSERT InternalAtomOrder FROM 'C:\\temp\\iao' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+		stmt.execute("BULK INSERT ATOFMSAtomInfoSparse FROM 'C:\\temp\\ais' WITH (FIELDTERMINATOR = ',', ROWTERMINATOR = '\n')");
+		
 	}
 		
 	public static void main(String[] args) {
