@@ -3245,6 +3245,56 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * Create an index on some part of AtomInfoDense for a datatype.  Possibly
+	 * useful if you're going to be doing a *whole lot* of queries on a
+	 * particular field or set of fields.  For syntax in the fieldSpec, look
+	 * at an SQL reference.  If it's just one field, just put the name of the
+	 * column there.
+	 * 
+	 * @return true if the index was successfully created, false otherwise.
+	 */
+	public boolean createIndex(String dataType, String fieldSpec) {
+		String table = getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
+		
+		String indexName = "index_" + fieldSpec.replaceAll("[^A-Za-z0-9]","");
+		String s = "CREATE INDEX " + indexName + " ON " + table 
+			+ " (" + fieldSpec + ")";
+		
+		try {
+			Statement stmt = con.createStatement();
+			boolean ret = stmt.execute(s);
+			stmt.close();
+			return ret;
+		} catch (SQLException e) {
+			System.err.println(e.toString());
+			return false;
+		}
+	}
+	
+	/**
+	 * Returns a list of indexed columns in a table.
+	 */
+	public Set<String> getIndexedColumns(String table) throws SQLException {
+		Set<String> indexed = new HashSet<String>();
+		
+		Statement stmt = con.createStatement();
+		ResultSet r = stmt.executeQuery("EXEC sp_helpindex " + table);
+		
+		String[] tmp;
+		while (r.next()) {
+			tmp = r.getString("index_keys").split(", ");
+			for (int i = 0; i < tmp.length; i++) {
+				indexed.add(tmp[i]);
+			}
+		}
+		
+		r.close();
+		stmt.close();
+		
+		return indexed;
+	}
+	
+	/**
 	 * Creates a table of all the appropriate atomIDs and the binned
 	 * times.  If the collection is the one that the aggregation is based on,
 	 * the table is just a copy of the original one.
