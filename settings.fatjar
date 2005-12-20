@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Fri Nov 04 12:52:21 CST 2005
+#Tue Dec 20 14:31:13 CST 2005
 onejar.license.required=true
 manifest.classpath=
 onejar.checkbox=false
@@ -9,5 +9,6 @@ manifest.mainclass=gui.MainFrame
 manifest.file=<createnew>
 jarname.isextern=false
 onejar.expand=
+#excludes=<po|edam-enchilada>~MSDERelA/;<po|edam-enchilada>~.classpath;<po|edam-enchilada>~.cvsignore;<po|edam-enchilada>~.fatjar;<po|edam-enchilada>~.project;<po|edam-enchilada>~config.ini;<po|edam-enchilada>~Enchilada.bat;<po|edam-enchilada>~enchilada.nsi;<po|edam-enchilada>~gpl.txt;<po|edam-enchilada>~icon.ico;<po|edam-enchilada>~library.txt;<po|edam-enchilada>~MPL-1.1.txt;<po|edam-enchilada>~README-MSSQL.txt;<po|edam-enchilada>~sapassword.ini;<po|edam-enchilada>~settings.fatjar;<po|edam-enchilada>~SQLServerRebuildDatabase.txt
 excludes=<po|edam-enchilada-fa05>~MSDERelA/;<po|edam-enchilada-fa05>~.classpath;<po|edam-enchilada-fa05>~.cvsignore;<po|edam-enchilada-fa05>~.fatjar;<po|edam-enchilada-fa05>~.project;<po|edam-enchilada-fa05>~config.ini;<po|edam-enchilada-fa05>~Enchilada.bat;<po|edam-enchilada-fa05>~enchilada.nsi;<po|edam-enchilada-fa05>~gpl.txt;<po|edam-enchilada-fa05>~icon.ico;<po|edam-enchilada-fa05>~library.txt;<po|edam-enchilada-fa05>~MPL-1.1.txt;<po|edam-enchilada-fa05>~README-MSSQL.txt;<po|edam-enchilada-fa05>~sapassword.ini;<po|edam-enchilada-fa05>~settings.fatjar;<po|edam-enchilada-fa05>~SQLServerRebuildDatabase.txt
 includes=
