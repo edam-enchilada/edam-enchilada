@@ -47,7 +47,6 @@ public class Aggregator {
 	public int createAggregateTimeSeries(final int rootCollectionID, final Collection[] collections) {	
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
-
 		final ProgressBarWrapper progressBar1 = 
 			new ProgressBarWrapper(parentFrame, "Retreiving Valid M/Z Values", collections.length);
 		
@@ -65,7 +64,10 @@ public class Aggregator {
 							Calendar startDate = new GregorianCalendar();
 							Calendar endDate = new GregorianCalendar();
 							Collection[] array = {basisCollection};
+							long begin = new Date().getTime();
 							db.getMaxMinDateInCollections(array,startDate,endDate);
+							long end = new Date().getTime();
+							System.out.println("getMaxMinDateInCollections: "+(end-begin)/1000+" sec.");
 							s = startDate.getTime();
 							e = endDate.getTime();
 						}
@@ -73,7 +75,10 @@ public class Aggregator {
 							s = start.getTime();
 							e = end.getTime();
 						}
-						mzValues[i] = db.getValidMZValuesForCollection(curColl, s, e);				
+						long begin = new Date().getTime();
+						mzValues[i] = db.getValidMZValuesForCollection(curColl, s, e);	
+						long end = new Date().getTime();
+						System.out.println("getValidMZValuesForCollection: "+(end-begin)/1000+" sec.");
 						if (mzValues[i] != null)
 							numSqlCalls[0] += mzValues[i].length;		
 						if (options.produceParticleCountTS)
@@ -99,16 +104,18 @@ public class Aggregator {
 				for (int i = 0; i < collections.length; i++) {
 					String name = collections[i].getName();
 					progressBar2.increment("Constructing time basis for "+name);
+					long begin = new Date().getTime();
 					if (baseOnCollection)
 						db.createTempAggregateBasis(collections[i],basisCollection);
 					else {
-						//System.out.println("** START ** "+ start.getTimeInMillis());
-						//System.out.println("** END ** "+ end.getTimeInMillis());
-						//System.out.println("** INTERVAL ** "+ interval.getTimeInMillis());
 						db.createTempAggregateBasis(collections[i],start,end,interval);
 					}
-					System.out.println("AGGREGATING COLLECTION "+name);
+					long end = new Date().getTime();
+					System.out.println("createTempAggBasis: "+(end-begin)/1000+" sec.");
+					begin = new Date().getTime();
 					db.createAggregateTimeSeries(progressBar2, rootCollectionID, collections[i], mzValues[i]);
+					end = new Date().getTime();
+					System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 					db.deleteTempAggregateBasis();				
 					}
 				progressBar2.disposeThis();

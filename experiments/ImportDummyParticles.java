@@ -18,6 +18,13 @@ import java.sql.*;
 import database.SQLServerDatabase;
 import java.io.*;
 
+/**
+ * Imports either 200,000 or 2 million dummy ATOFMS particles directly into the 
+ * database.  Files created are stored in C:\temp\.  Cannot be used unless
+ * this is a valid directory.
+ * @author ritza
+ *
+ */
 public class ImportDummyParticles {
 	private ArrayList<Integer> collectionIDs;
 	private SQLServerDatabase db;

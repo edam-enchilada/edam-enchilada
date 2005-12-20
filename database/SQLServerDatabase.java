@@ -3209,22 +3209,17 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		try{
 			StringBuilder sqlStr = new StringBuilder();
-			sqlStr.append("CREATE INDEX iao_index ON InternalAtomOrder (CollectionID)\n"+
+			sqlStr.append("CREATE INDEX iao_index ON InternalAtomOrder (CollectionID);\n"+
 		"SELECT MAX(Time) as MaxTime, MIN(Time) as MinTime\nFROM(\n");
 			sqlStr.append("SELECT AtomID, Time FROM "+ infoDenseNames.get(0)+"\n");
 			for (int i = 1; i < infoDenseNames.size(); i++)
 				sqlStr.append("UNION SELECT AtomID, Time FROM " + infoDenseNames.get(i)+"\n");
 			sqlStr.append(") AID, InternalAtomOrder IAO\n"+
 					"WHERE IAO.CollectionID in ("+cIDs+")\n" +
-							"AND AID.AtomID = IAO.AtomID\n");
-			sqlStr.append("DROP INDEX InternalAtomOrder.iao_index\n");
+							"AND AID.AtomID = IAO.AtomID;\n");
+			sqlStr.append("DROP INDEX InternalAtomOrder.iao_index;\n");
 			Statement stmt = con.createStatement();
-			long start = new Date().getTime();
-			//System.out.println("start get max min date in collection");
-			//System.out.println(sqlStr);
 			ResultSet rs = stmt.executeQuery(sqlStr.toString());
-			long end = new Date().getTime();
-			System.out.println("end get max min date in collection: time = "+(end-start)/1000);
 			if (rs.next()) {
 				Timestamp minT = rs.getTimestamp("MinTime");
 				if (!rs.wasNull())
@@ -3302,15 +3297,13 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * NOTE:  ALSO HAS A LIST OF ALL ATOM IDS IN COLLECTION!
 	 */
 	public void createTempAggregateBasis(Collection c, Collection basis) {
-		//System.out.println("collectionID = " + c.getCollectionID()+ ", basisID = "+basisCID);
 		// grabbing the times for all subcollectionIDs
 		try {
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
 			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#TimeBins')\n"+
 					"DROP TABLE #TimeBins;\n");
-			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID))\n");
-			
+			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			// if aggregation is based on this collection, copy table
 			if (c.getCollectionID() == basis.getCollectionID()) {	
 				System.out.println("copying table...");
@@ -3319,28 +3312,26 @@ public class SQLServerDatabase implements InfoWarehouse
 						"InternalAtomOrder IAO \n"+
 						"WHERE IAO.AtomID = AID.AtomID\n" +
 						"AND CollectionID = "+c.getCollectionID()+"\n"+
-				"ORDER BY Time\n");
+				"ORDER BY Time;\n");
 			}
-			
 			// else, perform a join merge on the two collections.
 			else {
+				Statement stmt1 = con.createStatement();
 				Statement stmt2 = con.createStatement();
-				//System.out.println("truncating/binning time as appropriate...");
-	
 				// get distinct times from basis collection
-				ResultSet basisRS = stmt.executeQuery("SELECT DISTINCT [Time] \n" +
+				ResultSet basisRS = stmt1.executeQuery("SELECT DISTINCT [Time] \n" +
 						"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, basis.getDatatype()) + " AID,\n" +
 						"InternalAtomOrder IAO \n"+
 						"WHERE IAO.AtomID = AID.AtomID\n" +
 						"AND CollectionID = "+basis.getCollectionID()+"\n"+
-				"ORDER BY Time\n");
+				"ORDER BY Time;\n");
 				// get all times from collection to bin.
 				ResultSet collectionRS = stmt2.executeQuery("SELECT AID.AtomID, [Time] \n" +
 						"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID,\n" +
 						"InternalAtomOrder IAO \n"+
 						"WHERE IAO.AtomID = AID.AtomID\n" +
 						"AND CollectionID = "+c.getCollectionID()+"\n"+
-				"ORDER BY Time\n");
+				"ORDER BY Time;\n");
 				
 				// initialize first values:
 				Timestamp nextBin = null;
@@ -3352,11 +3343,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				Timestamp collectionTime = collectionRS.getTimestamp(2);
 				boolean next = true;
 				
-				// We want to skip the times before the first bin.
-				//System.out.println("before the first bin...");
+				// We skip the times before the first bin.
 				while (collectionTime.compareTo(currentBin) < 0) {
-					//System.out.println("atomID: "+atomID+", collectionTime: NULL");
-					//tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",NULL)\n");
 					next = collectionRS.next();
 					if (!next)
 						break;
@@ -3366,41 +3354,65 @@ public class SQLServerDatabase implements InfoWarehouse
 					}
 				}
 				//	while the next time bin is legal...
-				//System.out.println("binning...");
-				while (next && basisRS.next()) { 
-					//System.out.println("currentBin: "+currentBin);
-					nextBin = basisRS.getTimestamp(1);
-					//System.out.println("nextBin: " + nextBin);
-					// while collectionTime is within bin, insert it in table.
-					while (collectionTime.compareTo(nextBin) < 0) {
-						//System.out.println("     inserting atomID: "+atomID+", collectionTime: "+collectionTime);
-						tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"')\n");
-						next = collectionRS.next();
-						if (!next)
-							break;
-						else { 
-						atomID = collectionRS.getInt(1);
-						collectionTime = collectionRS.getTimestamp(2);
+				
+				// Only bulk insert if client and server are on the same machine...
+				if (url.equals("localhost")) {
+					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					PrintWriter bulkFile = null;
+					try {
+						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					} catch (IOException e) {
+						System.err.println("Trouble creating " + tempFilename);
+						e.printStackTrace();
+					}
+					while (next && basisRS.next()) { 
+						nextBin = basisRS.getTimestamp(1);
+						// while collectionTime is within bin, insert it in table.
+						while (collectionTime.compareTo(nextBin) < 0) {
+							bulkFile.println(atomID+","+currentBin.toString());
+							next = collectionRS.next();
+							if (!next)
+								break;
+							else { 
+								atomID = collectionRS.getInt(1);
+								collectionTime = collectionRS.getTimestamp(2);
+							}	
 						}
+						currentBin = nextBin;
 					}
-					currentBin = nextBin;
-				}
-//				 We want to skip the times after the last bin.
-			/*	//System.out.println("after binning...");
-				if (next) { 
-					tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"')\n");
-					while (collectionRS.next()) {
-						tempTable.append("INSERT INTO #TimeBins VALUES ("+collectionRS.getInt(1)+",'"+currentBin+"')\n");
+					bulkFile.close();
+					tempTable.append("BULK INSERT #TimeBins\n" +
+							"FROM '" + tempFilename + "'\n" +
+					"WITH (FIELDTERMINATOR=',');\n");
+				} else {
+					int counter = 0;
+					while (next && basisRS.next()) { 
+						nextBin = basisRS.getTimestamp(1);
+						// while collectionTime is within bin, insert it in table.
+						while (collectionTime.compareTo(nextBin) < 0) {
+							tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"');\n");
+							counter++;
+							next = collectionRS.next();
+							if (!next)
+								break;
+							else { 
+								atomID = collectionRS.getInt(1);
+								collectionTime = collectionRS.getTimestamp(2);
+							}	
+							if (counter > 500) {
+								stmt.execute(tempTable.toString());
+								counter = 0;
+								tempTable = new StringBuilder();
+							}
+						}
+						currentBin = nextBin;
 					}
-				}*/
+				}		
+//				We skip the times after the last bin.
+				stmt1.close();
 				stmt2.close();
 			}
-			long startTime = new Date().getTime();
-			//System.out.println("start creating #TimeBins table");
-			//System.out.println(tempTable);
 			stmt.execute(tempTable.toString());
-			long endTime = new Date().getTime();
-			System.out.println("done creating #TimeBins table: time = "+(endTime-startTime)/1000);
 			stmt.close();	
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -3417,18 +3429,20 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void createTempAggregateBasis(Collection c, Calendar start, Calendar end, Calendar interval) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Calendar increment = (Calendar) start.clone();	
+		int counter = 0;
 		try {
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
-			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID))\n");
-			
+			Statement stmt1 = con.createStatement();
+			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
+			counter++;
 			// get all times from collection to bin.
-			ResultSet collectionRS = stmt.executeQuery("SELECT AID.AtomID, [Time] \n" +
+			ResultSet collectionRS = stmt1.executeQuery("SELECT AID.AtomID, [Time] \n" +
 					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype()) + " AID,\n" +
 					"InternalAtomOrder IAO \n"+
 					"WHERE IAO.AtomID = AID.AtomID\n" +
 					"AND CollectionID = "+c.getCollectionID()+"\n"+
-				"ORDER BY Time\n");
+				"ORDER BY Time;\n");
 			
 			// initialize first values:
 			collectionRS.next();
@@ -3437,13 +3451,9 @@ public class SQLServerDatabase implements InfoWarehouse
 			Date basisTime = increment.getTime();
 			Date nextTime = null;
 			boolean next = true; 
-			int lastID = -1;
 			
-			// if there are times before the first bin, dump them as NULL.
+			// if there are times before the first bin, skip them.
 			while (basisTime.compareTo((Date)collectionTime)> 0) {
-				//System.out.println("basisTime: " + basisTime);
-				tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",NULL)\n");
-				lastID = atomID;
 				next = collectionRS.next();
 				if (!next)
 					break;
@@ -3453,41 +3463,69 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 			}
 //			while the next time bin is legal...
-			while (next) {
-				increment.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
-				increment.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
-				increment.add(Calendar.SECOND, interval.get(Calendar.SECOND));
-				nextTime = increment.getTime();
-				while (next && nextTime.compareTo((Date)collectionTime)> 0) {
-					if (lastID != atomID) { // avoids inserting same ID in twice
-						tempTable.append("insert INTO #TimeBins values ("+atomID+",'"+dateFormat.format(basisTime)+"') \n");
-						lastID = atomID;
-					}
-						next = collectionRS.next();
-					if (!next)
-						break;
-					atomID = collectionRS.getInt(1);
-					collectionTime = collectionRS.getTimestamp(2);	
+//			 Only bulk insert if client and server are on the same machine...
+			if (url.equals("localhost")) {
+				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+				}
+				while (next) {
+					increment.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+					increment.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
+					increment.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+					nextTime = increment.getTime();
+					while (next && nextTime.compareTo((Date)collectionTime)> 0) {
+							bulkFile.println(+atomID+","+dateFormat.format(basisTime));
+							next = collectionRS.next();
+						if (!next)
+							break;
+						atomID = collectionRS.getInt(1);
+						collectionTime = collectionRS.getTimestamp(2);	
+					}	
+					if (nextTime.compareTo(end.getTime()) > 0)
+						next = false;
+					else 
+						basisTime = nextTime;
 				}	
-				if (nextTime.compareTo(end.getTime()) > 0)
-					next = false;
-				else 
-					basisTime = nextTime;
+				bulkFile.close();
+				tempTable.append("BULK INSERT #TimeBins\n" +
+						"FROM '" + tempFilename + "'\n" +
+				"WITH (FIELDTERMINATOR=',');\n");
+			} else {
+				while (next) {
+					increment.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+					increment.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
+					increment.add(Calendar.SECOND, interval.get(Calendar.SECOND));
+					nextTime = increment.getTime();
+					while (next && nextTime.compareTo((Date)collectionTime)> 0) {
+							tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+dateFormat.format(basisTime)+"');\n");
+							counter++;
+							next = collectionRS.next();
+						if (!next)
+							break;
+						atomID = collectionRS.getInt(1);
+						collectionTime = collectionRS.getTimestamp(2);	
+						if (counter > 1000) {
+							stmt.execute(tempTable.toString());
+							counter = 0;
+							tempTable = new StringBuilder();
+						}
+					}	
+					if (nextTime.compareTo(end.getTime()) > 0)
+						next = false;
+					else 
+						basisTime = nextTime;
+				}	
 			}	
-			// if there are still more times, dump them as the largest bin
-			if (collectionTime != null) { 
-				Date endTime = end.getTime();
-				if (lastID != atomID) { // avoids inserting same ID in twice
-					tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+dateFormat.format(endTime)+"')\n");
-					lastID = atomID;
-				}
-				while (collectionRS.next()) {
-					tempTable.append("INSERT INTO #TimeBins VALUES ("+collectionRS.getInt(1)+",'"+dateFormat.format(endTime)+"')\n");
-				}
-			}
 			
-			//System.out.println(tempTable);
+			// if there are still more times, skip them.
+
 			stmt.execute(tempTable.toString());
+			stmt1.close();
 			stmt.close();	
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception creating aggregate basis temp table");
@@ -3502,7 +3540,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void deleteTempAggregateBasis() {
 		try {
 			Statement stmt = con.createStatement();
-			stmt.execute("DROP TABLE #TimeBins\n");
+			stmt.execute("DROP TABLE #TimeBins;\n");
 			stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception deleting aggregate basis temp table");
@@ -3524,10 +3562,10 @@ public class SQLServerDatabase implements InfoWarehouse
 		AggregationOptions options = curColl.getAggregationOptions();
 		try {
 		Statement stmt = con.createStatement();
-	
+		StringBuilder sql = new StringBuilder();
 		// Create and Populate #atoms table with appropriate information.
 		/* IF DATATYPE IS ATOFMS */
-		if (curColl.getDatatype().equals("ATOFMS")) {				
+		if (curColl.getDatatype().equals("ATOFMS")) {	
 			if (mzValues == null) {
 				new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
@@ -3537,112 +3575,111 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 			} else {
 				//create and insert MZ Values into temporary #mz table.
-				StringBuilder createTables = new StringBuilder();
-				createTables.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
 				"DROP TABLE #mz;\n");
-				createTables.append("CREATE TABLE #mz (Value INT)\n");
-				for (int i = 0; i < mzValues.length; i++)
-					createTables.append("INSERT INTO #mz VALUES("+mzValues[i]+")\n");
-				long start = new Date().getTime();
-				//System.out.println(createTables);
-				stmt.execute(createTables.toString());
-				long end = new Date().getTime();
-				System.out.println("done creating m/z table: time = "+(end-start)/1000);
+				sql.append("CREATE TABLE #mz (Value INT);\n");
+				// Only bulk insert if client and server are on the same machine...
+				if (url.equals("localhost")) {
+					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					PrintWriter bulkFile = null;
+					try {
+						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					} catch (IOException e) {
+						System.err.println("Trouble creating " + tempFilename);
+						e.printStackTrace();
+					}
+					for (int i = 0; i < mzValues.length; i++){
+						bulkFile.println(mzValues[i]);
+					}
+					bulkFile.close();
+					sql.append("BULK INSERT #mz\n" +
+							"FROM '" + tempFilename + "'\n" +
+					"WITH (FIELDTERMINATOR=',');\n");
+				} else {
+					for (int i = 0; i < mzValues.length; i++){
+						sql.append("INSERT INTO #mz VALUES("+mzValues[i]+");\n");
+					}
+				}	
 				//	create #atoms table
-				createTables = new StringBuilder("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-				" Time DateTime, \n MZLocation int, \n Value real)\n");
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+				" Time DateTime, \n MZLocation int, \n Value real);\n");
 				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
-				createTables.append("insert #atoms (Time, MZLocation, Value) \n" +
+				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
 						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
 						"FROM #TimeBins TB\n" +
 						"JOIN ATOFMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
 						"JOIN #mz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
 						"GROUP BY BinnedTime,MZ.Value\n"+
-						"ORDER BY Location, BinnedTime\n");
-				start = new Date().getTime();
-				//System.out.println(createTables);
-				stmt.execute(createTables.toString());
-				end = new Date().getTime();
-				System.out.println("done creating atoms table: time = "+(end-start)/1000);
+						"ORDER BY Location, BinnedTime;\n");
+
 				// build 2 child collections - one for time series, one for M/Z values.
 				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
 				int mzPeakLoc, mzCollectionID;
 				// for each mz value specified, make a new child collection and populate it.
-				StringBuilder insertAtoms = new StringBuilder();
 				for (int j = 0; j < mzValues.length; j++) {	
 					mzPeakLoc = mzValues[j];
 					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
 					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
-					insertAtoms.append("insert AtomMembership (CollectionID, AtomID) \n" +
+					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
 							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
-							"ORDER BY NewAtomID\n");
-					insertAtoms.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
+							"ORDER BY NewAtomID;\n");
+					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
 							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
-					"ORDER BY NewAtomID\n");
+					"ORDER BY NewAtomID;\n");
 				}
-				insertAtoms.append("DROP TABLE #mz\n");
-				insertAtoms.append("DROP TABLE #atoms\n");
+				sql.append("DROP TABLE #mz;\n");
+				sql.append("DROP TABLE #atoms;\n");
 				progressBar.increment("  Executing M/Z Queries...");
-				start = new Date().getTime();
-				stmt.execute(insertAtoms.toString());
-				end = new Date().getTime();
-				System.out.println("done inserting atoms: time = " + (end-start)/1000);
-					
 					// if the particle count is selected, produce that time series as well.
 					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
 					// it now tracks number of particles instead of sum of m/z particles.	
+				stmt.execute(sql.toString());
+				sql = new StringBuilder();
 				if (options.produceParticleCountTS) {
-					StringBuilder particleCounts = new StringBuilder();
 						int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-						
-						particleCounts.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+						sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+						"DROP TABLE #atoms;\n");
+						sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 								" Time DateTime, \n MZLocation int, \n Value real)\n" +
 								"insert #atoms (Time, Value) \n" +
 								"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM #TimeBins TB\n"+
 								"GROUP BY BinnedTime\n"+
-								"ORDER BY BinnedTime\n");
+								"ORDER BY BinnedTime;\n");
 						
-						particleCounts.append("insert AtomMembership (CollectionID, AtomID) \n" +
-						"select " + combinedCollectionID + ", NewAtomID from #atoms \n");
-						particleCounts.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
-						"select NewAtomID, Time, Value from #atoms \n");
-						particleCounts.append("DROP TABLE #atoms");
+						sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
+						"select " + combinedCollectionID + ", NewAtomID from #atoms;\n");
+						sql.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
+						"select NewAtomID, Time, Value from #atoms;\n");
+						sql.append("DROP TABLE #atoms;");
 						
 						progressBar.increment("  " + collectionName + ", Particle Counts");
-						start = new Date().getTime();
-						stmt.execute(particleCounts.toString());
-						end = new Date().getTime();
-						System.out.println("done creating particle count time series: time = " + (end-start)/1000);
 					}
 			}
 			
 			/* IF DATATYPE IS TIME SERIES */
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
-			StringBuilder ts = new StringBuilder();
-			ts.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-			" Time DateTime, \n Value real)\n");
-			ts.append("insert #atoms (Time, Value) \n" +
+			sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+			" Time DateTime, \n Value real);\n");
+			sql.append("insert #atoms (Time, Value) \n" +
 					"select BinnedTime, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
 					"from #TimeBins TB \n" +
 					"join TimeSeriesAtomInfoDense AID on (TB.AtomID = AID.AtomID) \n"+
 					"group by BinnedTime \n" +
-			"order by BinnedTime \n");
+			"order by BinnedTime;\n");
 			
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
-			ts.append("insert AtomMembership (CollectionID, AtomID) \n" +
-					"select " + newCollectionID + ", NewAtomID from #atoms \n");
+			sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
+					"select " + newCollectionID + ", NewAtomID from #atoms;\n");
 			
-			ts.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-			"select NewAtomID, Time, Value from #atoms \n");
-			ts.append("DROP TABLE #atoms");
+			sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
+			"select NewAtomID, Time, Value from #atoms;\n");
+			sql.append("DROP TABLE #atoms;\n");
 			progressBar.increment("  " + collectionName);
-			long start = new Date().getTime();
-			//System.out.println(ts);
-			stmt.execute(ts.toString());
-			long end = new Date().getTime();
-			System.out.println("done aggregating collection: time = " + (end-start)/1000);
 		}
+		stmt.execute(sql.toString());
 		stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
@@ -3655,16 +3692,39 @@ public class SQLServerDatabase implements InfoWarehouse
 		Set<Integer> collectionIDs = collection.getCollectionIDSubTree();
 		AggregationOptions options = collection.getAggregationOptions();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
-		StringBuilder sql = new StringBuilder();
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = null;
+			StringBuilder sql = new StringBuilder();
 		// if there's a list of mz values:
 		if (options.mzValues != null && options.mzValues.size() > 0) {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
 			"DROP TABLE #mz;\n");
-			sql.append("CREATE TABLE #mz (Value INT)\n");
-			for (int i = 0; i < options.mzValues.size(); i++)
-				sql.append("INSERT INTO #mz VALUES ("+options.mzValues.get(i)+")\n");
-			sql.append("select distinct MZ.Value as RoundedPeakLocation " +
+			sql.append("CREATE TABLE #mz (Value INT);\n");
+			// Only bulk insert if client and server are on the same machine...
+			if (url.equals("localhost")) {
+				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+				}
+				for (int i = 0; i < options.mzValues.size(); i++){
+					bulkFile.println(options.mzValues.get(i));
+				}
+				bulkFile.close();
+				sql.append("BULK INSERT #mz\n" +
+						"FROM '" + tempFilename + "'\n" +
+				"WITH (FIELDTERMINATOR=',');\n");
+			} else {
+				for (int i = 0; i < options.mzValues.size(); i++) {
+					sql.append("INSERT INTO #mz VALUES ("+options.mzValues.get(i)+");\n");
+				}
+			}	
+			stmt.execute(sql.toString());
+			rs = stmt.executeQuery("select distinct MZ.Value as RoundedPeakLocation " +
 					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, ATOFMSAtomInfoDense AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 					"AND IAO.AtomID = AIS.AtomID \n" +
@@ -3672,10 +3732,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
 					"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
 					"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
-			"ORDER BY MZ.Value\n");
-			sql.append("DROP TABLE #mz\n");
+			"ORDER BY MZ.Value;\n");
+			stmt.execute("DROP TABLE #mz;\n");
 		} else { // if we want to get all mz values:
-			sql.append("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
+			rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
 					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, ATOFMSAtomInfoDense AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 					"AND IAO.AtomID = AIS.AtomID \n" +
@@ -3683,23 +3743,12 @@ public class SQLServerDatabase implements InfoWarehouse
 					"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
 					"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
 					"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
-					"ORDER BY RoundedPeakLocation");
+					"ORDER BY RoundedPeakLocation;\n");
 		}
 		
-		try {
 			ArrayList<Integer> peakLocs = new ArrayList<Integer>();
-			
-			Statement stmt = con.createStatement();
-			long start = new Date().getTime();
-			//System.out.println("start get valid MZ values");
-			//System.out.println(sql);
-			ResultSet rs = stmt.executeQuery(sql.toString());
-			long end = new Date().getTime();
-			System.out.println("end get valid MZ values: time = "+(end-start)/1000);
-			
 			while (rs.next()){
 				peakLocs.add(rs.getInt("RoundedPeakLocation"));
-				//System.out.println(rs.getInt("RoundedPeakLocation"));
 			}
 			rs.close();
 			stmt.close();
