@@ -82,6 +82,17 @@ Section "EDAM Enchilada (required)"
   File "SQLServerRebuildDatabase.txt"
   File "icon.ico"
   
+  SetOutPath $INSTDIR\labeling
+  File "labeling\cygwin1.dll"
+  File "labeling\nion-sigs.txt"
+  File "labeling\pion-sigs.txt"
+  File "labeling\run.bat"
+  File "labeling\spc_negative.txt"
+  File "labeling\spc_positive.txt"
+  File "labeling\spectrum.exe"
+  
+  SetOutPath $INSTDIR
+  
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\EDAM_Enchilada "Install_Dir" "$INSTDIR"
   
@@ -170,6 +181,7 @@ Section "un.Uninstall"
   Delete $INSTDIR\enchilada.dtd
   Delete $INSTDIR\ImporterInstructions
   Delete $INSTDIR\Enchilada.bat
+  Delete $INSTDIR\MSDE-EULA.txt
   Delete "$INSTDIR\gpl.txt"
   Delete "$INSTDIR\library.txt"
   Delete "$INSTDIR\MPL-1.1.txt"
@@ -178,6 +190,17 @@ Section "un.Uninstall"
   Delete $INSTDIR\*.set
   Delete $INSTDIR\uninstall.exe
   Delete $INSTDIR\icon.ico
+  Delete $INSTDIR\labeling\cygwin1.dll
+  Delete $INSTDIR\labeling\nion-sigs.txt
+  Delete $INSTDIR\labeling\pion-sigs.txt
+  Delete $INSTDIR\labeling\run.bat
+  Delete $INSTDIR\labeling\spc_negative.txt
+  Delete $INSTDIR\labeling\spc_positive.txt
+  Delete $INSTDIR\labeling\spectrum.exe
+  Delete $INSTDIR\labeling\temp_nion-sigs.txt"
+  Delete $INSTDIR\labeling\temp_pion-sigs.txt"
+  
+  RMDir "$INSTDIR\labeling"
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\EDAM Enchilada\*.*"
