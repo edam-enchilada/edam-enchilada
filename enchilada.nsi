@@ -72,15 +72,17 @@ Section "EDAM Enchilada (required)"
 !endif
   File "MPL-1.1.txt"
   File "edam-enchilada.jar"
-  File "importation files\meta.dtd"
-  File "importation files\enchilada.dtd"
-  File "importation files\ImporterInstructions"
   File "Enchilada.bat"
   File "gpl.txt"
   File "library.txt"
   File "MPL-1.1.txt"
   File "SQLServerRebuildDatabase.txt"
   File "icon.ico"
+
+  SetOutPath "$INSTDIR\importation files"
+  File "importation files\meta.dtd"
+  File "importation files\enchilada.dtd"
+  File "importation files\ImporterInstructions"
   
   SetOutPath $INSTDIR\labeling
   File "labeling\cygwin1.dll"
