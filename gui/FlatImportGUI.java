@@ -35,6 +35,10 @@ public class FlatImportGUI {
 	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
 		this.parent = parent;
 		fp = new FilePicker("Choose .task file", "task", parent);
+		if (fp.getFileName() == null) {
+			return;
+			// should this throw an exception instead?  i think this is ok...
+		}
 		conv = new TSConvert();
 		conv.setParent(parent);
 		
@@ -52,7 +56,7 @@ public class FlatImportGUI {
 
 	
 	
-	public void doImport() throws Exception {		
+	private void doImport() throws Exception {		
 		PipedInputStream pinput = new PipedInputStream();
 		final PipedOutputStream poutput = new PipedOutputStream(pinput);
 	
