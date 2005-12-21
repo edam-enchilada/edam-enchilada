@@ -3259,7 +3259,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			boolean ret = stmt.execute(s);
 			stmt.close();
-			return ret;
+			return true;
 		} catch (SQLException e) {
 			System.err.println(e.toString());
 			return false;
@@ -3267,10 +3267,12 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
-	 * Returns a list of indexed columns in a table.
+	 * Returns a list of indexed columns in an AtomInfoDense table.
 	 */
-	public Set<String> getIndexedColumns(String table) throws SQLException {
+	public Set<String> getIndexedColumns(String dataType) throws SQLException {
 		Set<String> indexed = new HashSet<String>();
+		
+		String table = this.getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
 		
 		Statement stmt = con.createStatement();
 		ResultSet r = stmt.executeQuery("EXEC sp_helpindex " + table);
