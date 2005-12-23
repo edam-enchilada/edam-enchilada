@@ -312,6 +312,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				//System.out.println("AISparams: " + AISparams);//debugging
 			}
 			else if (inAtomInfoDense){
+				
 				AIDparams = intersperse(data, AIDparams);
 				// System.out.println("AIDparams: " + AIDparams);//debugging
 			}
@@ -380,14 +381,23 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				params = params + "," + add;
 			
 		}
-		//if not a number, surround in single quotes
+		//if not a number, surround in single quotes, or it's empty so it's NULL
 		catch (NumberFormatException e){
 			
-			if (params.equals(""))
-				params = quote + add + quote;
-			else
-				params = params + "," + quote + add + quote;
+			if (add.equals("")) {
 			
+				if (params.equals(""))
+					params = "NULL";
+				else
+					params = params + ",NULL";
+						
+			} else {
+				
+				if (params.equals(""))
+					params = quote + add + quote;
+				else
+					params = params + "," + quote + add + quote;
+			}	
 		}
 		
 		return params;
