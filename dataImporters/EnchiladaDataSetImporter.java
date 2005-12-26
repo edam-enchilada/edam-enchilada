@@ -339,7 +339,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		else if (qName.equals("atominfodense")){
 			inAtomInfoDense = false;
 			db.insertParticle(AIDparams, AISinfo, db.getCollection(collectionID), 
-					collectionID, atomID);
+					datasetID, atomID);
 		}
 		else if (qName.equals("atominfosparse")){
 			inAtomInfoSparse = false;
