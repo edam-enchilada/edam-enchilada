@@ -678,7 +678,6 @@ public class MainFrame extends JFrame implements ActionListener
 		String dataType = collection.getDatatype();
 		ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
 		
-		
 		// use combo box to display particles in chunks of 1000 particles.
 		int numParticles = db.getCollectionSize(collection.getCollectionID());
 		int numLines = numParticles/1000;
@@ -745,9 +744,10 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionViewPanel.setComponentAt(0, particlePanel);
 			collectionViewPanel.repaint();
 		} else {
+			particleTablePane.setViewportView(particlesTable);
 			particlesTable.setEnabled(false);
-			// Change to just show table (no button)...
-			collectionViewPanel.setComponentAt(0, new JScrollPane(particlesTable));
+			// TODO Change to just show table (no button)...
+			collectionViewPanel.setComponentAt(0, particlePanel);
 		}
 		
 		//call setTable, which populates the table.
@@ -755,11 +755,7 @@ public class MainFrame extends JFrame implements ActionListener
 		//old code
 		//data.clear();
 		//data = db.updateParticleTable(collection, data, low, high);
-		
-		
-		
 
-		
 		return true;
 	}
 	

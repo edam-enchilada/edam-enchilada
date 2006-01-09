@@ -303,6 +303,7 @@ public class ATOFMSDataSetImporter {
 				countSet.close();
 				
 				totalParticles = tParticles;
+				
 				final ProgressBarWrapper progressBar = 
 					new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
 				
@@ -378,7 +379,7 @@ public class ATOFMSDataSetImporter {
 	}
 	
 	// tests for .par version (.ams,.amz)
-	// Strin[] returned is Name, Comment, and Description.
+	// String[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {
 		BufferedReader readPar = new BufferedReader(new FileReader(parFile));
 		String test = readPar.readLine();

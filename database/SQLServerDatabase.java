@@ -607,11 +607,12 @@ public class SQLServerDatabase implements InfoWarehouse
 					"VALUES (" +
 					collection.getCollectionID() + ", " +
 					nextID + ")");
-			stmt.addBatch("INSERT INTO DataSetMembers\n" +
+		stmt.addBatch("INSERT INTO DataSetMembers\n" +
 					"(OrigDataSetID, AtomID)\n" +
 					"VALUES (" +
 					datasetID + ", " + 
 					nextID + ")");
+			
 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
 			
 			// Only bulk insert if client and server are on the same machine...
@@ -626,8 +627,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					// XXX: do something else here
 				}
 				
-				for (int j = 0; j < sparse.size(); j++)
+				for (int j = 0; j < sparse.size(); j++) {
 					bulkFile.println(nextID + "," + sparse.get(j));
+					//System.out.println(nextID + "," + sparse.get(j));
+				}
 				
 				bulkFile.close();
 				stmt.addBatch("BULK INSERT " + tableName + "\n" +
@@ -637,7 +640,9 @@ public class SQLServerDatabase implements InfoWarehouse
 				for (int j = 0; j < sparse.size(); j++)
 					stmt.addBatch("INSERT INTO " + tableName +  
 							" VALUES (" + nextID + "," + sparse.get(j) + ")");
+				
 			}
+			//System.out.println(tableName);
 			stmt.executeBatch();
 			
 			stmt.close();
@@ -3659,8 +3664,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						
 						progressBar.increment("  " + collectionName + ", Particle Counts");
 					}
-			}
-			
+			}		
 			/* IF DATATYPE IS TIME SERIES */
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
 			sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
@@ -3680,6 +3684,78 @@ public class SQLServerDatabase implements InfoWarehouse
 			"select NewAtomID, Time, Value from #atoms;\n");
 			sql.append("DROP TABLE #atoms;\n");
 			progressBar.increment("  " + collectionName);
+		}
+		/* IF DATATYPE IS AMS */
+		else if (curColl.getDatatype().equals("AMS")) {	
+			if (mzValues == null) {
+				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
+				return;
+			} else if (mzValues.length == 0) {
+				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
+			} else {
+				//create and insert MZ Values into temporary #mz table.
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
+				"DROP TABLE #mz;\n");
+				sql.append("CREATE TABLE #mz (Value INT);\n");
+				// Only bulk insert if client and server are on the same machine...
+				if (url.equals("localhost")) {
+					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					PrintWriter bulkFile = null;
+					try {
+						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					} catch (IOException e) {
+						System.err.println("Trouble creating " + tempFilename);
+						e.printStackTrace();
+					}
+					for (int i = 0; i < mzValues.length; i++){
+						bulkFile.println(mzValues[i]);
+					}
+					bulkFile.close();
+					sql.append("BULK INSERT #mz\n" +
+							"FROM '" + tempFilename + "'\n" +
+					"WITH (FIELDTERMINATOR=',');\n");
+				} else {
+					for (int i = 0; i < mzValues.length; i++){
+						sql.append("INSERT INTO #mz VALUES("+mzValues[i]+");\n");
+					}
+				}	
+				//	create #atoms table
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+				" Time DateTime, \n MZLocation int, \n Value real);\n");
+				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
+				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
+						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
+						"FROM #TimeBins TB\n" +
+						"JOIN AMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
+						"JOIN #mz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
+						"GROUP BY BinnedTime,MZ.Value\n"+
+						"ORDER BY Location, BinnedTime;\n");
+
+				// build 2 child collections - one for time series, one for M/Z values.
+				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
+				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
+				int mzPeakLoc, mzCollectionID;
+				// for each mz value specified, make a new child collection and populate it.
+				for (int j = 0; j < mzValues.length; j++) {	
+					mzPeakLoc = mzValues[j];
+					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
+					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
+					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
+							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
+							"ORDER BY NewAtomID;\n");
+					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
+							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
+					"ORDER BY NewAtomID;\n");
+				}
+				sql.append("DROP TABLE #mz;\n");
+				sql.append("DROP TABLE #atoms;\n");
+				progressBar.increment("  Executing M/Z Queries...");	
+				stmt.execute(sql.toString());
+			}
 		}
 		stmt.execute(sql.toString());
 		stmt.close();
@@ -3726,6 +3802,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 			}	
 			stmt.execute(sql.toString());
+			/* If Datatype is ATOFMS */
+			if (collection.getDatatype().equals("ATOFMS")){
 			rs = stmt.executeQuery("select distinct MZ.Value as RoundedPeakLocation " +
 					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, ATOFMSAtomInfoDense AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
@@ -3735,6 +3813,19 @@ public class SQLServerDatabase implements InfoWarehouse
 					"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
 					"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
 			"ORDER BY MZ.Value;\n");
+			}
+			/* If Datatype is AMS */
+			else if (collection.getDatatype().equals("AMS")){
+				rs = stmt.executeQuery("select distinct MZ.Value as RoundedPeakLocation " +
+						"from AMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, AMSAtomInfoDense AID \n"+
+						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
+						"AND IAO.AtomID = AIS.AtomID \n" +
+						"AND IAO.AtomID = AID.AtomID \n"+
+						"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
+						"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
+						"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
+				"ORDER BY MZ.Value;\n");
+				}
 			stmt.execute("DROP TABLE #mz;\n");
 		} else { // if we want to get all mz values:
 			rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +

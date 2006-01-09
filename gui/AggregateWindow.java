@@ -428,6 +428,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			if (!isInterval) {
 				month  = getComboBox(initDate.get(Calendar.MONTH) + 1, 1, 12, false);
 				day    = getComboBox(initDate.get(Calendar.DAY_OF_MONTH), 1, 31, false);
+				// TODO:  There has been an error here with the upper limit for date 
+				// We need to find a better fix than this.  I'll log it on Sourceforge - AR
 				year   = getComboBox(initDate.get(Calendar.YEAR), 2000, 2006, false);
 				day.setPreferredSize(new Dimension(40, 20));
 				month.setPreferredSize(new Dimension(40, 20));
@@ -456,6 +458,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		}
 		
 		private JComboBox getComboBox(int initVal, int start, int end, boolean padZero) {
+			System.out.println(initVal);
+			System.out.println(start);
+			System.out.println(" ");
 			String[] ret = new String[end - start + 1];
 			for (int i = 0; i < ret.length; i++) {
 				int num = start + i;
