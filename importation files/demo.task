@@ -1,0 +1,13 @@
+# This file specifies the importation task (from CSV files to 
+# Enchilada's database).
+#
+# Each line should have the following format
+# File Name, Time Column, Value Column 1, Value Column 2, ...
+# 
+# File Name: The name of a time-series file (a comma-separated table with the
+#            the first line representing the column names).
+# Time Column: The column name in the specified file that represents the
+#            the point in time.
+# Value Column i: The column representing the values of the time series.
+#
+uvc_bc_agg.csv, Run_Date, BC, VC_BC

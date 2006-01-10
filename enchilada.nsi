@@ -83,6 +83,7 @@ Section "EDAM Enchilada (required)"
   File "importation files\meta.dtd"
   File "importation files\enchilada.dtd"
   File "importation files\ImporterInstructions"
+  File "importation files\demo.task"
   
   SetOutPath $INSTDIR\labeling
   File "labeling\cygwin1.dll"
