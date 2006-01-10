@@ -369,7 +369,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	 * @param params	The existing string.
 	 * @return	The comma-separated string.
 	 */
-	public String intersperse(String add, String params){
+	public static String intersperse(String add, String params){
 		
 		//separate out the numbers from the real men!
 		try{
