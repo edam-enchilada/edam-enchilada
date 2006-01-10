@@ -174,6 +174,14 @@ public class ExceptionDialog extends JDialog implements ActionListener{
 		new ExceptionDialog(frame, array);
 	}
 	
+	public ExceptionDialog(JDialog frame, Exception e) {
+		this(frame, new String[]{e.toString()});
+	}
+	
+	public ExceptionDialog(Exception e) {
+		this(e.toString());
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)

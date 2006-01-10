@@ -28,8 +28,7 @@ import externalswing.*;
 
 public class FlatImportGUI {
 	private FilePicker fp;
-	private TSConvert conv;
-	private EnchiladaDataSetImporter importer;
+	private TSImport importer;
 	private Frame parent;
 	
 	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
@@ -39,44 +38,20 @@ public class FlatImportGUI {
 			return;
 			// should this throw an exception instead?  i think this is ok...
 		}
-		conv = new TSConvert();
-		conv.setParent(parent);
-		
-		importer = new EnchiladaDataSetImporter(db);
-		importer.setParent(parent);
+		importer = new TSImport(db, parent);
 		
 		try {
 			doImport();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Exception importing (generally)");
-			// TODO: more handling of this exception.
+			new ExceptionDialog(e);
 		}
 	}
 
 	
 	
-	private void doImport() throws Exception {		
-		PipedInputStream pinput = new PipedInputStream();
-		final PipedOutputStream poutput = new PipedOutputStream(pinput);
-	
-		// uncomment these, and comment out the pipe versions, if you need
-		// to see what's getting passed between the converter and importer.
-//		FileOutputStream poutput = new FileOutputStream(new File("temp.xml"));
-		
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					conv.convert(fp.getFileName(), poutput);
-				} catch (Exception e) {
-					e.printStackTrace();
-					// TODO: exception handling.  as usual.
-				}
-			}
-		});
-
-		
-//		InputStream pinput = new FileInputStream(new File("temp.xml"));
-		importer.importStreamThreaded(new BufferedInputStream(pinput));
+	private void doImport() throws Exception {
+		importer.read(fp.getFileName());
 	}
 }
