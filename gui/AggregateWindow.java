@@ -458,9 +458,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		}
 		
 		private JComboBox getComboBox(int initVal, int start, int end, boolean padZero) {
-			System.out.println(initVal);
-			System.out.println(start);
-			System.out.println(" ");
 			String[] ret = new String[end - start + 1];
 			for (int i = 0; i < ret.length; i++) {
 				int num = start + i;

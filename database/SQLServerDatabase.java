@@ -3576,11 +3576,14 @@ public class SQLServerDatabase implements InfoWarehouse
 			if (mzValues == null) {
 				new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
+				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return;
 			} else if (mzValues.length == 0) {
 				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-			} else {
+				System.err.println("Collections need to overlap times in order to be aggregated.");
+			} 
+			else {
 				//create and insert MZ Values into temporary #mz table.
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
 				"DROP TABLE #mz;\n");
@@ -3663,6 +3666,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						sql.append("DROP TABLE #atoms;");
 						
 						progressBar.increment("  " + collectionName + ", Particle Counts");
+						stmt.execute(sql.toString());
 					}
 			}		
 			/* IF DATATYPE IS TIME SERIES */
@@ -3684,6 +3688,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			"select NewAtomID, Time, Value from #atoms;\n");
 			sql.append("DROP TABLE #atoms;\n");
 			progressBar.increment("  " + collectionName);
+			stmt.execute(sql.toString());
 		}
 		/* IF DATATYPE IS AMS */
 		else if (curColl.getDatatype().equals("AMS")) {	
@@ -3757,7 +3762,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.execute(sql.toString());
 			}
 		}
-		stmt.execute(sql.toString());
+		//stmt.execute(sql.toString());
 		stmt.close();
 		} catch (SQLException e) {
 			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
@@ -3773,6 +3778,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = null;
+			ArrayList<Integer> peakLocs = new ArrayList<Integer>();
 			StringBuilder sql = new StringBuilder();
 		// if there's a list of mz values:
 		if (options.mzValues != null && options.mzValues.size() > 0) {
@@ -3803,46 +3809,44 @@ public class SQLServerDatabase implements InfoWarehouse
 			}	
 			stmt.execute(sql.toString());
 			/* If Datatype is ATOFMS */
-			if (collection.getDatatype().equals("ATOFMS")){
 			rs = stmt.executeQuery("select distinct MZ.Value as RoundedPeakLocation " +
-					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, ATOFMSAtomInfoDense AID \n"+
+					"from "+
+					getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
+					" AIS, InternalAtomOrder IAO, #mz MZ, "+
+					getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype())+
+					" AID \n"+
 					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 					"AND IAO.AtomID = AIS.AtomID \n" +
 					"AND IAO.AtomID = AID.AtomID \n"+
 					"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
-					"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
-					"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
-			"ORDER BY MZ.Value;\n");
-			}
-			/* If Datatype is AMS */
-			else if (collection.getDatatype().equals("AMS")){
-				rs = stmt.executeQuery("select distinct MZ.Value as RoundedPeakLocation " +
-						"from AMSAtomInfoSparse AIS, InternalAtomOrder IAO, #mz MZ, AMSAtomInfoDense AID \n"+
-						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
-						"AND IAO.AtomID = AIS.AtomID \n" +
-						"AND IAO.AtomID = AID.AtomID \n"+
-						"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
-						"AND AID.Time >= "+dateFormat.format(startDate)+"\n"+
-						"AND AID.Time <= "+dateFormat.format(endDate)+"\n"+
-				"ORDER BY MZ.Value;\n");
-				}
-			stmt.execute("DROP TABLE #mz;\n");
-		} else { // if we want to get all mz values:
-			rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
-					"from ATOFMSAtomInfoSparse AIS, InternalAtomOrder IAO, ATOFMSAtomInfoDense AID \n"+
-					"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
-					"AND IAO.AtomID = AIS.AtomID \n" +
-					"AND IAO.AtomID = AID.AtomID \n" +
-					"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
 					"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
 					"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
-					"ORDER BY RoundedPeakLocation;\n");
-		}
-		
-			ArrayList<Integer> peakLocs = new ArrayList<Integer>();
+			"ORDER BY MZ.Value;\n");
 			while (rs.next()){
 				peakLocs.add(rs.getInt("RoundedPeakLocation"));
 			}
+			stmt.execute("DROP TABLE #mz;\n");
+		} 
+//		if we want to get all mz values:
+		/* If Datatype is ATOFMS */
+		else {
+				rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
+						"from "+
+						getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
+						" AIS, InternalAtomOrder IAO, "+
+						getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype())+
+						" AID \n"+
+						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
+						"AND IAO.AtomID = AIS.AtomID \n" +
+						"AND IAO.AtomID = AID.AtomID \n" +
+						"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
+						"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
+						"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
+				"ORDER BY RoundedPeakLocation;\n");
+				while (rs.next()){
+					peakLocs.add(rs.getInt("RoundedPeakLocation"));
+				}
+		}
 			rs.close();
 			stmt.close();
 			
