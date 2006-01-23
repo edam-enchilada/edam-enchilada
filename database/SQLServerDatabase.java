@@ -76,6 +76,16 @@ import java.io.*;
 import java.util.Scanner;
 
 
+/*
+ * how to keep track of db revision?
+ * 
+ * i'd love it to only have to change in one place, hopefully the DB Rebuild
+ * script.  Maybe the version checker can look at that file when it is checking.
+ * Is it in the same place in the install and devel versions?  Yes, I think that
+ * will work.  Should this number reside in comments, or in 
+ */
+
+
 /* 
  * Maybe a good way to refactor this file is to separate out methods that
  * are used by importers from those used by clustering code, and so on.
@@ -4404,5 +4414,34 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		updateAncestors(collection.getParentCollection());
 	}
+	
+	
+	/**
+	 * This method, used by VersionChecker, returns the version string that the
+	 * database contains, which hopefully corresponds to the structure of the
+	 * database.
+	 * @return the version string, or "No database version" if the database is from before version strings.
+	 * @throws SQLException
+	 */
+	public String getDatabaseVersion() throws SQLException {
+		String version;
+		Statement stmt = con.createStatement();
+		try {
+			ResultSet rs = stmt.executeQuery(
+					"SELECT Value FROM DBInfo WHERE Name = 'Version'");
+			if (! rs.next()) {
+				throw new Exception("Inconsistent DB State?");
+				// no version in DB (though this shouldn't happen?)
+			} else {
+				version = rs.getString(1);
+			}
+		} catch (SQLException e) {
+			version = "No database version";
+		} catch (Exception e) {
+			throw new SQLException("Can't understand what state the DB is in. (has version field but no value)");
+		}
+		return version;
+	}
+	
 }
 

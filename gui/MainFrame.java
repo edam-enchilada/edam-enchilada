@@ -832,12 +832,26 @@ public class MainFrame extends JFrame implements ActionListener
 						JOptionPane.YES_OPTION) {
 				
 				SQLServerDatabase.rebuildDatabase("SpASMSdb");
-			}			
+			} else {
+				return; // no database?  we shouldn't do anything at all.
+			}
 		}
 		
 		//Open database connection:
 		db = new SQLServerDatabase("SpASMSdb");
 		db.openConnection();
+		
+
+		VersionChecker vc = new VersionChecker(db);
+		try {
+			if (! vc.isDatabaseCurrent()) {
+				System.out.println("If we cared yet about database versions, this one would not be current!");
+			}
+		} catch (Exception e) {
+			System.out.println("SQL Exception retrieving version!");
+			e.printStackTrace();
+		}
+		
 		
 		//Schedule a job for the event-dispatching thread:
 		//creating and showing this application's GUI.
