@@ -28,15 +28,12 @@ public class TSImport{
 	
 	private Frame parent;
 	
-	private List<String> outFileNames;
-	
     static SimpleDateFormat dateformatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public TSImport(SQLServerDatabase db, Frame parent) {
     	super();
     	this.parent = parent;
     	this.db = db;
-    	outFileNames = new ArrayList<String>();
 	}
 	
     public void read(String task_file) throws Exception{
@@ -94,11 +91,7 @@ public class TSImport{
         if(args.length < 3)
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
         final BufferedReader in = new BufferedReader(
-        		new InputStreamReader(
-//        				new ProgressMonitorInputStream(
-//        						parent,
-//        						"Reading csv file: "+args[0],
-        						new FileInputStream(prefix+File.separator+args[0])));
+        		new FileReader(prefix+File.separator+args[0]));
         String line = in.readLine();
         if(line == null || line.trim().equals(""))
             throw new Exception("Error in "+args[0]+" at line 1: The first line should be the list of column names\n");
