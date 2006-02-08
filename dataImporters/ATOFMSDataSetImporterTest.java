@@ -95,7 +95,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		table.setValueAt(true, 1, 7);
 		
 		Window mf = (Window)new JFrame();
-		importer = new ATOFMSDataSetImporter(table, mf, new ImportParsDialog());
+		importer = new ATOFMSDataSetImporter(table, mf);
 	}
 	
 	protected void tearDown()
@@ -183,7 +183,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		
 		assertTrue(rs.next());
 		assertTrue(rs.getInt(1) == 1);
-		assertTrue(rs.getTimestamp(2).toString().equals("09/02/2003 05:30:38 PM"));
+		assertTrue(rs.getTimestamp(2).toString().equals("2003-09-02 17:30:38.0"));
 		assertTrue(rs.getInt(3) == 0);
 		assertTrue(rs.getFloat(4) == 0.1f);
 		assertTrue(rs.getInt(5) == 0);

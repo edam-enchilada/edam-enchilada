@@ -82,9 +82,8 @@ import collection.Collection;
  */
 public class ATOFMSDataSetImporter {
 	
-	private ParTableModel table;
+	private ParTable table;
 	private Window mainFrame;
-	private ImportParsDialog ipd;
 	private boolean parent;
 	
 	//Table values - used repeatedly.
@@ -121,23 +120,25 @@ public class ATOFMSDataSetImporter {
 	/* Lock to make sure database is only accessed in one batch at a time */
 	private static Integer dbLock = new Integer(0);
 	
+	/* the parent collection */
+	private int parentID = 0;
+
 	
 	/**
 	 * 
 	 * Constructor.  Sets the particle table for the importer.
 	 * @param t - particle table model.
 	 */
-	public ATOFMSDataSetImporter(ParTableModel t, Window mf, ImportParsDialog dialog) {
+	public ATOFMSDataSetImporter(ParTable t, Window mf) {
 		table = t;
 		mainFrame = mf;
-		ipd = dialog;
 	}
 	
 	/**
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
 	 */
-	public void collectTableInfo() {
+	public void collectTableInfo() throws Exception {
 		
 		rowCount = table.getRowCount()-1;
 		totalInBatch = rowCount;
@@ -161,9 +162,8 @@ public class ATOFMSDataSetImporter {
 				db.updateAncestors(db.getCollection(id[0]));
 			} catch (Exception e) {
 				e.printStackTrace();
-				String[] s = {name + " failed to import.", "Exception: ", 
-						e.toString()};
-				ipd.displayException(s);
+				throw new Exception(name + " failed to import.  Exception: " 
+					+ e.toString());
 			}
 		}
 	}
@@ -206,9 +206,9 @@ public class ATOFMSDataSetImporter {
 	/**
 	 * This method loops through the table and checks to make sure that there is a
 	 * .par file and a .cal file for every row, as well as non-zeros for the params.
-	 * @return true if there is a null row, false if not.
+	 * @return returns if there are no null rows, throws exception if there are.
 	 */
-	public boolean nullRows() {
+	public void checkNullRows() throws Exception {
 		String name, massCalFile;
 		int height, area;
 		float relArea;
@@ -219,22 +219,17 @@ public class ATOFMSDataSetImporter {
 			if (name.equals(".par file") || name.equals("") 
 					|| massCalFile.equals(".cal file") 
 					|| massCalFile.equals("")) {
-				String[] s = {"You must enter a '.par' file and a " +
-						"'.cal' file at row # " + (i+1) + "."};
-				ipd.displayException(s);
-				return true;
+				throw new Exception("You must enter a '.par' file and a " +
+						"'.cal' file at row # " + (i+1) + ".");
 			}
 			height= ((Integer)table.getValueAt(i,4)).intValue();
 			area = ((Integer)table.getValueAt(i,5)).intValue();
 			relArea = ((Float)table.getValueAt(i,6)).floatValue();
 			if (height == 0 || area == 0 || relArea == 0.0) {
-				String[] s = {"The Peaklisting Parameters need to be greater " +
-						"than 0 at row # " + (i+1) + "."};
-				ipd.displayException(s);
-				return true;
+				throw new Exception("The Peaklisting Parameters need to be greater " +
+						"than 0 at row # " + (i+1) + ".");
 			}
 		}
-		return false;
 	}
 	
 	/**
@@ -248,6 +243,10 @@ public class ATOFMSDataSetImporter {
 		String[] data = parVersion();
 		//CreateEmptyCollectionandDataset
 		db = MainFrame.db;
+		if (db == null) {
+			db = new SQLServerDatabase();
+			db.openConnection();
+		}
 		id = new int[2];
 		System.out.println(data[0]);
 		System.out.println(data[2]);
@@ -262,9 +261,8 @@ public class ATOFMSDataSetImporter {
 		
 		//if datasets are imported into a parent collection
 		//pass parent's id in as second parameter, else parentID is root (0)
-		int parentID = 0;
-		if (ipd.parentExists())
-			parentID = ipd.getParentID();
+//		if (ipd.parentExists())
+//			parentID = ipd.getParentID();
 		
 		id = db.createEmptyCollectionAndDataset("ATOFMS",parentID,data[0],data[2],
 				"'" + massCalFile + "', '" + sizeCalFile + "', " +
@@ -416,5 +414,9 @@ public class ATOFMSDataSetImporter {
 			throw new DataFormatException
 			("Corrupt data in " + parFile.toString() + " file.");
 		}
+	}
+
+	public void setParentID(int parentID) {
+		this.parentID = parentID;
 	}
 }
