@@ -68,7 +68,6 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	private JProgressBar progressBar;
 	private int dataSetCount;
 	private static Window parent = null;
-	private boolean exceptions = false;
 	private boolean importedTogether = false;
 	private int parentID = 0; //default parent collection is root
 	
@@ -175,14 +174,22 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		if (source == okButton) {
 				ATOFMSDataSetImporter dsi = 
 					new ATOFMSDataSetImporter(
-							pTableModel, parent, this);
+							pTableModel, parent);
+				if (importedTogether)
+					dsi.setParentID(parentID);
 				// If a .par file or a .cal file is missing, don't start the process.
-				if (!dsi.nullRows()) {
+				try {
+					dsi.checkNullRows();
 					dsi.collectTableInfo();
-					if (!exceptions)
-						dispose();
+					dispose();
+				} catch (Exception exc) {
+					// Exceptions here mostly have to do with mis-entered data.
+					// Those that don't should probably be handled differently,
+					// but I'm just reworking this so that it uses exceptions
+					// in a way that's less silly, so I'm not worrying about that
+					// for now.  -Thomas
+					displayException(new String[] { exc.toString() });
 				}
-			exceptions = false;
 		}
 		else if (source == parentButton){
 			//pop up a "create new collections" dialog box & keep number of new
@@ -227,7 +234,6 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	}
 	
 	public void displayException(String[] message) {
-		exceptions = true;
 		new ExceptionDialog(this,message);
 	}
 }
