@@ -53,7 +53,7 @@ import javax.swing.table.AbstractTableModel;
  * @author andersbe
  *
  */
-public class ParTableModel extends AbstractTableModel implements TableModelListener
+public class ParTableModel extends AbstractTableModel implements TableModelListener, dataImporters.ParTable
 {
 	private String[] columnNames;
 	private ArrayList<ArrayList<Object>> rowData = new ArrayList<ArrayList<Object>>();
