@@ -48,18 +48,19 @@ public class Aggregator {
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
 		final ProgressBarWrapper progressBar1 = 
-			new ProgressBarWrapper(parentFrame, "Retreiving Valid M/Z Values", collections.length);
+			new ProgressBarWrapper(parentFrame, "Retrieving Valid M/Z Values", collections.length);
 		
 		final SwingWorker worker2 = new SwingWorker() {
 			public Object construct() {
 				Date s,e; // start and end dates.
 				for (int i = 0; i < collections.length; i++) {
-					progressBar1.increment("Retreiving Valid M/Z Values for Collection # "+(i+1)+" out of "+collections.length);
+					progressBar1.increment("Retrieving Valid M/Z Values for Collection # "+(i+1)+" out of "+collections.length);
 					Collection curColl = collections[i];
 					AggregationOptions options = curColl.getAggregationOptions();
 					if (options == null)
 						curColl.setAggregationOptions(options = new AggregationOptions());				
-					if (curColl.getDatatype().equals("ATOFMS")) {
+					if (curColl.getDatatype().equals("ATOFMS") || 
+							curColl.getDatatype().equals("AMS")) {
 						if (baseOnCollection) {
 							Calendar startDate = new GregorianCalendar();
 							Calendar endDate = new GregorianCalendar();

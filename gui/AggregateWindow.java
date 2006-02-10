@@ -134,7 +134,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		if (options == null)
 			collection.setAggregationOptions(options = new AggregationOptions());
 		
-		if (collection.getDatatype().equals("ATOFMS")) {
+		if (collection.getDatatype().equals("ATOFMS") || 
+				collection.getDatatype().equals("AMS")) {
 			ret = getATOFMSPanel(collection);
 		} else if (collection.getDatatype().equals("TimeSeries")) {
 			ret = getTimeSeriesPanel(collection);
@@ -194,7 +195,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    	public void focusLost(FocusEvent evt) {
 	    		JTextField mzValues = ((JTextField) evt.getSource());
 	    		String newText = mzValues.getText();
-	    		
 	    		try {
 	    			options.setMZValues(newText);
 	    		} catch (NumberFormatException e) {
@@ -364,8 +364,17 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			setVisible(false);
 			long timingEnd = new Date().getTime();
 			System.out.println("Aggregation Time: " + (timingEnd-timingStart));
+			// for all collections, set default Aggregation Options.
+			for (int i = 0; i < collections.length; i++) {
+				collections[i].getAggregationOptions().setDefaultOptions();
+			}
+			
 			dispose();
 		} else if (source == cancel) {
+			// for all collections, set default Aggregation Options.
+			for (int i = 0; i < collections.length; i++) {
+				collections[i].getAggregationOptions().setDefaultOptions();
+			}
 			setVisible(false);
 			dispose();
 		}

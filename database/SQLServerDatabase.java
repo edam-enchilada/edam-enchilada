@@ -3705,10 +3705,12 @@ public class SQLServerDatabase implements InfoWarehouse
 			if (mzValues == null) {
 				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
+				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return;
 			} else if (mzValues.length == 0) {
 				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
+				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
 				//create and insert MZ Values into temporary #mz table.
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+

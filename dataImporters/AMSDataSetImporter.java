@@ -172,7 +172,7 @@ public class AMSDataSetImporter {
 				convertedCalendar.add(Calendar.SECOND, temp.intValue());
 				prevBigInt = bigInt;
 			}
-			System.out.println(convertedCalendar.getTime().toString());
+			//System.out.println(convertedCalendar.getTime().toString());
 			timeSeries.add(convertedCalendar.getTime());
 		}
 		readTimeSeries.close();

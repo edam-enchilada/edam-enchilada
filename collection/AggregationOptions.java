@@ -25,10 +25,13 @@ public class AggregationOptions {
 	public void setMZValues(String mzString) {
 		this.mzString = mzString;
 		
-		if (mzString.trim().equals(""))
-			return;
-		
 		ArrayList<Integer> tempValues = new ArrayList<Integer>();
+		
+		if (mzString.trim().equals("")) {
+			mzValues = tempValues;
+			return;
+		}
+	
 		
 		String[] ranges = mzString.split(",");
 		for (int i = 0; i < ranges.length; i++) {
@@ -53,5 +56,15 @@ public class AggregationOptions {
 		
 		Collections.sort(tempValues);
 		mzValues = tempValues;
+	}
+	
+	public void setDefaultOptions() {
+		// These are only relevant to ATOFMS:
+		peakTolerance = .4;
+		produceParticleCountTS = true;
+		treatDataAsContinuous = false;
+		combMethod = CombiningMethod.SUM;
+		mzValues = new ArrayList<Integer>();
+		mzString = "";
 	}
 }
