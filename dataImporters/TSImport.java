@@ -7,6 +7,8 @@ import java.util.*;
 
 import javax.swing.ProgressMonitorInputStream;
 
+import collection.Collection;
+
 import database.SQLServerDatabase;
 
 import externalswing.ProgressTask;
@@ -24,11 +26,13 @@ import externalswing.ProgressTask;
  */
 
 public class TSImport{
+	private boolean failed = false;
+	
 	private SQLServerDatabase db;
 	
 	private Frame parent;
 	
-    static SimpleDateFormat dateformatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static final SimpleDateFormat dateformatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public TSImport(SQLServerDatabase db, Frame parent) {
     	super();
@@ -36,7 +40,7 @@ public class TSImport{
     	this.db = db;
 	}
 	
-    public void read(String task_file) throws Exception{
+    public boolean read(String task_file) throws Exception {
     	final String tf = task_file;
     	if (! tf.endsWith("task")) {
     		// They haven't given us a task file!
@@ -69,6 +73,7 @@ public class TSImport{
     					process(line.split("\\s*,\\s*"), tf, line_no, prefix);
     				}
     			} catch (Exception e) {
+    				failed = true;
     				System.err.println(e.toString());
     				System.err.println("Exception while converting data!");
     				e.printStackTrace();
@@ -80,6 +85,7 @@ public class TSImport{
     	// does not return until the task is completed, but the GUI gets 
     	// redrawn as needed anyway.  
     	convTask.start();
+    	return ! failed;
     }
 
     // args[0]: file name
@@ -124,7 +130,7 @@ public class TSImport{
         }
     }
 
-    void putDataset(String name, ArrayList<String> time, ArrayList<String> value){
+    private void putDataset(String name, ArrayList<String> time, ArrayList<String> value){
     	System.out.println("Putting a dataset: " +name);
     	int[] collectionInfo = db.createEmptyCollectionAndDataset(
     			"TimeSeries",
@@ -134,15 +140,22 @@ public class TSImport{
     			"-1,0");
     	int collectionID = collectionInfo[0];
     	int datasetID = collectionInfo[1];
+    	
+    	collection.Collection coll = db.getCollection(collectionID);
+    	
+    	int nextID = db.getNextID();
+    	TreeMap<String, ArrayList<String>> noSparseTables = new TreeMap<String, ArrayList<String>>(); 
+    	
     	for(int i=0; i<time.size(); i++) {
     		String dense = "";
     		dense = EnchiladaDataSetImporter.intersperse(time.get(i), dense);
     		dense = EnchiladaDataSetImporter.intersperse(value.get(i), dense);
     	
-    		db.insertParticle(dense, new TreeMap<String, ArrayList<String>>(),
-    				db.getCollection(collectionID),
-    				datasetID, db.getNextID());
+    		db.insertParticle(dense, noSparseTables,
+    				coll,
+    				datasetID, nextID++);
         }
+    	db.updateAncestors(coll);
     }
 
     public static void main(String[] args) {
