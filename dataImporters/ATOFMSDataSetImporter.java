@@ -358,7 +358,7 @@ public class ATOFMSDataSetImporter {
 								if(particleNum % 10 == 0 && particleNum >= 10)
 									progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
 								
-						}
+							}
 							db.updateAncestors(curCollection);
 							readSet.close();
 						} catch (IOException e) {
