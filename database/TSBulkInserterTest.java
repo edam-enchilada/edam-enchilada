@@ -48,11 +48,12 @@ public class TSBulkInserterTest extends TestCase {
 		ins.startDataset("test coll");
 		
 		Iterator<Entry<Date, Float>> i = data.entrySet().iterator();
-		while (i.hasNext()) {
-			Entry<Date,Float> e = i.next();
-			ins.addPoint(e.getKey(), e.getValue());
-		}
+
 		try {
+			while (i.hasNext()) {
+				Entry<Date,Float> e = i.next();
+				ins.addPoint(e.getKey(), e.getValue());
+			}
 			ins.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();

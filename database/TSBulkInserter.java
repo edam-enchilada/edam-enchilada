@@ -9,6 +9,8 @@ public class TSBulkInserter {
 	private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private boolean started = false;
 	private int collectionID, datasetID, nextID, firstID;
+	private int maxBufferSize = 1024 * 950 * 3; // a bit before 1M for each StringBuilder.
+	
 	
 	private SQLServerDatabase db;
 	private Connection con;
@@ -25,11 +27,12 @@ public class TSBulkInserter {
 	}
 
 	private void setUp() {
-		vals = new StringBuilder(1024);
-		membership = new StringBuilder(1024);
-		dataset = new StringBuilder(1024);
+		vals = new StringBuilder(2048);
+		membership = new StringBuilder(2048);
+		dataset = new StringBuilder(2048);
 		tabName = db.getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries");
 		con = db.getCon();
+		nextID = firstID = collectionID = datasetID = -1;
 	}
 	
 	public int[] startDataset(String collName) {
@@ -47,31 +50,32 @@ public class TSBulkInserter {
 	}
 
 	
-	public void addPoint(java.util.Date time, float val) {
+	public void addPoint(java.util.Date time, float val) throws SQLException {
 		if (!started) {
 			throw new Error("Haven't called startDataset() before adding a point.");
 		}
 		vals.append("INSERT INTO " + tabName 
 				+ " VALUES (" + nextID + ",'"
 				+ df.format(time) + "',"
-				+ val +")\n");
+				+ val +")");
 		membership.append("INSERT INTO AtomMembership" +
 				"(CollectionID, AtomID)" +
-				"VALUES (" + collectionID + ", " +
+				"VALUES (" + collectionID + "," +
 				nextID + ")");
 		dataset.append("INSERT INTO DataSetMembers" +
 			"(OrigDataSetID, AtomID)" +
 			" VALUES (" + datasetID + "," + nextID + ")");
 		
 		nextID++;
+		
+		if (vals.length() + membership.length() + dataset.length() > maxBufferSize) {
+			interimCommit();
+		}
 	
 	}
 	
-	public int commit() throws SQLException {
-		if (vals.length() == 0) {
-			System.err.println("Committing 0 particles... weird!  Doing it anyway.");
-			Thread.dumpStack();
-		}
+	private void interimCommit() throws SQLException {
+		System.out.println("Committing some particles.");
 		if (db.getNextID() != firstID) {
 			throw new RuntimeException("Database has changed under a batch insert.. you can't do that!");
 		}
@@ -81,7 +85,16 @@ public class TSBulkInserter {
 		st.execute(vals.toString());
 		st.execute(dataset.toString());
 		st.close();
+		
+		vals.setLength(0); // make it into nothing!
+		dataset.setLength(0);
+		membership.setLength(0);
+		
+		firstID = nextID = db.getNextID();
+	}
 	
+	public int commit() throws SQLException {
+		interimCommit();
 		started = false;
 		
 		db.updateAncestors(db.getCollection(collectionID));
@@ -89,11 +102,15 @@ public class TSBulkInserter {
 		collectionID = -1;
 		datasetID = -1;
 		nextID = firstID = -1;
-		vals.setLength(0); // make it into nothing!
-		dataset.setLength(0);
-		membership.setLength(0);
-		
 		
 		return collectionID;
+	}
+
+	public int getMaxBufferSize() {
+		return maxBufferSize;
+	}
+
+	public void setMaxBufferSize(int maxBufferSize) {
+		this.maxBufferSize = maxBufferSize;
 	}
 }

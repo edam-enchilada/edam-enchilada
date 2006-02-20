@@ -10,7 +10,7 @@ import database.SQLServerDatabase;
 public class TSImportTest extends TestCase {
 	private String taskFile;
 	private SQLServerDatabase db;
-	private static final int NUM_PARTICLES = 500;
+	private static final int NUM_PARTICLES = 5000;
 	private File tsFile;
 	
 	
