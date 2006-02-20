@@ -75,17 +75,6 @@ import gui.*;
 import java.io.*;
 import java.util.Scanner;
 
-
-/*
- * how to keep track of db revision?
- * 
- * i'd love it to only have to change in one place, hopefully the DB Rebuild
- * script.  Maybe the version checker can look at that file when it is checking.
- * Is it in the same place in the install and devel versions?  Yes, I think that
- * will work.  Should this number reside in comments, or in 
- */
-
-
 /* 
  * Maybe a good way to refactor this file is to separate out methods that
  * are used by importers from those used by clustering code, and so on.
@@ -99,7 +88,7 @@ import java.util.Scanner;
 public class SQLServerDatabase implements InfoWarehouse
 {
 	/* Class Variables */
-	private Connection con;
+	protected Connection con;
 	private String url;
 	private String port;
 	private String database;
@@ -698,7 +687,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			nextID + ", " + dense + ")";
 			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
-			stmt.executeBatch();
 			insert = "INSERT INTO AtomMembership" +
 			"(CollectionID, AtomID)" +
 			"VALUES (" +
@@ -706,7 +694,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			nextID + ")";
 			//System.out.println(insert); //debugging
 			stmt.addBatch(insert);
-			stmt.executeBatch();
 			insert = "INSERT INTO DataSetMembers" +
 			"(OrigDataSetID, AtomID)" +
 			" VALUES (" +
@@ -1329,6 +1316,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				new ExceptionDialog(new String[]{"Error retrieving collection for collectionID ",
 						Integer.toString(collectionID)});
 				System.err.println("collectionID not created yet!!");
+				return null;
 			}
 			stmt.close();
 			
@@ -1337,6 +1325,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					Integer.toString(collectionID)});
 			System.err.println("error creating collection");
 			e.printStackTrace();
+			return null;
 		}
 		return new Collection(datatype,collectionID,this);
 	}
