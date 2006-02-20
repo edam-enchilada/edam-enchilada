@@ -34,7 +34,6 @@ public class TSImportTest extends TestCase {
 		c.setTimeInMillis(System.currentTimeMillis());
 		SimpleDateFormat dForm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		
-		
 		ts.println("Time,Val");
 		
 		for (int i = 0; i < NUM_PARTICLES; i++) {

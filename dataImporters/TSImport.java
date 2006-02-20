@@ -2,6 +2,7 @@ package dataImporters;
 
 import java.awt.Frame;
 import java.io.*;
+import java.sql.SQLException;
 import java.text.*;
 import java.util.*;
 
@@ -10,6 +11,7 @@ import javax.swing.ProgressMonitorInputStream;
 import collection.Collection;
 
 import database.SQLServerDatabase;
+import database.TSBulkInserter;
 
 import externalswing.ProgressTask;
 
@@ -32,7 +34,8 @@ public class TSImport{
 	
 	private Frame parent;
 	
-    public static final SimpleDateFormat dateformatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	public static final String dfString = "yyyy-MM-dd HH:mm:ss";
+    public static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
 
     public TSImport(SQLServerDatabase db, Frame parent) {
     	super();
@@ -130,32 +133,25 @@ public class TSImport{
         }
     }
 
-    private void putDataset(String name, ArrayList<String> time, ArrayList<String> value){
+    private void putDataset(String name, ArrayList<String> time, ArrayList<String> value)
+    throws SQLException, UnsupportedFormatException
+    {
     	System.out.println("Putting a dataset: " +name);
-    	int[] collectionInfo = db.createEmptyCollectionAndDataset(
-    			"TimeSeries",
-    			0,
-    			name,
-    			"",
-    			"-1,0");
-    	int collectionID = collectionInfo[0];
-    	int datasetID = collectionInfo[1];
+    	TSBulkInserter ins = new TSBulkInserter(db);
+    	ins.startDataset(name);
     	
-    	collection.Collection coll = db.getCollection(collectionID);
-    	
-    	int nextID = db.getNextID();
     	TreeMap<String, ArrayList<String>> noSparseTables = new TreeMap<String, ArrayList<String>>(); 
     	
-    	for(int i=0; i<time.size(); i++) {
-    		String dense = "";
-    		dense = EnchiladaDataSetImporter.intersperse(time.get(i), dense);
-    		dense = EnchiladaDataSetImporter.intersperse(value.get(i), dense);
-    	
-    		db.insertParticle(dense, noSparseTables,
-    				coll,
-    				datasetID, nextID++);
-        }
-    	db.updateAncestors(coll);
+    	try {
+    		for(int i=0; i<time.size(); i++) {
+    			ins.addPoint(dateformatter.parse(time.get(i)), 
+    					Float.parseFloat(value.get(i)));
+    		}
+    	} catch (ParseException e) {
+    		throw new UnsupportedFormatException(e.toString() + 
+    				"  Expecting " +dfString);
+    	}
+    	ins.commit();
     }
 
     public static void main(String[] args) {
@@ -170,7 +166,11 @@ public class TSImport{
     	ArrayList<String> values = new ArrayList<String>();
     	values.add("37");
     	
-    	t.putDataset("WOOT", times, values);
+    	try {
+    		t.putDataset("WOOT", times, values);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
     	
     }
  
