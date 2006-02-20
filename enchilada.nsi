@@ -149,7 +149,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	netstart_success:
 	
     ; XXX - password
-    ExecWait `"C:\Program Files\Microsoft SQL Server\80\Tools\Binn\osql.exe" -U sa -P "sa-account-password" -Q "EXEC sp_addlogin 'SpASMS','finally' EXEC sp_addsrvrolemember 'SpASMS','bulkadmin' EXEC sp_addsrvrolemember 'SpASMS','dbcreator'"` $0
+    ExecWait `"C:\Program Files\Microsoft SQL Server\80\Tools\Binn\osql.exe" -U sa -P "sa-account-password" -Q "EXEC sp_addlogin 'SpASMS','finally' EXEC sp_addsrvrolemember 'SpASMS','sysadmin'"` $0
 	DetailPrint "osql returned $0"
 
 	IntCmp $0 0 makeusers_success
