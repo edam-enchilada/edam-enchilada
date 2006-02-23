@@ -4391,14 +4391,17 @@ public class SQLServerDatabase implements InfoWarehouse
 			query += " ORDER BY AtomID";
 			ResultSet rs = stmt.executeQuery(query);
 			int order = 1;
+			Statement st2 = con.createStatement();
 			
 			while (rs.next()) {
 				//System.out.println("inserting...");
-				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
+				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
 						rs.getInt(1) + ","+cID+","+order+")");
 				order++;
+				if (order % 1000 == 0) st2.executeBatch();
 			}
-			stmt.executeBatch();
+			st2.executeBatch();
+			st2.close();
 			stmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
