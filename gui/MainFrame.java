@@ -76,7 +76,6 @@ public class MainFrame extends JFrame implements ActionListener
 	private JToolBar buttonPanel;
 	private JSplitPane mainSplitPane;
 	
-	private JButton batchImportParsButton;
 	private JButton importEnchiladaDataButton;
 	private JButton importAMSDataButton;
 	private JButton importParsButton;
@@ -89,6 +88,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
+	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
@@ -207,7 +207,7 @@ public class MainFrame extends JFrame implements ActionListener
 			validate();
 		}
 		
-		if (source == batchImportParsButton) {
+		if (source == batchLoadATOFMSItem) {
 			ATOFMSBatchImportGUI abig = new ATOFMSBatchImportGUI(this);
 			if (abig.init()) abig.go();
 			collectionPane.updateTree();
@@ -411,8 +411,11 @@ public class MainFrame extends JFrame implements ActionListener
 		loadEnchiladaDataItem.addActionListener(this);
 		loadAMSDataItem = new JMenuItem("from AMS data. . .");
 		loadAMSDataItem.addActionListener(this); 
+		batchLoadATOFMSItem = new JMenuItem("from ATOFMS data (with bulk file). . .");
+		batchLoadATOFMSItem.addActionListener(this);
 		importMenu.setMnemonic(KeyEvent.VK_I);
 		importMenu.add(loadATOFMSItem);
+		importMenu.add(batchLoadATOFMSItem);
 		importMenu.add(loadEnchiladaDataItem);
 		importMenu.add(loadAMSDataItem);
 		
@@ -541,10 +544,6 @@ public class MainFrame extends JFrame implements ActionListener
 		importEnchiladaDataButton.setBorder(new EtchedBorder());
 		importEnchiladaDataButton.addActionListener(this);
 		
-		batchImportParsButton = new JButton("Another damn button");
-		batchImportParsButton.setBorder(new EtchedBorder());
-		batchImportParsButton.addActionListener(this);
-		
 		importAMSDataButton = new JButton("Import AMS Data Sets");
 		importAMSDataButton.setBorder(new EtchedBorder());
 		importAMSDataButton.addActionListener(this);
@@ -567,7 +566,6 @@ public class MainFrame extends JFrame implements ActionListener
 		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(importAMSDataButton);
 		buttonPanel.add(exportParsButton);
-		buttonPanel.add(batchImportParsButton);
 		add(buttonPanel);
 	}
 	

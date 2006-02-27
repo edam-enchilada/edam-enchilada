@@ -75,7 +75,7 @@ public abstract class ProgressTask extends JDialog {
 						doRun();
 						
 						break;
-					} else if (Thread.interrupted()) {
+					} else if (Thread.currentThread().isInterrupted()) {
 						/*
 						 * interrupted() implies that either the window has been
 						 * closed (see overridden dispose()), or the thread
@@ -96,6 +96,7 @@ public abstract class ProgressTask extends JDialog {
 		
 		task = new Thread(r);
 		task.start();
+		System.out.println("The worker thread: " + task);
 		
 		// setVisible does not return until the dialog is disposed, if the 
 		// ProgressTask was constructed as a modal dialog.
@@ -136,6 +137,7 @@ public abstract class ProgressTask extends JDialog {
 	 */
 	public void dispose() {
 		task.interrupt();
+		System.out.println("dispose called");
 		super.dispose();
 	}	
 	

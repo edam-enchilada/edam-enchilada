@@ -91,6 +91,9 @@ public class TSBulkInserter {
 		membership.setLength(0);
 		
 		firstID = nextID = db.getNextID();
+		
+		System.out.println("in thread " + Thread.currentThread());
+    	if (Thread.currentThread().isInterrupted()) System.out.println("Yowwie!");
 	}
 	
 	public int commit() throws SQLException {

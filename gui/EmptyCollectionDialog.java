@@ -80,13 +80,20 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		commentField = new JTextField(25);
 		
 		JLabel datatypeLabel = new JLabel("Datatype: ");
-		ArrayList<String> datatypeNames = MainFrame.db.getKnownDatatypes();
-		String[] nameArray = new String[datatypeNames.size() + 1];
-		nameArray[0] = "Choose One:  ";
-		for (int i = 1; i <= datatypeNames.size(); i++)
-			nameArray[i] = datatypeNames.get(i-1);
-		datatypeBox = new JComboBox(nameArray);
-		datatypeBox.setSelectedIndex(0);
+		
+		if (datatypeEditable) {
+			ArrayList<String> datatypeNames = MainFrame.db.getKnownDatatypes();
+			String[] nameArray = new String[datatypeNames.size() + 1];
+			nameArray[0] = "Choose One:  ";
+			for (int i = 1; i <= datatypeNames.size(); i++)
+				nameArray[i] = datatypeNames.get(i-1);
+			datatypeBox = new JComboBox(nameArray);
+			datatypeBox.setSelectedIndex(0);
+		} else {
+			datatypeBox = new JComboBox(new String[] {datatype});
+			datatypeBox.setSelectedIndex(0);
+			datatypeBox.setEditable(false);
+		}
 		
 		JPanel buttonPanel = new JPanel();
 		okButton = new JButton("OK");

@@ -123,12 +123,7 @@ public class ATOFMSBatchTableModel extends AbstractTableModel implements ParTabl
 		
 	}
 
-	public boolean isAutocal() {
-		return autocal;
-	}
-
 	public void setAutocal(boolean autocal) {
 		this.autocal = autocal;
 	}
-
 }

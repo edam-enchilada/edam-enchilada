@@ -1,0 +1,15 @@
+IMPORTING ATOFMS DATA IN BATCH
+
+Using the ATOFMS batch loader is just like using the dialog box that you might
+otherwise use to import ATOFMS data.  The fields are exactly the same:
+
+"C:\path\to\dataset.par","c:\path\to\mass.cal","c:\path\to\size.noz",20,20,0.003
+
+the last three fields are the peaklisting parameters: respectively, minimum
+height, minimum area, and minimum relative area, for a peak to be recorded.
+
+It should be possible to generate a file like this from MS Excel pretty easily,
+or make it by hand or with a script.  Unfortunately, there are no comment lines
+allowed in these files.
+
+-Thomas Smith, Feb 26, 2006

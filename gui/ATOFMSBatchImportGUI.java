@@ -2,6 +2,7 @@ package gui;
 
 import java.awt.*;
 import javax.swing.*;
+
 import java.io.*;
 
 import dataImporters.ATOFMSBatchTableModel;
@@ -10,13 +11,20 @@ import dataImporters.ATOFMSDataSetImporter;
 public class ATOFMSBatchImportGUI {
 	private Window parent;
 	private ATOFMSBatchTableModel tab;
+	private int parentID;
 	
 	public ATOFMSBatchImportGUI(Window parent) {
 		super();
 		this.parent = parent;
 	}
 	
-	
+	/**
+	 * init() - ask the user various questions about importing, and prepare to import.
+	 * 
+	 * if (import.init()) import.go();
+	 * 
+	 * @return true if a dataset can now be imported, false otherwise.
+	 */
 	public boolean init() {
 		try {
 			FilePicker fpick = new FilePicker("Choose a dataset list to import",
@@ -40,6 +48,20 @@ public class ATOFMSBatchImportGUI {
 			else
 				tab.setAutocal(false);
 			
+			selection = JOptionPane.showConfirmDialog(parent,
+					"Import all datasets into one parent collection?",
+					"Import into parent?",
+					JOptionPane.YES_NO_OPTION);
+			if (selection == JOptionPane.YES_OPTION) {
+				EmptyCollectionDialog ecd = 
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+				parentID = ecd.getCollectionID();
+				if (parentID == -1) {
+					return false;
+				}
+			}
+			
+			
 			return true;
 		} catch (IOException ex) {
 			new ExceptionDialog(ex.toString());
@@ -47,22 +69,21 @@ public class ATOFMSBatchImportGUI {
 		return false;
 	}
 	
+	/**
+	 * Actually try to import the dataset.  Doesn't tell the caller whether
+	 * it worked or not, but it does tell the user.  This seems to be the usual
+	 * thing to do, don't know if it's right.  Whee!
+	 * 
+	 * Can take a while...
+	 */
 	public void go() {
 		try {
 			ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent);
+			dsi.setParentID(parentID);
 			dsi.checkNullRows();
 			dsi.collectTableInfo();
 		} catch (Exception e) {
 			new ExceptionDialog(e.toString());
 		}
 	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

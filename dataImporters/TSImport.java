@@ -75,6 +75,8 @@ public class TSImport{
     							.substring(0,25)+"...");
     					process(line.split("\\s*,\\s*"), tf, line_no, prefix);
     				}
+    			} catch (InterruptedException e) {
+    				System.out.println("WOJSDJFKJSD");
     			} catch (Exception e) {
     				failed = true;
     				System.err.println(e.toString());
@@ -129,6 +131,7 @@ public class TSImport{
         	System.out.println(i.getMessage());
         }
         for(int i=2; i<values.length; i++){
+        	if (Thread.currentThread().isInterrupted()) throw new InterruptedException("dialog closed, probably");
             putDataset(args[i],values[1],values[i]);
         }
     }
