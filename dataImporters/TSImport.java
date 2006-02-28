@@ -34,6 +34,8 @@ public class TSImport{
 	
 	private Frame parent;
 	
+	private ProgressTask convTask;
+	
 	public static final String dfString = "yyyy-MM-dd HH:mm:ss";
     public static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
 
@@ -56,9 +58,9 @@ public class TSImport{
     	final File task = new File(task_file);
     	final String prefix = task.getParent();
     	final BufferedReader in = new BufferedReader(new FileReader(task_file));
-    	ProgressTask convTask = new ProgressTask(parent, 
+    	convTask = new ProgressTask(parent, 
     			"Importing CSV Files", true) {
-    		public void run() {
+    		public void run() {  			
     			pSetInd(true);
     			this.pack();
     			int line_no = 0;
@@ -76,7 +78,7 @@ public class TSImport{
     					process(line.split("\\s*,\\s*"), tf, line_no, prefix);
     				}
     			} catch (InterruptedException e) {
-    				System.out.println("WOJSDJFKJSD");
+    				failed = true;
     			} catch (Exception e) {
     				failed = true;
     				System.err.println(e.toString());
@@ -99,6 +101,9 @@ public class TSImport{
     private void process(String[] args, String task_file, int line_no, String prefix)
     throws Exception{
         System.out.println("Processing "+args[0]+" ...");
+		
+		if (convTask.terminate) throw new InterruptedException("Inter");
+		
         if(args.length < 3)
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
         final BufferedReader in = new BufferedReader(
@@ -131,13 +136,13 @@ public class TSImport{
         	System.out.println(i.getMessage());
         }
         for(int i=2; i<values.length; i++){
-        	if (Thread.currentThread().isInterrupted()) throw new InterruptedException("dialog closed, probably");
+        	if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
             putDataset(args[i],values[1],values[i]);
         }
     }
 
     private void putDataset(String name, ArrayList<String> time, ArrayList<String> value)
-    throws SQLException, UnsupportedFormatException
+    throws SQLException, UnsupportedFormatException, InterruptedException
     {
     	System.out.println("Putting a dataset: " +name);
     	TSBulkInserter ins = new TSBulkInserter(db);
@@ -147,6 +152,8 @@ public class TSImport{
     	
     	try {
     		for(int i=0; i<time.size(); i++) {
+    			if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
+    			
     			ins.addPoint(dateformatter.parse(time.get(i)), 
     					Float.parseFloat(value.get(i)));
     		}

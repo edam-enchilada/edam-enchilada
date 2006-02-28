@@ -22,6 +22,7 @@ public abstract class ProgressTask extends JDialog {
 	private JProgressBar progressBar;
 	private JLabel statusText;
 	private Thread task;
+	public volatile boolean terminate = false;
 	
 	/**
 	 * These are just the same parameters that a Dialog takes in its
@@ -75,7 +76,7 @@ public abstract class ProgressTask extends JDialog {
 						doRun();
 						
 						break;
-					} else if (Thread.currentThread().isInterrupted()) {
+					} else if (terminate) {
 						/*
 						 * interrupted() implies that either the window has been
 						 * closed (see overridden dispose()), or the thread
@@ -106,6 +107,8 @@ public abstract class ProgressTask extends JDialog {
 	private void doRun() {
 		// this is dumb, but i don't know how to refer to the ProgressTask's
 		// run() from within the Runnable's run().
+
+		
 		this.run();
 	}
 	
@@ -127,17 +130,13 @@ public abstract class ProgressTask extends JDialog {
 	/**
 	 * dispose() - close the dialog box and stop the task that is running.
 	 * 
-	 * This overridden dispose() method calls interrupt() on the thread that
-	 * contains the running task.  See Thread.interrupt().  If the thread is
-	 * waiting for something, like I/O, it will get an exception thrown, which
-	 * should stop it.  If not, i.e. it is doing computations, it will only get
-	 * its interrupted() status set.  Therefore, it would be a good idea to
-	 * check whether this is the case periodically during heavy computations in
-	 * your threaded job, using the static method Thread.interrupted().
+	 * This overridden dispose() sets the .terminate flag on the ProgressTask
+	 * object.  If you want your task to stop going when its window gets closed,
+	 * you should probably check the state of this flag pretty often.
 	 */
 	public void dispose() {
+		this.terminate = true;
 		task.interrupt();
-		System.out.println("dispose called");
 		super.dispose();
 	}	
 	

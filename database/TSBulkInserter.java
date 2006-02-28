@@ -75,9 +75,8 @@ public class TSBulkInserter {
 	}
 	
 	private void interimCommit() throws SQLException {
-		System.out.println("Committing some particles.");
 		if (db.getNextID() != firstID) {
-			throw new RuntimeException("Database has changed under a batch insert.. you can't do that!");
+			throw new SQLException("Database has changed under a batch insert.. you can't do that!");
 		}
 		
 		Statement st = con.createStatement();
@@ -91,9 +90,6 @@ public class TSBulkInserter {
 		membership.setLength(0);
 		
 		firstID = nextID = db.getNextID();
-		
-		System.out.println("in thread " + Thread.currentThread());
-    	if (Thread.currentThread().isInterrupted()) System.out.println("Yowwie!");
 	}
 	
 	public int commit() throws SQLException {
