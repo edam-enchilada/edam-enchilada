@@ -133,6 +133,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				pSetVal(0);
 				for (String eachFile : fNames) {
 					setStatus("Importing "+eachFile);
+					if (terminate) { return; }
 					read(eachFile);
 					pInc();
 				}
@@ -147,6 +148,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 		{
 			public void run() {
 				pSetInd(true);
+				if (terminate) {return;}
 				setStatus("Importing...");
 				read(in);
 			}
