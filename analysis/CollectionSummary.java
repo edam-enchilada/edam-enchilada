@@ -6,8 +6,8 @@ import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.SQLServerDatabase;
 
-/*
- * By Thomas Smith.
+/**
+ * @author Thomas Smith.
  * 
  * This class is incomplete, it's designed simply to wire up MedianFinder to
  * arbitrary collections and display pretty results in a graph eventually.

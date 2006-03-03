@@ -488,17 +488,24 @@ public abstract class Cluster extends CollectionDivider {
 		}
 		out.println();
 		for (int centroidIndex = 0; 
-		centroidIndex < centroidList.size();
-		centroidIndex++)
+			centroidIndex < centroidList.size();
+			centroidIndex++)
 		{
 			out.println("Centroid " + 
 					centroidList.get(centroidIndex).subCollectionNum +
 			":");
 			out.println("Number of particles in cluster: " + 
 					centroidList.get(centroidIndex).numMembers);
-			writeBinnedPeakListToFile(
-					centroidList.get(centroidIndex).peaks,out);
 			
+			StringWriter centroidPeaks = new StringWriter();
+			PrintWriter pr = new PrintWriter(centroidPeaks);
+			writeBinnedPeakListToFile(
+					centroidList.get(centroidIndex).peaks,pr);
+			out.print(centroidPeaks.toString());
+			
+			db.setCollectionDescription(db.getCollection(
+					subCollectionIDs.get(centroidList.get(centroidIndex).subCollectionNum-1)),
+				centroidPeaks.toString());
 		}
 		//out.close();
 		System.out.println(sendToDB.toString());
