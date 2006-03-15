@@ -48,6 +48,7 @@
 package gui;
 
 import dataImporters.EnchiladaDataSetImporter;
+import errorframework.*;
 import database.DynamicTableGenerator;
 import database.SQLServerDatabase;
 
@@ -59,10 +60,14 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -245,10 +250,18 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		public void actionPerformed(ActionEvent e)
 		{
 			Object source = e.getSource();
+			int cID = -1;
 			if (source == okButton) {
-				EnchiladaDataSetImporter importer = new EnchiladaDataSetImporter(db);
-				ArrayList<String> files = importer.collectTableInfo(eTableModel);
-				int cID = importer.importFiles(files);
+				EnchiladaDataSetImporter importer;
+				try {
+					importer = new EnchiladaDataSetImporter(db);
+					ArrayList<String> files = importer.collectTableInfo(eTableModel);
+					cID = importer.importFiles(files);
+				} catch (WriteException e1) {
+					ErrorLogger.writeExceptionToLog("EnchiladaImporting",e1.getMessage());
+				} catch (DisplayException e1) {
+					ErrorLogger.displayException(this,e1.getMessage());
+				}
 				db.updateAncestors(db.getCollection(cID));
 				dispose();
 			}
@@ -296,13 +309,11 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 						//if the scanner couldn't find anything, the file's not
 						//in the right format
 					} catch (NoSuchElementException e1){
-						ExceptionDialog edialog = new ExceptionDialog(this,
-								"Please check .md file " + fileName + 
+						ErrorLogger.writeExceptionToLog("EnchiladaImporting","Please check .md file " + fileName + 
 								" for correct format.");
 						
 					} catch (FileNotFoundException e1) {
-						ExceptionDialog edialog = new ExceptionDialog(this,
-								"Problems creating new datatype from " + fileName);
+						ErrorLogger.writeExceptionToLog("EnchiladaImporting","Problems creating new datatype from " + fileName);
 						//System.err.println("Problems creating new datatype.");
 						//e1.printStackTrace();
 					}					

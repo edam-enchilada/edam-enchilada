@@ -1,14 +1,9 @@
 package dataImporters;
 
 import java.awt.Container;
-import java.awt.FlowLayout;
 import java.awt.Window;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,28 +11,20 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Scanner;
-import java.util.StringTokenizer;
-import java.util.zip.DataFormatException;
+
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-
-
-import ATOFMS.ATOFMSParticle;
-import ATOFMS.CalInfo;
-import ATOFMS.PeakParams;
-import ATOFMS.ReadSpec;
 import collection.Collection;
 import database.SQLServerDatabase;
+import errorframework.*;
 import externalswing.SwingWorker;
 import gui.AMSTableModel;
 import gui.ImportAMSDataDialog;
-import gui.ImportParsDialog;
 import gui.MainFrame;
-import gui.ParTableModel;
 import gui.ProgressBarWrapper;
 
 public class AMSDataSetImporter {
@@ -97,8 +84,9 @@ public class AMSDataSetImporter {
 	/**
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
+	 * @throws WriteException 
 	 */
-	public void collectTableInfo() {
+	public void collectTableInfo() throws DisplayException, WriteException {
 		
 		rowCount = table.getRowCount()-1;
 		totalInBatch = rowCount;
@@ -116,14 +104,14 @@ public class AMSDataSetImporter {
 				
 				positionInBatch = i + 1;
 				// Call relevant methods
-				processDataSet(i);
+					processDataSet(i);
+
 				// update the internal atom order table;
 				db.updateAncestors(db.getCollection(id[0]));
-			} catch (Exception e) {
-				e.printStackTrace();
-				String[] s = {datasetName + " failed to import.", "Exception: ", 
-						e.toString()};
-				ams.displayException(s);
+			} catch (DisplayException e) {
+				throw new DisplayException(datasetName + " failed to import. Exception: "+e.toString());
+			} catch (WriteException e) {
+				throw new WriteException(datasetName + "failed to import.  Exception: " + e.toString());
 			}
 		}
 	}
@@ -134,13 +122,17 @@ public class AMSDataSetImporter {
 	 * 
 	 * // NOTE: Datatype is already in the db.
 	 */
-	public void processDataSet(int index)
-	throws IOException, DataFormatException {
+	public void processDataSet(int index) throws DisplayException, WriteException {
 		boolean skipFile = false;
 		
 		//put time series file and mz file into an array, since they will
 		//be accessed in the same way for every atom.
-		Scanner readTimeSeries = new Scanner(new File(timeSeriesFile));
+		Scanner readTimeSeries;
+		try {
+			readTimeSeries = new Scanner(new File(timeSeriesFile));
+		} catch (FileNotFoundException e1) {
+			throw new WriteException(timeSeriesFile+" was not found.");
+		}
 		readTimeSeries.next(); // skip name
 		timeSeries = new ArrayList<Date>();
 		BigInteger maxInt = new BigInteger(""+Integer.MAX_VALUE);
@@ -176,7 +168,12 @@ public class AMSDataSetImporter {
 			timeSeries.add(convertedCalendar.getTime());
 		}
 		readTimeSeries.close();
-		Scanner readMZ = new Scanner(new File(massToChargeFile));
+		Scanner readMZ;
+		try {
+			readMZ = new Scanner(new File(massToChargeFile));
+		} catch (FileNotFoundException e1) {
+			throw new WriteException(massToChargeFile+" was not found.");
+		}
 		readMZ.next(); // skip name
 		massToCharge = new ArrayList<Double>();
 		while (readMZ.hasNext()) {
@@ -185,12 +182,21 @@ public class AMSDataSetImporter {
 		readMZ.close();
 		
 		// create empty collection.
-		id = db.createEmptyCollectionAndDataset("AMS",0,getName(),"AMS import",
-				"'"+datasetName+"','"+timeSeriesFile+"','"+massToChargeFile+"'");
+		try {
+			id = db.createEmptyCollectionAndDataset("AMS",0,getName(),"AMS import",
+					"'"+datasetName+"','"+timeSeriesFile+"','"+massToChargeFile+"'");
+		} catch (FileNotFoundException e1) {
+			throw new WriteException("Attempt to get name for collection not" +
+					" found because the file was not found.");
+		}
 	
 		
 		// get total number of particles for progress bar.
-		readData = new Scanner(new File(datasetName));
+		try {
+			readData = new Scanner(new File(datasetName));
+		} catch (FileNotFoundException e1) {
+			throw new WriteException(datasetName+"was not found.");
+		}
 		readData.next();//skip name
 		int tParticles = 0;
 		while (readData.hasNext()) {
@@ -236,15 +242,14 @@ public class AMSDataSetImporter {
 						SwingUtilities.invokeAndWait(new Runnable() {
 							public void run()
 							{
-								String[] s = 
-								{"Corrupt datatset file or particle: ", exception};
-								ams.displayException(s);
+								// don't throw an exception here because we want to keep going:
+								ErrorLogger.writeExceptionToLog("Importing","Corrupt datatset file or particle: "+ exception);
 							}
 						});
 					} catch (Exception e2) {
 						e2.printStackTrace();
-						String[] s = {"ParticleException: ", e2.toString()};
-						ams.displayException(s);
+						// don't throw exception here because we want to keep going:
+						ErrorLogger.writeExceptionToLog("Importing","ParticleException: "+e2.toString());
 					}
 				}
 				return null;
@@ -259,7 +264,7 @@ public class AMSDataSetImporter {
 	 * This method loops through the table and checks to make sure that there is a
 	 * are non-null values for all datasets.
 	 */
-	public boolean errorCheck() {
+	public void errorCheck() throws DisplayException{
 		String name, timeFile, mzFile;
 		File d,m,t;
 		for (int i=0;i<table.getRowCount()-1;i++) {
@@ -272,10 +277,8 @@ public class AMSDataSetImporter {
 					|| timeFile.equals("")
 					|| mzFile.equals("mass to charge file") 
 					|| mzFile.equals("")) {
-				String[] s = {"You must enter a data file, a time series file," +
-						" and a mass to charge file at row # " + (i+1) + "."};
-				ams.displayException(s);
-				return true;
+				throw new DisplayException("You must enter a data file, a time series file," +
+						" and a mass to charge file at row # " + (i+1) + ".");
 			}
 			
 			// check to make sure all files are valid:
@@ -283,11 +286,9 @@ public class AMSDataSetImporter {
 			t = new File(timeFile);
 			m = new File(mzFile);
 			if (!d.exists() || !t.exists() || !m.exists()) {
-				String[] s = {"One of the files does not exist at row # " + (i+1) +"."};
-				ams.displayException(s);
+				throw new DisplayException("One of the files does not exist at row # " + (i+1) +".");
 			}
 		}
-		return false;
 	}
 	
 	/**

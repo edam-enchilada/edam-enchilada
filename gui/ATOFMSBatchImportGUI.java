@@ -7,6 +7,7 @@ import java.io.*;
 
 import dataImporters.ATOFMSBatchTableModel;
 import dataImporters.ATOFMSDataSetImporter;
+import errorframework.ErrorLogger;
 
 public class ATOFMSBatchImportGUI {
 	private Window parent;
@@ -64,7 +65,7 @@ public class ATOFMSBatchImportGUI {
 			
 			return true;
 		} catch (IOException ex) {
-			new ExceptionDialog(ex.toString());
+			ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",ex.toString());
 		}
 		return false;
 	}
@@ -83,7 +84,7 @@ public class ATOFMSBatchImportGUI {
 			dsi.checkNullRows();
 			dsi.collectTableInfo();
 		} catch (Exception e) {
-			new ExceptionDialog(e.toString());
+			ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
 		}
 	}
 }

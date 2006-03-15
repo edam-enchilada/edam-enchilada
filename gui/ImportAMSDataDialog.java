@@ -8,6 +8,11 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Date;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -25,6 +30,7 @@ import javax.swing.table.TableColumn;
 
 import dataImporters.AMSDataSetImporter;
 import dataImporters.ATOFMSDataSetImporter;
+import errorframework.*;
 
 public class ImportAMSDataDialog extends JDialog implements ActionListener{
 
@@ -36,7 +42,6 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	private JProgressBar progressBar;
 	private int dataSetCount;
 	private static Window parent = null;
-	private boolean exceptions = false;
 	private boolean importedTogether = false;
 	private int parentID = 0; //default parent collection is root
 	
@@ -136,12 +141,15 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 					new AMSDataSetImporter(
 							amsTableModel, parent, this);
 				// If a .par file or a .cal file is missing, don't start the process.
-				if (!ams.errorCheck()) {
-					ams.collectTableInfo();
-					if (!exceptions)
+					try {
+							ams.errorCheck();
+							ams.collectTableInfo();
+						} catch (DisplayException e1) {
+							ErrorLogger.displayException(this,e1.toString());
+						} catch (WriteException e2) {
+							ErrorLogger.writeExceptionToLog("Importing",e2.toString());
+						}
 						dispose();
-				}
-			exceptions = false;
 		}
 		else if (source == parentButton){
 			//pop up a "create new collections" dialog box & keep number of new
@@ -180,10 +188,4 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	public int getParentID(){
 		return parentID;
 	}
-	
-	public void displayException(String[] message) {
-		exceptions = true;
-		new ExceptionDialog(this,message);
-	}
-
 }

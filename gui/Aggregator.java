@@ -117,7 +117,7 @@ public class Aggregator {
 					db.createAggregateTimeSeries(progressBar2, rootCollectionID, collections[i], mzValues[i]);
 					end = new Date().getTime();
 					System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
-					db.deleteTempAggregateBasis();				
+					db.deleteTempAggregateBasis();
 					}
 				progressBar2.disposeThis();
 				

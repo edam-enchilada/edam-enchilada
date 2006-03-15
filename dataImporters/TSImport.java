@@ -13,6 +13,9 @@ import collection.Collection;
 import database.SQLServerDatabase;
 import database.TSBulkInserter;
 
+import errorframework.DisplayException;
+import errorframework.ErrorLogger;
+import errorframework.WriteException;
 import externalswing.ProgressTask;
 
 /**
@@ -45,11 +48,11 @@ public class TSImport{
     	this.db = db;
 	}
 	
-    public boolean read(String task_file) throws Exception {
+    public boolean read(String task_file) throws DisplayException, WriteException {
     	final String tf = task_file;
     	if (! tf.endsWith("task")) {
     		// They haven't given us a task file!
-    		throw new UnsupportedFormatException("Currently, to import any CSV" +
+    		throw new DisplayException("Currently, to import any CSV" +
     				" file, a .task file must be used." +
     				"  See 'importation files\\demo.task' in the installation " +
     				"directory.");
@@ -57,7 +60,12 @@ public class TSImport{
     	
     	final File task = new File(task_file);
     	final String prefix = task.getParent();
-    	final BufferedReader in = new BufferedReader(new FileReader(task_file));
+    	final BufferedReader in;
+		try {
+			in = new BufferedReader(new FileReader(task_file));
+		} catch (FileNotFoundException e1) {
+			throw new WriteException(task_file+" is not found.  Please check the file name");
+		}
     	convTask = new ProgressTask(parent, 
     			"Importing CSV Files", true) {
     		public void run() {  			
@@ -84,7 +92,7 @@ public class TSImport{
     				System.err.println(e.toString());
     				System.err.println("Exception while converting data!");
     				e.printStackTrace();
-    				new gui.ExceptionDialog(e);
+    				ErrorLogger.writeExceptionToLog("TSImport","Exception while converting data: " +e.toString());
     			}
     		}
     	};

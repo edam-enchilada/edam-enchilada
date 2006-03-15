@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;
+import errorframework.WriteException;
 import junit.framework.TestCase;
 
 public class EnchiladaDataSetImporterTest extends TestCase{
@@ -16,12 +17,16 @@ public class EnchiladaDataSetImporterTest extends TestCase{
 	private SQLServerDatabase db;
 	private ArrayList<File> tempFiles;
 
-	protected void setUp(){
+	protected void setUp() throws WriteException{
 		CreateTestDatabase ctd = new CreateTestDatabase();
 		tempFiles = ctd.createEnchFiles();
 		db = ctd.tempDB;
 		db.openConnection();
-		edsi = new EnchiladaDataSetImporter(db);
+		try {
+			edsi = new EnchiladaDataSetImporter(db);
+		} catch (WriteException e) {
+			throw new WriteException("Error initializing EnchiladaDataSetImporter");
+		}
 	}
 	
 	protected void tearDown(){
@@ -46,7 +51,7 @@ public class EnchiladaDataSetImporterTest extends TestCase{
 	 * it initiates the parsing of the files.  (Most of the current methods are 
 	 * called by the SAX parser.)
 	 */
-	public void testRead(){
+	public void testRead() throws WriteException{
 
 
 		Connection con = db.getCon();

@@ -75,6 +75,8 @@ import gui.*;
 import java.io.*;
 import java.util.Scanner;
 
+import errorframework.ErrorLogger;
+
 /* 
  * Maybe a good way to refactor this file is to separate out methods that
  * are used by importers from those used by clustering code, and so on.
@@ -148,10 +150,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					foundDatabase = true;
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[] {"Error in testing if ", dbName,
-			" is present."});
-			System.err.println("Error in testing if " + dbName + " is present.");
-			e.printStackTrace();
+			ErrorLogger.displayException(null,"Error in testing if "+dbName+" is present.");
 		}
 		return foundDatabase;
 	}
@@ -166,7 +165,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Class.forName("net.sourceforge.jtds.jdbc.Driver").newInstance();
 		} catch (Exception e) {
-			new ExceptionDialog("Failed to load current driver.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Failed to load current driver for database.");
 			System.err.println("Failed to load current driver.");
 			return false;
 		} // end catch
@@ -174,7 +173,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			con = DriverManager.getConnection("jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
 		} catch (Exception e) {
-			new ExceptionDialog("Failed to establish a connection to SQL Server.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Failed to establish a connection to SQL Server.");
 			System.err.println("Failed to establish a connection to SQL Server");
 			System.err.println(e);
 		}
@@ -192,7 +191,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			try {
 				con.close();
 			} catch (Exception e) {
-				new ExceptionDialog("Could not close the connection to SQL Server.");
+				ErrorLogger.writeExceptionToLog("SQLServer","Could not close the connection to SQL Server.");
 				System.err.println("Could not close the connection: ");
 				System.err.println(e);
 				return false;
@@ -249,7 +248,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception creating empty collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception creating empty collection.");
 			System.err.println("Exception creating empty collection:");
 			e.printStackTrace();
 			return -1;
@@ -300,7 +299,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception creating the new dataset.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception creating the new dataset.");
 			System.err.println("Exception creating the dataset entries:");
 			e.printStackTrace();
 		}
@@ -403,7 +402,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			updateAncestors(newCollection.getParentCollection());
 			return newID;
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception copying collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception copying collection "+collection.getName());
 			System.err.println("Exception copying collection: ");
 			e.printStackTrace();
 			return -1;
@@ -444,7 +443,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			updateAncestors(toCollection.getParentCollection());
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL Exception moving the collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception moving the collection "+collection.getName());
 			System.err.println("Error moving collection: ");
 			System.err.println(e);
 			return false;
@@ -489,7 +488,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception adding particles, please check the incoming data for correct format.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception adding particles, please check the incoming data for correct format.");
 			System.err.println("Exception adding particle memberships:");
 			System.err.println(e);
 			return false;
@@ -533,7 +532,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL Exception creating items in AtomInfoDense table.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception creating items in AtomInfoDense table.  Please check incoming data for correct format.");
 			System.err.println("Error creating items in AtomInfo table:");
 			System.err.println(e);
 			return null;
@@ -570,7 +569,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.executeBatch();
 				stmt.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception inserting into AtomInfoSparse.  Please check the data for correct format.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting into AtomInfoSparse.  Please check the data for correct format.");
 				System.err.println("Exception inserting the " +
 				"peaklists");
 				System.err.println(e);
@@ -646,7 +645,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 			
@@ -772,7 +771,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		stmt.close();
 			
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("value of insert:" + insert);
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
@@ -822,7 +821,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"INSERT INTO AtomMembership \n" +
 					"VALUES(" + parentID + ", " + atomID + ")");
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception adding atom to AtomMembership.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception adding atom "+atomID+"to AtomMembership.");
 			System.err.println("Exception adding atom to " +
 			"AtomMembership table");
 			e.printStackTrace();
@@ -848,7 +847,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"INSERT INTO AtomMembership \n" +
 					"VALUES(" + parentID + ", " + atomID + ")");
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception adding atom to AtomMembership.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception adding atom "+atomID+" to AtomMembership.");
 			System.err.println("Exception adding atom to " +
 			"AtomMembership table");
 			e.printStackTrace();
@@ -878,7 +877,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				return false;
 			else if (parentID < 2)
 			{
-				new ExceptionDialog("Cannot perform this operation on root level collections.");
+				ErrorLogger.writeExceptionToLog("SQLServer","Cannot perform the Orphan And Adopt operation on root level collections.");
 				System.err.println("Cannot perform this operation " +
 				"on root level collections.");
 				return false;
@@ -913,7 +912,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			recursiveDelete(collection);
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("Error executing Orphan and Adopt.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Error executing Orphan and Adopt.");
 			System.err.println("Error executing orphan and Adopt");
 			e.printStackTrace();
 			return false;
@@ -951,7 +950,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			updateAncestors(parent);
 			stmt.close();
 		} catch (Exception e){
-			new ExceptionDialog("Exception deleting collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
 			e.printStackTrace();
 			return false;
@@ -1066,7 +1065,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception grabbing subchildren.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception grabbing subchildren in GetImmediateSubCollections.");
 			System.err.println("Exception grabbing subchildren:");
 			System.err.println(e);
 		}
@@ -1084,8 +1083,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"WHERE CollectionID = " + collection.getCollectionID() + "\n" +
 					"AND AtomID IN (" + atomIDs + ")");
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[] {"SQL Exception deleting atoms.", 
-					atomIDs});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception deleting atoms "+atomIDs);
 			System.err.println("Exception parents from " +
 			"parent membership table.");
 			e.printStackTrace();
@@ -1106,8 +1104,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"WHERE CollectionID = " + collection.getCollectionID() + "\n" +
 					"AND AtomID = " + atomID);
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[]{"SQL Exception deleting atom ",
-					Integer.toString(atomID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception deleting atom "+atomID);
 			System.err.println("Exception adding a batch statement to " +
 			"delete atoms from AtomMembership.");
 			e.printStackTrace();
@@ -1126,7 +1123,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	{
 		if (toParentID == 0)
 		{
-			new ExceptionDialog("Cannot move atoms to the root collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Cannot move atoms to the root collection.");
 			System.err.println("Cannot move atoms to the root " +
 			"collection.");
 			return false;
@@ -1148,7 +1145,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			updateAncestors(getCollection(toParentID));
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception updating AtomMembership table.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception updating AtomMembership table.");
 			System.err.println("Exception updating membership table");
 			e.printStackTrace();
 		}
@@ -1232,7 +1229,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			batchStatement = con.createStatement();
 			alteredCollections = new ArrayList<Integer>();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception occurred.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception occurred initializing AtomBatch functionality.");
 			e.printStackTrace();
 		}
 	}
@@ -1249,7 +1246,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				updateAncestors(getCollection(alteredCollections.get(i)).getParentCollection());
 			batchStatement.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception executing batch atom adds and inserts.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception executing batch atom adds and inserts.");
 			System.out.println("Exception executing batch atom adds " +
 			"and inserts");
 			e.printStackTrace();
@@ -1282,7 +1279,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception grabbing subchildren.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception grabbing subchildren in GetImmediateSubCollections.");
 			System.err.println("Exception grabbing subchildren:");
 			System.err.println(e);
 		}
@@ -1313,16 +1310,14 @@ public class SQLServerDatabase implements InfoWarehouse
 				datatype = rs.getString(1);
 			}
 			else {
-				new ExceptionDialog(new String[]{"Error retrieving collection for collectionID ",
-						Integer.toString(collectionID)});
+				ErrorLogger.writeExceptionToLog("SQLServer","Error retrieving collection for collectionID "+collectionID);
 				System.err.println("collectionID not created yet!!");
 				return null;
 			}
 			stmt.close();
 			
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[]{"SQL Exception retrieving collection for collectionID ",
-					Integer.toString(collectionID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving collection for collectionID "+collectionID);
 			System.err.println("error creating collection");
 			e.printStackTrace();
 			return null;
@@ -1345,8 +1340,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			name = rs.getString("Name");
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[]{"Error retrieving the collection name for collectionID ",
-					Integer.toString(collectionID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","Error retrieving the collection name for collectionID "+collectionID);
 			System.err.println("Exception grabbing the collection name:");
 			System.err.println(e);
 		}
@@ -1368,8 +1362,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			comment = rs.getString("Comment");
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[]{"Error retrieving the collection comment for collectionID ",
-					Integer.toString(collectionID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","Error retrieving the collection comment for collectionID "+collectionID);
 			System.err.println("Exception grabbing the collection comment:");
 			System.err.println(e);
 		}
@@ -1392,8 +1385,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			descrip = rs.getString("Description");
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[]{"Error retrieving the collection description for collectionID ",
-					Integer.toString(collectionID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","Error retrieving the collection description for collectionID "+collectionID);
 			System.err.println("Error retrieving Collection " +
 			"Description.");
 			e.printStackTrace();
@@ -1415,8 +1407,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			returnThis = rs.getInt(1);
 			stmt.close();
 		} catch (SQLException e1) {
-			new ExceptionDialog(new String[]{"Error retrieving the collection size for collectionID ",
-					Integer.toString(collectionID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","Error retrieving the collection size for collectionID "+collectionID);
 			System.err.println("Error selecting the size of " +
 			"the table");
 			e1.printStackTrace();
@@ -1439,7 +1430,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				rs.close();
 				stmt.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving collections with atoms.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving collections with atoms.");
 				System.err.println("Error retrieving collections with atoms.");
 				e.printStackTrace();
 			}
@@ -1473,7 +1464,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			while(rs.next())
 				results.add(new Integer(rs.getInt(1)));
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving children of the collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving children of the collection.");
 			System.err.println("Error retrieving children.");
 			e.printStackTrace();
 		}
@@ -1500,7 +1491,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs.close();
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving parentID of the collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving parentID of the collection.");
 			System.err.println("Error retrieving parentID of the collection.");
 			e.printStackTrace();
 		}
@@ -1567,7 +1558,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			// only order when needed in each method. - AR
 			//stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving children of the collection.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving children of the collection.");
 			e.printStackTrace();
 		}
 		return returnThis;
@@ -1638,7 +1629,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception collecting particle information.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception collecting particle information.");
 			System.err.println("Error collecting particle " +
 			"information:");
 			e.printStackTrace();
@@ -1683,8 +1674,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			datatype = rs.getString(1);
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog(new String[] {"SQL Exception getting the datatype for atom ",
-					Integer.toString(atomID)});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception getting the datatype for atom "+atomID);
 			System.err.println("error getting atom's datatype");
 			e.printStackTrace();
 		}
@@ -1709,7 +1699,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					"WHERE CollectionID = " + collection.getCollectionID());
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception updating collection description.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception updating collection description.");
 			System.err.println("Error updating collection " +
 			"description:");
 			e.printStackTrace();
@@ -1739,7 +1729,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			return nextID;
 			
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception finding the maximum atomID.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception finding the maximum atomID.");
 			System.err.println("Exception finding max atom id.");
 			e.printStackTrace();
 		}
@@ -1768,7 +1758,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
 		} catch (ClassNotFoundException e) {
-			new ExceptionDialog("Error loading ODBC bridge driver.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Error loading ODBC bridge driver.");
 			System.err.println("Error loading ODBC " +
 			"bridge driver");
 			e.printStackTrace();
@@ -2000,7 +1990,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			odbcCon.close();
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception exporting to MSAccess database.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception exporting to MSAccess database.");
 			System.err.println("SQL error exporting to " +
 			"Access database:");
 			e.printStackTrace();
@@ -2030,7 +2020,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception checking atom's parentage.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception checking atom's parentage.");
 			System.err.println("Error checking parentage:");
 			e.printStackTrace();
 		}
@@ -2096,7 +2086,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.executeUpdate("create database " + dbName);
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("Error rebuilding SQL Server database.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
 			System.err.println("Error in rebuilding SQL Server database.");
 			e.printStackTrace();
 			return false;
@@ -2135,68 +2125,9 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 		} catch (IOException e) {
 			System.err.println("IOException occurred when rebuilding the database.");
-			/*// HACK; CHANGE THIS EVENTUALLY!
-			 db = new SQLServerDatabase();
-			 db.database = dbName;
-			 db.openConnection();
-			 con = db.getCon();
-			 String q = 
-			 "CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))"+
-			 " INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')"+
-			 " INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')"+
-			 " CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))"+
-			 " CREATE INDEX atom_membership_collection ON AtomMembership (CollectionID)"+
-			 " CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))"+
-			 " CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)"+
-			 " CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[DataSetID]', 'INT', 1, 0, 1)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[DataSet]', 'VARCHAR(8000)', 0, 0, 2)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[MassCalFile]','VARCHAR(8000)',0, 0, 3)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[SizeCalFile]','VARCHAR(8000)',0, 0, 4)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[MinHeight]','INT',0,0,5)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[MinArea]','INT',0,0,6)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[MinRelArea]','REAL',0,0,7)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[Autocal]','BIT',0,0,8)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]', 'INT',1, 1,1)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[Time]','DATETIME',0,1,2)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[LaserPower]','REAL',0,1,3)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[Size]','REAL',0,1,4)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[ScatDelay]','INT',0,1,5)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[OrigFilename]','VARCHAR(8000)',0,1,6)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[AtomID]','INT',1, 2, 1)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[PeakLocation]','REAL',1,2,2)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[PeakArea]','INT',0,2,3)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[RelPeakArea]','REAL',0,2,4)"+
-			 " INSERT INTO MetaData VALUES ('ATOFMS','[PeakHeight]','INT',0,2,5)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[DataSetID]','INT',1,0,1)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[OrigCollectionID]','INT',0,0,2)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[IsSynchronized]','BIT',0,0,3)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[AtomID]','INT',1,1,1)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[Time]','DATETIME',0,1,2)"+
-			 " INSERT INTO MetaData VALUES ('TimeSeries','[Value]','REAL',0,1,3)"+
-			 " CREATE TABLE ATOFMSDataSetInfo ([DataSetID] INT, [DataSet] VARCHAR(8000), [MassCalFile] VARCHAR(8000), [SizeCalFile] VARCHAR(8000), [MinHeight] INT, [MinArea] INT, [MinRelArea] REAL, [Autocal] BIT,  PRIMARY KEY ([DataSetID]))"+
-			 " CREATE TABLE ATOFMSAtomInfoDense ([AtomID] INT, [Time] DATETIME, [LaserPower] REAL, [Size] REAL, [ScatDelay] INT, [OrigFilename] VARCHAR(8000),  PRIMARY KEY ([AtomID]))"+
-			 " CREATE TABLE ATOFMSAtomInfoSparse ([AtomID] INT, [PeakLocation] REAL, [PeakArea] INT, [RelPeakArea] REAL, [PeakHeight] INT, PRIMARY KEY ([AtomID], [PeakLocation]))"+
-			 " CREATE TABLE TimeSeriesDataSetInfo([DataSetID] INT, [DataSet] VARCHAR(8000), [OrigCollectionID] INT NULL, [IsSynchronized] bit, PRIMARY KEY ([DataSetID]))"+
-			 " CREATE TABLE TimeSeriesAtomInfoDense([AtomID] INT, [Time] DATETIME, [Value] REAL, PRIMARY KEY ([AtomID]))"+
-			 " CREATE TABLE ValueMaps(ValueMapID INT PRIMARY KEY IDENTITY, Name VARCHAR(100))"+
-			 " CREATE TABLE ValueMapRanges(ValueMapID INT, Value INT, Low INT, High INT, FOREIGN KEY (ValueMapID) REFERENCES ValueMaps(ValueMapID))"+
-			 " CREATE TABLE IonSignature(IonID INT PRIMARY KEY IDENTITY, IsPositive BIT, Name VARCHAR(7000))"+
-			 " CREATE TABLE AtomIonSignaturesRemoved(AtomID INT, IonID INT, PRIMARY KEY (AtomID, IonID), FOREIGN KEY (IonID) REFERENCES IonSignature(IonID))"+
-			 " CREATE TABLE InternalAtomOrder(AtomID INT, CollectionID INT, OrderNumber INT, PRIMARY KEY (AtomID, CollectionID))"+
-			 " CREATE INDEX Order_Index ON InternalAtomOrder(CollectionID, OrderNumber)";
-			 try {
-			 Statement stmt = con.createStatement();
-			 stmt.executeUpdate(q);
-			 stmt.close();
-			 } catch (SQLException e1) {
-			 // TODO Auto-generated catch block
-			  new ExceptionDialog("NOPE, THis Didn't Work");
-			  e1.printStackTrace();
-			  }*/
 			return true;
 		} catch (SQLException e) {
-			new ExceptionDialog("Error rebuilding SQL Server database.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
 			System.err.println("Error in adding tables to database.");
 			e.printStackTrace();
 			return false;
@@ -2243,7 +2174,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("Error dropping SQL Server database.");
+			ErrorLogger.writeExceptionToLog("SQLServer","Error dropping SQL Server database.");
 			System.err.println("Error in dropping SQL Server database.");
 			e.printStackTrace();
 			return false;
@@ -2292,7 +2223,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			} 
 			
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving peaks.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving peaks.");
 			System.err.println("Error using the result set");
 			e.printStackTrace();
 		}
@@ -2320,7 +2251,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			try {
 				return rs.next();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error checking the " +
 						"bounds of " +
 				"the ResultSet.");
@@ -2336,7 +2267,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				particleInfo.setID(rs.getInt(1));
 				particleInfo.setBinnedList(getPeakListfromAtomID(rs.getInt(1)));
 			}catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -2349,7 +2280,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			try {
 				rs.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a clustering cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2359,7 +2290,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				rs.close();
 				rs = getAllAtomsRS(collection);
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error resetting a " +
 						"resultset " +
 				"for that collection:");
@@ -2406,7 +2337,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt2.close();
 				listRS.close();
 			}catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -2526,7 +2457,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("SQL Error resetting " +
 				"cursor: ");
 				e.printStackTrace();
@@ -2537,7 +2468,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			try {
 				return partInfRS.next();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error checking the " +
 						"bounds of " +
 				"the ResultSet.");
@@ -2563,7 +2494,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				particleInfo.setID(particleInfo.getParticleInfo().getAtomID());
 				return particleInfo; 
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -2576,7 +2507,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.close();
 				partInfRS.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2602,7 +2533,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				rs.close();
 				return peakList;
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error retrieving peak " +
 				"list.");
 				e.printStackTrace();
@@ -2636,7 +2567,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a SQL cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2646,7 +2577,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.close();
 				super.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a SQL cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2661,7 +2592,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a SQL cursor.");
 				System.err.println("SQL Error resetting cursor: ");
 				e.printStackTrace();
 			}
@@ -2686,7 +2617,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt = con.createStatement();
 				
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2714,7 +2645,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				pInfo.setPeakList(pList);
 				peakRS.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 			
@@ -2726,7 +2657,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				peakRS.close();
 				super.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2820,7 +2751,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				partInfRS = stmt.executeQuery(cursorQuery);
 				//System.out.println("got result set");
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception randomizing data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Randomized cursor.");
 				System.err.println("Could not randomize atoms.");
 				e.printStackTrace();
 			}
@@ -2831,7 +2762,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				"DROP Table #TempRand");
 				super.close();
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Randomized cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -2846,7 +2777,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				" ORDER BY RandNum";
 				partInfRS = stmt.executeQuery(cursorQuery);
 			} catch (SQLException e) {
-				new ExceptionDialog("SQL Exception retrieving data.");
+				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Randomized cursor.");
 				System.err.println("SQL Error resetting cursor: ");
 				e.printStackTrace();
 			}
@@ -2985,7 +2916,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.executeQuery("SELECT RAND(" + seed + ")\n");
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception seeding the random number generator.");
 			System.err.println("Error in seeding random number generator.");		
 			e.printStackTrace();
 		}
@@ -3004,7 +2935,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			System.out.println(num);
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception testing the random number seeding.");
 			System.err.println("Error in generating single number.");
 			e.printStackTrace();
 		}
@@ -3035,7 +2966,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception retrieving column names.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving column names.");
 			System.err.println("Error retrieving column names");
 			e.printStackTrace();
 		}
@@ -3092,7 +3023,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception inserting new value map range.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting new value map range.");
 			System.err.println("Error inserting new value map range");
 			e.printStackTrace();
 		}
@@ -3112,7 +3043,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.close();
 		}
 		catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving value vaps");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving value maps");
 			System.err.println("Error getting value maps from database.");
 			e.printStackTrace();
 		}
@@ -3136,7 +3067,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.close();
 		}
 		catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving value map ranges");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving value map ranges");
 			System.err.println("Error getting value map ranges from database.");
 			e.printStackTrace();
 		}
@@ -3184,7 +3115,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.execute(query);
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception creating new mapped collection");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception creating new mapped collection");
 			System.err.println("Error creating new mapped collection.");
 			e.printStackTrace();
 		}
@@ -3237,7 +3168,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving max time for collections.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving max time for collections.");
 			System.err.println("SQL exception retrieving max time for collections");
 			e.printStackTrace();
 		}
@@ -3534,7 +3465,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt1.close();
 			stmt.close();	
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception creating aggregate basis temp table");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception creating aggregate basis temp table");
 			System.err.println("SQL exception creating aggregate basis temp table");
 			e.printStackTrace();
 		}
@@ -3549,7 +3480,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.execute("DROP TABLE #TimeBins;\n");
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception deleting aggregate basis temp table");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception deleting aggregate basis temp table");
 			System.err.println("SQL exception deleting aggregate basis temp table");
 			e.printStackTrace();
 		}
@@ -3573,12 +3504,12 @@ public class SQLServerDatabase implements InfoWarehouse
 		/* IF DATATYPE IS ATOFMS */
 		if (curColl.getDatatype().equals("ATOFMS")) {	
 			if (mzValues == null) {
-				new ExceptionDialog("Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+				ErrorLogger.writeExceptionToLog("SQLServer","Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return;
 			} else if (mzValues.length == 0) {
-				new ExceptionDialog("Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+				ErrorLogger.writeExceptionToLog("SQLServer","Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} 
@@ -3692,12 +3623,12 @@ public class SQLServerDatabase implements InfoWarehouse
 		/* IF DATATYPE IS AMS */
 		else if (curColl.getDatatype().equals("AMS")) {	
 			if (mzValues == null) {
-				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return;
 			} else if (mzValues.length == 0) {
-				new ExceptionDialog("Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
@@ -3766,7 +3697,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		//stmt.execute(sql.toString());
 		stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception aggregating collection: " + collectionName);
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception aggregating collection: " + collectionName);
 			System.err.println("SQL exception aggregating collection: " + collectionName);
 			e.printStackTrace();
 		}
@@ -3858,7 +3789,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			return ret;
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL exception creating finding M/Z values within collection");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception creating finding M/Z values within collection");
 			System.err.println("Error creating finding M/Z values within collection.");
 			e.printStackTrace();
 		}
@@ -3927,7 +3858,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.close();
 			rs.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		}
@@ -3980,7 +3911,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving Ion data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving Ion data.");
 			System.err.println("Error retrieving Ion data.");
 			e.printStackTrace();
 		}
@@ -4008,7 +3939,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.execute(sqlStr);
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL exception saving removed Ion data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception saving removed Ion data.");
 			System.err.println("Error saving removed Ion data.");
 			e.printStackTrace();
 		}	
@@ -4026,7 +3957,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving removed Ion data.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving removed Ion data.");
 			System.err.println("Error retrieving removed Ion data.");
 			e.printStackTrace();
 		}
@@ -4059,7 +3990,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.close();
 		}
 		catch (SQLException e){
-			new ExceptionDialog("SQL exception retrieving known datatypes.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving known datatypes.");
 			System.err.println("Error getting the known datatypes.");
 			e.printStackTrace();
 		}
@@ -4085,8 +4016,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				return false;
 		}
 		catch (SQLException e){
-			new ExceptionDialog(new String[]{"SQL Exception checking for the existence of datatype ",
-					type});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception checking for the existence of datatype "+type);
 			System.err.println("problems checking datatype from SQLServer.");
 			return false;
 		}
@@ -4107,7 +4037,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.close();
 		}
 		catch (SQLException e){
-			new ExceptionDialog(new String[]{"SQL Exception getting first atom in collection"});
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception getting first atom in collection");
 			System.err.println("problems checking datatype from SQLServer.");
 		}
 		return atom;
@@ -4340,7 +4270,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e) {
-			new ExceptionDialog("SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 		}

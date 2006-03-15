@@ -30,6 +30,7 @@ import javax.swing.JRadioButton;
 import javax.swing.SpringLayout;
 
 import database.DynamicTable;
+import errorframework.*;
 
 public class DataFormatViewer extends JDialog implements ActionListener, ItemListener{
 	private JPanel cards;
@@ -90,7 +91,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 			try {
 				indexedColumns = MainFrame.db.getIndexedColumns(dataTypes[i]);
 			} catch (Exception e) {
-				new ExceptionDialog("Error finding which columns are indexed!");
+				ErrorLogger.writeExceptionToLog("DataFormatViewer","Error finding which columns are indexed!");
 			}
 			
 			ArrayList<ArrayList<String>> namesAndTypes = 
@@ -173,7 +174,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 						this.setEnabled(false);
 						return;
 					} else {
-						new ExceptionDialog("Somehow, we could not create an index!");
+						ErrorLogger.writeExceptionToLog("DataFormatViewer","Somehow, we could not create an index!");
 					}
 				}
 			}

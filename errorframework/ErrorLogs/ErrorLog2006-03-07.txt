@@ -1,0 +1,36 @@
+ErrorLog: started @ 2006-03-07
+20:38:23:484 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154325-00010.amz
+20:38:24:031 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154848-00020.amz
+20:43:19:750 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\a\a-031203080345-00007.amz
+20:46:13:468 : File C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\par error for a\a.par failed to import: Corrupt data in C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\par error for a\a.par file.
+20:54:42:250 : File C:\Documents and Settings\ritza\My Documents\Presentation data\b\b.par failed to import: /n/tnull
+21:04:49:593 : Corrupt calibration file : 
+	Message: For input string: "2138,7.000"
+21:04:49:609 : File C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\a\a.par failed to import: 
+	Message :null
+21:06:59:546 : Corrupt calibration file : 
+	Message: For input string: "2138,7.000"
+21:06:59:562 : File C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\a\a.par failed to import: 
+	Message :null
+21:08:43:234 : Corrupt calibration file : 
+	Message: For input string: "2138,7.000"
+21:08:43:250 : File C:\Documents and Settings\ritza\My Documents\Presentation data\a\a.par failed to import: 
+	Message :null
+21:11:24:531 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154325-00010.amz:
+	Message: null
+21:11:25:093 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154848-00020.amz:
+	Message: null
+21:11:27:156 : Corrupt calibration file : 
+	Message: For input string: "2138,7.000"
+21:11:27:718 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154325-00010.amz:
+	Message: null
+21:11:28:250 : Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154848-00020.amz:
+	Message: null
+21:14:13:718 : Corrupt calibration file : 
+	Message: For input string: "a Set 1=E:\03-26-02\sc_a\sc_a"
+21:14:13:734 : File C:\Documents and Settings\ritza\My Documents\Presentation data\a\a.par failed to import: 
+	Message : java.lang.NullPointerException,null
+21:14:42:343 : Corrupt calibration file : 
+	Message: For input string: "a Set 1=E:\03-26-02\sc_a\sc_a"
+21:14:42:359 : File C:\Documents and Settings\ritza\My Documents\Presentation data\a\a.par failed to import: 
+	Message : java.lang.NullPointerException,null

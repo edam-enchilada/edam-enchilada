@@ -45,6 +45,8 @@
 package dataImporters;
 
 import database.SQLServerDatabase;
+import errorframework.DisplayException;
+import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 import gui.*;
 
@@ -138,13 +140,12 @@ public class ATOFMSDataSetImporter {
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
 	 */
-	public void collectTableInfo() throws Exception {
+	public void collectTableInfo() {
 		
 		rowCount = table.getRowCount()-1;
 		totalInBatch = rowCount;
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
-			try {
 				// Table values for this row.
 				name = (String)table.getValueAt(i,1);
 				massCalFile = (String)table.getValueAt(i,2);
@@ -155,16 +156,18 @@ public class ATOFMSDataSetImporter {
 				autoCal = ((Boolean)table.getValueAt(i,7)).booleanValue();
 				positionInBatch = i + 1;
 				// Call relevant methods
-				processDataSet(i);
-				readParFileAndCreateEmptyCollection();
-				readSpectraAndCreateParticle();
-				// update the internal atom order table;
-				db.updateAncestors(db.getCollection(id[0]));
-			} catch (Exception e) {
-				e.printStackTrace();
-				throw new Exception(name + " failed to import.  Exception: " 
-					+ e.toString());
-			}
+				try {
+					processDataSet(i);
+					readParFileAndCreateEmptyCollection();
+					readSpectraAndCreateParticle();
+					// update the internal atom order table;
+					db.updateAncestors(db.getCollection(id[0]));
+				} catch (Exception e) {
+					//e.printStackTrace();
+					ErrorLogger.writeExceptionToLog("Importing","File "+name+
+							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage());
+				} 
+
 		}
 	}
 	
@@ -186,7 +189,8 @@ public class ATOFMSDataSetImporter {
 			else 
 				calInfo = new CalInfo(massCalFile,sizeCalFile, autoCal);
 		} catch (Exception e) {
-			new DataFormatException("Corrupt Calibration File: " + e.toString());
+			ErrorLogger.writeExceptionToLog("Importing","Corrupt calibration file : " +
+					"\n\tMessage: "+e.getMessage());
 			skipFile = true;
 		}
 		if (!skipFile) { // If we don't have to skip this row due to an error...
@@ -208,7 +212,7 @@ public class ATOFMSDataSetImporter {
 	 * .par file and a .cal file for every row, as well as non-zeros for the params.
 	 * @return returns if there are no null rows, throws exception if there are.
 	 */
-	public void checkNullRows() throws Exception {
+	public void checkNullRows() throws DisplayException {
 		String name, massCalFile;
 		int height, area;
 		float relArea;
@@ -219,14 +223,14 @@ public class ATOFMSDataSetImporter {
 			if (name.equals(".par file") || name.equals("") 
 					|| massCalFile.equals(".cal file") 
 					|| massCalFile.equals("")) {
-				throw new Exception("You must enter a '.par' file and a " +
+				throw new DisplayException("You must enter a '.par' file and a " +
 						"'.cal' file at row # " + (i+1) + ".");
 			}
 			height= ((Integer)table.getValueAt(i,4)).intValue();
 			area = ((Integer)table.getValueAt(i,5)).intValue();
 			relArea = ((Float)table.getValueAt(i,6)).floatValue();
 			if (height == 0 || area == 0 || relArea == 0.0) {
-				throw new Exception("The Peaklisting Parameters need to be greater " +
+				throw new DisplayException("The Peaklisting Parameters need to be greater " +
 						"than 0 at row # " + (i+1) + ".");
 			}
 		}
@@ -338,13 +342,8 @@ public class ATOFMSDataSetImporter {
 								token.nextToken();
 								particleName = token.nextToken().replace('\\', File.separatorChar);
 								particleFileName = grandParent.toString() + File.separator + particleName;
-								
 								try {
-									read = new ReadSpec(particleFileName);
-								} catch (ZipException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+								read = new ReadSpec(particleFileName);
 								
 								currentParticle = read.getParticle();
 								db.insertParticle(
@@ -352,6 +351,11 @@ public class ATOFMSDataSetImporter {
 										currentParticle.particleInfoDenseString(),
 										currentParticle.particleInfoSparseString(),
 										destination,id[1],nextID);
+								}
+								catch (Exception e) {
+									ErrorLogger.writeExceptionToLog("Importing","Error reading particle " + 
+											particleFileName+":\n\tMessage: "+e.getMessage());
+								}
 								nextID++;
 								particleNum++;
 								//doDisplay++;
@@ -362,8 +366,9 @@ public class ATOFMSDataSetImporter {
 							db.updateAncestors(curCollection);
 							readSet.close();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							ErrorLogger.writeExceptionToLog("Importing","Error reading dataset for collection "+
+									destination.getName()+"\n\tMessage: "+e.toString()+","+e.getMessage());
+							
 						}
 						final String exceptionFile = particleName;
 						progressBar.disposeThis();
@@ -372,7 +377,7 @@ public class ATOFMSDataSetImporter {
 				};
 				worker.start();
 				progressBar.constructThis();				
-			} else System.out.println("Dataset has no hits.");
+			} else System.out.println("Dataset has no hits because "+name+" does not exist.");
 		}
 	}
 	

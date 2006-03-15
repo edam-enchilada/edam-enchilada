@@ -63,6 +63,7 @@ import java.util.Scanner;
 import java.util.Vector;
 
 import database.*;
+import errorframework.ErrorLogger;
 
 /**
  * @author ritza
@@ -356,7 +357,6 @@ public class MainFrame extends JFrame implements ActionListener
 				bw.setVisible(true);
 			}
 		}
-		
 		else if (source == dataFormatItem) {
 			new DataFormatViewer(this);
 		}
@@ -364,6 +364,8 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == chooseParticleSet) {
 			setTable();
 		}
+		
+		ErrorLogger.flushLog(this);
 	}
 	
 	private Collection getSelectedCollection() {

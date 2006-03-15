@@ -47,10 +47,17 @@ import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.event.*;
 import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Date;
+
 import javax.swing.*;
 import javax.swing.table.TableColumn;
 
 import dataImporters.ATOFMSDataSetImporter;
+import errorframework.*;
 
 
 /**
@@ -178,18 +185,25 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				if (importedTogether)
 					dsi.setParentID(parentID);
 				// If a .par file or a .cal file is missing, don't start the process.
-				try {
-					dsi.checkNullRows();
+				//try {
+					try {
+						dsi.checkNullRows();
+					} catch (DisplayException e1) {
+//						 Exceptions here mostly have to do with mis-entered data.
+						// Those that don't should probably be handled differently,
+						// but I'm just reworking this so that it uses exceptions
+						// in a way that's less silly, so I'm not worrying about that
+						// for now.  -Thomas
+						ErrorLogger.displayException(this,e1.toString());
+						return;
+					}
 					dsi.collectTableInfo();
 					dispose();
-				} catch (Exception exc) {
-					// Exceptions here mostly have to do with mis-entered data.
-					// Those that don't should probably be handled differently,
-					// but I'm just reworking this so that it uses exceptions
-					// in a way that's less silly, so I'm not worrying about that
-					// for now.  -Thomas
-					displayException(new String[] { exc.toString() });
-				}
+				/*} catch (Exception exc) {
+					
+					System.out.println("**"+exc.toString());
+
+				}*/
 		}
 		else if (source == parentButton){
 			//pop up a "create new collections" dialog box & keep number of new
@@ -233,7 +247,5 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		
 	}
 	
-	public void displayException(String[] message) {
-		new ExceptionDialog(this,message);
-	}
+
 }

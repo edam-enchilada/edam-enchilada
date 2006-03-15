@@ -9,6 +9,7 @@ import javax.swing.*;
 import dataImporters.*;
 import database.SQLServerDatabase;
 
+import errorframework.*;
 import externalswing.*;
 
 
@@ -45,7 +46,7 @@ public class FlatImportGUI {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Exception importing (generally)");
-			new ExceptionDialog(e);
+			ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
 		}
 	}
 

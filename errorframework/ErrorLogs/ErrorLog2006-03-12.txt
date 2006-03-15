@@ -1,0 +1,10 @@
+ErrorLog: started @ 2006-03-12
+19:18:30:625 : Importing Error: Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154325-00010.amz:
+	Message: null
+19:18:31:765 : Importing Error: Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154848-00020.amz:
+	Message: null
+19:20:47:640 : Importing Error: Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154325-00010.amz:
+	Message: null
+19:20:48:203 : Importing Error: Error reading particle C:\Documents and Settings\ritza\Desktop\Data\ErroneousData\b\b-040804154848-00020.amz:
+	Message: null
+20:20:32:671 : SQLServer Error: Note: Collection: c doesn't have any peak data to aggregate!
