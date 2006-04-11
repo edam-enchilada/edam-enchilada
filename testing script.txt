@@ -1,0 +1,52 @@
+Testing Script
+
+Installer tests:
+There's no need to uninstall between every test, I think.
+
+***** Run these with the MSDE installer but not installing MSDE, and
+with the non-MSDE installer:
+
+**Try installing with no SQL Server on the computer.
+__An error message should pop up saying it couldn't find an SQL Server on 
+the computer.  Installation should abort.
+
+**Try installing with SQL Server installed but the SpASMS login not present.
+__Should make the login, SpASMS/finally, with sysadmin.  Installation should
+	continue as normal, and Enchilada should be able to
+		__1. make the database
+		__2. aggregate particles (i.e. use the tempdb database)
+
+**Try installing with SQL Server installed and the SpASMS login present.
+__should work.
+		__1. make the database
+		__2. aggregate particles
+
+***** Uninstall test:
+
+**Try uninstalling.
+__should not leave behind anything in the program directory.
+	also:
+		__desktop icon and start menu group should be gone
+
+
+***** With the MSDE installer:
+
+**Try installing with MSDE.
+__should work, and Enchilada should be able to:
+		__1. make the database
+		__2. aggregate particles.
+	The installer:
+		__Should not leave behind a directory like c:\msde-install-temp
+
+**Try installing with MSDE with a copy of SQL Server already on the system.
+__should say something informative, and abort.
+		__Should not leave behind a directory like c:\msde-install-temp
+
+
+Uninstall test:
+
+**Try uninstalling.
+__should not leave behind anything in the program directory.
+	also:
+		__desktop icon and start menu group should be gone
+
