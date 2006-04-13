@@ -9,11 +9,11 @@
 ;;; available from http://nsis.sourceforge.net/
 
 ; To build a copy of the installer with MSDE, uncomment this line:
-;!define WITH_MSDE
+!define WITH_MSDE
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line:
-!define RELEASE
+;!define RELEASE
 
 
 ;--------------------------------
@@ -136,6 +136,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	DetailPrint "setup.exe returned $0"
 	IntCmp $0 0 setup_success
     	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
+        SetOutPath C:\
         RMDir /r "C:\MSDE-install-temp"
         Abort 'MSSQL failed to install.'
     setup_success:
