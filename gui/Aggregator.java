@@ -93,6 +93,7 @@ public class Aggregator {
 				return null;
 			}
 		};
+		// XXX: this demonstrates a race condition.. oops!
 		worker2.start();
 		progressBar1.constructThis();
 		
