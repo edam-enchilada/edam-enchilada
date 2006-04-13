@@ -135,9 +135,9 @@ public class KMeansTest extends TestCase {
     	assertTrue(cluster1.containsData());
     	assertTrue(cluster1.getComment().equals("1"));
     	assertTrue(cluster1.getDatatype().equals("ATOFMS"));
-    	assertTrue(cluster1.getDescription().equals("Name: 1 Comment: 1"));
+    	assertTrue(cluster1.getDescription().startsWith("Key:\tValue:"));
     	assertTrue(cluster1.getName().equals("1"));
-    	assertTrue(cluster1.getParentCollection() == null);
+    	assertTrue(cluster1.getParentCollection().getCollectionID() == 7);
     	ArrayList<Integer> particles = cluster1.getParticleIDs();
        	assertTrue(particles.get(0) == 2);
     	assertTrue(particles.get(1) == 3);
@@ -147,9 +147,9 @@ public class KMeansTest extends TestCase {
     	assertTrue(cluster2.containsData());
     	assertTrue(cluster2.getComment().equals("2"));
     	assertTrue(cluster2.getDatatype().equals("ATOFMS"));
-    	assertTrue(cluster2.getDescription().equals("Name: 2 Comment: 2"));
+    	assertTrue(cluster2.getDescription().startsWith("Key:\tValue:"));
     	assertTrue(cluster2.getName().equals("2"));
-    	assertTrue(cluster2.getParentCollection() == null);
+    	assertTrue(cluster2.getParentCollection().getCollectionID() == 7);
     	particles = cluster2.getParticleIDs();
     	assertTrue(particles.get(0) == 4);
     	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
