@@ -234,7 +234,6 @@ public abstract class ClusterK extends Cluster {
 				return returnThis;
 			}
 		};
-		worker.start();
 		
 		errorUpdate = new JDialog((JFrame)container,"Clustering",true);
 		errorLabel = new JLabel("Clusters stabilize when change in error = 0");
@@ -242,6 +241,8 @@ public abstract class ClusterK extends Cluster {
 		errorUpdate.add(errorLabel);
 		errorUpdate.pack();
 		errorUpdate.validate();
+		// XXX: still a race condition!  Not a really bad one, though.  
+		worker.start();
 		errorUpdate.setVisible(true);
 		
 		return returnThis;
