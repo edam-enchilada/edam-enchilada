@@ -184,7 +184,8 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertTrue(rs.next());
 		assertTrue(rs.getInt(1) == 1);
 		assertTrue(rs.getTimestamp(2).toString().equals("2003-09-02 17:30:38.0"));
-		assertTrue(rs.getInt(3) == 0);
+		System.out.println(rs.getFloat(3));
+		assertEquals(0, rs.getInt(3));
 		assertTrue(rs.getFloat(4) == 0.1f);
 		assertTrue(rs.getInt(5) == 0);
 		assertTrue(rs.getString(6).equals("One"));
