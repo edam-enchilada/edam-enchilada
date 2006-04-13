@@ -66,17 +66,17 @@ public class AggregatorTest extends TestCase {
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
 		assertTrue(rs.next());
-		assertTrue(rs.getInt(1)==35);
+		assertEquals(rs.getInt(1),35);
 		
 		// check ATOFMS m/z collection:
 		rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership" +
 				" WHERE CollectionID = 13 ORDER BY AtomID;\n");
 		assertTrue(rs.next());
-		assertTrue(rs.getInt(1)==35);
+		assertEquals(rs.getInt(1),35);
 		assertTrue(rs.next());
-		assertTrue(rs.getInt(1)==36);
+		assertEquals(rs.getInt(1),36);
 		assertTrue(rs.next());
-		assertTrue(rs.getInt(1)==37);
+		assertEquals(rs.getInt(1),37);
 		
 		rs = stmt.executeQuery("SELECT Time, Value FROM " +
 				"TimeSeriesAtomInfoDense WHERE AtomID = 35;");
