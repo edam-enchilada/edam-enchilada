@@ -1,5 +1,7 @@
 package testing;
 
+import gui.FilePicker;
+
 import java.io.File;
 import java.util.*;
 
@@ -21,8 +23,15 @@ public class LotsOfDataTest extends TestCase {
 		db.openConnection();
 		
 		collectionID = db.createEmptyCollection("ATOFMS", 0,"the big one","sooo much data","");
-		
-		tab = new ATOFMSBatchTableModel(new File("E:\\STL\\muchdata.csv"));
+	
+		FilePicker fpick = new FilePicker("Choose a dataset list to import",
+				"csv", null);
+		if (fpick.getFileName() == null) {
+			// they chose to cancel.
+			fail();
+		}
+
+		tab = new ATOFMSBatchTableModel(new File(fpick.getFileName()));
 		tab.setAutocal(true);
 		
 		ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, null);
@@ -45,7 +54,7 @@ public class LotsOfDataTest extends TestCase {
 		
 		KMedians kmed = new KMedians(collectionID, db, 10, "", "comment",
 				false, cInfo);
-		kmed.setCursorType(Cluster.DISK_BASED);
+		kmed.setCursorType(Cluster.STORE_ON_FIRST_PASS);
 		
 		System.out.print("*********Started clustering data at ");
 		System.out.println(new Date());
