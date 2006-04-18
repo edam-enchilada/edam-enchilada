@@ -4310,7 +4310,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 			String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
-			"WHERE CollectionID = "+cID;
+				"WHERE CollectionID = "+cID;
 			ArrayList<Integer> children = collection.getSubCollectionIDs();
 			if (children.size() != 0) {
 				query += " UNION SELECT AtomID FROM InternalAtomOrder WHERE CollectionID = " + children.get(0);
@@ -4336,6 +4336,8 @@ public class SQLServerDatabase implements InfoWarehouse
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+		// maybe make this conditional?  how?  temp table and replace it?
 		updateAncestors(collection.getParentCollection());
 	}
 	

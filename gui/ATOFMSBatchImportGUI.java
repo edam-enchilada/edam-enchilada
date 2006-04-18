@@ -60,6 +60,8 @@ public class ATOFMSBatchImportGUI {
 				if (parentID == -1) {
 					return false;
 				}
+			} else {
+				parentID = 0;
 			}
 			
 			
