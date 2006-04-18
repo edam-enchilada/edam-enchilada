@@ -17,5 +17,14 @@ public class ClusterInformation {
 		weightColumn = w;
 		automatic = a;
 		normalize = n;
+		
+	}
+	
+	public void printSelf() {
+		System.out.println("value columns: " + valueColumns);
+		System.out.println("key col " + keyColumn);
+		System.out.println("weightcol " + weightColumn);
+		System.out.println("auto " + automatic);
+		System.out.println("normalize " + normalize);
 	}
 }
