@@ -35,6 +35,7 @@ __should not leave behind anything in the program directory.
 __should work, and Enchilada should be able to:
 		__1. make the database
 		__2. aggregate particles.
+		__3. import atofms using a config file (i.e. opencsv made it into the jar)
 	The installer:
 		__Should not leave behind a directory like c:\msde-install-temp
 

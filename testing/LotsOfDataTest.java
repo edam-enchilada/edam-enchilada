@@ -18,43 +18,45 @@ public class LotsOfDataTest extends TestCase {
 	int collectionID;
 	
 	protected void setUp() throws Exception {
-		SQLServerDatabase.rebuildDatabase("TestDB");
-		db = new SQLServerDatabase("TestDB");
+//		SQLServerDatabase.rebuildDatabase("SpASMSdb");
+		db = new SQLServerDatabase();
 		db.openConnection();
-		
-		collectionID = db.createEmptyCollection("ATOFMS", 0,"the big one","sooo much data","");
-	
-		FilePicker fpick = new FilePicker("Choose a dataset list to import",
-				"csv", null);
-		if (fpick.getFileName() == null) {
-			// they chose to cancel.
-			fail();
-		}
-
-		tab = new ATOFMSBatchTableModel(new File(fpick.getFileName()));
-		tab.setAutocal(true);
-		
-		ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, null);
-		dsi.setParentID(collectionID);
-
-		System.out.print("Started importing data at ");
-		System.out.println(new Date());
-		dsi.checkNullRows();
-		dsi.collectTableInfo(); // imports the data
-		System.out.print("Finished importing data at ");
-		System.out.println(new Date());
+//		
+//		collectionID = db.createEmptyCollection("ATOFMS", 0,"the big one","sooo much data","");
+//	
+//		FilePicker fpick = new FilePicker("Choose a dataset list to import",
+//				"csv", null);
+//		if (fpick.getFileName() == null) {
+//			// they chose to cancel.
+//			fail();
+//		}
+//
+//		tab = new ATOFMSBatchTableModel(new File(fpick.getFileName()));
+//		tab.setAutocal(true);
+//		
+//		ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, null);
+//		dsi.setParentID(collectionID);
+//
+//		System.out.print("Started importing data at ");
+//		System.out.println(new Date());
+//		dsi.checkNullRows();
+//		dsi.collectTableInfo(); // imports the data
+//		System.out.print("Finished importing data at ");
+//		System.out.println(new Date());
 	}
 	
 	public void testClustering() {
 		ArrayList<String> valuecol = new ArrayList<String>();
-		valuecol.add("[ATOFMSAtomInfoSparse.PeakArea]");
+		valuecol.add("ATOFMSAtomInfoSparse.PeakArea");
+	
+		collectionID = 2;
 		
 		ClusterInformation cInfo = new ClusterInformation(valuecol,
 				"[PeakLocation]", null, false, true);
 		
 		KMedians kmed = new KMedians(collectionID, db, 10, "", "comment",
 				false, cInfo);
-		kmed.setCursorType(Cluster.STORE_ON_FIRST_PASS);
+		kmed.setCursorType(Cluster.DISK_BASED);
 		
 		System.out.print("*********Started clustering data at ");
 		System.out.println(new Date());
