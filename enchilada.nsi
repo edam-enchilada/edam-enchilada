@@ -138,6 +138,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
     	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
         SetOutPath C:\
         RMDir /r "C:\MSDE-install-temp"
+	RMDir "C:\MSDE-install-temp"
         Abort 'MSSQL failed to install.'
     setup_success:
 	
@@ -249,6 +250,7 @@ Section "un.Uninstall"
   Delete $INSTDIR\labeling\spc_negative.txt
   Delete $INSTDIR\labeling\spc_positive.txt
   Delete $INSTDIR\labeling\spectrum.exe
+  Delete $INSTDIR\labeling\spectrum.exe.stackdump
   Delete $INSTDIR\labeling\temp_nion-sigs.txt"
   Delete $INSTDIR\labeling\temp_pion-sigs.txt"
   
