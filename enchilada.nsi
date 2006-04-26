@@ -13,7 +13,7 @@
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line:
-;!define RELEASE
+!define RELEASE
 
 
 ;--------------------------------
@@ -89,6 +89,9 @@ Section "EDAM Enchilada (required)"
   File "SQLServerRebuildDatabase.txt"
   File "icon.ico"
   
+  CreateDirectory $INSTDIR\errorframework
+  CreateDirectory $INSTDIR\errorframework\ErrorLogs
+  
   SetOutPath "$INSTDIR\importation files"
   File "importation files\atofmsBatchDemo.csv"
   File "importation files\atofmsBatchInfo.txt"
@@ -136,7 +139,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	DetailPrint "setup.exe returned $0"
 	IntCmp $0 0 setup_success
     	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
-        SetOutPath C:\
+        SetOutPath "$INSTDIR"
         RMDir /r "C:\MSDE-install-temp"
 	RMDir "C:\MSDE-install-temp"
         Abort 'MSSQL failed to install.'
@@ -253,6 +256,9 @@ Section "un.Uninstall"
   Delete $INSTDIR\labeling\spectrum.exe.stackdump
   Delete $INSTDIR\labeling\temp_nion-sigs.txt"
   Delete $INSTDIR\labeling\temp_pion-sigs.txt"
+  
+  RMDir /r $INSTDIR\errorframework
+  RMDir $INSTDIR\errorframework
   
   Delete "$INSTDIR\importation files\*.*"
   RMDir "$INSTDIR\importation files"
