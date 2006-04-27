@@ -107,7 +107,10 @@ public class BIRCH extends CompressData{
 			
 			// If we have run out of memory (i.e. node space), rebuild tree.
 			mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-			if (mem.getUsed() >= mem.getCommitted()*0.90) {
+			
+			//TODO:  Changed this for testing purposes.
+			//if (mem.getUsed() >= mem.getCommitted()*0.90) {
+			if (mem.getUsed() >= mem.getCommitted()*0.70) {
 				end = new Date().getTime();
 				System.out.println("interval: " + (end-start));
 				start = new Date().getTime();

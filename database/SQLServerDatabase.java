@@ -4009,11 +4009,14 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT Datatype FROM MetaData"
 					+" WHERE Datatype = '" + type +"'");
-			stmt.close();
 			if (rs.next()){
-				return true;}
-			else
+				stmt.close();
+				return true;
+			}
+			else {
+				stmt.close();
 				return false;
+			}
 		}
 		catch (SQLException e){
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception checking for the existence of datatype "+type);
