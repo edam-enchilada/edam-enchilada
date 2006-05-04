@@ -157,7 +157,7 @@ public class ATOFMSDataSetImporter {
 				positionInBatch = i + 1;
 				// Call relevant methods
 				try {
-					processDataSet(i);
+					processDataSet();
 					readParFileAndCreateEmptyCollection();
 					readSpectraAndCreateParticle();
 					// update the internal atom order table;
@@ -172,12 +172,12 @@ public class ATOFMSDataSetImporter {
 	}
 	
 	/**
-	 * Sets the currCalInfo and currPeakParam 
-	 * fields of ATOFMSParticle,
+	 * Does some preprocessing before importing a datset.
+	 * Sets the currCalInfo and currPeakParam fields of ATOFMSParticle,
 	 * creates an empty collection and fills that collection with the dataset's 
 	 * particles.
 	 */
-	public void processDataSet(int index)
+	public void processDataSet()
 	throws IOException, DataFormatException {
 		boolean skipFile = false;
 		

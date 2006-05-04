@@ -165,7 +165,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		db.openConnection();
 		boolean success = true;
 		try {
-			importer.processDataSet(1);			
+			importer.processDataSet();			
 		} catch (Exception e) {success = false; }
 		assertTrue(success);
 		
