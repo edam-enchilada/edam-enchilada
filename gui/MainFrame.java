@@ -352,7 +352,6 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == mapValuesButton) 
 		{
 			Collection selectedCollection = synchronizedPane.getSelectedCollection();
-			System.out.println(selectedCollection.getName());
 			if (selectedCollection != null) { 
 				MapValuesWindow bw = new MapValuesWindow(this, db, selectedCollection);
 				bw.setVisible(true);
