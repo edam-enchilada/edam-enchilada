@@ -85,6 +85,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JTextPane labelText;
 	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
+	private IntegerPeakCheckBox intPeaks;
 	
 	//Data elements
 	private SQLServerDatabase db;
@@ -111,6 +112,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	// Make sure that queued threads don't waste work 
 	// (since only last-queued thread in each window will matter)
 	private int numRunningThreads = 0;
+	private boolean integralPeaks = true;
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
 	private static final int DEFAULT_XMIN = 0;
@@ -314,7 +316,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
 		bottomPanel.add(buttonPanel);
-		bottomPanel.add(labelPeaks = new JCheckBox("Label Peaks", true));
+		JPanel peakButtonPanel = new JPanel(new GridLayout(2, 1));
+		bottomPanel.add(peakButtonPanel);
+		peakButtonPanel.add(intPeaks = new IntegerPeakCheckBox());
+		peakButtonPanel.add(labelPeaks = new JCheckBox("Label Peaks", true));
 		labelPeaks.addItemListener(new ItemListener() {
 			int lastDividerLocation = 0;
 			
@@ -396,6 +401,41 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		negPeaks = new ArrayList<Peak>();
 		
 		//loads peaks
+		if (integralPeaks) {
+			Map<Integer, Peak> map = new LinkedHashMap<Integer, Peak>();
+			
+
+			for (Peak p : peaks) {
+				// see BinnedPeakList.java for source of this routine
+				int mzInt; double mz = p.massToCharge;
+				
+				if (mz >= 0.0)
+					mzInt = (int) (mz + 0.5);
+				else
+					mzInt = (int) (mz - 0.5);
+				
+				//new Peak(int height, int area, double masstocharge)
+				if (map.containsKey(mzInt))
+				{
+					Peak soFar = map.get(mzInt);
+					map.put(mzInt, 
+							new Peak(soFar.height + p.height,
+									soFar.area + p.area,
+									soFar.relArea + p.relArea,
+									mzInt));
+				} else {
+					map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
+				}
+			}
+			
+			peaks = new ArrayList<Peak>();
+			for (int p : map.keySet())
+			{
+				peaks.add(map.get(p));
+				// max value because i want it to be obvious if that messes things up.
+				// but nothing should use height, right?  only area.
+			}
+		} 
 		for (Peak p : peaks)
 		{
 			if(p.massToCharge > 0){
@@ -405,7 +445,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				negPeaks.add(p);
 			}
 		}
-
+		
+		
+		
 		doLabeling(true);
 		
 		//sets up chart to detect mouse hits on peaks
@@ -980,6 +1022,23 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			case 2: return "Area";
 			case 3: return "Relative Area";
 			default: return "";
+			}
+		}
+	}
+	
+	public class IntegerPeakCheckBox 
+		extends JCheckBox implements ChangeListener
+	{
+		public IntegerPeakCheckBox() {
+			super("Integer peaks");
+			this.setSelected(integralPeaks);
+			this.addChangeListener(this);
+		}
+
+		public void stateChanged(ChangeEvent e) {
+			if (integralPeaks != this.isSelected()) {
+				integralPeaks = this.isSelected();
+				showGraph();
 			}
 		}
 	}
