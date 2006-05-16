@@ -33,6 +33,7 @@ public class SyncAnalyzePanel extends JPanel {
 	private int numConditions = 2;
 
 	private JPanel topPanel;
+	private ZoomableChart zchart;
 
 	private static String[] comparators = { "", " <", " >", " <=", " >=", " =", " <>" };
 	private static String[] comptypes = { " VAL: ", " SEQ: " };
@@ -257,8 +258,13 @@ public class SyncAnalyzePanel extends JPanel {
 
 			chart.repaint();
 
+			zchart = new ZoomableChart(chart);
+			zchart.setFocusable(true);
+			zchart.setDefaultXmin(startTime - 1000);
+			zchart.setDefaultXmax(lastTimePoint + 1000);
+			
 			// Set up comparison charts
-			JPanel bottomPanel = addComponent(chart, panePanel);
+			JPanel bottomPanel = addComponent(zchart, panePanel);
 
 			int dataSetIndex = numSequences;
 			

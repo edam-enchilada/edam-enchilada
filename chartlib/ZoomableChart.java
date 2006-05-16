@@ -70,6 +70,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	private double defaultXmin = 0;
 	private double defaultXmax = 400;
 	
+	private final int SCROLL_MIN = 0;
+	private final int SCROLL_MAX = Integer.MAX_VALUE;
+	
 	private final int MIN_ZOOM = 5;
 /**
  * Constructs a new ZoomableChart.
@@ -83,8 +86,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 
 		
 		//on an unzoomed chart, the bar fills the whole range.
-		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, 0, 100, 0, 100);
-		scrollBar.setModel(new ScrollBarRangeModel());
+		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, SCROLL_MIN, SCROLL_MAX,
+					SCROLL_MIN, SCROLL_MAX);
+		scrollBar.setModel(new DefaultBoundedRangeModel());
 		scrollBar.addAdjustmentListener(this);
 		
 		//layout for stacking components
@@ -145,6 +149,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		{
 			glassPane.drawLine = true;
 			
+			/* 
+			 * don't need to change for scrollbar changes, since this just
+			 * sees if the point is on the chart or not. 
+			 */
 			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
 			{
 				Point oldEnd;
@@ -185,18 +193,34 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 *
 	 */
 	public void adjustmentValueChanged(AdjustmentEvent e) {
-		double xmin = e.getValue();
-		double xmax = xmin + scrollBar.getVisibleAmount();
+		int scrollmin = e.getValue();
+		int scrollmax = scrollmin + scrollBar.getVisibleAmount();		
 //		System.out.println(e.toString());
 //		System.out.println(scrollBar.getVisibleAmount());
 //		System.out.println(scrollBar.getMaximum());
-		if(xmin >= xmax) return;
+		if(scrollmin >= scrollmax) return;
+		
+		
+		double xmin = scrollToChart(scrollmin);
+		double xmax = scrollToChart(scrollmax);
+		
 		try
 		{
 			chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
 			chart.packData(false, true);
 		}
 		catch (IllegalArgumentException ex){}
+	}
+	
+	double scrollToChart(int scrollValue) {
+		double maxExtent = defaultXmax - defaultXmin;
+		return ((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent) 
+			+ defaultXmin;
+	}
+	int chartToScroll(double chartValue) {
+		double maxExtent = defaultXmax - defaultXmin;
+		return (int) 
+			(((chartValue - defaultXmin) / maxExtent) * Integer.MAX_VALUE);
 	}
 	
 	/**
@@ -222,6 +246,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		xmin = chart.getDataValueForPoint(minPoint).x;
 		xmax = chart.getDataValueForPoint(maxPoint).x;
+		// these are in chart coordinates.
 		
 		if(xmin >= xmax)
 		{
@@ -229,7 +254,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			return; //another case of zooms that are too small
 		}
 		
-		zoom((int)xmin, (int)xmax);
+		zoom(xmin, xmax);
 		//chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
 
 	}
@@ -237,8 +262,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void zoom(double newXmin, double newXmax)
 	{
 		chart.packData(false, true);
-		scrollBar.setValues((int)newXmin, (int)(newXmax - newXmin),
-				(int)defaultXmin, (int)defaultXmax);
+		int scrollMin = chartToScroll(newXmin);
+		int scrollMax = chartToScroll(newXmax);
+		scrollBar.setValues(scrollMin, scrollMax - scrollMin,
+				SCROLL_MIN, SCROLL_MAX);
 		
 		scrollBar.updateUI();
 	}
@@ -314,32 +341,5 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			g.fillRect(end.x-5, start.y-5, 10, 10);
 		}
 	}
-	
-	private class ScrollBarRangeModel extends DefaultBoundedRangeModel
-	{
-		public int getMinimum()
-		{
-			return (int)defaultXmin;
-		}
-		public int getMaximum()
-		{
-			return (int)defaultXmax;
-		}
-//		public int getValue()
-//		{
-//			
-//			int val =  (int) chart.getXmin(0);
-//			//System.out.println(val);
-//			return val;
-//		}
-//		public int getExtent()
-//		{
-//			int val = (int) (chart.getXmax(0) - chart.getXmin(0));
-//			return val;
-//		
-//		}
-	}
-
-
 	
 }

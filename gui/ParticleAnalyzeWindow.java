@@ -250,7 +250,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		            (ListSelectionModel)e.getSource();
 		        if (!lsm.isSelectionEmpty()) {
 		            int selectedRow = lsm.getMinSelectionIndex();
-					selectedMZ = (Double) peaksDataModel.getValueAt(selectedRow, 0);
+		            selectedMZ = 
+		            	((Number) peaksDataModel.getValueAt(selectedRow, 0))
+		            			.doubleValue();
 					setLabels();
 		        } else 
 		        	selectedMZ = 0;
@@ -476,8 +478,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		chart.packData(false, true); //updates the Y axis scale.
 		chart.setTitle("Particle from" + filename);
 		peaksDataModel.fireTableDataChanged();
-		
-		unZoom();
 	}
 	
 	public void doLabeling(boolean forceLabeling) {
@@ -508,6 +508,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			curRow--;
 		
 		showGraph();
+		unZoom();
 	}
 	
 	private void showNextParticle() {
@@ -515,6 +516,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			curRow++;
 			
 		showGraph();
+		unZoom();
 	}
 	
 	private void showGraph() {
@@ -994,7 +996,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			else return peaks.size();
 		}
 
-		public Object getValueAt(int row, int column) {
+		public Number getValueAt(int row, int column) {
 			Peak peak;
 			if(row < negPeaks.size())
 				peak = negPeaks.get(row);
@@ -1005,7 +1007,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			// Putting these in wrapper classes, hope this
 			// helps 
 			// -Ben
-			case 0: return new Double(peak.massToCharge);
+			case 0: 
+				if (integralPeaks) return new Integer((int)peak.massToCharge);
+				else return new Double(peak.massToCharge);
 			case 1: return new Integer(peak.height);
 			case 2: return new Integer(peak.area);
 			case 3: return new Float(peak.relArea);
@@ -1025,7 +1029,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			}
 		}
 	}
-	
+		
 	public class IntegerPeakCheckBox 
 		extends JCheckBox implements ChangeListener
 	{
