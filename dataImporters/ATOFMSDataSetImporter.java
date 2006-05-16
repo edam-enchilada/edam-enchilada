@@ -136,6 +136,12 @@ public class ATOFMSDataSetImporter {
 		mainFrame = mf;
 	}
 	
+	public ATOFMSDataSetImporter(ParTable t, Window mf, SQLServerDatabase db) {
+		table = t;
+		mainFrame = mf;
+		this.db = db;
+	}
+	
 	/**
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
@@ -246,8 +252,10 @@ public class ATOFMSDataSetImporter {
 		//Read '.par' info.
 		String[] data = parVersion();
 		//CreateEmptyCollectionandDataset
-		db = MainFrame.db;
 		if (db == null) {
+			db = MainFrame.db;
+		}
+		if (db == null) { // still
 			db = new SQLServerDatabase();
 			db.openConnection();
 		}
@@ -274,6 +282,7 @@ public class ATOFMSDataSetImporter {
 				ATOFMSParticle.currPeakParams.minArea  + ", " + 
 				ATOFMSParticle.currPeakParams.minRelArea + ", " + 
 				bool);
+		
 	}
 	
 	/**
@@ -284,8 +293,9 @@ public class ATOFMSDataSetImporter {
 	public void readSpectraAndCreateParticle() 
 	throws IOException, NumberFormatException {
 		synchronized (dbLock) {
-			//Read spectra & create particle.  
-			File parent = parFile.getParentFile();
+			//Read spectra & create particle.
+			File canonical = parFile.getAbsoluteFile();
+			File parent = canonical.getParentFile();
 			File grandParent = parent.getParentFile();
 			//System.out.println("Data set: " + parent.toString());
 			
@@ -313,7 +323,7 @@ public class ATOFMSDataSetImporter {
 					public Object construct() {
 						
 						//Read spectra & create particle.  
-						File parent = parFile.getParentFile();
+						File parent = parFile.getAbsoluteFile().getParentFile();
 						File grandParent = parent.getParentFile();
 						//System.out.println("Data set: " + parent.toString());
 						
@@ -377,7 +387,10 @@ public class ATOFMSDataSetImporter {
 				};
 				worker.start();
 				progressBar.constructThis();				
-			} else System.out.println("Dataset has no hits because "+name+" does not exist.");
+			} else {
+				ErrorLogger.displayException(parentContainer, 
+						"Dataset has no hits because "+name+" does not exist.");
+			}
 		}
 	}
 	
