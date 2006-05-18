@@ -268,6 +268,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		scrollBar.setValues(scrollMin, scrollMax - scrollMin,
 				SCROLL_MIN, SCROLL_MAX);
 		
+		scrollBar.setBlockIncrement(scrollMax - scrollMin);
+		
 		scrollBar.updateUI();
 	}
 	
