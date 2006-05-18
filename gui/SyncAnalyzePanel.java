@@ -34,6 +34,8 @@ public class SyncAnalyzePanel extends JPanel {
 
 	private JPanel topPanel;
 	private ZoomableChart zchart;
+	private JButton zoomOutButton;
+	private double xMin, xMax;
 
 	private static String[] comparators = { "", " <", " >", " <=", " >=", " =", " <>" };
 	private static String[] comptypes = { " VAL: ", " SEQ: " };
@@ -52,11 +54,20 @@ public class SyncAnalyzePanel extends JPanel {
 		secondCollectionModel = new SyncCollectionModel(firstCollectionModel);
 
 		topPanel = new JPanel(new BorderLayout());
-		JPanel sequenceSel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		sequenceSel.add(new JLabel("1st Sequence: "));
-		sequenceSel.add(firstSeq = new JComboBox(firstCollectionModel));
-		sequenceSel.add(new JLabel("              2nd Sequence: "));
-		sequenceSel.add(secondSeq = new JComboBox(secondCollectionModel));
+		JPanel seqAndZoom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		seqAndZoom.add(new JLabel("1st Sequence: "));
+		seqAndZoom.add(firstSeq = new JComboBox(firstCollectionModel));
+		seqAndZoom.add(new JLabel("              2nd Sequence: "));
+		seqAndZoom.add(secondSeq = new JComboBox(secondCollectionModel));
+		
+		zoomOutButton = new JButton("Zoom Out");
+		zoomOutButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				zchart.zoom(xMin, xMax);
+			}
+		});
+		
+		seqAndZoom.add(zoomOutButton);
 
 		JButton exportToCSV, refresh;
 		Box buttonPanel = new Box(BoxLayout.Y_AXIS);
@@ -84,7 +95,7 @@ public class SyncAnalyzePanel extends JPanel {
 		bottomHalf.add(buildConditionPanels(firstCollectionModel), BorderLayout.WEST);
 		bottomHalf.add(buttonPanel, BorderLayout.CENTER);
 
-		topPanel.add(sequenceSel, BorderLayout.NORTH);
+		topPanel.add(seqAndZoom, BorderLayout.NORTH);
 		topPanel.add(bottomHalf, BorderLayout.CENTER);
 
 		bottomPane = new JScrollPane();
@@ -231,7 +242,10 @@ public class SyncAnalyzePanel extends JPanel {
 					datasets[i].add(new DataPoint(lastTimePoint, value));
 				}
 			}
-
+			
+			xMin = startTime - 1000;
+			xMax = lastTimePoint + 1000;
+			
 			for (int i = 0; i < numSets; i++) {
 				if (maxValue[i] <= 0)
 					maxValue[i] = 10;
@@ -247,7 +261,7 @@ public class SyncAnalyzePanel extends JPanel {
 			for (int i = 0; i < numSequences; i++) {
 				chart.setTitleY(i, "Sequence " + (i + 1) + " Value");
 				chart.setColor(i, i == 0 ? Color.red : Color.blue);
-				chart.setAxisBounds(i, startTime - 1000, lastTimePoint + 1000, 0, maxValue[i]);
+				chart.setAxisBounds(i, xMin, xMax, 0, maxValue[i]);
 				chart.setDataset(i, datasets[i]);
 				chart.setDataDisplayType((datasets[i].size() == 1), true);
 			}
@@ -260,8 +274,8 @@ public class SyncAnalyzePanel extends JPanel {
 
 			zchart = new ZoomableChart(chart);
 			zchart.setFocusable(true);
-			zchart.setDefaultXmin(startTime - 1000);
-			zchart.setDefaultXmax(lastTimePoint + 1000);
+			zchart.setDefaultXmin(xMin);
+			zchart.setDefaultXmax(xMax);
 			
 			// Set up comparison charts
 			JPanel bottomPanel = addComponent(zchart, panePanel);
@@ -288,7 +302,7 @@ public class SyncAnalyzePanel extends JPanel {
 				compChart.setTitleX(0, "Time");
 				compChart.setTitleY(0, "Condition Series " + (i + 1) + " Value");
 				compChart.setColor(0, Color.green);
-				compChart.setAxisBounds(0, startTime - 1000, lastTimePoint + 1000, 0, trueMax);
+				compChart.setAxisBounds(0, xMin, xMax, 0, trueMax);
 				compChart.setDataset(0, datasets[dataSetIndex]);
 				compChart.setDataDisplayType((datasets[dataSetIndex++].size() == 1), true);
 				compChart.setNumTicks(10, 10, 1, 1);
@@ -298,7 +312,7 @@ public class SyncAnalyzePanel extends JPanel {
 				if (!compareAgainstValue) {
 					compChart.setTitleY(1, "Condition Series " + (i + 1) + " Comparison Value");
 					compChart.setColor(1, Color.magenta);
-					compChart.setAxisBounds(1, startTime - 1000, lastTimePoint + 1000, 0, trueMax);
+					compChart.setAxisBounds(1, xMin, xMax, 0, trueMax);
 					compChart.setDataset(1, datasets[dataSetIndex++]);
 				}
 
@@ -314,8 +328,8 @@ public class SyncAnalyzePanel extends JPanel {
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
 				scatterChart.setTitleY(0, "Sequence 1 Value");
 				scatterChart.setTitleY(1, "Sequence 2 Value");
-				scatterChart.setAxisBounds(0, startTime - 1000,	lastTimePoint + 1000, 0, maxValue[0]);
-				scatterChart.setAxisBounds(1, startTime - 1000,	lastTimePoint + 1000, 0, maxValue[1]);
+				scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
+				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
 				scatterChart.setDataset(0, datasets[0]);
 				scatterChart.setDataset(1, datasets[1]);
 				scatterChart.drawAsScatterPlot();

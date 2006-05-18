@@ -88,7 +88,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		//on an unzoomed chart, the bar fills the whole range.
 		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, SCROLL_MIN, SCROLL_MAX,
 					SCROLL_MIN, SCROLL_MAX);
-		scrollBar.setModel(new DefaultBoundedRangeModel());
+		scrollBar.setModel(new DefaultBoundedRangeModel(SCROLL_MIN, SCROLL_MAX,
+					SCROLL_MIN, SCROLL_MAX));
 		scrollBar.addAdjustmentListener(this);
 		
 		//layout for stacking components
