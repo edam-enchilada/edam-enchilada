@@ -122,6 +122,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JTabbedPane collectionViewPanel;
 	private JPanel particlePanel;
 	private JScrollPane particleTablePane;
+	private JScrollPane collInfoPane;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -618,7 +619,7 @@ public class MainFrame extends JFrame implements ActionListener
 		//rightPane.addTab("Spectrum Viewer Text", null, panel2, null);
 		descriptionTA = new JTextArea("Description here");
 		infoPanel = makeTextPanel(descriptionTA);
-		JScrollPane collInfoPane = new JScrollPane(infoPanel);
+		collInfoPane = new JScrollPane(infoPanel);
 		collectionViewPanel.addTab("Collection Information", 
 				null, collInfoPane, null);
 		// Create and add the split panes.
@@ -813,6 +814,12 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 			descriptionTA.setText(text);
 			descriptionTA.setCaretPosition(0);
+			
+			JScrollBar vert = collInfoPane.getVerticalScrollBar();
+			int page = vert.getVisibleAmount();
+			vert.setUnitIncrement(page / 15);
+			vert.setBlockIncrement(page);
+			
 			/*
 			 int docLength = descriptionTA.getDocument().getLength();
 			 
