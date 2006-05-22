@@ -138,7 +138,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	}
 	
 	/**
-	 * This method in turn calls 
+	 * This method in turn calls processDataSet,
 	 * readParFileAndCreateEmptyCollection() and
 	 * readSpectraAndCreateParticle(),
 	 * so unit tests are not needed for these two.
@@ -154,6 +154,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		ResultSet rs = stmt.executeQuery("SELECT * FROM ATOFMSAtomInfoDense " +
 				"ORDER BY AtomID");
 		assertEquals(true,rs.next());
+		int rowCount = 1;
 
 		// to construct more tests like below, this is useful.
 //		ResultSetMetaData rsmd = rs.getMetaData();
@@ -170,53 +171,18 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertEquals(3129,rs.getInt(5));
 		assertEquals("C:\\Documents and Settings\\smitht\\my documents\\workspace\\edam-enchilada\\testRow\\b\\b-040804153913-00001.amz",rs.getString(6));
 		
-	}
-	/*
-	public void testProcessDataSet() {
-		db.openConnection();
-		boolean success = true;
-		try {
-			importer.processDataSet();			
-		} catch (Exception e) {success = false; }
-		assertTrue(success);
-		
-		assertTrue(db.getCollectionComment(2).equals("one"));
-		assertTrue(db.getCollectionDescription(2).equals("onedescrip"));
-		assertTrue(db.getCollectionName(2).equals("One"));
-		
-		Statement stmt;
-		try {
-			stmt = db.getCon().createStatement();
-		ResultSet rs = stmt.executeQuery("SELECT * FROM ATOFMSAtomInfoDense " +
-				"WHERE AtomID = 1 OR AtomID = 5 ORDER BY AtomID");
-		// Check the first and last particles to see if they have been
-		// imported properly.
-		
-		assertTrue(rs.next());
-		assertTrue(rs.getInt(1) == 1);
-		assertTrue(rs.getTimestamp(2).toString().equals("2003-09-02 17:30:38.0"));
-		System.out.println(rs.getInt(3));
-		assertEquals(1, rs.getInt(3));
-		assertTrue(rs.getFloat(4) == 0.1f);
-		assertTrue(rs.getInt(5) == 0);
-		assertTrue(rs.getString(6).equals("One"));
-
-
-		assertTrue(rs.next());
-		assertTrue(rs.next());
-		assertTrue(rs.getInt(1) == 5);
-		assertTrue(rs.getTimestamp(2).toString().equals("09/02/2003 05:30:38 PM"));
-		assertTrue(rs.getInt(3) == 0);
-		assertTrue(rs.getFloat(4) == 0.5f);
-		assertTrue(rs.getInt(5) == 0);
-		assertTrue(rs.getString(6).equals("Five"));
-		
-		stmt.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		while (rs.next()) {
+			rowCount++;
 		}
-		db.closeConnection();	
-	}	
-	*/
+		assertEquals(10, rowCount);
+		
+		ArrayList<Integer> atomIDs = db.getAllDescendedAtoms(db.getCollection(0));
+		java.util.Collections.sort(atomIDs);
+		for(int i = 1; i <= atomIDs.size(); i++)
+			assertEquals(i, atomIDs.get(i).intValue());
+		
+		assertEquals("b", db.getCollectionName(2));
+		
+		
+	}
 }
