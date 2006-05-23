@@ -288,7 +288,7 @@ public interface InfoWarehouse {
 	
 	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, 
 			Collection curColl, int[] mzValues);
-	public int[] getValidMZValuesForCollection(Collection collection, Date startDate, Date endDate);
+	public int[] getValidSelectedMZValuesForCollection(Collection collection, Date startDate, Date endDate);
 	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
