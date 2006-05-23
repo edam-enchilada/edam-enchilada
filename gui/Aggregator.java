@@ -77,7 +77,7 @@ public class Aggregator {
 							e = end.getTime();
 						}
 						long begin = new Date().getTime();
-						mzValues[i] = db.getValidMZValuesForCollection(curColl, s, e);	
+						mzValues[i] = db.getValidSelectedMZValuesForCollection(curColl, s, e);	
 						long end = new Date().getTime();
 						System.out.println("getValidMZValuesForCollection: "+(end-begin)/1000+" sec.");
 						if (mzValues[i] != null)

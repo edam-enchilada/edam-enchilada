@@ -3508,12 +3508,15 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return;
-			} else if (mzValues.length == 0) {
-				ErrorLogger.writeExceptionToLog("SQLServer","Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
-				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} 
-			else {
+			
+			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
+			if (mzValues.length == 0) {
+				// do nothing!  allow emptiness.
+//				ErrorLogger.writeExceptionToLog("SQLServer","Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+//				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
+//				System.err.println("Collections need to overlap times in order to be aggregated.");
+			} else {
 				//create and insert MZ Values into temporary #mz table.
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
 				"DROP TABLE #mz;\n");
@@ -3555,7 +3558,6 @@ public class SQLServerDatabase implements InfoWarehouse
 						"ORDER BY Location, BinnedTime;\n");
 
 				// build 2 child collections - one for time series, one for M/Z values.
-				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
 				int mzPeakLoc, mzCollectionID;
 				// for each mz value specified, make a new child collection and populate it.
@@ -3577,28 +3579,29 @@ public class SQLServerDatabase implements InfoWarehouse
 					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
 					// it now tracks number of particles instead of sum of m/z particles.	
 				stmt.execute(sql.toString());
-				sql = new StringBuilder();
-				if (options.produceParticleCountTS) {
-						int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-						sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
-						"DROP TABLE #atoms;\n");
-						sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-								" Time DateTime, \n MZLocation int, \n Value real)\n" +
-								"insert #atoms (Time, Value) \n" +
-								"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM #TimeBins TB\n"+
-								"GROUP BY BinnedTime\n"+
-								"ORDER BY BinnedTime;\n");
-						
-						sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
+			}
+			sql = new StringBuilder();
+			if (options.produceParticleCountTS) {
+				int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+						" Time DateTime, \n MZLocation int, \n Value real)\n" +
+						"insert #atoms (Time, Value) \n" +
+						"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM #TimeBins TB\n"+
+						"GROUP BY BinnedTime\n"+
+				"ORDER BY BinnedTime;\n");
+				
+				sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
 						"select " + combinedCollectionID + ", NewAtomID from #atoms;\n");
-						sql.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
-						"select NewAtomID, Time, Value from #atoms;\n");
-						sql.append("DROP TABLE #atoms;");
-						
-						progressBar.increment("  " + collectionName + ", Particle Counts");
-						stmt.execute(sql.toString());
-					}
-			}		
+				sql.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
+				"select NewAtomID, Time, Value from #atoms;\n");
+				sql.append("DROP TABLE #atoms;");
+				
+				progressBar.increment("  " + collectionName + ", Particle Counts");
+				stmt.execute(sql.toString());
+			}
+			
 			/* IF DATATYPE IS TIME SERIES */
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
 			sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
@@ -3759,10 +3762,11 @@ public class SQLServerDatabase implements InfoWarehouse
 					peakLocs.add(rs.getInt("RoundedPeakLocation"));
 				}
 				stmt.execute("DROP TABLE #mz;\n");
+				rs.close();
 			} 
 //			if we want to get all mz values:
 			/* If Datatype is ATOFMS */
-			else {
+			else if (options.allMZValues) {
 				rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
 						"from "+
 						getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
@@ -3779,8 +3783,9 @@ public class SQLServerDatabase implements InfoWarehouse
 				while (rs.next()){
 					peakLocs.add(rs.getInt("RoundedPeakLocation"));
 				}
+				rs.close();
 			}
-			rs.close();
+			
 			stmt.close();
 			
 			int[] ret = new int[peakLocs.size()];

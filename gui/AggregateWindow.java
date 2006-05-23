@@ -209,6 +209,12 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    		}
 	    	}
 	    });
+	    final JCheckBox allMZValues = new JCheckBox("Aggregate all M/Z values", false);
+	    allMZValues.addActionListener(new ActionListener() {
+	    	public void actionPerformed(ActionEvent e) {
+	    		options.allMZValues = allMZValues.isSelected();
+	    	}
+	    });
 	    
 	    ButtonGroup bg = getValueCombiningButtons(options);
 	    Enumeration<AbstractButton> combiningButtons = bg.getElements();
@@ -237,6 +243,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomHalf = addComponent(new JLabel("Produce time series"), bottomHalf);
 		bottomHalf = addComponent(new JLabel("for m/z values (leave blank for all):"), bottomHalf);
 		bottomHalf = addComponent(mzValues, bottomHalf);
+		bottomHalf = addComponent(allMZValues, bottomHalf);
 		
 		return mainPanel;
 	}

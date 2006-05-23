@@ -15,6 +15,7 @@ public class AggregationOptions {
 	public double peakTolerance = .4;
 	public boolean produceParticleCountTS = true;
 	public boolean treatDataAsContinuous = false;
+	public boolean allMZValues = false;
 	public CombiningMethod combMethod = CombiningMethod.SUM;
 	public ArrayList<Integer> mzValues;
 	public String mzString = "";
@@ -65,6 +66,7 @@ public class AggregationOptions {
 		treatDataAsContinuous = false;
 		combMethod = CombiningMethod.SUM;
 		mzValues = new ArrayList<Integer>();
+		allMZValues = false;
 		mzString = "";
 	}
 }
