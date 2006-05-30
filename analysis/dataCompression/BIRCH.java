@@ -66,6 +66,7 @@ public class BIRCH extends CompressData{
 	private CFTree curTree;
 	private MemoryUsage mem;
 	private long start, end;
+	private final float MEM_THRESHOLD = 1100;
 
 	
 	/*
@@ -86,18 +87,19 @@ public class BIRCH extends CompressData{
 	 * @param threshold - initial threshold for tree.
 	 */
 	public void buildTree(float threshold) {
-		curTree = new CFTree(threshold, branchingFactor); 
+		curTree = new CFTree(threshold, branchingFactor, distanceMetric); 
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
 		// Insert particles one by one.
 		start = new Date().getTime();
-		while(curs.next()) { 
+		while(curs.next()) {
 			particle = curs.getCurrent();
 			particle.getBinnedList().normalize(distanceMetric);
+			
 			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());
 			
 			lastSplitNode = curTree.splitNodeIfPossible(changedNode);
-			
+	
 			// If there has been a split above the leaves, refine the
 			// split
 			if (!lastSplitNode.isLeaf() || 
@@ -105,24 +107,22 @@ public class BIRCH extends CompressData{
 				curTree.refineMerge(lastSplitNode);
 			}	
 			
-			// If we have run out of memory (i.e. node space), rebuild tree.
-			mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+			if (curTree.getMemory()> MEM_THRESHOLD) {
+				int[] counts = {0,0,0,0,0};
+				int leafNum = curTree.countNodesRecurse(curTree.root,counts)[1];
+				if (curTree.threshold >= 2 && leafNum == 1) {
+					System.err.println("Out of memory at max threshold with 1 " +
+							"leaf in tree.\nAll points will be in the same leaf," +
+							" so the clustering is pointless.\nExiting.");
+					System.exit(0);
+				}
 			
-			//TODO:  Changed this for testing purposes.
-			//if (mem.getUsed() >= mem.getCommitted()*0.90) {
-			if (mem.getUsed() >= mem.getCommitted()*0.70) {
-				end = new Date().getTime();
-				System.out.println("interval: " + (end-start));
-				start = new Date().getTime();
-				System.out.println();
 				curTree.countNodes();
-				System.out.println("out of memory: rebuilding tree");
+				System.out.println("out of memory @ "+
+						curTree.getMemory()+": rebuilding tree");
 				rebuildTree();
-				end = new Date().getTime();
-				System.out.println("interval: " + (end-start));
-				start = new Date().getTime();
 				curTree.countNodes();
-				System.out.println();
+
 			}
 			System.gc();
 		}	
@@ -138,7 +138,7 @@ public class BIRCH extends CompressData{
 	public void rebuildTree() {
 		float newThreshold = curTree.nextThreshold();
 		System.out.println("new Threshold: " + newThreshold);
-		CFTree newTree = new CFTree(newThreshold, branchingFactor);
+		CFTree newTree = new CFTree(newThreshold, branchingFactor, distanceMetric);
 		newTree = rebuildTreeRecurse(newTree, newTree.root, curTree.root, null);
 		// remove all the nodes with count = 0;
 		newTree.assignLeaves();
@@ -159,6 +159,9 @@ public class BIRCH extends CompressData{
 		}
 		newTree.numDataPoints = curTree.numDataPoints;
 		newTree.assignLeaves();
+		
+		// reassign memory allocation to each node.
+		newTree.findTreeMemory(newTree.root, true);
 		curTree = newTree;
 	}
 	
@@ -197,11 +200,11 @@ public class BIRCH extends CompressData{
 		else {
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
 				while (newCurNode.getSize() <= i) {
-					ClusterFeature newCF = new ClusterFeature(newCurNode);
+					ClusterFeature newCF = new ClusterFeature(newCurNode, newCurNode.dMetric);
 					newCurNode.addCF(newCF);
 				}
 				if (newCurNode.getCFs().get(i).child == null) {
-					CFNode newChild = new CFNode(newCurNode.getCFs().get(i));
+					CFNode newChild = new CFNode(newCurNode.getCFs().get(i), distanceMetric);
 					newCurNode.getCFs().get(i).updatePointers(
 							newChild, newCurNode);
 				}
@@ -227,10 +230,6 @@ public class BIRCH extends CompressData{
 
 	@Override
 	public void compress() {	
-		MemoryUsage mem = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-		System.out.println("memory used: " + mem.getUsed());
-		System.out.println("memory committed: " + mem.getCommitted());
-		System.out.println();
 		buildTree(0.0f);
 		System.out.println();
 		System.out.println("FINAL TREE:");

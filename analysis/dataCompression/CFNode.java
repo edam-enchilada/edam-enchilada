@@ -59,15 +59,17 @@ public class CFNode {
 	public CFNode prevLeaf = null;
 	public CFNode nextLeaf = null;
 	
+	public DistanceMetric dMetric;
 	/**
 	 * Constructor
 	 * @param p - parent cluster feature
 	 */
-	public CFNode(ClusterFeature p) {
+	public CFNode(ClusterFeature p, DistanceMetric d) {
 		cfs = new ArrayList<ClusterFeature>();
 		parentCF = p;
-		if (parentCF != null)
+		if (parentCF != null) 
 			parentNode = p.curNode;
+		dMetric = d;
 	}
 	
 	/**
@@ -108,11 +110,11 @@ public class CFNode {
 		ClusterFeature entryA = null, entryB = null;
 		BinnedPeakList listI, listJ;
 		for (int i = 0; i < cfs.size(); i++) {
-			listI = cfs.get(i).getCentroid();
+			listI = cfs.get(i).getSums();
 			for (int j = i; j < cfs.size(); j++) {
-				listJ = cfs.get(j).getCentroid();
+				listJ = cfs.get(j).getSums();
 				thisDistance = listI.getDistance(listJ,
-						DistanceMetric.CITY_BLOCK);
+						dMetric);
 				if (i != j && thisDistance < minDistance) {
 					minDistance = thisDistance;
 					entryA = cfs.get(i);
@@ -140,11 +142,11 @@ public class CFNode {
 		ClusterFeature entryA = null, entryB = null;
 		BinnedPeakList listI, listJ;
 		for (int i = 0; i < cfs.size(); i++) {
-			listI = cfs.get(i).getCentroid();
+			listI = cfs.get(i).getSums();
 			for (int j = i; j < cfs.size(); j++) {
-				listJ = cfs.get(j).getCentroid();
+				listJ = cfs.get(j).getSums();
 				thisDistance = listI.getDistance(listJ,
-						DistanceMetric.CITY_BLOCK);
+						dMetric);
 				if (thisDistance > maxDistance) {
 					maxDistance = thisDistance;
 					entryA = cfs.get(i);
@@ -170,12 +172,12 @@ public class CFNode {
 		BinnedPeakList list; 
 		for (int i = 0; i < cfs.size(); i++) {
 			if (cfs.get(i).getCount() != 0) {
-			list = cfs.get(i).getCentroid();
-			thisDistance = list.getDistance(entry,DistanceMetric.CITY_BLOCK);
-			if (thisDistance < minDistance) {
-				minDistance = thisDistance;
-				minCF = cfs.get(i);
-			}
+				list = cfs.get(i).getSums();
+				thisDistance = list.getDistance(entry,dMetric);
+				if (thisDistance < minDistance) {
+					minDistance = thisDistance;
+					minCF = cfs.get(i);
+				}
 			}
 		}
 		return minCF;
@@ -187,6 +189,7 @@ public class CFNode {
 	 * @param parent - new parent CF
 	 */
 	public void updateParent(ClusterFeature parent) {
+			
 		parentCF = parent;
 		if (parent == null)
 			parentNode = null;
@@ -211,6 +214,7 @@ public class CFNode {
 		parentCF = null;
 		nextLeaf = null;
 		prevLeaf = null;
+		
 		cfs.clear();
 		return returnThis;
 	}
@@ -220,22 +224,12 @@ public class CFNode {
 	 * @param delimiter - delimiter for the given level in the tree
 	 */
 	public void printNode(String delimiter) {
-		//System.out.println(delimiter + "parent: " + parentNode);
 		System.out.println(delimiter + "node: " + this);
-		//ClusterFeature[] blah = getTwoClosest();
-		//if (isLeaf() && blah != null){
-	//		System.out.println(delimiter + "* cf1: " + blah[0]);
-	//		System.out.println(delimiter + "* cf2: " + blah[1]);
-		//	System.out.println(delimiter + "* closest CF dist: " + 
-		//blah[0].getCentroid().getDistance(blah[1].getCentroid(), 
-		//DistanceMetric.CITY_BLOCK));
-		//}
-		//System.out.println(delimiter + "# cfs: " + getSize());
-		//System.out.println(delimiter + "prev leaf: " + prevLeaf);
-		//System.out.println(delimiter + "next leaf: " + nextLeaf);
-		//System.out.println(delimiter + "Node's cfs:");
+		//System.out.println(delimiter + "  parent node: " + parentNode);
+		//System.out.println(delimiter + "  parent CF: " + parentCF);
+		//System.out.println(delimiter+"memory: " + getMemory());
 		for (int i = 0; i < cfs.size(); i++) {
-			cfs.get(i).printCF(delimiter);
+			cfs.get(i).printCF(delimiter+" ");
 		}
 	}
 	
@@ -266,4 +260,11 @@ public class CFNode {
 	public ArrayList<ClusterFeature> getCFs() {
 		return cfs;
 	}	
+	
+	public long getMemory(){
+		long returnThis = 50*cfs.size(); //Conservative estimate.
+		for (int i = 0; i < cfs.size(); i++)
+			returnThis+=cfs.get(i).getMemory();
+		return returnThis;
+	}
 }

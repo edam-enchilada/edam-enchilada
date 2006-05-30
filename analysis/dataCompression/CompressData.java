@@ -3,6 +3,7 @@ package analysis.dataCompression;
 
 import java.util.ArrayList;
 
+import analysis.CollectionDivider;
 import analysis.DistanceMetric;
 
 import collection.Collection;
@@ -19,7 +20,7 @@ import database.InfoWarehouse;
  * @author ritza
  *
  */
-public abstract class CompressData {
+public abstract class CompressData {//extends CollectionDivider {
 
 	public static final int DISK_BASED = 0;
 	public static final int STORE_ON_FIRST_PASS = 1;
@@ -28,12 +29,11 @@ public abstract class CompressData {
 	protected Collection newCollection;
 	protected String oldDatatype;
 	protected String newDatatype;
-	protected InfoWarehouse db;
 	protected boolean isNormalized;
 	protected DistanceMetric distanceMetric;
 	protected String name;
 	protected String comment;
-	
+	protected InfoWarehouse db;
 	/**
 	 * The CollectionCursor used to access the atoms of the 
 	 * collection you are dividing.  Initialize this to one of the
@@ -42,6 +42,7 @@ public abstract class CompressData {
 	protected CollectionCursor curs = null;
 	
 	public CompressData(Collection c, InfoWarehouse database, String name, String comment, boolean n, DistanceMetric d) {
+		//super()
 		db = database;
 		oldCollection = c;
 		oldDatatype = c.getDatatype();

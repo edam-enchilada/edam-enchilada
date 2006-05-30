@@ -385,6 +385,18 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return true;
 	}
 	
+	/** Used for BIRCH clustering.
+	 * @param factor
+	 */
+	public void multiply(float factor) {
+		Iterator<BinnedPeak> iter = iterator();
+		BinnedPeak temp;
+		while (iter.hasNext()) {
+			temp = iter.next();
+			temp.value = temp.value*factor;
+		}
+	}
+	
 	public Iterator<BinnedPeak> iterator() {
 		return new Iter(this);
 	}
