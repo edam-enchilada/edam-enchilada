@@ -43,6 +43,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 
 import collection.Collection;
 import ATOFMS.ParticleInfo;
@@ -61,12 +62,20 @@ import database.*;
  */
 public class BIRCH extends CompressData{
 	/* Class Variables */
-	private int branchingFactor;
+	private int branchingFactor; // Number of cluster features each node is allowed to have.
 	private int collectionID;
 	private CFTree curTree;
-	private MemoryUsage mem;
 	private long start, end;
-	private final float MEM_THRESHOLD = 1100;
+	
+	/**
+	 * MEM_THRESHOLD is a new way of calculating memory predictably.  This threshold
+	 * should ultimately be the max threshold of the system that Enchilada is being
+	 * run on, but for now I manually set it to test smaller datasets.  I think, for example.
+	 * that running Tester works well if MEM_THRESHOLD = 2000.
+	 * 
+	 * This should be an advanced option that the user can change in the GUI.
+	 */
+	private final float MEM_THRESHOLD = 40000;
 
 	
 	/*
@@ -74,9 +83,9 @@ public class BIRCH extends CompressData{
 	 */
 	public BIRCH(Collection c, InfoWarehouse database, String name, String comment, boolean n, DistanceMetric d) 
 	{
-		super(c,database,name,comment, n, d);
+		super(c,database,name,comment,d);
 		// set parameters.
-		branchingFactor = 4;
+		branchingFactor = 4; // should be an advanced option in the GUI
 		collectionID = oldCollection.getCollectionID();
 		setCursorType(0);
 	}
@@ -96,20 +105,28 @@ public class BIRCH extends CompressData{
 			particle = curs.getCurrent();
 			particle.getBinnedList().normalize(distanceMetric);
 			
-			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());
+			// insert the entry
+			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());	
 			
+			// if it's possible to split the node, do so.
 			lastSplitNode = curTree.splitNodeIfPossible(changedNode);
 	
-			// If there has been a split above the leaves, refine the
-			// split
+			// If there has been a split above the leaves, refine the split
 			if (!lastSplitNode.isLeaf() || 
 					!changedNode.equals(lastSplitNode)) {
 				curTree.refineMerge(lastSplitNode);
 			}	
 			
+			// if we have run out of memory, rebuild the tree.
 			if (curTree.getMemory()> MEM_THRESHOLD) {
 				int[] counts = {0,0,0,0,0};
 				int leafNum = curTree.countNodesRecurse(curTree.root,counts)[1];
+				
+				/**
+				 * If there is only one leaf node, then that means that there is only
+				 * enough memory to clump all particles into one collection, therefore
+				 * making BIRCH pointless.
+				 */
 				if (curTree.threshold >= 2 && leafNum == 1) {
 					System.err.println("Out of memory at max threshold with 1 " +
 							"leaf in tree.\nAll points will be in the same leaf," +
@@ -118,13 +135,13 @@ public class BIRCH extends CompressData{
 				}
 			
 				curTree.countNodes();
-				System.out.println("out of memory @ "+
-						curTree.getMemory()+": rebuilding tree");
+				System.out.println("out of memory @ "+ curTree.getMemory()+": rebuilding tree");
+				
+				// rebuild tree.
 				rebuildTree();
+				
 				curTree.countNodes();
-
 			}
-			System.gc();
 		}	
 		end = new Date().getTime();
 		System.out.println("interval: " + (end-start));
@@ -136,18 +153,22 @@ public class BIRCH extends CompressData{
 	 * tree to the new one at the end of the method.
 	 */
 	public void rebuildTree() {
+		// predict the next best threshold.
 		float newThreshold = curTree.nextThreshold();
 		System.out.println("new Threshold: " + newThreshold);
+		
 		CFTree newTree = new CFTree(newThreshold, branchingFactor, distanceMetric);
 		newTree = rebuildTreeRecurse(newTree, newTree.root, curTree.root, null);
-		// remove all the nodes with count = 0;
+		
 		newTree.assignLeaves();
+		
+		// remove all the nodes with count = 0;
 		CFNode curLeaf = newTree.getFirstLeaf();
+		
 		while (curLeaf != null) {
 			// TODO: make this more elegant
 			if (curLeaf.getSize() == 0 || 
-					(curLeaf.getSize() == 1 && 
-							curLeaf.getCFs().get(0).getCount() == 0)) {
+					(curLeaf.getSize() == 1 && curLeaf.getCFs().get(0).getCount() == 0)) {
 				CFNode emptyNode = curLeaf;
 				ClusterFeature emptyCF;
 				while (emptyNode.parentCF != null && emptyNode.parentCF.getCount() == 0) {
@@ -175,14 +196,16 @@ public class BIRCH extends CompressData{
 	 */
 	public CFTree rebuildTreeRecurse(CFTree newTree, CFNode newCurNode, 
 			CFNode oldCurNode, CFNode lastLeaf) {
-		//newTree.printTree();
 		newTree.assignLeaves();
+	
 		// if this is the first entry, build the path.
 		if (oldCurNode.isLeaf()) {
+			
 			if (lastLeaf == null)
 				lastLeaf = newTree.getFirstLeaf();
 			else if (lastLeaf.nextLeaf == null)
 				lastLeaf.nextLeaf = newCurNode;
+			
 			// reinsert leaf;
 			boolean reinserted;
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
@@ -234,6 +257,7 @@ public class BIRCH extends CompressData{
 		System.out.println();
 		System.out.println("FINAL TREE:");
 		curTree.countNodes();
+		putCollectionInDB();
 	}
 
 	@Override
@@ -245,37 +269,53 @@ public class BIRCH extends CompressData{
 	protected void putCollectionInDB() {	
 		// Create new collection and dataset:
 		String compressedParams = getDatasetParams(oldDatatype);
-		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,compressedParams); 
+		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,""); 
 		int newCollectionID = IDs[0];
 		int newDatasetID = IDs[1];
 		
 		// insert each CF as a new atom.
 		int atomID;
-		Collection collection;
+		Collection collection  = new Collection(newDatatype, newCollectionID, db);
+		
 		CFNode leaf = curTree.getFirstLeaf();
 		ArrayList<ClusterFeature> curCF;
 		ArrayList<Integer> curIDs;
+		
+		
+		// Enter the CFS of each leaf
 		while (leaf != null) {
 			curCF = leaf.getCFs();
 			for (int i = 0; i < curCF.size(); i++) {
 				atomID = db.getNextID();
-				collection = new Collection(newDatatype, newCollectionID, db);
+				
 				// create denseAtomInfo string.
 				String denseStr = "";
 				curIDs = curCF.get(i).getAtomIDs();
 				ArrayList<String> denseNames = db.getColNames(newDatatype, DynamicTable.AtomInfoDense);
+				
 				// start at 1 to skip AtomID column.
-				//for (int j = 1; j < denseNames.size(); j++) {
-					//denseStr += db.aggregateColumn(DynamicTable.AtomInfoDense,denseNames.get(j),curIDs,oldDatatype);
+				for (int j = 1; j < denseNames.size()-1; j++) {
+					denseStr += db.aggregateColumn(DynamicTable.AtomInfoDense,denseNames.get(j),curIDs,oldDatatype);
 					denseStr += ", ";
-				//}
-				denseStr.substring(0,denseStr.length()-3);
+				}
+				denseStr+=curCF.get(i).getCount();
+				
 				// create sparseAtomInfo string arraylist.
 				ArrayList<String> sparseArray = new ArrayList<String>();
+				Iterator iter = curCF.get(i).getSums().iterator();
+				while (iter.hasNext()) {
+					BinnedPeak p=(BinnedPeak) iter.next();
+					sparseArray.add(p.key + "," + 
+							p.value + "," + p.value + 
+							"," + 0);
+				}				
 				
 				//insert particle
 				db.insertParticle(denseStr,sparseArray,collection,newDatasetID,atomID);
 			}
+			leaf=leaf.nextLeaf;
 		}
+		db.updateInternalAtomOrder(collection);
+		System.out.println("Done inserting BIRCH into DB.");
 	}
 }

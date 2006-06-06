@@ -294,9 +294,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			//importation from MSAnalyze.  TODO: We should discuss.  ~Leah
 			String statement = "INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
 			returnVals[1] + ",'" + datasetName + "',"+ params + ")";
+			if (statement.charAt(statement.length()-2) == ',')
+				statement = statement.substring(0,statement.length()-2)+")";
 			System.out.println(statement); //debugging
-			stmt.execute(statement);
-			
+			stmt.execute(statement);	
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception creating the new dataset.");
@@ -2643,6 +2644,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				pList.setPeakList(aPeakList);
 				pInfo.setPeakList(pList);
+				pInfo.setID(pList.getAtomID());
 				peakRS.close();
 			} catch (SQLException e) {
 				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a Peak cursor.");
@@ -4082,9 +4084,15 @@ public class SQLServerDatabase implements InfoWarehouse
 						columnOrder = 1;
 						firstloop = false;
 					}
-					String update = "INSERT INTO MetaData VALUES ('" +
+
+					//ALL COMRESSED VALUES ARE SET TO REAL!!
+					/*String update = "INSERT INTO MetaData VALUES ('" +
 					newDatatype + "','" + rs.getString(2) + "','" + 
 					rs.getString(3) + "'," + rs.getInt(4) + "," +
+					rs.getInt(5) + "," + columnOrder + ")";*/
+
+					String update = "INSERT INTO MetaData VALUES ('" +
+					newDatatype + "','" + rs.getString(2) + "','REAL'," + rs.getInt(4) + "," +
 					rs.getInt(5) + "," + columnOrder + ")";
 					System.out.println(update);
 					stmt.addBatch(update);
@@ -4096,7 +4104,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				assert(rs.next());
 				int nextColumnOrder = rs.getInt(1) + 1;
 				String numParts = "INSERT INTO MetaData VALUES ('" + 
-				newDatatype + "', '[NumParticles]', 'INT',0," + 
+				newDatatype + "', '[NumParticles]', 'REAL',0," + 
 				DynamicTable.AtomInfoDense.ordinal() + "," + nextColumnOrder +")";
 				System.out.println(numParts);
 				stmt.execute(numParts);
@@ -4116,85 +4124,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	public CollectionCursor getMemoryClusteringCursor(Collection collection, ClusterInformation cInfo) {
 		return new MemoryClusteringCursor(collection, cInfo);
-	}
-	
-	/**
-	 * TODO: ENDED HERE>> LOTS OF PROBLEMS WITH THIS.
-	 * @param curTree
-	 * @param oldDatatype
-	 * @param newDatatype
-	 */
-	public void addCompressedData(CFTree curTree, String oldDatatype, String newDatatype) {
-		Statement stmt;
-		CFNode leaf = curTree.getFirstLeaf();
-		try {
-			stmt = con.createStatement();
-			
-			// create temp table:
-			stmt.execute("IF (OBJECT_ID('#ClusterFeatureRelationships') " +
-					"IS NOT NULL)" +
-			" DROP TABLE #ClusterFeatureRelationships");
-			stmt.execute(" CREATE TABLE #ClusterFeatureRelationships " +
-			"(CF INT, AtomID INT, PRIMARY KEY (CF, AtomID))");
-			int counter = 1;
-			while (leaf != null) {
-				for (int i = 0; i < leaf.getCFs().size(); i++) {
-					stmt.addBatch("INSERT INTO " +
-							"#ClusterFeatureRelationships VALUES (" + 
-							counter + ", " + leaf.getCFs().get(i) + ")");
-				}
-				counter++;
-			}
-			stmt.executeBatch();
-			
-			// Get Result Set for dense atom info.
-			ArrayList<String> denseNames = getColNames(newDatatype, DynamicTable.AtomInfoDense);
-			String denseQuery = "SELECT CF, ";
-			for (int i = 0; i < denseNames.size(); i++) {
-				denseQuery += "SUM(" + denseNames.get(i) + "), ";
-			}
-			denseQuery.substring(0,denseQuery.length()-3);
-			denseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) +
-			"WHERE #ClusterFeatureRelationships.AtomID = " + 
-			getDynamicTableName(DynamicTable.AtomInfoDense, oldDatatype) + ".AtomID ORDER BY CF";
-			ResultSet denseRS = stmt.executeQuery(denseQuery);
-			// get primary keys; we want to preserve these.
-			ResultSet densePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
-					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
-					"' AND TableID = " + DynamicTable.AtomInfoDense.ordinal());
-			
-			// get ResultSet for sparseAtomInfo.
-			ArrayList<String> sparseNames = getColNames(newDatatype, DynamicTable.AtomInfoSparse);
-			String sparseQuery = "SELECT CF, ";
-			for (int i = 0; i < sparseNames.size(); i++) {
-				sparseQuery += "SUM(" + sparseNames.get(i) + "), ";
-			}
-			sparseQuery.substring(0,sparseQuery.length()-3);
-			sparseQuery += " FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) +
-			"WHERE #ClusterFeatureRelationships.AtomID = " + 
-			getDynamicTableName(DynamicTable.AtomInfoSparse, oldDatatype) + ".AtomID GROUP BY ORDER BY CF";
-			ResultSet sparseRS = stmt.executeQuery(sparseQuery);
-			// get primary keys; we want to preserve these.
-			ResultSet sparsePrimaryKeys = stmt.executeQuery("SELECT ColumnName FROM MetaData " +
-					"WHERE PrimaryKey = 1 AND Datatype = '" + newDatatype + 
-					"' AND TableID = " + DynamicTable.AtomInfoSparse.ordinal());
-			String denseStr, sparseStr;
-			// insert particles.
-			while (denseRS.next()) {
-				sparseRS.next();
-			}
-			
-			denseRS.close();
-			sparseRS.close();
-			densePrimaryKeys.close();
-			sparsePrimaryKeys.close();
-			
-			stmt.execute("DROP TABLE #ClusterFeatureRelationships");		
-		} catch(SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
 	}
 	
 	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable table) {
@@ -4376,6 +4305,29 @@ public class SQLServerDatabase implements InfoWarehouse
 			throw new SQLException("Can't understand what state the DB is in. (has version field but no value)");
 		}
 		return version;
+	}
+
+	public String aggregateColumn(DynamicTable table, String string, ArrayList<Integer> curIDs, String oldDatatype) {
+		double sum=0;
+		try {
+			Statement stmt = con.createStatement();
+		String query = "SELECT SUM("+string+") FROM "+
+			getDynamicTableName(table,oldDatatype)+" WHERE AtomID IN (";
+		for (int i = 0; i < curIDs.size(); i++) {
+			query+=curIDs.get(i);
+			if (i!=curIDs.size()-1)
+				query+=",";
+		}
+		query+=");";
+		//System.out.println(query);
+		ResultSet rs = stmt.executeQuery(query);
+		assert(rs.next());
+		sum=rs.getDouble(1);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		return ""+sum;
 	}
 	
 }

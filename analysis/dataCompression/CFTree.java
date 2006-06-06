@@ -394,9 +394,7 @@ public class CFTree {
 			return;
 		}
 		ClusterFeature merge = mergeEntries(closestTwo[0], closestTwo[1]);
-		//printTree();
-		//System.out.println("merge.curNode.isLeaf()"+merge.curNode.isLeaf());
-		//System.out.flush();
+		
 		// use the splitNodeRecurse method if merged child needs to split.
 		if (!merge.curNode.isLeaf()) 
 			if (merge.child.isLeaf())
@@ -520,17 +518,9 @@ public class CFTree {
 						return threshold + 0.1f;
 				}
 			}
-			//System.out.println("node: " + node);
-			//printTree();
-			
+		
 			ClusterFeature[] m = node.getTwoClosest();
-			/*m[0].getCentroid().printPeakList();
-			m[1].getCentroid().printPeakList();
-			*/
 
-		//	System.out.println("distance: " + m[0].getSums().getDistance(m[1].getSums(), 
-			//		dMetric));
-			
 			dMin = m[0].getSums().getDistance(m[1].getSums(), 
 					dMetric);
 			

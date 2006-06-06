@@ -317,8 +317,8 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == compressItem) {
 			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",false,DistanceMetric.EUCLIDEAN_SQUARED);
 			b.compress();
+			collectionPane.updateTree();
 		}
-		
 		
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,

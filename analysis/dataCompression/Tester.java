@@ -9,6 +9,11 @@ import analysis.DistanceMetric;
 import database.CreateTestDatabase;
 import database.SQLServerDatabase;
 
+/**
+ * Tester class for BIRCH.  Creates and manipulates BIRCHdb.
+ * @author ritza
+ *
+ */
 public class Tester {
 	static SQLServerDatabase db;
 	SQLServerDatabase tempDB;

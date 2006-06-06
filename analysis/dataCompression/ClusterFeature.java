@@ -209,7 +209,7 @@ public class ClusterFeature {
 		for (int i = 0; i < atomIDs.size(); i++)
 			System.out.print(atomIDs.get(i) + " ");
 		System.out.println(")");
-		sums.printPeakList();
+		//sums.printPeakList();
 		//System.out.println(delimiter+"CF SS: " + squareSums);
 		//System.out.println(delimiter+"CF Magnitude: " + sums.getMagnitude(dMetric));
 		//System.out.println(delimiter+"CF length: " + sums.length());
@@ -258,22 +258,6 @@ public class ClusterFeature {
 	public float getSumOfSquares() {
 		return squareSums;
 	}
-	
-	/**
-	 * Gets the centroid for the CF.
-	 * @return - cf's centroid
-	 *
-	public BinnedPeakList getCentroid() {
-		BinnedPeakList list = new BinnedPeakList(new DummyNormalizer());
-		Iterator<BinnedPeak> iterator = sums.iterator();
-		BinnedPeak next;
-		while (iterator.hasNext()) {
-			next = iterator.next();
-			list.addNoChecks(next.key, next.value / count);
-		}
-		list.normalize(curNode.dMetric);
-		return list;
-	}*/
 	
 	public ArrayList<Integer> getAtomIDs() {
 		return atomIDs;
