@@ -165,9 +165,6 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		tableColumns[2].setCellEditor(
 				new FilePickerEditor("noz","Size Cal file",this));
 		tableColumns[2].setPreferredWidth(250);
-	
-		for (int i=3;i<7;i++)
-			tableColumns[i].setCellEditor(pTable.getDefaultEditor(Double.class));
 		
 		TableColumn numColumn = pTable.getColumnModel().getColumn(0);
 		numColumn.setPreferredWidth(10);
