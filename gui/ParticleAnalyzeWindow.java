@@ -514,7 +514,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void showNextParticle() {
 		if (curRow < particlesTable.getRowCount() - 1)
 			curRow++;
-			
 		showGraph();
 		unZoom();
 	}
@@ -522,7 +521,18 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void showGraph() {
 		int atomID = ((Integer) 
 				particlesTable.getValueAt(curRow, 0)).intValue();
-
+		if(curRow==0){
+			prevButton.setEnabled(false);
+		}else{
+			prevButton.setEnabled(true);
+		}
+		if(curRow==particlesTable.getRowCount()-1){
+			nextButton.setEnabled(false);
+		}else{
+			nextButton.setEnabled(true);
+		}
+		
+		zoomOutButton.setEnabled(false);
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
 		String filename = (String)particlesTable.getValueAt(curRow, 5);
@@ -539,7 +549,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		System.out.println(peakString);
 		setPeaks(peaks, atomID, filename);		
-
+		
 		db.buildAtomRemovedIons(atomID, posIons, negIons);
 	}
 	
