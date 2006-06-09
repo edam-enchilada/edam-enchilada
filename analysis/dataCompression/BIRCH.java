@@ -71,11 +71,11 @@ public class BIRCH extends CompressData{
 	 * MEM_THRESHOLD is a new way of calculating memory predictably.  This threshold
 	 * should ultimately be the max threshold of the system that Enchilada is being
 	 * run on, but for now I manually set it to test smaller datasets.  I think, for example.
-	 * that running Tester works well if MEM_THRESHOLD = 2000.
+	 * that running Tester works well if MEM_THRESHOLD = 1000.
 	 * 
 	 * This should be an advanced option that the user can change in the GUI.
 	 */
-	private final float MEM_THRESHOLD = 40000;
+	private final float MEM_THRESHOLD = 1000;
 
 	
 	/*
