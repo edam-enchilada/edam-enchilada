@@ -43,6 +43,7 @@
  */
 package gui;
 
+
 import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.event.*;
@@ -152,7 +153,9 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	private JTable getParTable()
 	{
 		pTableModel = new ParTableModel();
-		JTable pTable = new JTable(pTableModel);		
+		JTable pTable = new JTable(pTableModel);	
+        pTable.setDefaultEditor(Float.class, new FloatEditor());
+        pTable.setDefaultEditor(Integer.class, new IntegerEditor());
 		TableColumn[] tableColumns = new TableColumn[7];
 		for (int i = 0; i < 7; i++)
 			tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
@@ -165,10 +168,10 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		tableColumns[2].setCellEditor(
 				new FilePickerEditor("noz","Size Cal file",this));
 		tableColumns[2].setPreferredWidth(250);
-		
+
 		TableColumn numColumn = pTable.getColumnModel().getColumn(0);
 		numColumn.setPreferredWidth(10);
-		
+
 		return pTable;
 	}
 	
