@@ -38,7 +38,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
 		setSize(500, 540);
-		setResizable(false);
+		setResizable(true);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
 
