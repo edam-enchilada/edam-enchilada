@@ -101,12 +101,9 @@ Section "EDAM Enchilada (required)"
   File "importation files\meta.dtd"
   
   SetOutPath $INSTDIR\labeling
-  File "labeling\cygwin1.dll"
   File "labeling\nion-sigs.txt"
   File "labeling\pion-sigs.txt"
   File "labeling\run.bat"
-  File "labeling\spc_negative.txt"
-  File "labeling\spc_positive.txt"
   File "labeling\spectrum.exe"
   
   SetOutPath $INSTDIR
