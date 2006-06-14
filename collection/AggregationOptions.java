@@ -20,9 +20,20 @@ public class AggregationOptions {
 	public ArrayList<Integer> mzValues;
 	public String mzString = "";
 
+	/**
+	 * Produces a String representing the SQL embodiment of the chosen combination method
+	 * @return String representation of the combination method
+	 */
 	public String getGroupMethodStr() {
-		return combMethod == AggregationOptions.CombiningMethod.SUM ? "SUM" : "AVG";
+		if(combMethod == AggregationOptions.CombiningMethod.SUM) return new String("SUM"); 
+		return new String("AVG");
 	}
+	
+	/**
+	 * Takes a String representing user input and transforms and stores it as the ArrayList representing the 
+	 * m/z values to aggregate
+	 * @param mzString String representation of values
+	 */
 	public void setMZValues(String mzString) {
 		this.mzString = mzString;
 		
@@ -39,7 +50,8 @@ public class AggregationOptions {
 			String range = ranges[i].trim();
 			String[] splitRange = range.split(" to ");
 			int low = Integer.parseInt(splitRange[0]);
-			int high = splitRange.length == 2 ? Integer.parseInt(splitRange[1]) : low;
+			int high = low;
+			if(splitRange.length == 2) high = Integer.parseInt(splitRange[1]);
 			
 			// Swap if the user got them backwards...
 			if (low > high) {
