@@ -37,7 +37,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		cachedCollectionPanels = new Hashtable<Collection, JPanel>();
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
-		setSize(500, 540);
+		setSize(500, 580);
 		setResizable(true);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -183,7 +183,11 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		});
 	    partCount.setSelected(options.produceParticleCountTS);
 		
-	    JTextField mzValues = new JTextField(100);
+	    // right now it's going to do all or just those you select.  it might
+	    // also be clever to do those you select or the complement of those you
+	    // select.  But I'm not going to do that right now.  --Thomas
+	    
+	    final JTextField mzValues = new JTextField(100);
 	    mzValues.setText(options.mzString);
 	    mzValues.addFocusListener(new FocusListener() {
 	    	private String savedText;
@@ -213,6 +217,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    allMZValues.addActionListener(new ActionListener() {
 	    	public void actionPerformed(ActionEvent e) {
 	    		options.allMZValues = allMZValues.isSelected();
+	    		mzValues.setEnabled(! allMZValues.isSelected());
 	    	}
 	    });
 	    

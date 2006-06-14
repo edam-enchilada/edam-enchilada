@@ -3718,8 +3718,29 @@ public class SQLServerDatabase implements InfoWarehouse
 			ArrayList<Integer> peakLocs = new ArrayList<Integer>();
 			StringBuilder sql = new StringBuilder();
 			
+//			if we want to get all mz values:
+			if (options.allMZValues) {
+				rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
+						"from "+
+						getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
+						" AIS, InternalAtomOrder IAO, "+
+						getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype())+
+						" AID \n"+
+						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
+						"AND IAO.AtomID = AIS.AtomID \n" +
+						"AND IAO.AtomID = AID.AtomID \n" +
+						"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
+						"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
+						"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
+				"ORDER BY RoundedPeakLocation;\n");
+				while (rs.next()){
+					peakLocs.add(rs.getInt("RoundedPeakLocation"));
+				}
+				rs.close();
+
 			// if there's a list of mz values:
-			if (options.mzValues != null && options.mzValues.size() > 0) {
+			} else if (options.mzValues != null && options.mzValues.size() > 0)
+			{
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
 						"DROP TABLE #mz;\n");
 				sql.append("CREATE TABLE #mz (Value INT);\n");
@@ -3766,28 +3787,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.execute("DROP TABLE #mz;\n");
 				rs.close();
 			} 
-//			if we want to get all mz values:
-			/* If Datatype is ATOFMS */
-			else if (options.allMZValues) {
-				rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
-						"from "+
-						getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
-						" AIS, InternalAtomOrder IAO, "+
-						getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype())+
-						" AID \n"+
-						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
-						"AND IAO.AtomID = AIS.AtomID \n" +
-						"AND IAO.AtomID = AID.AtomID \n" +
-						"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
-						"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
-						"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
-				"ORDER BY RoundedPeakLocation;\n");
-				while (rs.next()){
-					peakLocs.add(rs.getInt("RoundedPeakLocation"));
-				}
-				rs.close();
-			}
-			
+
 			stmt.close();
 			
 			int[] ret = new int[peakLocs.size()];
