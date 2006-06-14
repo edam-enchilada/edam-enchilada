@@ -449,7 +449,21 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testOrphanAndAdopt(){
 		
 		db.openConnection();
+		//Insert 5,21 into the database to tell if an error occurs when an item
+		//is present in a parent and its child
+		try {
+			Connection con1 = db.getCon();
+			Statement stmt1 = con1.createStatement();
+			String query = "USE TestDB\n" +
+				"INSERT INTO AtomMembership VALUES(5,21)\n";
+			System.out.println(query);
+			stmt1.executeUpdate(query);
 			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
 		assertTrue(db.orphanAndAdopt(db.getCollection(6)));
 		//make sure that the atoms collected before are in collection 4
 		ArrayList<Integer> collection5Info = new ArrayList<Integer>();

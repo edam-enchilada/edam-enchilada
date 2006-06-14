@@ -905,8 +905,22 @@ public class SQLServerDatabase implements InfoWarehouse
 						parentCollection);
 			}
 			
-			stmt.executeUpdate("UPDATE AtomMembership SET CollectionID = " + 
-					parentID + " WHERE CollectionID = " + collection.getCollectionID());
+			//this query updates the AtomMembership database so that all the collectionIDs are set to
+			//parentID when the CollectionID is the child's CollectionID and when AtomID has
+			//the child's CollectionID but not the parent's CollectionID
+			//so if we have
+			// {(2,100), (2, 101), (2, 103), (5, 99), (5, 100), (5, 101)}
+			//where 2 is the parent and 5 is the child and the first number denotes the CollectionID
+			//and the second number denotes the AtomID
+			//we want it to change all the 5s to 2s except when the corresponding AtomID is already
+			//in the set of 2s.  So we want to change (5, 99) but not (5, 100) and (5, 101).
+			
+			String query = "UPDATE AtomMembership SET CollectionID = " + 
+			parentID + " WHERE CollectionID = " + collection.getCollectionID()+ 
+			" and AtomID in (select AtomID from AtomMembership where CollectionID = " + collection.getCollectionID() + 
+			" and AtomID not in (select AtomID from AtomMembership where CollectionID = " + parentID + "))";
+
+			stmt.executeUpdate(query);
 			
 			// Delete the collection now that everything has been 
 			// moved.  Updates the InternalAtomOrder table as well.
@@ -4170,10 +4184,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 			
-			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = "+cID;
+			//get all the AtomIDs from AtomMembership if the corresponding CollectionID was
+			//the parent's or one of the children's.  We want the union of these so that there
+			//are no overlaps.
+			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = " + cID;
 			Iterator<Integer> subCollections = getAllDescendantCollections(cID,false).iterator();
 			while (subCollections.hasNext())
-				query += " OR CollectionID = " + subCollections.next();
+				query += " union (SELECT AtomID FROM AtomMembership WHERE CollectionID = " + subCollections.next() + ")";
 			query += " ORDER BY AtomID";
 			//System.out.println(query);
 			ResultSet rs = stmt.executeQuery(query);
