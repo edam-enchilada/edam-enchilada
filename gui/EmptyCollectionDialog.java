@@ -164,12 +164,24 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		if (source == okButton) {
-			SQLServerDatabase db = new SQLServerDatabase();
-			db.openConnection();
-			collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
-			db.closeConnection();
-			System.out.println("Empty Collection ID: " + collectionID);
-			dispose();
+			if(!nameField.getText().equals("")) {
+				if(datatypeBox.getSelectedIndex()!=0) {
+					SQLServerDatabase db = new SQLServerDatabase();
+					db.openConnection();
+					collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
+					db.closeConnection();
+					System.out.println("Empty Collection ID: " + collectionID);
+					dispose();
+				}
+				//If they didn't enter a data type, force them to choose one, this prevents
+				//errors later on when pasting collections into the created collection
+				else
+					JOptionPane.showMessageDialog(this, "Please select a data type");
+			}
+			//If they didn't enter a name, force them to type one, this prevents errors
+			//later on because you can't select collections that don't have names
+			else
+				JOptionPane.showMessageDialog(this, "Please enter a name for the collection");
 		}			
 		else  
 			dispose();

@@ -79,7 +79,7 @@ public class CollectionTree extends JPanel
         super(new BorderLayout());
         
         String treeTitle = forSynchronized ? "Synchronized Time Series" : "Collections";
-        int selectionMode = forSynchronized ? TreeSelectionModel.SINGLE_TREE_SELECTION 
+        int selectionMode = forSynchronized ? TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION 
         									: TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION;
         db = database;
         

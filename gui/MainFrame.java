@@ -250,25 +250,35 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == deleteAdoptItem)
 		{
-			Collection c = getSelectedCollection();
-			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.orphanAndAdopt(c);
-			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			//System.out.println("this: " + c.getCollectionID());
-			//System.out.println("parent: " + c.getParentCollection().getCollectionID());
-			selectedCollectionTree.updateTree(c.getParentCollection().getCollectionID());
+			Collection[] c = getSelectedCollections();
+			if(c == null)
+				return;
+			for (int i = 0; i<c.length; i++){
+				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				if(db.orphanAndAdopt(c[i]))
+				{
+					selectedCollectionTree.updateTree();
+					clearTable();
+				}
+			}
 			validate();
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		}
 		
 		else if (source == recursiveDeleteItem)
 		{
-			Collection c = getSelectedCollection();
-			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			db.recursiveDelete(getSelectedCollection());
-			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-			selectedCollectionTree.updateTree(c.getParentCollection().getCollectionID());
-			clearTable();
+			Collection[] c = getSelectedCollections();
+			if(c == null)
+				return;
+			for (int i = 0; i<c.length; i++){
+				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				if(db.recursiveDelete(c[i])){
+					selectedCollectionTree.updateTree();
+					clearTable();
+				}
+			}
 			validate();
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		}
 		
 		else if (source == copyItem)
@@ -288,21 +298,28 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == pasteItem)
 		{
 			if (copyID != 
-				getSelectedCollection().getCollectionID())
+				getSelectedCollection().getCollectionID() || copyID>-1)
 			{
-				if (cutBool == false)
-				{
+				//check if the datatypes are the same
+				if(db.getCollection(copyID).getDatatype().equals
+											(getSelectedCollection().getDatatype())){
+						
+					if (cutBool == false)
+					{
 					db.copyCollection(db.getCollection(copyID), 
 							getSelectedCollection());
+					}
+					else
+					{
+						db.moveCollection(db.getCollection(copyID), 
+							getSelectedCollection());
+					}
+					collectionPane.updateTree();
+					validate();
 				}
 				else
-				{
-					db.moveCollection(db.getCollection(copyID), 
-							getSelectedCollection());
-					
-				}
-				collectionPane.updateTree();
-				validate();
+					JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
+							" be of the same data type");
 			}
 			else
 				System.err.println("Cannot copy/paste to the same " +
@@ -375,6 +392,14 @@ public class MainFrame extends JFrame implements ActionListener
 			return c;
 		else
 			return synchronizedPane.getSelectedCollection();
+	}
+	
+	private Collection[] getSelectedCollections() {
+		Collection[] c = collectionPane.getSelectedCollections();
+		if (c != null)
+			return c;
+		else
+			return synchronizedPane.getSelectedCollections();
 	}
 	
 	private void showAnalyzeParticleWindow() {
