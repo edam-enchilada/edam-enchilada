@@ -912,6 +912,7 @@ public class ChartArea extends JComponent {
 			lastY = coords[i];
 		}
 		
+		
 		//cleanup
 		g2d.setClip(oldClip);
 		g2d.setStroke(oldStroke);
@@ -1058,6 +1059,9 @@ public class ChartArea extends JComponent {
 	 * @param g the graphics2d object that runs the pane with the graph on it.
 	 */
 	private void drawMorePointsIndicator(int i, Graphics2D g) {
+		Color oldColor = g.getColor();
+		Shape oldClip = g.getClip();
+		
 		Rectangle dataArea = getDataAreaBounds();
 
 		int arrowShaftY = dataArea.y + dataArea.height - 3;
@@ -1067,6 +1071,8 @@ public class ChartArea extends JComponent {
 		
 		// these draw little arrows facing left or right, as appropriate.
 		if (i == 0) {
+			g.setClip(new Rectangle(dataArea.x - 20, dataArea.y,
+					dataArea.width + 20, dataArea.height + 5));
 			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
 					dataArea.x - 5, arrowShaftY));
 			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
@@ -1074,6 +1080,8 @@ public class ChartArea extends JComponent {
 			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
 					dataArea.x - 10, arrowShaftY - 5));
 		} else {
+			g.setClip(new Rectangle(dataArea.x, dataArea.y,
+					dataArea.width + 20, dataArea.height + 5));
 			int leftX = dataArea.x + dataArea.width;
 			g.draw(new Line2D.Double(leftX + 15, arrowShaftY,
 					leftX + 5, arrowShaftY));
@@ -1082,6 +1090,8 @@ public class ChartArea extends JComponent {
 			g.draw(new Line2D.Double(leftX + 15, arrowShaftY,
 					leftX + 10, arrowShaftY - 5));
 		}
+		g.setClip(oldClip);
+		g.setColor(oldColor);
 	}
 
 	/**
