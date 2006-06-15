@@ -100,6 +100,7 @@ public class SyncAnalyzePanel extends JPanel {
 
 		bottomPane = new JScrollPane();
 		setupBottomPane();
+		bottomPane.getVerticalScrollBar().setUnitIncrement(10);
 
 		add(topPanel, BorderLayout.NORTH);
 		add(bottomPane, BorderLayout.CENTER);
