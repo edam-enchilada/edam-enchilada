@@ -67,11 +67,15 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	
 	private JScrollBar scrollBar;
 	
-	private double defaultXmin = 0;
-	private double defaultXmax = 400;
+	// these are the maximum and minimum indices, in chart coordinates,
+	// that are displayed.
+	private double cScrollMin = 0;
+	private double cScrollMax = 400;
 	
-	private final int SCROLL_MIN = 0;
-	private final int SCROLL_MAX = Integer.MAX_VALUE;
+	private double defaultCScrollMax = cScrollMax;
+	
+	private final int S_SCROLL_MIN = 0;
+	private final int S_SCROLL_MAX = Integer.MAX_VALUE;
 	
 	private final int MIN_ZOOM = 5;
 /**
@@ -86,10 +90,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 
 		
 		//on an unzoomed chart, the bar fills the whole range.
-		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, SCROLL_MIN, SCROLL_MAX,
-					SCROLL_MIN, SCROLL_MAX);
-		scrollBar.setModel(new DefaultBoundedRangeModel(SCROLL_MIN, SCROLL_MAX,
-					SCROLL_MIN, SCROLL_MAX));
+		scrollBar = new JScrollBar(JScrollBar.HORIZONTAL, S_SCROLL_MIN, S_SCROLL_MAX,
+					S_SCROLL_MIN, S_SCROLL_MAX);
+		scrollBar.setModel(new DefaultBoundedRangeModel(S_SCROLL_MIN, S_SCROLL_MAX,
+					S_SCROLL_MIN, S_SCROLL_MAX));
 		scrollBar.addAdjustmentListener(this);
 		
 		//layout for stacking components
@@ -106,17 +110,18 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	}
 	
 	
-	public double getDefaultXmax() {
-		return defaultXmax;
+	public double getCScrollMax() {
+		return cScrollMax;
 	}
-	public void setDefaultXmax(double defaultXmax) {
-		this.defaultXmax = defaultXmax;
+	public void setCScrollMax(double defaultXmax) {
+		this.cScrollMax = defaultXmax;
+		this.defaultCScrollMax = defaultXmax;
 	}
-	public double getDefaultXmin() {
-		return defaultXmin;
+	public double getCScrollMin() {
+		return cScrollMin;
 	}
-	public void setDefaultXmin(double defaultXmin) {
-		this.defaultXmin = defaultXmin;
+	public void setCScrollMin(double defaultXmin) {
+		this.cScrollMin = defaultXmin;
 	}
 	
 	
@@ -214,14 +219,14 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	}
 	
 	double scrollToChart(int scrollValue) {
-		double maxExtent = defaultXmax - defaultXmin;
+		double maxExtent = cScrollMax - cScrollMin;
 		return ((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent) 
-			+ defaultXmin;
+			+ cScrollMin;
 	}
 	int chartToScroll(double chartValue) {
-		double maxExtent = defaultXmax - defaultXmin;
+		double maxExtent = cScrollMax - cScrollMin;
 		return (int) 
-			(((chartValue - defaultXmin) / maxExtent) * Integer.MAX_VALUE);
+			(((chartValue - cScrollMin) / maxExtent) * Integer.MAX_VALUE);
 	}
 	
 	/**
@@ -263,16 +268,41 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void zoom(double newXmin, double newXmax)
 	{
 		chart.packData(false, true);
+		
+		if (newXmax > cScrollMax) {
+			cScrollMax = newXmax;
+			scrollBar.setEnabled(false);
+		} else {
+			cScrollMax = defaultCScrollMax;
+			scrollBar.setEnabled(true);
+		}
 		int scrollMin = chartToScroll(newXmin);
 		int scrollMax = chartToScroll(newXmax);
+		
+		scrollBar.setValues(scrollMin + 1, scrollMax - scrollMin,
+				S_SCROLL_MIN, S_SCROLL_MAX);
 		scrollBar.setValues(scrollMin, scrollMax - scrollMin,
-				SCROLL_MIN, SCROLL_MAX);
+				S_SCROLL_MIN, S_SCROLL_MAX);
+		// why twice?  to force the scrollBar to realise that something has
+		// changed.  true, that's a dumb way to do it, but i'm not smart. -tom
 		
 		scrollBar.setBlockIncrement(scrollMax - scrollMin);
 		
 		scrollBar.updateUI();
 	}
 	
+	public void zoomOutHalf() {
+		double xmin = chart.getXmin(0), xmax = chart.getXmax(0);
+		double diff = (xmax - xmin) / 2.0;
+		xmin -= diff; xmax += diff;
+		
+		if (xmin < 0) {
+			xmax = xmax + (- xmin);
+			xmin = 0;
+		}
+		
+		zoom(xmin, xmax);
+	}
 	
 //	/**
 //	 * For testing: outputs the chart point of the click.
@@ -340,9 +370,11 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			g.setStroke(new BasicStroke(3));
 			g.fillRect(start.x-5, start.y-5, 10,10);
 			g.drawLine(start.x, start.y, 
-					end.x, start.y);
+					end.x, start.y); // a horizontal line
 			g.fillRect(end.x-5, start.y-5, 10, 10);
 		}
 	}
+
+
 	
 }

@@ -588,6 +588,59 @@ public class ChartArea extends JComponent {
 		pack(1, true, true);
 	}
 	
+	public double[][] findAllMinsMaxes(Dataset dataset) {
+		double xmin, ymin, xmax, ymax;	
+		xmin = ymin = Double.MAX_VALUE;
+		xmax = ymax = Double.MIN_VALUE;
+		DataPoint dp;
+		int size = dataset.size();
+		
+		java.util.Iterator iterator = dataset.iterator();
+
+		while(iterator.hasNext())
+		{
+			dp = (DataPoint)(iterator.next());
+			if(dp.y < ymin) ymin = dp.y;
+			if(dp.y > ymax) ymax = dp.y;
+			if(dp.x < xmin) xmin = dp.x;
+			if(dp.x > xmax) xmax = dp.x;
+		}
+		
+		double[][] ret = new double[2][2];
+		ret[0][0] = xmin;
+		ret[0][1] = xmax;
+		ret[1][0] = ymin;
+		ret[1][1] = ymax;
+		return ret;
+	}
+	
+	public double[] findYMinMax(Dataset dataset) {
+		double xmin, ymin, xmax, ymax;	
+		xmin = ymin = Double.MAX_VALUE;
+		xmax = ymax = Double.MIN_VALUE;
+		DataPoint dp;
+		int size = 0;
+		
+		java.util.Iterator iterator = dataset.iterator();
+		
+		while(iterator.hasNext())
+		{
+			dp = (DataPoint)(iterator.next());
+			if(dp.x > this.xmin && dp.x < this.xmax)
+			{
+				if(dp.y < ymin) ymin = dp.y;
+				if(dp.y > ymax) ymax = dp.y;
+				size++;
+			}
+		}
+		if (size == 0) return null;
+		
+		double[] ret = new double[2];
+		ret[0] = ymin;
+		ret[1] = ymax;
+		return ret;
+	}
+	
 	/**
 	 * Sets the bounds of either or both axes to fit the dataset.
 	 * If the dataset is empty, leaves the axes alone.
@@ -603,49 +656,26 @@ public class ChartArea extends JComponent {
 		//empty dataset: do nothing
 		if (dataset == null || dataset.size() == 0 || (packX == false && packY == false))
 			return;
-		
-		java.util.Iterator iterator = dataset.iterator();
-		//these duplicate variables prevent changing the globals
-		// unless we really want to.
-		double xmin, ymin, xmax, ymax;	
-		xmin = ymin = Double.MAX_VALUE;
-		xmax = ymax = Double.MIN_VALUE;
-		DataPoint dp;
-		int size = dataset.size();
-		
-		//this loop finds the minimum and maximum values for x and y
-		//when x is also to be packed
-		if(packX == true)
-			while(iterator.hasNext() )
-			{
-				dp = (DataPoint)(iterator.next());
-				if(dp.y < ymin) ymin = dp.y;
-				if(dp.y > ymax) ymax = dp.y;
-				if(dp.x < xmin) xmin = dp.x;
-				if(dp.x > xmax) xmax = dp.x;
-			}
-		//if X is not being packed, only look at points within the x window
-		else
-		{
-			size = 0;
-			while(iterator.hasNext() )
-			{
-				dp = (DataPoint)(iterator.next());
-				if(dp.x > this.xmin && dp.x < this.xmax)
-				{
-					if(dp.y < ymin) ymin = dp.y;
-					if(dp.y > ymax) ymax = dp.y;
-					size++;
-				}
-			}
-			if(size == 0) return;
+
+		double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+
+		if(packX == true) {
+			double[][] bounds = findAllMinsMaxes(dataset);
+			xmin = bounds[0][0];
+			xmax = bounds[0][1];
+			ymin = bounds[1][0];
+			ymax = bounds[1][1];
+		} else {
+			double[] bounds = findYMinMax(dataset);
+			if (bounds == null) return;
+			ymin = bounds[0];
+			ymax = bounds[1];
 		}
-		
 		
 		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
 		
 		//one element:
-		if(size == 1)
+		if(xmin == xmax && ymin == ymax)
 		{
 			newXmin = xmin - xmin / 2;
 			newXmax = xmax + xmax / 2;
@@ -843,15 +873,20 @@ public class ChartArea extends JComponent {
 		{
 			DataPoint curPoint = iterator.next();
 			
-			int xCoord = (int) (xAxis.relativePosition(curPoint.x) * dataArea.width);
-			double yCoord = (dataArea.y + dataArea.height 
-					- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
-			
-			if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
-				if (coords[xCoord] == 0 || yCoord < coords[xCoord])
-					coords[xCoord] = yCoord;
-			} else if (curPoint.y == -999)
-				coords[xCoord] = -999.0;
+			double pointPos = xAxis.relativePosition(curPoint.x);
+			if (pointPos < 0) drawMorePointsIndicator(0, g2d);
+			else if (pointPos > 1) drawMorePointsIndicator(1, g2d);
+			else {
+				int xCoord = (int) (xAxis.relativePosition(curPoint.x) * dataArea.width);
+				double yCoord = (dataArea.y + dataArea.height 
+						- (actualYAxis.relativePosition(curPoint.y) * dataArea.height));
+				
+				if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
+					if (coords[xCoord] == 0 || yCoord < coords[xCoord])
+						coords[xCoord] = yCoord;
+				} else if (curPoint.y == -999)
+					coords[xCoord] = -999.0;
+			}
 		}
 		
 		// Then draws them:
@@ -996,10 +1031,13 @@ public class ChartArea extends JComponent {
 				g2d.setColor(Color.BLACK);
 				g2d.draw(bar);
 			}
-			else
+			else if (xCoord < 0) 
 			{
+				drawMorePointsIndicator(0, g2d);
 				//puts a null bar in the array to hold its place
 				//barsTemp[index] = null;
+			} else {
+				drawMorePointsIndicator(1, g2d);
 			}
 		}
 		//saves in global array
@@ -1008,6 +1046,44 @@ public class ChartArea extends JComponent {
 		//	bars[c] = barsTemp[c];
 	}
 	
+	/**
+	 * drawMorePointsIndicator - draw symbols indicating more points exist.
+	 * 
+	 * When there are more points off the graph area to the left or right,
+	 * this method draws arrows which indicate that this is the case.
+	 * 
+	 * I don't understand why this doesn't work in the line-graph case.
+	 * 
+	 * @param i 0 for a left arrow, 1 for a right arrow.
+	 * @param g the graphics2d object that runs the pane with the graph on it.
+	 */
+	private void drawMorePointsIndicator(int i, Graphics2D g) {
+		Rectangle dataArea = getDataAreaBounds();
+
+		int arrowShaftY = dataArea.y + dataArea.height - 3;
+		
+		// TODO: set the color according to *which* dataset has data off the edge.
+		g.setColor(color);
+		
+		// these draw little arrows facing left or right, as appropriate.
+		if (i == 0) {
+			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
+					dataArea.x - 5, arrowShaftY));
+			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
+					dataArea.x - 10, arrowShaftY + 5));
+			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
+					dataArea.x - 10, arrowShaftY - 5));
+		} else {
+			int leftX = dataArea.x + dataArea.width;
+			g.draw(new Line2D.Double(leftX + 15, arrowShaftY,
+					leftX + 5, arrowShaftY));
+			g.draw(new Line2D.Double(leftX + 15, arrowShaftY,
+					leftX + 10, arrowShaftY + 5));
+			g.draw(new Line2D.Double(leftX + 15, arrowShaftY,
+					leftX + 10, arrowShaftY - 5));
+		}
+	}
+
 	/**
 	 * Draws the X axis line, without tick marks.
 	 * @param g2d The graphics context.

@@ -24,7 +24,7 @@ public class Histogram {
 	 */
 	
 	public Histogram(float stdDev, int count) {
-		// try different widths!!
+		// TODO: try different widths!!
 		// "Scott's normal reference rule" -- probably should change to one
 		// of Scott's rules that allows for tons of skew.
 		this.binWidth = (float) (3.49 * stdDev * Math.pow(count, -1.0/3));

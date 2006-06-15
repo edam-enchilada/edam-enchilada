@@ -787,4 +787,15 @@ public class Chart extends JPanel
 			p.y += chartAreas[count].getHeight();
 		return p;
 	}
+	
+	public double[] getXRange() {
+		double[][] bounds;
+		double xmin = Double.MAX_VALUE, xmax = Double.MIN_VALUE;
+		for (ChartArea c : chartAreas) {
+			bounds = c.findAllMinsMaxes(c.getDataset(0));
+			if (bounds[0][0] < xmin) xmin = bounds[0][0];
+			if (bounds[0][1] > xmax) xmax = bounds[0][1];
+		}
+		return new double[] {xmin, xmax};
+	}
 }

@@ -81,7 +81,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private ZoomableChart zchart;
 	private JTable peaksTable; 
 	private JRadioButton peakButton, specButton;
-	private JButton nextButton, zoomOutButton, prevButton;
+	private JButton nextButton, zoomDefaultButton, prevButton;
 	private JTextPane labelText;
 	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
@@ -112,7 +112,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	// Make sure that queued threads don't waste work 
 	// (since only last-queued thread in each window will matter)
 	private int numRunningThreads = 0;
+	
 	private boolean integralPeaks = true;
+	private JButton zoomOutButton;
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
 	private static final int DEFAULT_XMIN = 0;
@@ -216,13 +218,15 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		zchart.addMouseMotionListener(this);
 		zchart.addMouseListener(this);
 		zchart.setFocusable(true);
-		zchart.setDefaultXmin(DEFAULT_XMIN);
-		zchart.setDefaultXmax(DEFAULT_XMAX);
+		zchart.setCScrollMin(DEFAULT_XMIN);
+		zchart.setCScrollMax(DEFAULT_XMAX);
 		
 		JPanel centerPanel = new JPanel(new BorderLayout());
 		JPanel nextPrevPanel = new JPanel(new FlowLayout());
 		nextPrevPanel.add(prevButton = new JButton("Previous"));
 		prevButton.addActionListener(this);
+		nextPrevPanel.add(zoomDefaultButton = new JButton("Zoom ->Default"));
+		zoomDefaultButton.addActionListener(this);
 		nextPrevPanel.add(zoomOutButton = new JButton("Zoom Out"));
 		zoomOutButton.addActionListener(this);
 		nextPrevPanel.add(nextButton = new JButton("Next"));
@@ -477,6 +481,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		chart.packData(false, true); //updates the Y axis scale.
 		chart.setTitle("Particle from" + filename);
+		double xMax = chart.getXRange()[1];
+		zchart.setCScrollMax(DEFAULT_XMAX > xMax ? DEFAULT_XMAX : xMax);
+		zchart.zoom(DEFAULT_XMIN, DEFAULT_XMAX);
+		// argh, just realized that getXRange is a horribly inefficient way
+		// of doing this.  could just keep track of it above, where we're
+		// iterating through the peaks anyway.  But it's written, and ... bleh.
 		peaksDataModel.fireTableDataChanged();
 	}
 	
@@ -499,7 +509,11 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void unZoom()
 	{
 		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX - 1);
-		zoomOutButton.setEnabled(false);
+	}
+	
+	private void zoomOut()
+	{
+		zchart.zoomOutHalf();
 	}
 
 	
@@ -532,7 +546,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			nextButton.setEnabled(true);
 		}
 		
-		zoomOutButton.setEnabled(false);
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
 		String filename = (String)particlesTable.getValueAt(curRow, 5);
@@ -629,7 +642,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	public void mouseDragged(MouseEvent e){}
 	public void mouseClicked(MouseEvent e) {}
 	public void mousePressed(MouseEvent e){}
-	public void mouseReleased(MouseEvent e) { zoomOutButton.setEnabled(true); }	
+	public void mouseReleased(MouseEvent e) {}	
 	public void mouseExited(MouseEvent e) {}	
 	public void mouseEntered(MouseEvent e) {}	
 	
@@ -648,8 +661,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			else
 				showNextParticle();
 		}
-		else if (source == zoomOutButton)
+		else if (source == zoomDefaultButton)
 			unZoom();
+		else if (source == zoomOutButton)
+			zoomOut();
 	}
 	
 	/**
