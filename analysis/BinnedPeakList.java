@@ -41,15 +41,6 @@ package analysis;
 
 import java.util.*;
 
-
-/*
- * NOTE! NOTE! NOTE!
- * when we generalize clustering and binnedpeaklists and such, we should
- * consider making the positive and negative spectra separate AtomInfoSparse
- * tables in the database, so that we don't have all the icky subtracting
- * and adding MAX_LOCATION and negative indices.
- */
-
 /**
  * @author andersbe
  * @author smitht
@@ -63,10 +54,6 @@ import java.util.*;
 public class BinnedPeakList implements Iterable<BinnedPeak> {
 	protected SortedMap<Integer, Float> peaks;
 
-	protected static final int MAX_LOCATION = 2500;
-	protected static int DOUBLE_MAX = MAX_LOCATION * 2;
-	protected static float[] longerLists = new float[MAX_LOCATION * 2];
-	
 	private Normalizable normalizable;
 
 	/**
@@ -208,8 +195,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 */
 	public void add(float location, float area)
 	{
-		assert(location < MAX_LOCATION && location > - MAX_LOCATION) :
-			"Location to add is out of bounds" + location;
 		int locationInt;
 		
 		// If the key is positive or zero, then add 0.5 to round.
@@ -260,9 +245,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 */
 	public void addNoChecks(int location, float area)
 	{
-		assert(location < MAX_LOCATION && location > - MAX_LOCATION) : 
-			"key is out of bounds: " + location;
-		//peaks.add(new BinnedPeak(key,value));
 		peaks.put(location, area);
 	}
 	
