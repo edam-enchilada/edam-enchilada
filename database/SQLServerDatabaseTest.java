@@ -592,38 +592,6 @@ public class SQLServerDatabaseTest extends TestCase {
 			stmt.execute(sql.toString());
 			assertTrue(db.recursiveDelete(db.getCollection(5)));
 				
-			/*//make sure info for 5 is gone from database
-			for (Integer atomID : atomIDs){
-				System.out.println(atomID);
-				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM ATOFMSAtomInfoDense\n"
-						+ " WHERE AtomID = " + atomID);
-				assertFalse(rs.next());
-				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM AtomMembership\n"
-						+ " WHERE AtomID = " + atomID);
-				assertFalse(rs.next());
-				rs = stmt.executeQuery("USE TestDB\n" +
-						"SELECT * FROM ATOFMSAtomInfoSparse\n"
-						+ " WHERE AtomID = " + atomID);
-				assertFalse(rs.next());
-				rs = stmt.executeQuery("USE TestDB SELECT * FROM InternalAtomOrder WHERE" +
-				" CollectionID = "+atomID);
-				assertFalse(rs.next());
-			
-			
-			}
-			//make sure collection info and relationship info is gone
-			rs = stmt.executeQuery("USE TestDB\n" +
-					"SELECT * FROM CollectionRelationships\n"
-					+ " WHERE ChildID = 5"
-					+ " OR ParentID = 5");
-			assertFalse(rs.next());
-			rs = stmt.executeQuery("USE TestDB\n" +
-					"SELECT * FROM Collections\n"
-					+ " WHERE CollectionID = 5");
-			assertFalse(rs.next());
-			*/
 			
 			//Check to make sure that the database is as it should be
 			//Both that information that should be gone is gone 
