@@ -83,49 +83,6 @@ public class BinnedPeakListTest extends TestCase {
 		
 	}
 	
-	public void testSpeed() {
-		float location, area;
-		Normalizer n = new Normalizer();
-		BinnedPeakList 
-			bpl = new BinnedPeakList(n), 
-			bpl2 = new BinnedPeakList(n);
-		int numPeaks = 40;
-		
-		for (int peaks = 0; peaks < numPeaks; peaks++) {
-			location = (float) (Math.random() - 0.5) * 4500;
-			area = (float) Math.random();
-			if (Math.random() > 0.5) {
-				bpl.add(location, area);
-			} else {
-				bpl2.add(location, area);
-			}
-		}
-		
-		bpl.normalize(CITY_BLOCK);
-		bpl2.normalize(CITY_BLOCK);
-		
-		Date start, end;
-		start = new Date();
-		
-		for (int i = 0; i < 100000; i++) {
-			bpl.getDistance2(bpl2, CITY_BLOCK);
-		}
-		
-		end = new Date();
-		System.out.println("New method took " + 
-				(end.getTime() - start.getTime()) + " milliseconds.");
-		
-		start = new Date();
-		for (int i = 0; i < 100000; i++) {
-			bpl.getDistance(bpl2, CITY_BLOCK);
-		}
-		
-		end = new Date();
-		System.out.println("Old method took " + 
-				(end.getTime() - start.getTime()) + " milliseconds.");
-		
-	}
-	
 	public void testGetDistance2() {
 		float location;
 		float area;
