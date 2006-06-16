@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class Normalizer implements Normalizable {
 
-	public BinnedPeakList normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
+	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
 		float magnitude = peakList.getMagnitude(dMetric);	
 		
 		Map.Entry<Integer,Float> entry;
@@ -14,8 +14,7 @@ public class Normalizer implements Normalizable {
 		while (iterator.hasNext()) {
 			entry = iterator.next();
 			entry.setValue(entry.getValue() / magnitude);
-		}
-		return peakList;		
+		}	
 	}
 
 	public float roundDistance(BinnedPeakList peakList, BinnedPeakList toList, DistanceMetric dMetric, float distance) {

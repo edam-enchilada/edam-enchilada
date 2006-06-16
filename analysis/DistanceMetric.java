@@ -39,11 +39,23 @@
  * ***** END LICENSE BLOCK ***** */
 
 package analysis;
+import java.lang.Math;
 
 /**
  * @author andersbe
  *
  */
 public enum DistanceMetric {
-	EUCLIDEAN_SQUARED, CITY_BLOCK, DOT_PRODUCT
+	EUCLIDEAN_SQUARED, CITY_BLOCK, DOT_PRODUCT;
+
+	public static float getDistance(float a, float b, DistanceMetric metric) {
+		if (metric == EUCLIDEAN_SQUARED) {
+			float tmp = a - b;
+			return tmp*tmp;
+		} else if (metric == CITY_BLOCK) {
+			return Math.abs(a - b);
+		} else {
+			return a * b;
+		}
+	}
 }

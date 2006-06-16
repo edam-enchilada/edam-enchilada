@@ -1,28 +1,146 @@
 package analysis;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import junit.framework.TestCase;
+import static analysis.DistanceMetric.*;
+
 
 public class BinnedPeakListTest extends TestCase {
 	OldBinnedPeakList old1, old2;
 	BinnedPeakList new1, new2;
 	
+	float delta = 0.00001f;
+	
 	protected void setUp() throws Exception {
 		super.setUp();
 	}
+//	
+//	public void testGetDistance() {
+//		float location;
+//		float area;
+//		for (int i = 0; i < 1000; i++) {
+//			old1 = new OldBinnedPeakList();
+//			old2 = new OldBinnedPeakList();
+//			
+//			new1 = new BinnedPeakList(new Normalizer());
+//			new2 = new BinnedPeakList(new Normalizer());
+//			
+//			for (int peaks = 0; peaks < 40; peaks++) {
+//				location = (float) (Math.random() - 0.5) * 4500;
+//				area = (float) Math.random();
+//				if (Math.random() > 0.5) {
+//					old1.add(location, area);
+//					new1.add(location, area);
+//				} else {
+//					old2.add(location, area);
+//					new2.add(location, area);
+//				}
+//			}
+//			assertEquals(old1.getDistance(old2, EUCLIDEAN_SQUARED),
+//					new1.getDistance(new2, EUCLIDEAN_SQUARED));
+//			assertEquals(old1.getDistance(old2, EUCLIDEAN_SQUARED),
+//					old2.getDistance(old1, EUCLIDEAN_SQUARED));
+//			assertEquals(new1.getDistance(new2, EUCLIDEAN_SQUARED),
+//					new2.getDistance(new1, EUCLIDEAN_SQUARED));
+//			
+//			assertEquals(old1.getDistance(old2, DOT_PRODUCT),
+//					new1.getDistance(new2, DOT_PRODUCT));
+//			assertEquals(old1.getDistance(old2, DOT_PRODUCT),
+//					old2.getDistance(old1, DOT_PRODUCT));
+//			assertEquals(new1.getDistance(new2, DOT_PRODUCT),
+//					new2.getDistance(new1, DOT_PRODUCT));
+//			
+//			
+//			assertEquals(old1.getDistance(old2, CITY_BLOCK),
+//					new1.getDistance(new2, CITY_BLOCK));
+//			assertEquals(old1.getDistance(old2, CITY_BLOCK),
+//					old2.getDistance(old1, CITY_BLOCK));
+//			assertEquals(new1.getDistance(new2, CITY_BLOCK),
+//					new2.getDistance(new1, CITY_BLOCK));
+//			
+//		}
+//	}
+//	
+
+	public void testEmptyList() {
+		BinnedPeakList bpl = new BinnedPeakList(new Normalizer());
+		BinnedPeakList bpl2 = new BinnedPeakList(new Normalizer());
+		
+		bpl.addAnotherParticle(bpl2);
+		
+		assertEquals(0, bpl.length());
+		assertFalse(bpl.iterator().hasNext());
+		
+		bpl.divideAreasBy(3);
+		bpl.multiply(3);
+		assertEquals(0.0f, bpl.getDistance(bpl2, CITY_BLOCK));
+		bpl2.add(3, .2f);
+		assertEquals(.2f, bpl.getDistance(bpl2, CITY_BLOCK));
+		
+		bpl.normalize(CITY_BLOCK); // what should this actually do?
+		
+	}
 	
-	public void testGetDistance() {
+	public void testSpeed() {
+		float location, area;
+		Normalizer n = new Normalizer();
+		BinnedPeakList 
+			bpl = new BinnedPeakList(n), 
+			bpl2 = new BinnedPeakList(n);
+		int numPeaks = 40;
+		
+		for (int peaks = 0; peaks < numPeaks; peaks++) {
+			location = (float) (Math.random() - 0.5) * 4500;
+			area = (float) Math.random();
+			if (Math.random() > 0.5) {
+				bpl.add(location, area);
+			} else {
+				bpl2.add(location, area);
+			}
+		}
+		
+		bpl.normalize(CITY_BLOCK);
+		bpl2.normalize(CITY_BLOCK);
+		
+		Date start, end;
+		start = new Date();
+		
+		for (int i = 0; i < 100000; i++) {
+			bpl.getDistance2(bpl2, CITY_BLOCK);
+		}
+		
+		end = new Date();
+		System.out.println("New method took " + 
+				(end.getTime() - start.getTime()) + " milliseconds.");
+		
+		start = new Date();
+		for (int i = 0; i < 100000; i++) {
+			bpl.getDistance(bpl2, CITY_BLOCK);
+		}
+		
+		end = new Date();
+		System.out.println("Old method took " + 
+				(end.getTime() - start.getTime()) + " milliseconds.");
+		
+	}
+	
+	public void testGetDistance2() {
 		float location;
 		float area;
+		
+		Normalizer n = new Normalizer();
 		for (int i = 0; i < 1000; i++) {
 			old1 = new OldBinnedPeakList();
 			old2 = new OldBinnedPeakList();
 			
-			new1 = new BinnedPeakList(new Normalizer());
-			new2 = new BinnedPeakList(new Normalizer());
+			new1 = new BinnedPeakList(n);
+			new2 = new BinnedPeakList(n);
 			
-			for (int peaks = 0; peaks < 40; peaks++) {
+			int numPeaks = 40;
+			
+			for (int peaks = 0; peaks < numPeaks; peaks++) {
 				location = (float) (Math.random() - 0.5) * 4500;
 				area = (float) Math.random();
 				if (Math.random() > 0.5) {
@@ -33,30 +151,46 @@ public class BinnedPeakListTest extends TestCase {
 					new2.add(location, area);
 				}
 			}
-			assertEquals(old1.getDistance(old2, DistanceMetric.EUCLIDEAN_SQUARED),
-					new1.getDistance(new2, DistanceMetric.EUCLIDEAN_SQUARED));
-			assertEquals(old1.getDistance(old2, DistanceMetric.EUCLIDEAN_SQUARED),
-					old2.getDistance(old1, DistanceMetric.EUCLIDEAN_SQUARED));
-			assertEquals(new1.getDistance(new2, DistanceMetric.EUCLIDEAN_SQUARED),
-					new2.getDistance(new1, DistanceMetric.EUCLIDEAN_SQUARED));
+//			
+//			old1.add(3, .5f);
+//			old2.add(4, .5f);
+//			old2.add(3, .2f);
+//			new1.add(3, .5f);
+//			new2.add(4, .5f);
+//			new2.add(3, .2f);
 			
-			assertEquals(old1.getDistance(old2, DistanceMetric.DOT_PRODUCT),
-					new1.getDistance(new2, DistanceMetric.DOT_PRODUCT));
-			assertEquals(old1.getDistance(old2, DistanceMetric.DOT_PRODUCT),
-					old2.getDistance(old1, DistanceMetric.DOT_PRODUCT));
-			assertEquals(new1.getDistance(new2, DistanceMetric.DOT_PRODUCT),
-					new2.getDistance(new1, DistanceMetric.DOT_PRODUCT));
+			old1.divideAreasBy(numPeaks);
+			old2.divideAreasBy(numPeaks);
+			new1.divideAreasBy(numPeaks);
+			new2.divideAreasBy(numPeaks);
 			
+			assertEquals(old1.getMagnitude(CITY_BLOCK), new1.getMagnitude(CITY_BLOCK), 0.0001);
+			assertEquals(old2.getMagnitude(CITY_BLOCK), new2.getMagnitude(CITY_BLOCK), 0.0001);
 			
-			assertEquals(old1.getDistance(old2, DistanceMetric.CITY_BLOCK),
-					new1.getDistance(new2, DistanceMetric.CITY_BLOCK));
-			assertEquals(old1.getDistance(old2, DistanceMetric.CITY_BLOCK),
-					old2.getDistance(old1, DistanceMetric.CITY_BLOCK));
-			assertEquals(new1.getDistance(new2, DistanceMetric.CITY_BLOCK),
-					new2.getDistance(new1, DistanceMetric.CITY_BLOCK));
+			assertEquals(old1.getDistance(old2, EUCLIDEAN_SQUARED),
+					new1.getDistance2(new2, EUCLIDEAN_SQUARED), delta);
+			assertEquals(old1.getDistance(old2, EUCLIDEAN_SQUARED),
+					old2.getDistance(old1, EUCLIDEAN_SQUARED), delta);
+			assertEquals(new1.getDistance(new2, EUCLIDEAN_SQUARED),
+					new2.getDistance2(new1, EUCLIDEAN_SQUARED), delta);
+			
+			assertEquals(old1.getDistance(old2, DOT_PRODUCT),
+					new1.getDistance2(new2, DOT_PRODUCT), delta);
+			assertEquals(old1.getDistance(old2, DOT_PRODUCT),
+					old2.getDistance(old1, DOT_PRODUCT), delta);
+			assertEquals(new1.getDistance(new2, DOT_PRODUCT),
+					new2.getDistance2(new1, DOT_PRODUCT), delta);	
+			
+			assertEquals(old1.getDistance(old2, CITY_BLOCK),
+					new1.getDistance2(new2, CITY_BLOCK), delta);
+			assertEquals(old1.getDistance(old2, CITY_BLOCK),
+					old2.getDistance(old1, CITY_BLOCK), delta);
+			assertEquals(new1.getDistance2(new2, CITY_BLOCK),
+					new2.getDistance2(new1, CITY_BLOCK), delta);
 			
 		}
 	}
+	
 	private class OldBinnedPeakList {
 
 		private ArrayList<Integer> locations;

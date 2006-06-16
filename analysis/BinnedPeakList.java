@@ -232,6 +232,74 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return normalizable.roundDistance(this, toList, dMetric, distance);
 	}
 	
+	public float getDistance2(BinnedPeakList other, DistanceMetric metric) {
+		Map.Entry<Integer, Float> i = null, j = null;
+		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
+			thatIter = other.peaks.entrySet().iterator();
+		
+		float distance = 0;
+		
+		// if one of the peak lists is empty, do something about it.
+		if (thisIter.hasNext()) {
+			i = thisIter.next();
+		}
+		if (thatIter.hasNext()) {
+			j = thatIter.next();
+		}
+		// both lists have some particles, so 
+		while (i != null && j != null) {
+			if (i.getKey().equals(j.getKey()))
+			{
+				distance += DistanceMetric.getDistance(i.getValue(),
+						j.getValue(),
+						metric);
+				if (thisIter.hasNext())
+					i = thisIter.next();
+				else i = null;
+				
+				if (thatIter.hasNext())
+					j = thatIter.next();
+				else j = null;
+				
+				
+			}
+			else if (i.getKey() < j.getKey())
+			{
+				distance += DistanceMetric.getDistance(0, i.getValue(), metric);
+				if (thisIter.hasNext())
+					i = thisIter.next();
+				else i = null;
+			}
+			else
+			{
+				distance += DistanceMetric.getDistance(0, j.getValue(), metric);
+				if (thatIter.hasNext())
+					j = thatIter.next();
+				else j = null;
+			}
+		}
+	
+		if (i != null) {
+			assert(j == null);
+			distance += DistanceMetric.getDistance(0, i.getValue(), metric);
+			while (thisIter.hasNext()) {
+				distance += DistanceMetric.getDistance(0, 
+						thisIter.next().getValue(), metric);
+			}
+		} else if (j != null) {
+			distance += DistanceMetric.getDistance(0, j.getValue(), metric);
+			while (thatIter.hasNext()) {
+				distance += DistanceMetric.getDistance(0,
+						thatIter.next().getValue(), metric);
+			}
+		}
+		
+		if (metric == DistanceMetric.DOT_PRODUCT)
+		    distance = 1-distance;
+		
+		return normalizable.roundDistance(this, other, metric, distance);
+	}
+	
 	/**
 	 * Retrieve the value of the peaklist at a given key
 	 * @param key	The key of the value you wish to
@@ -275,11 +343,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		else
 			locationInt = (int) ((float) location - 0.5);
 		
-		if (peaks.containsKey(locationInt))
+		add(locationInt, area);
+	}
+	
+	public void add(int location, float area) {
+		if (peaks.containsKey(location))
 		{
-			peaks.put(locationInt, peaks.get(locationInt) + area);
+			peaks.put(location, peaks.get(location) + area);
 		} else {
-			peaks.put(locationInt, area);
+			peaks.put(location, area);
 		}
 	}
 	
@@ -289,7 +361,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @param bp the BinnedPeak to add.
 	 */
 	public void add(BinnedPeak bp) {
-		add((float) bp.key, bp.value);
+		add(bp.key, bp.value);
 	}
 	
 	/**
@@ -319,7 +391,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	}
 	
 	public void divideAreasBy(int divisor) {
-		// TODO: Map.Entry.setValue()
 		Map.Entry<Integer,Float> e;
 		Iterator<Map.Entry<Integer,Float>> i = peaks.entrySet().iterator();
 		
@@ -385,15 +456,16 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return true;
 	}
 	
-	/** Used for BIRCH clustering.
+	/** 
+	 * Multiply each value by a scalar factor.
 	 * @param factor
 	 */
 	public void multiply(float factor) {
-		Iterator<BinnedPeak> iter = iterator();
-		BinnedPeak temp;
+		Iterator<Map.Entry<Integer, Float>> iter = peaks.entrySet().iterator();
+		Map.Entry<Integer,Float> temp;
 		while (iter.hasNext()) {
 			temp = iter.next();
-			temp.value = temp.value*factor;
+			temp.setValue(temp.getValue() * factor);
 		}
 	}
 	
@@ -401,6 +473,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return new Iter(this);
 	}
 	
+	/**
+	 * Warning!  This does not actually provide you with access to the
+	 * underlying map structure, so any changes made to elements accessed by
+	 * this iterator will NOT BE REFLECTED in the BPL itself.
+	 * 
+	 * @author smitht
+	 *
+	 */
 	public class Iter implements Iterator<BinnedPeak> {
 		private Iterator<Map.Entry<Integer,Float>> entries;
 		
