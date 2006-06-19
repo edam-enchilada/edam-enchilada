@@ -4227,10 +4227,28 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		ArrayList<String> columnsToReturn = new ArrayList<String>();
 		columnsToReturn.add("Ts1Value");
+		int parentSeq1 = this.getParentCollectionID(seq1.getCollectionID());
+		int parentSeq2 = -1;
+		if(seq2 != null) parentSeq2 = this.getParentCollectionID(seq2.getCollectionID());
+		
 		
 		String atomSelStr = "select CollectionID, Time, Value from " +
 		getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + 
 		" D join AtomMembership M on (D.AtomID = M.AtomID)";
+		
+		
+		
+		String selectAllTimesStr = 
+			"SELECT T.Time\n" +
+			"FROM (SELECT CollectionID, Time, Value\n" +
+			"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+			" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+			"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)" +
+			"WHERE ParentID = " + parentSeq1+"";
+		if (seq2 != null) {
+			selectAllTimesStr += "\nOR ParentID = " + parentSeq2 + "";
+		}
+		selectAllTimesStr += ";";
 		
 		String selectStr = "select T1.Time as Time";
 		String tableJoinStr = "from (" + atomSelStr + ") T1 \n";
@@ -4239,7 +4257,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		if (seq2 != null) {
 			tableJoinStr += "join (" + atomSelStr + ") T2 on (T2.Time = T1.Time) \n";
-			collCondStr += "and T2.CollectionID = " + seq2.getCollectionID() + " \n";
+			collCondStr += "OR T2.CollectionID = " + seq2.getCollectionID() + " \n";
 			columnsToReturn.add("Ts2Value");
 		}
 		
@@ -4269,8 +4287,19 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		try{
 			Statement stmt = con.createStatement();
+			//System.out.println(selectAllTimesStr);
+			ResultSet rs = stmt.executeQuery(selectAllTimesStr);
+			while (rs.next()) {
+				double[] retValues = new double[columnsToReturn.size()];
+				for (int i = 0; i < retValues.length; i++)
+					retValues[i] = 0;
+				Timestamp ts = rs.getTimestamp("Time");
+				if (ts != null)
+					retData.put(ts, retValues);	
+			}
+			
 			//System.out.println(sqlStr);
-			ResultSet rs = stmt.executeQuery(sqlStr);
+			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
 				double[] retValues = new double[columnsToReturn.size()];
