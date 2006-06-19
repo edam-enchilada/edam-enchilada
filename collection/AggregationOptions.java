@@ -40,7 +40,8 @@ public class AggregationOptions {
 		ArrayList<Integer> tempValues = new ArrayList<Integer>();
 		
 		if (mzString.trim().equals("")) {
-			mzValues = tempValues;
+			allMZValues = true;
+			mzValues = null;
 			return;
 		}
 	
