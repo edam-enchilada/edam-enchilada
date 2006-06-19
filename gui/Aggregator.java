@@ -44,12 +44,18 @@ public class Aggregator {
 		return createAggregateTimeSeries(rootCollectionID, collections);
 	}
 
+	/**
+	 * @param rootCollectionID the CollectionID for the new time-series data
+	 * @param collections the collections to be aggregated
+	 * @return
+	 */
 	public int createAggregateTimeSeries(final int rootCollectionID, final Collection[] collections) {	
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
 		final ProgressBarWrapper progressBar1 = 
 			new ProgressBarWrapper(parentFrame, "Retrieving Valid M/Z Values", collections.length);
 		
+		//get the valid m/z values for each collection individually
 		final SwingWorker worker2 = new SwingWorker() {
 			public Object construct() {
 				Date s,e; // start and end dates.
@@ -100,6 +106,7 @@ public class Aggregator {
 		final ProgressBarWrapper progressBar2 = 
 			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls[0]+1);
 		
+		//actually do the aggregation
 		final SwingWorker worker1 = new SwingWorker() {
 			public Object construct() {
 				// iterates through the collections and creates the time series for them.

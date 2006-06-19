@@ -188,7 +188,19 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    // select.  But I'm not going to do that right now.  --Thomas
 	    
 	    final JTextField mzValues = new JTextField(100);
-	    mzValues.setText(options.mzString);
+	    try {
+			options.setMZValues(options.mzString);
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(
+					mzValues, 
+					"Error: Invalid input (" + options.mzString + ")\n" +
+							"Make sure your input is of the form: \"-10 to -4, 5 to 6, 100 to 400\"\n" +
+							"and that all values are within the range of -600 to 600", 
+					"Invalid Input", 
+					JOptionPane.ERROR_MESSAGE); 
+			mzValues.setText(options.mzString);
+		}
+		mzValues.setText(options.mzString);
 	    mzValues.addFocusListener(new FocusListener() {
 	    	private String savedText;
 	    	
@@ -213,13 +225,13 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    		}
 	    	}
 	    });
-	    final JCheckBox allMZValues = new JCheckBox("Aggregate all M/Z values", false);
-	    allMZValues.addActionListener(new ActionListener() {
-	    	public void actionPerformed(ActionEvent e) {
-	    		options.allMZValues = allMZValues.isSelected();
-	    		mzValues.setEnabled(! allMZValues.isSelected());
-	    	}
-	    });
+	    //final JCheckBox allMZValues = new JCheckBox("Aggregate all M/Z values", false);
+	    //allMZValues.addActionListener(new ActionListener() {
+	    //	public void actionPerformed(ActionEvent e) {
+	    //		options.allMZValues = allMZValues.isSelected();
+	    //		mzValues.setEnabled(! allMZValues.isSelected());
+	    //	}
+	    //});
 	    
 	    ButtonGroup bg = getValueCombiningButtons(options);
 	    Enumeration<AbstractButton> combiningButtons = bg.getElements();
@@ -248,7 +260,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomHalf = addComponent(new JLabel("Produce time series"), bottomHalf);
 		bottomHalf = addComponent(new JLabel("for m/z values (leave blank for all):"), bottomHalf);
 		bottomHalf = addComponent(mzValues, bottomHalf);
-		bottomHalf = addComponent(allMZValues, bottomHalf);
+		//bottomHalf = addComponent(allMZValues, bottomHalf);
 		
 		return mainPanel;
 	}
