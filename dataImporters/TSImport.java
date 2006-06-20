@@ -81,7 +81,7 @@ public class TSImport{
     					if (line.equals("")) continue;
     					if(line.charAt(0) == '#') continue;
     					line_no++;
-    					setStatus(("CSV "+line_no+": "+line)
+    					setStatus(("CSV "+line_no+": "+line+"                          ")  // 26 spaces
     							.substring(0,25)+"...");
     					process(line.split("\\s*,\\s*"), tf, line_no, prefix);
     				}
