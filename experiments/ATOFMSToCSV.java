@@ -2,7 +2,9 @@ package experiments;
 
 import java.sql.*;
 
-import database.SQLServerDatabase;
+import database.*;
+
+import analysis.*;
 
 public class ATOFMSToCSV {
 
@@ -18,7 +20,27 @@ public class ATOFMSToCSV {
 		SQLServerDatabase db = new SQLServerDatabase();
 		if (!db.openConnection()) throw new RuntimeException();
 		
-		db.getBinnedCursor(db.getCollection(3));
+		CollectionCursor b = db.getBinnedCursor(db.getCollection(7));
+		BinnedPeakList particle;
+		int partnum = 0;
+		
+		int maxMZ = 100;
+		
+		System.out.print("partnum");
+		for (int i = 1; i < maxMZ; i++) {
+			System.out.print("," + i);
+		}
+		System.out.println();
+		
+		while (b.next()) {
+			particle = b.getCurrent().getBinnedList();
+			System.out.print(partnum++);
+			for (int i = 1; i < maxMZ; i++) {
+				System.out.print("," + particle.getAreaAt(i));
+			}
+			System.out.println();
+		}
+		
 	}
 
 }
