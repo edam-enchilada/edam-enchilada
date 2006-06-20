@@ -106,6 +106,9 @@ public class PeakDivider extends CollectionDivider {
 			thisParticle = curs.getCurrent();
 			thisParticleList = thisParticle.getBinnedList();
 			int atomID = thisParticle.getParticleInfo().getAtomID();
+			
+			// this class is never used anywhere right now.
+			// this loop looks really broken to me... -thomas
 			for (int i = 0; i < peaks.length(); i++)
 			{
 				mustContain = peaks.iterator();

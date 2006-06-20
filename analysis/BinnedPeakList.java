@@ -71,6 +71,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		normalizable = null;
 	}*/
 	
+	/**
+	 * Return the magnitude of this peaklist, according to the supplied
+	 * distance metric (it varies according to measurement).
+	 */
 	public float getMagnitude(DistanceMetric dMetric)
 	{
 		float magnitude = 0;
@@ -95,7 +99,24 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return magnitude;
 	}
 
+	/**
+	 * Find the distance between this peaklist and another one.
+	 * @param other The peaklist to compare to
+	 * @param metric The distance metric to use
+	 * @return the distance between the lists.
+	 */
 	public float getDistance(BinnedPeakList other, DistanceMetric metric) {
+
+		/*
+		 * The following distance calculation algorithm is very similar to the
+		 * merge part of merge sort, where you riffle through both lists looking
+		 * for the lowest entry, and choosing that one.  The extra condition
+		 * is when we have an entry for the same dimension in each list,
+		 * in which case we don't choose one but calculate the distance between
+		 * them. 
+		 */
+		
+		
 		Map.Entry<Integer, Float> i = null, j = null;
 		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
 			thatIter = other.peaks.entrySet().iterator();
@@ -116,6 +137,8 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 				distance += DistanceMetric.getDistance(i.getValue(),
 						j.getValue(),
 						metric);
+				
+				
 				if (thisIter.hasNext())
 					i = thisIter.next();
 				else i = null;
@@ -123,12 +146,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 				if (thatIter.hasNext())
 					j = thatIter.next();
 				else j = null;
-				
-				
 			}
 			else if (i.getKey() < j.getKey())
 			{
 				distance += DistanceMetric.getDistance(0, i.getValue(), metric);
+			
 				if (thisIter.hasNext())
 					i = thisIter.next();
 				else i = null;
@@ -136,6 +158,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			else
 			{
 				distance += DistanceMetric.getDistance(0, j.getValue(), metric);
+				
 				if (thatIter.hasNext())
 					j = thatIter.next();
 				else j = null;
@@ -158,7 +181,9 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		
 		if (metric == DistanceMetric.DOT_PRODUCT)
-		    distance = 1-distance;
+		    distance = 1-distance; 
+		// dot product actually comes up with similarity, rather than distance,
+		// so we take 1- it to find "distance".
 		
 		return normalizable.roundDistance(this, other, metric, distance);
 	}
@@ -207,6 +232,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		add(locationInt, area);
 	}
 	
+	/**
+	 * This is just like add(float, float) except that it is assumed that
+	 * rounding the peaks to the right location has been done already.
+	 * @param location
+	 * @param area
+	 */
 	public void add(int location, float area) {
 		if (peaks.containsKey(location))
 		{
@@ -218,7 +249,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	
 	/**
 	 * Adds a BinnedPeak, with the same checks as add(float, float).
-	 * Equivalent to add(bp.location, bp.area).
+	 * Equivalent to add(bp.key, bp.value).
 	 * @param bp the BinnedPeak to add.
 	 */
 	public void add(BinnedPeak bp) {
@@ -237,9 +268,8 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	
 	/**
 	 * This skips all the checks of add().  Do not use this unless
-	 * you are copying from another list: not taking care to make
-	 * sure that you are not adding duplicate locations can result
-	 * in undesired behavior!!!!
+	 * you are copying from another list: if you add a peak where
+	 * another one is already, the first one will be lost.
 	 * @param key	The key of the peak
 	 * @param value	The value of the peak at that key.
 	 */
@@ -248,6 +278,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		peaks.put(location, area);
 	}
 	
+	/**
+	 * Divide the value at each peak by this amount.
+	 * @param divisor
+	 */
 	public void divideAreasBy(int divisor) {
 		Map.Entry<Integer,Float> e;
 		Iterator<Map.Entry<Integer,Float>> i = peaks.entrySet().iterator();
@@ -257,7 +291,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			e.setValue(e.getValue() / divisor);
 		}
 	}
-		
+	
+	/**
+	 * Print a representation of this peak list.
+	 */
 	public void printPeakList() {
 		System.out.println("printing peak list");
 		Iterator<BinnedPeak> i = iterator();
@@ -268,18 +305,33 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	/**
+	 * Find the highest key in the mapping.
+	 * @return the highest key!!
+	 */
 	public int getLastLocation() {
 		return peaks.lastKey();
 	}
 	
+	/**
+	 * Finds the lowest key in the mapping.
+	 */
 	public int getFirstLocation() {
 		return peaks.firstKey();
 	}
 	
+	/**
+	 * Find the largest value contained in the peaklist.  (not its index, the
+	 * value itself).
+	 */
 	public float getLargestArea() {
 		return Collections.max(peaks.values());
 	}
 	
+	/**
+	 * Find the sum of two particles.
+	 * @param other the particle to add to this one.
+	 */
 	public void addAnotherParticle(BinnedPeakList other) {
 		Iterator<BinnedPeak> i = other.iterator();
 		while (i.hasNext()) {
@@ -290,14 +342,19 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	/**
 	 * A method to normalize this BinnedPeakList.  Depending 
 	 * on which distance metric is
-	 * used, this method will adapt to produce a distance of one 
-	 * from <0,0,0,....,0> to the vector represented by the list.
+	 * used, this method will change the peaklist so that the distance 
+	 * from <0,0,0,....,0> to the vector represented by the list is equal to 1.
 	 * @param 	dMetric the distance metric to use to measure length
 	 */
 	public void normalize(DistanceMetric dMetric) {
 		normalizable.normalize(this,dMetric);
 	}
 	
+	/**
+	 * Change the Normalizer that will be used during calls to normalize() on
+	 * this peaklist.
+	 * @param norm the new normalizer.
+	 */
 	public void setNormalizer(Normalizer norm) {
 		normalizable = norm;
 	}
@@ -327,6 +384,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	/**
+	 * Return an iterator view of the binned peak list.  Note that modifying
+	 * the elements accessed by the iterator will NOT modify the peaklist itself.
+	 */
 	public Iterator<BinnedPeak> iterator() {
 		return new Iter(this);
 	}
@@ -342,6 +403,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	public class Iter implements Iterator<BinnedPeak> {
 		private Iterator<Map.Entry<Integer,Float>> entries;
 		
+		/*
+		 * Copy the set of peaks into a list, and get an iterator on the list.
+		 * This happens to be sorted, yay.
+		 */
 		public Iter(BinnedPeakList bpl) {
 			this.entries = bpl.peaks.entrySet().iterator();
 		}

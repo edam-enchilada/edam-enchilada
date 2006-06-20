@@ -1,6 +1,11 @@
 package analysis.clustering.o;
 
 /**
+ * Hmm, this Partition thing could really benefit from refactoring using a
+ * has-a type relationship rather than is-a.  Changing the type of a Partition
+ * could be as easy as setting a variable, but instead it's all complicated
+ * and silly with trasmogrifyChild and stuff.
+ * 
  * Interface for different kinds of Partitions.  See OClusterThoughts for what
  * this means, although that document is rather out of date.
  * @author Thomas Smith

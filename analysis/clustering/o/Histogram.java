@@ -212,7 +212,8 @@ public class Histogram {
 	}
 
 	/**
-	 * @return Returns the dimension.
+	 * @return Returns the dimension, which is just some number associated with
+	 * the histogram.
 	 */
 	public int getDimension() {
 		return dimension;
