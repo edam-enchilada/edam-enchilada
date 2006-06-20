@@ -1,5 +1,9 @@
 package testing;
 
+/**
+ * @author smitht
+ */
+
 import gui.FilePicker;
 
 import java.io.File;
