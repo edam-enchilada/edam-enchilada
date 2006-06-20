@@ -9,6 +9,16 @@ import dataImporters.ATOFMSBatchTableModel;
 import dataImporters.ATOFMSDataSetImporter;
 import errorframework.ErrorLogger;
 
+/**
+ * A GUI for importing several ATOFMS collections at once, using a CSV file that
+ * looks just like the Import from MS-Analyze GUI.
+ * An example of such a file is in the importation files directory of the source
+ * tree.
+ * 
+ * @author smitht
+ *
+ */
+
 public class ATOFMSBatchImportGUI {
 	private Window parent;
 	private ATOFMSBatchTableModel tab;

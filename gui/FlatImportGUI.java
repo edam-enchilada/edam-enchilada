@@ -1,30 +1,17 @@
 package gui;
 
 import java.awt.*;
-import java.util.concurrent.*;
-import java.io.*;
-
-import javax.swing.*;
 
 import dataImporters.*;
 import database.SQLServerDatabase;
 
 import errorframework.*;
-import externalswing.*;
 
-
-
-/*
- * Actually, a LinkedBlockingQueue is perfect.
+/**
+ * GUI for importing CSV files, using a "task" file.  An example of such a file
+ * is in the Importation Files directory of the source tree.
  * 
- * OK, so:  to do.
- * in TSConvert, add support within the ProgressTask to stick things on the
- * queue instead of just adding them to the array.
- * 
- * here, create the fileQueue and pass it to each thing
- * 
- * think about how closing one dialog will influence the other.  bleah.
- * maybe override dispose in the implementations
+ * @author smitht
  */
 
 public class FlatImportGUI {
