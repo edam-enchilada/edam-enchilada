@@ -858,6 +858,7 @@ public class ChartArea extends JComponent {
 	{
 		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
+		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
@@ -874,8 +875,14 @@ public class ChartArea extends JComponent {
 			DataPoint curPoint = iterator.next();
 			
 			double pointPos = xAxis.relativePosition(curPoint.x);
-			if (pointPos < 0) drawMorePointsIndicator(0, g2d);
-			else if (pointPos > 1) drawMorePointsIndicator(1, g2d);
+			if (pointPos < 0 && !drawnMoreLeft) {
+				drawnMoreLeft = true;
+				drawMorePointsIndicator(0, g2d);
+			}
+			else if (pointPos > 1 && !drawnMoreRight) {
+				drawnMoreRight = true;
+				drawMorePointsIndicator(1, g2d);
+			}
 			else {
 				int xCoord = (int) (xAxis.relativePosition(curPoint.x) * dataArea.width);
 				double yCoord = (dataArea.y + dataArea.height 
@@ -989,6 +996,7 @@ public class ChartArea extends JComponent {
 		int width = barWidth;
 		double xCoord;
 		double height;
+		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		//loops through all data points, drawing each one.
 		Iterator<DataPoint> i = ds.iterator();
@@ -1032,12 +1040,14 @@ public class ChartArea extends JComponent {
 				g2d.setColor(Color.BLACK);
 				g2d.draw(bar);
 			}
-			else if (xCoord < 0) 
+			else if (xCoord < 0 && !drawnMoreLeft) 
 			{
+				drawnMoreLeft = true;
 				drawMorePointsIndicator(0, g2d);
 				//puts a null bar in the array to hold its place
 				//barsTemp[index] = null;
-			} else {
+			} else if (! drawnMoreRight) {
+				drawnMoreRight = true;
 				drawMorePointsIndicator(1, g2d);
 			}
 		}
@@ -1051,9 +1061,8 @@ public class ChartArea extends JComponent {
 	 * drawMorePointsIndicator - draw symbols indicating more points exist.
 	 * 
 	 * When there are more points off the graph area to the left or right,
-	 * this method draws arrows which indicate that this is the case.
-	 * 
-	 * I don't understand why this doesn't work in the line-graph case.
+	 * this method gets called, and draws arrows which indicate that this 
+	 * is the case.
 	 * 
 	 * @param i 0 for a left arrow, 1 for a right arrow.
 	 * @param g the graphics2d object that runs the pane with the graph on it.
@@ -1070,7 +1079,7 @@ public class ChartArea extends JComponent {
 		g.setColor(color);
 		
 		// these draw little arrows facing left or right, as appropriate.
-		if (i == 0) {
+		if (i <= 0) {
 			g.setClip(new Rectangle(dataArea.x - 20, dataArea.y,
 					dataArea.width + 20, dataArea.height + 5));
 			g.draw(new Line2D.Double(dataArea.x - 15, arrowShaftY,
