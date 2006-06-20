@@ -3,6 +3,14 @@ package database;
 import java.text.SimpleDateFormat;
 import java.sql.*;
 
+/**
+ * This class makes it fairly simple to insert a lot of time series data quickly.
+ * <p>
+ * It is not synchronized or anything, so only use one at a time!
+ * 
+ * @author smitht
+ *
+ */
 public class TSBulkInserter {
 	private StringBuilder vals, membership, dataset;
 	private String tabName;
@@ -15,12 +23,20 @@ public class TSBulkInserter {
 	private SQLServerDatabase db;
 	private Connection con;
 	
+	/**
+	 * Create a new TSBulkInserter with its own database connection.
+	 *
+	 */
 	public TSBulkInserter() {
 		db = new SQLServerDatabase();
 		db.openConnection();
 		setUp();
 	}
 
+	/**
+	 * Create a new TSBulkInserter with an already-connected database.
+	 * @param db
+	 */
 	public TSBulkInserter(SQLServerDatabase db) {
 		this.db = db;
 		setUp();
@@ -35,7 +51,15 @@ public class TSBulkInserter {
 		nextID = firstID = collectionID = datasetID = -1;
 	}
 	
+	/**
+	 * Creates the {@link Collection} that the time series info will go into,
+	 * and sets everything up for adding the data.
+	 * 
+	 * @param collName
+	 * @return an array containing the collectionID (index 0) and the datasetID (1).
+	 */
 	public int[] startDataset(String collName) {
+		if (started) throw new Error("Bad order of calls to TSBulkInserter");
 		int[] collectionInfo = db.createEmptyCollectionAndDataset(
 				"TimeSeries",
 				0,
@@ -49,7 +73,14 @@ public class TSBulkInserter {
 		return collectionInfo;
 	}
 
-	
+	/**
+	 * Add a time, value pair to be inserted.  If there are enough pairs built up,
+	 * this method may run some of the queries.
+	 * 
+	 * @param time the time at which the observation was made
+	 * @param val the value of the observation
+	 * @throws SQLException
+	 */
 	public void addPoint(java.util.Date time, float val) throws SQLException {
 		if (!started) {
 			throw new Error("Haven't called startDataset() before adding a point.");
@@ -74,6 +105,10 @@ public class TSBulkInserter {
 	
 	}
 	
+	/**
+	 * commits the particles that are currently queued up in the StringBuffers.
+	 * @throws SQLException
+	 */
 	private void interimCommit() throws SQLException {
 		if (db.getNextID() != firstID) {
 			throw new SQLException("Database has changed under a batch insert.. you can't do that!");
@@ -92,23 +127,41 @@ public class TSBulkInserter {
 		firstID = nextID = db.getNextID();
 	}
 	
+	/**
+	 * Put all the time, value pairs that have been added using addPoint into the database.
+	 * <p>
+	 * Note that some may have been put into the database before you call this method.
+	 * 
+	 * @return the collectionID of the collection which holds the observations.
+	 * @throws SQLException
+	 */
 	public int commit() throws SQLException {
 		interimCommit();
 		started = false;
 		
 		db.updateAncestors(db.getCollection(collectionID));
 		
+		int ret = collectionID;
+		
 		collectionID = -1;
 		datasetID = -1;
 		nextID = firstID = -1;
 		
-		return collectionID;
+		return ret;
 	}
 
+	/**
+	 * Returns the maximum size that TSBulkInserter will let its queues of 
+	 * SQL insert statements grow to, in bytes.
+	 */
 	public int getMaxBufferSize() {
 		return maxBufferSize;
 	}
 
+	/**
+	 * Set the maximum amount of data to queue up between commits to the database.
+	 * @param maxBufferSize in bytes
+	 */
 	public void setMaxBufferSize(int maxBufferSize) {
 		this.maxBufferSize = maxBufferSize;
 	}
