@@ -2730,6 +2730,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * http://www.sqlteam.com/item.asp?ItemID=217
 	 * 
 	 * Updated 12/05 at http://www.sqlteam.com/item.asp?ItemID=217
+	 * 
+	 * Updated again 6/06 at http://www.sqlteam.com/item.asp?ItemID=8747
+	 * which has a much faster method for random ordering, but it will
+	 * only work on Windows 2000 and above.
 	 */
 	private class RandomizedCursor extends BinnedCursor {
 		protected Statement stmt = null;
