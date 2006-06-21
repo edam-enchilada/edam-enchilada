@@ -853,11 +853,11 @@ public class ChartArea extends JComponent {
 	 * @param g2d
 	 * @param ds
 	 */
-	
 	private void drawDataLinesSmart(int index, Graphics2D g2d, Dataset ds)
 	{
 		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
+		//whether we've drawn indicators that more data exist to each direction
 		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		Shape oldClip = g2d.getClip();

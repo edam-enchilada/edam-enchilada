@@ -17,8 +17,17 @@ import analysis.clustering.o.*;
 
 public class Histogrammer {
 	private SQLServerDatabase db;
-	private static final int maxMZ = 300;
-	private static final int graphHeight = 200;
+	private static final int maxMZ = 200;
+	private static final int graphHeight = 100;
+	
+	
+	// once this is in a full gui, these could be controlled by a slider,
+	// to set something like the "resolution" of the histogram.  
+	private static final float maxBinCount = 40;
+	private static final float paintIncrement = 1f / maxBinCount;
+	// calculated once for speed.
+
+	
 	private JPanel cpane;
 	private JFrame window;
 	
@@ -34,6 +43,7 @@ public class Histogrammer {
 	}
 	
 	private Map<Integer, DrawInfo> collectionHistograms = new TreeMap<Integer, DrawInfo>();
+	private Canvas canvas;
 	
 	public Histogrammer() {
 		super();
@@ -47,31 +57,31 @@ public class Histogrammer {
 		cpane.setPreferredSize(new Dimension(maxMZ * 2, graphHeight));
 
 
-		Canvas c = new Canvas() {
+		canvas = new Canvas() {
 			public void paint(Graphics g) {
 				for (DrawInfo dataset : collectionHistograms.values()) {
-					float R = dataset.color.getRed(), G = dataset.color.getGreen(),
-						B = dataset.color.getBlue();
-					R /= 255f; G /= 255f; B /= 255f;
+					float R = dataset.color.getRed() / 255f,
+					      G = dataset.color.getGreen() / 255f,
+					      B = dataset.color.getBlue() / 255f;
+					
 					for (int mz = 0; mz < maxMZ; mz++) {
 						if (dataset.hists[mz] == null) continue;
 						for (int i = 0; i < graphHeight; i++) {
-							g.setColor(new Color(R,G,B,
-									0.05f));
-//									min(20 * 
-//								((float) dataset.hists[mz].get(i)) / dataset.count, 1)));
-//							g.drawLine(2 * mz, graphHeight - i, 2 * mz + 1, graphHeight - i);
-							for (int j = 0; j < dataset.hists[mz].get(i)
-								&& j < 25; j++)
-								g.fillOval(2*mz, graphHeight - i, 2, 2);
+							g.setColor(new Color(R,G,B, 
+								min(dataset.hists[mz].get(i) * paintIncrement,
+								    1)));
+							g.fillOval(2*mz, graphHeight - i, 2, 2);
+
+//						(color etc)	min(20 * 
+//							((float) dataset.hists[mz].get(i)) / dataset.count, 1)));
+//						g.drawLine(2 * mz, graphHeight - i, 2 * mz + 1, graphHeight - i);
 						}
 					}
 				}
-				System.out.println(new Date());
 			}
 		};
-		c.setPreferredSize(new Dimension(maxMZ*2, graphHeight));
-		cpane.add(c);
+		canvas.setPreferredSize(new Dimension(maxMZ*2, graphHeight));
+		cpane.add(canvas);
 		
 		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		window.pack();
@@ -86,8 +96,7 @@ public class Histogrammer {
 		CollectionCursor b = db.getBinnedCursor(coll);
 		BinnedPeakList particle;
 		int partnum = 0;
-		
-		
+
 		final HistList[] histograms = new HistList[maxMZ];
 		
 		while (b.next()) {
@@ -108,14 +117,21 @@ public class Histogrammer {
 		
 		collectionHistograms.put(coll.getCollectionID(), 
 				new DrawInfo(partnum, histograms, c));
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				canvas.paint(canvas.getGraphics());
+			}
+		});
 	}
+	
 	/**
-	 * @param args
+	 * @param args not used
 	 */
 	public static void main(String[] args) throws SQLException {
 		Histogrammer h = new Histogrammer();
 		
-//		h.drawCollection(24, new Color(0f, 0f, 0f));
+		h.drawCollection(24, new Color(0f, 0f, 0f));
 		h.drawCollection(827, new Color(0f, 0.5f, 0f));
 	}
 	
