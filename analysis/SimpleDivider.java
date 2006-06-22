@@ -97,13 +97,13 @@ public class SimpleDivider extends CollectionDivider {
 			temp = curs.getCurrent();
 			if (which)
 			{
-				putInSubCollection(temp.getParticleInfo().
+				putInSubCollection(temp.getATOFMSParticleInfo().
 						getAtomID(),1);
 				which = false;
 			}
 			else
 			{
-				putInSubCollection(temp.getParticleInfo().
+				putInSubCollection(temp.getATOFMSParticleInfo().
 						getAtomID(),2);
 				which = true;
 			}

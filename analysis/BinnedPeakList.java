@@ -339,6 +339,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	
 	/**
 	 * A method to normalize this BinnedPeakList.  Depending 
 	 * on which distance metric is

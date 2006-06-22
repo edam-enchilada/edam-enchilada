@@ -548,6 +548,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			}
 			if (currentShowing == KCLUSTER)
 			{
+				
 				try {
 					System.out.println("Collection ID: " +
 							cTree.getSelectedCollection().
@@ -570,7 +571,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 									cTree.getSelectedCollection().
 									getCollectionID(),db, k, "", 
 									commentField.getText(), refinedCentroids, cInfo);
-							
+							kMedians.addInfo(cInfo);
 							kMedians.setDistanceMetric(dMetInt);
 							if (db.getCollectionSize(
 									cTree.getSelectedCollection().
@@ -593,7 +594,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 									getCollectionID(),db, 
 									Integer.parseInt(kClusterText.getText()), 
 									"", commentField.getText(), refinedCentroids, cInfo);
-							
+							kMeans.addInfo(cInfo);
 							kMeans.setDistanceMetric(dMetInt);
 							//TODO:  When should we use disk based and memory based 
 							// cursors?

@@ -513,6 +513,6 @@ public class CreateTestDatabase2 {
 	}
 	
 	public static void main(String[] args) {
-		new CreateTestDatabase();
+		new CreateTestDatabase2();
 	}
 }

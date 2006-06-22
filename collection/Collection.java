@@ -273,7 +273,7 @@ public class Collection {
 			nFormat.setMinimumFractionDigits(6);
 			while (curs.next())
 			{
-				particle = curs.getCurrent().getParticleInfo();
+				particle = curs.getCurrent().getATOFMSParticleInfo();
 
 			// the number in the string (65535) is 
 			// somewhat meaningless for our purposes, this is

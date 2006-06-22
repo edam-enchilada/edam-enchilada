@@ -85,6 +85,7 @@ public class CFTree {
 	 */
 	public CFNode insertEntry(BinnedPeakList entry, int atomID) {
 		numDataPoints++;
+		//show progress every 100 particles
 		if (numDataPoints % 100 == 0)
 			System.out.println("inserting particle # " + numDataPoints);
 		// If this is the first entry, make it the root.

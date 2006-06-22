@@ -45,6 +45,7 @@ INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized d
 CREATE TABLE AtomMembership (CollectionID INT, AtomID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))
 CREATE INDEX atom_membership_collection ON AtomMembership (CollectionID)
 CREATE TABLE CollectionRelationships(ParentID INT, ChildID INT PRIMARY KEY, FOREIGN KEY (ParentID) REFERENCES Collections(CollectionID), FOREIGN KEY (ChildID) REFERENCES Collections(CollectionID))
+CREATE TABLE CenterAtoms (AtomID INT, CollectionID INT, PRIMARY KEY (AtomID, CollectionID), FOREIGN KEY (CollectionID) REFERENCES Collections(CollectionID))
 CREATE TABLE DataSetMembers (OrigDataSetID INT, AtomID INT PRIMARY KEY)
 CREATE TABLE MetaData (Datatype VARCHAR(8000), ColumnName VARCHAR(8000), ColumnType VARCHAR(8000), PrimaryKey BIT, TableID INT, ColumnOrder INT, PRIMARY KEY (Datatype, ColumnName, TableID))
 INSERT INTO MetaData VALUES ('ATOFMS','[DataSetID]', 'INT', 1, 0, 1)

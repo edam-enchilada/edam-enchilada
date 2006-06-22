@@ -220,16 +220,21 @@ public class SQLServerDatabase implements InfoWarehouse
 			String comment,
 			String description)
 	{
-		
 		if (description.length() == 0)
 			description = "Name: " + name + " Comment: " + comment;
 		
 		int nextID = -1;
 		try {
 			Statement stmt = con.createStatement();
+			//Assert datatype is valid.  (Only valid options given in GUI, but
+			//still want to double-check.)
+			ResultSet rs = stmt.executeQuery("SELECT DISTINCT Datatype \n" +
+					"FROM Metadata \n" +
+					"WHERE Datatype = '" + datatype + "'");
+			assert(rs.next()) : "The datatype of the new collection doesn't exist.";
 			
 			// Get next CollectionID:
-			ResultSet rs = stmt.executeQuery("SELECT MAX(CollectionID)\n" +
+			rs = stmt.executeQuery("SELECT MAX(CollectionID)\n" +
 			"FROM Collections\n");
 			rs.next();
 			nextID = rs.getInt(1) + 1;
@@ -297,7 +302,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			returnVals[1] + ",'" + datasetName + "',"+ params + ")";
 			if (statement.charAt(statement.length()-2) == ',')
 				statement = statement.substring(0,statement.length()-2)+")";
-			System.out.println(statement); //debugging
+			//System.out.println(statement); //debugging
 			stmt.execute(statement);	
 			stmt.close();
 		} catch (SQLException e) {
@@ -582,6 +587,19 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * Overloaded method for particles with no datasets (e.g., cluster centers).
+	 * @param dense
+	 * @param sparse
+	 * @param collection
+	 * @param nextID
+	 * @return
+	 */
+	public int insertParticle(String dense, ArrayList<String> sparse,
+			Collection collection, int nextID){
+		return insertParticle(dense, sparse, collection, -1, nextID);
+	}
+	
+	/**
 	 * insertParticle takes a string of dense info, a string of sparse info, 
 	 * the collection, the datasetID and the nextID and inserts the info 
 	 * into the dynamic tables based on the collection's datatype.
@@ -601,18 +619,24 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			//System.out.println("Adding batches");
 			
-			stmt.addBatch("INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
-					nextID + ", " + dense + ")");
-			stmt.addBatch("INSERT INTO AtomMembership\n" +
+			String debug = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+					nextID + ", " + dense + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
+			debug = "INSERT INTO AtomMembership\n" +
 					"(CollectionID, AtomID)\n" +
 					"VALUES (" +
 					collection.getCollectionID() + ", " +
-					nextID + ")");
-		stmt.addBatch("INSERT INTO DataSetMembers\n" +
+					nextID + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
+			debug = "INSERT INTO DataSetMembers\n" +
 					"(OrigDataSetID, AtomID)\n" +
 					"VALUES (" +
 					datasetID + ", " + 
-					nextID + ")");
+					nextID + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
 			
 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
 			
@@ -646,6 +670,7 @@ public class SQLServerDatabase implements InfoWarehouse
 							" VALUES (" + nextID + "," + sparse.get(j) + ")");
 				
 			}
+			
 			//System.out.println(tableName);
 			
 			stmt.executeBatch();
@@ -658,11 +683,147 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			return -1;
 		}
+		updateInternalAtomOrder(collection);
 		return nextID;
 	}
 	
 	//TODO : Although this means we can import multiple AtomInfoSparse tables,
 	//		the rest of the program can't handle them.
+	/**
+	 * A method to insert particles in the database that allows for multiple
+	 * AtomInfoSparse tables.  Does not require a datasetID
+	 * 
+	 * @param dense	The dense info for this particle, in a comma-separated string.
+	 * @param sparseTables	The sparse info, each sparse table has its own entry 
+	 * 						in the map, key of its tablename.  Each ArrayList
+	 * 						represents one SparseInfo entry, with the data contained
+	 * 						in a comma-separated string.
+	 * @param collection The collection into which the particle is imported.
+	 * @param nextID The atomID for the particle being imported.
+	 * @return	the successfully inserted particle's ID (-1 on failure).
+	 */
+	public int insertParticle(String dense, 
+			TreeMap<String, ArrayList<String>> sparseTables,
+			Collection collection, int nextID){
+		
+		//System.out.println("Inserting new particle:");
+		String insert = "";
+
+		String string = "";
+		
+		try {
+			Statement stmt = con.createStatement();
+			//System.out.println("Adding batches");
+			
+			insert = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+			nextID + ", " + dense + ")";
+			//System.out.println(insert); //debugging
+			stmt.addBatch(insert);
+			insert = "INSERT INTO AtomMembership" +
+			"(CollectionID, AtomID)" +
+			"VALUES (" +
+			collection.getCollectionID() + ", " +
+			nextID + ")";
+			//System.out.println(insert); //debugging
+			stmt.addBatch(insert);
+			stmt.executeBatch();
+			
+			// Only bulk insert if client and server are on the same machine...
+			if (url.equals("localhost")) {
+				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				PrintWriter bulkFile = null;
+				try {
+					//System.out.println(tempFilename);//DEBUGGING
+					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+				} catch (IOException e) {
+					System.err.println("Trouble creating " + tempFilename);
+					e.printStackTrace();
+					// XXX: do something else here
+				}
+				
+
+				int counter = 0;
+				String tableName;
+				ArrayList<String> sparse;
+				String printer;
+				while (!sparseTables.isEmpty()){
+					//the table name is the string the arraylists are mapped by
+					tableName = collection.getDatatype() + sparseTables.firstKey();
+					
+					sparse = sparseTables.get(sparseTables.firstKey());
+					//insert all the strings in the arraylist
+					System.out.println("Printing to " + tempFilename);
+					for (int j = 0; j < sparse.size(); j++){
+						printer = nextID + "," + sparse.get(j);
+						System.out.println(printer);//debugging
+						bulkFile.println(printer);
+
+					}
+					//remove that mapping
+					sparseTables.remove(sparseTables.firstKey());
+					String command = "BULK INSERT " + tableName + "\n" +
+							"FROM '" + tempFilename + "'\n" +
+					"WITH (FIELDTERMINATOR=',')";
+					System.out.println("Adding to batch : " + command);
+					stmt.addBatch(command);
+					tempFilename = tempdir + File.separator + "bulkfile" + counter
+					+ ".txt";
+					try{
+						bulkFile.close();
+						bulkFile = new PrintWriter(new FileWriter(
+								tempFilename));
+					} catch(IOException e){
+						System.err.println("Trouble creating next temp file");
+					}
+					counter ++;
+				}
+				
+				bulkFile.close();
+				
+				//endif	
+			} else {
+				
+				//for each of the arraylists of strings in the map
+				while (!sparseTables.isEmpty()){
+					
+					//the table name is the string the arraylists are mapped by
+					//preceeded by the datatype name
+					String tableName = collection.getDatatype() + 
+					sparseTables.firstKey();
+					
+					ArrayList<String> sparse = 
+						sparseTables.get(sparseTables.firstKey());
+					//insert all the strings in the arraylist
+					for (int j = 0; j < sparse.size(); j++){
+						string = "INSERT INTO " + tableName + 
+						" VALUES (" + nextID + "," + sparse.get(j) + ")";
+						System.out.println(string);	//debugging
+						stmt.addBatch(string);
+					}
+					
+					//remove that mapping
+					sparseTables.remove(sparseTables.firstKey());
+				}
+				
+			}
+			
+			stmt.executeBatch();			
+		stmt.close();
+			
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
+			System.err.println("value of insert:" + string);
+			System.err.println("Exception inserting particle.");
+			e.printStackTrace();
+			
+			return -1;
+		}
+		// update internal atom table.
+		addSingleInternalAtomToTable(nextID, collection.getCollectionID());
+	
+		return nextID;
+		
+	}
 	/**
 	 * A method to insert particles in the database that allows for multiple
 	 * AtomInfoSparse tables.
@@ -684,6 +845,8 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		//System.out.println("Inserting new particle:");
 		String insert = "";
+
+		String string = "";
 		
 		try {
 			Statement stmt = con.createStatement();
@@ -714,6 +877,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
 				PrintWriter bulkFile = null;
 				try {
+					//System.out.println(tempFilename);//DEBUGGING
 					bulkFile = new PrintWriter(new FileWriter(tempFilename));
 				} catch (IOException e) {
 					System.err.println("Trouble creating " + tempFilename);
@@ -721,7 +885,8 @@ public class SQLServerDatabase implements InfoWarehouse
 					// XXX: do something else here
 				}
 				
-				
+
+				int counter = 0;
 				while (!sparseTables.isEmpty()){
 					//the table name is the string the arraylists are mapped by
 					String tableName = collection.getDatatype() + sparseTables.firstKey();
@@ -729,19 +894,30 @@ public class SQLServerDatabase implements InfoWarehouse
 					ArrayList<String> sparse = sparseTables.get(sparseTables.firstKey());
 					//insert all the strings in the arraylist
 					String printer;
-					System.out.println("Printing to bulk file:");
+					System.out.println("Printing to " + tempFilename);
 					for (int j = 0; j < sparse.size(); j++){
 						printer = nextID + "," + sparse.get(j);
 						System.out.println(printer);//debugging
 						bulkFile.println(printer);
+
 					}
 					//remove that mapping
 					sparseTables.remove(sparseTables.firstKey());
-					
-					bulkFile.close();
-					stmt.addBatch("BULK INSERT " + tableName + "\n" +
+					String command = "BULK INSERT " + tableName + "\n" +
 							"FROM '" + tempFilename + "'\n" +
-					"WITH (FIELDTERMINATOR=',')");
+					"WITH (FIELDTERMINATOR=',')";
+					System.out.println("Adding to batch : " + command);
+					stmt.addBatch(command);
+					tempFilename = tempdir + File.separator + "bulkfile" + counter
+					+ ".txt";
+					try{
+						bulkFile.close();
+						bulkFile = new PrintWriter(new FileWriter(
+								tempFilename));
+					} catch(IOException e){
+						System.err.println("Trouble creating next temp file");
+					}
+					counter ++;
 				}
 				
 				bulkFile.close();
@@ -750,7 +926,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			} else {
 				
 				//for each of the arraylists of strings in the map
-				String string;
 				while (!sparseTables.isEmpty()){
 					
 					//the table name is the string the arraylists are mapped by
@@ -779,7 +954,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
-			System.err.println("value of insert:" + insert);
+			System.err.println("value of insert:" + string);
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 			
@@ -1177,6 +1352,33 @@ public class SQLServerDatabase implements InfoWarehouse
 		return true;
 	}
 	
+	/**
+	 * Associates a cluster center with the collection of atoms it represents.
+	 * @param atomID	The atomID of the cluster center.
+	 * @param collID	The collectionID for the collection this center represents.
+	 * @return
+	 */
+	public boolean addCenterAtom(int atomID, int collID){
+		boolean success = false;
+		try {
+			Statement stmt = con.createStatement();
+			String query = "INSERT INTO CenterAtoms \n" +
+							"VALUES ("+ atomID + ", " + collID + ")";
+			stmt.execute(query);
+			stmt.close();
+			success = true;
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return success;
+	}
+	
+	/**
+	 * Updates InternalAtomOrder
+	 * @param atomID
+	 * @param toParentID
+	 */	
 	public void addSingleInternalAtomToTable(int atomID, int toParentID) {
 //		update InternalAtomOrder; have to iterate through all
 		// atoms sequentially in order to insert it. 
@@ -1394,6 +1596,27 @@ public class SQLServerDatabase implements InfoWarehouse
 		return comment;
 	}
 	
+	/**
+	 * gets the collection's datatype
+	 */
+	public String getCollectionDatatype (int collectionID){
+		String datatype = "";
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT Datatype \n" +
+					"FROM Collections \n" +
+					"WHERE CollectionID = " + collectionID);
+			rs.next();
+			datatype = rs.getString("Datatype");
+			stmt.close();
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLog("SQLServer", "Error retrieving the collection's datatype for collection " + collectionID);
+			System.err.println("Error retrieving Collection Datatype.");
+			e.printStackTrace();
+		}
+		return datatype;
+	}
 	/**
 	 * gets the collection description for the given collectionID
 	 */
@@ -1681,6 +1904,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		else return null;
 	}
 	
+
 	/**
 	 * Gets the datatype of a given atom.  
 	 * @param atomID
@@ -2516,7 +2740,7 @@ public class SQLServerDatabase implements InfoWarehouse
 								partInfRS.getFloat(4), 
 								new Date(partInfRS.getTimestamp(5).
 										getTime())));
-				particleInfo.setID(particleInfo.getParticleInfo().getAtomID());
+				particleInfo.setID(particleInfo.getATOFMSParticleInfo().getAtomID());
 				return particleInfo; 
 			} catch (SQLException e) {
 				ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception retrieving data through a AtomInfoOnly cursor.");

@@ -46,6 +46,7 @@ package ATOFMS;
 import analysis.BinnedPeakList;
 import analysis.clustering.PeakList;
 import atom.ATOFMSAtomFromDB;
+import atom.GeneralAtomFromDB;
 
 /**
  * This holds a peaklist, an ATOFMSAtomFromDB, and a 
@@ -57,20 +58,38 @@ import atom.ATOFMSAtomFromDB;
 public class ParticleInfo {
 	private PeakList peakList;
 	private ATOFMSAtomFromDB particleInfo;
+	private GeneralAtomFromDB info;
 	private BinnedPeakList binnedList;
 	private int ID;
 	
 	/**
 	 * @return Returns the particleInfo.
 	 */
-	public ATOFMSAtomFromDB getParticleInfo() {
+	public ATOFMSAtomFromDB getATOFMSParticleInfo() {
 		return particleInfo;
 	}
+	
+	/**
+	 * Gets generic particle info.
+	 * @return	The information of a particle.
+	 */
+	public GeneralAtomFromDB getParticleInfo(){
+		return info;
+	}
+	
 	/**
 	 * @param particleInfo The particleInfo to set.
 	 */
 	public void setParticleInfo(ATOFMSAtomFromDB particleInfo) {
 		this.particleInfo = particleInfo;
+	}
+	
+	/**
+	 * A generic way to set particle info.
+	 * @param info
+	 */
+	public void setParticleInfo(GeneralAtomFromDB info){
+		this.info = info;
 	}
 	/**
 	 * @return Returns the peakList.

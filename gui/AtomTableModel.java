@@ -110,19 +110,19 @@ public class AtomTableModel extends AbstractTableModel {
 		if (columnIndex == 0)
 		{
 			return new Integer(
-					pInfo.getParticleInfo().getAtomID());
+					pInfo.getATOFMSParticleInfo().getAtomID());
 		}
 		else if (columnIndex == 1)
 		{
-			return pInfo.getParticleInfo().getFilename();
+			return pInfo.getATOFMSParticleInfo().getFilename();
 		}
 		else if (columnIndex == 2)
 		{
-			return new Float(pInfo.getParticleInfo().getSize());
+			return new Float(pInfo.getATOFMSParticleInfo().getSize());
 		}
 		else if (columnIndex == 3)
 		{
-			return pInfo.getParticleInfo().getDateString();
+			return pInfo.getATOFMSParticleInfo().getDateString();
 		}
 		else
 			return null;

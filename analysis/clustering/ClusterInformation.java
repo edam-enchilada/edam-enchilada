@@ -20,6 +20,10 @@ public class ClusterInformation {
 		
 	}
 	
+	//dummy constructor used for testing method(s) in Cluster
+	public ClusterInformation() {
+	}
+	
 	public void printSelf() {
 		System.out.println("value columns: " + valueColumns);
 		System.out.println("key col " + keyColumn);

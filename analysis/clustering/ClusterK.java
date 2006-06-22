@@ -53,9 +53,11 @@ import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
 import ATOFMS.ParticleInfo;
+import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.SubSampleCursor;
+import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
@@ -221,6 +223,7 @@ public abstract class ClusterK extends Cluster {
 				returnThis = 
 					assignAtomsToNearestCentroid(centroidList, curs);
 				curs.close();
+				
 				
 				try {
 					SwingUtilities.invokeAndWait(new Runnable() {

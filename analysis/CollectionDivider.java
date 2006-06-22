@@ -188,6 +188,40 @@ public abstract class CollectionDivider {
 	}
 	
 	/**
+	 * Creates an emtpy collection of the same datatype in the root level for
+	 * cluster centers.
+	 * @return	- new collection number
+	 */
+	protected int createCenterCollection(){
+		int collID = 0;
+		collID = db.createEmptyCollection(collection.getDatatype(),
+										0,
+										"Centers for " + collection.getName(),
+										"",
+										"");
+		assert (collID != -1) : "Error creating empty center collection.";
+		return collID;
+	}
+	
+	/**
+	 * Creates an emtpy collection of the same datatype in the root level for
+	 * cluster centers.
+	 * @param	name
+	 * @param	comments
+	 * @return	- new collection number
+	 */
+	protected int createCenterCollection(String name, String comments){
+		int collID = 0;
+		collID = db.createEmptyCollection(collection.getDatatype(),
+										0,
+										"Centers :" + collection.getName() + "," + name,
+										comments,
+										"");
+		assert (collID != -1) : "Error creating empty center collection.";
+		return collID;
+	}
+	
+	/**
 	 * Takes an atom and puts it in the identified subcollection.
 	 * You should take care to make sure the atom exists in the
 	 * collection you're dividing before using this collection

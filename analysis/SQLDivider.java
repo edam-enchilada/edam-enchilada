@@ -96,7 +96,7 @@ public class SQLDivider extends CollectionDivider {
 	public int divide() {
 		while (curs.next())
 		{
-			int temp = curs.getCurrent().getParticleInfo().getAtomID();
+			int temp = curs.getCurrent().getATOFMSParticleInfo().getAtomID();
 			putInHostSubCollection(temp);
 		}
 		db.setCollectionDescription(db.getCollection(newHostID), "Divided on:\n" +

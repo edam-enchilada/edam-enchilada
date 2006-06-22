@@ -387,7 +387,7 @@ try {
 			if (params.equals(""))
 				params = add;
 			else
-				params = params + "," + add;
+				params = params + ", " + add;
 			
 		}
 		//if not a number, surround in single quotes, or it's empty so it's NULL
@@ -405,7 +405,7 @@ try {
 				if (params.equals(""))
 					params = quote + add + quote;
 				else
-					params = params + "," + quote + add + quote;
+					params = params + ", " + quote + add + quote;
 			}	
 		}
 		

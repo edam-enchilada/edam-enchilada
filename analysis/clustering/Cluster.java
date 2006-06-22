@@ -47,8 +47,12 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
+import database.DynamicTable;
 import database.InfoWarehouse;
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
@@ -67,6 +71,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected ArrayList<Double> totalDistancePerPass;
 	protected int numPasses,collectionID;
 	protected String parameterString;
+	protected ClusterInformation clusterInfo;
 	
 	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	
@@ -88,6 +93,14 @@ public abstract class Cluster extends CollectionDivider {
 			String comment, boolean norm) {
 		super(cID,database,name.concat(",CLUST"),comment);
 		isNormalized = norm;
+	}
+	
+	/**
+	 * Sets the cluster information for this cluster.
+	 * @param cl
+	 */
+	public void addInfo(ClusterInformation cl){
+		clusterInfo = cl;
 	}
 	
 	/**
@@ -327,16 +340,20 @@ public abstract class Cluster extends CollectionDivider {
 					temp.subCollectionNum);
 			temp.numMembers++;
 			
-		}// end while there are particles remaining
+		}// end with no particle remaining
 		putInSubCollectionBatchExecute();
+		ArrayList<Integer> ids = this.subCollectionIDs;
 		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);
 			centroidList.get(i).peaks = sums.get(i);
 		}
+
+		createCenterAtoms(centroidList, ids);
 		
 		printDescriptionToDB(particleCount, centroidList);
+		
 		return newHostID;
 	}
 	
@@ -417,6 +434,175 @@ public abstract class Cluster extends CollectionDivider {
 		printDescriptionToDB(particleCount, centroidList);
 
 		return newHostID;
+	}
+	
+	/**
+	 * Creates the "center atoms" from a list of centroids, and puts them into
+	 * a new root-level collection.
+	 * 	
+	 * @param centerList	The list of centroids.
+	 * @param ids			The list of subcollection IDs for the cluster 
+	 * 						collections to which the centroids belong.
+	 */
+	public void createCenterAtoms(ArrayList<Centroid> centerList,
+			ArrayList<Integer> ids){
+		
+		//new root-level collection
+		int centerCollID = createCenterCollection(parameterString, "");
+		int centerAtomID;
+
+		CollectionCursor densecurs;
+		ParticleInfo info;
+		ArrayList<String> denseValues;
+		ArrayList<String> denseNames = new ArrayList<String>();
+		ArrayList<Float> totValues;
+		Float temp = new Float(0);
+		boolean first = true;
+		String dense = "";
+		ArrayList<ArrayList<String>> denseInfo;
+		String datatype;
+		String sqlType;
+		String colName;
+		ArrayList<String> avgValues;
+		ArrayList<String> intCols = new ArrayList<String>();
+		ArrayList<String> charCols = new ArrayList<String>();
+		ArrayList<String> bitCols = new ArrayList<String>();
+		ArrayList<String> numeric = new ArrayList<String>();
+		Pattern intP = Pattern.compile(".*INT");
+		Pattern charP = Pattern.compile(".*CHAR.*");
+		Pattern dTime = Pattern.compile("DATETIME");
+		Pattern bitP = Pattern.compile("BIT");
+		Matcher m;
+		int q = 0;
+		
+		for (Centroid center: centerList){
+			
+			totValues = new ArrayList<Float>();
+			first = true;
+			avgValues = new ArrayList<String>();
+			
+			//System.out.println("Attempting to make an atom of " + center.subCollectionNum);//Debugging
+			datatype = db.getCollectionDatatype(centerCollID);
+			
+			denseInfo = db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoDense);
+			
+			//TODO: there's got to be a better way to do this - LES
+			//identify column names of types that not are appropriate to average
+			for (ArrayList<String> nameAndType : denseInfo){
+				colName = nameAndType.remove(0);
+				sqlType = nameAndType.remove(0);
+				//System.out.println("col Name " + colName + " sql type " + sqlType); //Debugging
+				m = intP.matcher(sqlType);
+				if (m.matches())
+					intCols.add(colName);
+				else{
+					m = charP.matcher(sqlType);
+					if (m.matches())
+						charCols.add(colName);
+					else{
+						m = dTime.matcher(sqlType);
+						if (m.matches())
+							//charCols.add(colName);
+							bitCols.add(colName); //hack to get the cluster number to show up
+						else{
+							m = bitP.matcher(sqlType);
+							if (m.matches())
+								bitCols.add(colName);
+							else
+								numeric.add(colName);
+						}
+					}
+				}
+			}
+			
+			//get the dense info for each particle in the cluster.
+			//iterate through the atoms in the cluster
+			//adding their averageable and int columns together
+			densecurs = db.getAtomInfoOnlyCursor(db.getCollection(ids.get(center.subCollectionNum-1)));
+			
+			//NOTE: this is currently only set up to deal with ATOFMS particles
+			while (densecurs.next()){
+				info = densecurs.getCurrent();
+				denseNames = info.getATOFMSParticleInfo().getFieldNames();
+				denseValues = info.getATOFMSParticleInfo().getFieldValues();
+
+				if (first){
+					for (int i=1; i<=denseNames.size(); i++)
+						totValues.add(new Float(0.0));
+						first = false;
+				}
+				for (int i=1; i<denseNames.size(); i++){
+					if (numeric.contains(denseNames.get(i)) || 
+							intCols.contains(denseNames.get(i))){
+						temp = Float.parseFloat(denseValues.get(i));
+						totValues.set(i, totValues.get(i) + temp);
+					}else{
+						totValues.set(i, new Float(-99));
+					}
+						
+				}
+			}
+			densecurs.close();
+			
+			//average the values			
+			for (int i=1; i<totValues.size(); i++){
+				
+				if (numeric.contains(denseNames.get(i)) || intCols.contains(denseNames.get(i))){
+					temp = totValues.get(i) / center.numMembers;
+					if (intCols.contains(denseNames.get(i))){
+						int j = temp.intValue();
+						avgValues.add(Integer.toString(j));
+					} else
+						avgValues.add(Float.toString(temp));
+				} else if(charCols.contains(denseNames.get(i))){
+					avgValues.add("Center for cluster " + center.subCollectionNum);
+				} else
+					avgValues.add("");
+
+				dense = EnchiladaDataSetImporter.intersperse(avgValues.get(i-1),
+						dense);
+			
+			
+			}
+			//System.out.println("DENSE " + dense);	//Debugging
+
+			ArrayList<String> sparse = new ArrayList<String>();
+			//put the sparse info into appropriate format
+			Iterator<BinnedPeak> i = center.peaks.iterator();
+			BinnedPeak p;
+			//don't forget the rest of the info.  DUH.  Like PeakArea, Height, Rel.Area
+			//get the names of fields and their field types
+			ArrayList<ArrayList<String>> sparseNamesTypes = 
+				db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoSparse);
+			String s = "";
+			while (i.hasNext()) {
+				p = i.next();
+				//TODO: waaaaaaaaay too type-specific
+				//if (sparseNamesTypes.get(1).equals("INT"))
+					s = EnchiladaDataSetImporter.intersperse(
+							Integer.toString(new Float(p.value).intValue()), Integer.toString(p.key));
+				//else
+				//	s = EnchiladaDataSetImporter.intersperse(
+				//		Float.toString(p.value), Integer.toString(p.key));
+			
+				for (int j=0; j<2; j++)
+					s = EnchiladaDataSetImporter.intersperse("1", s);
+				sparse.add(s);
+			}
+			
+			/*debugging*/
+		//	for (String sp : sparse)
+		//		System.out.print(" SPARSE " + sp);	
+			
+			centerAtomID = db.insertParticle(dense, sparse, db.getCollection(centerCollID),
+					db.getNextID());
+			
+			//associate the new center atoms with the collections they represent
+			db.addCenterAtom(centerAtomID, ids.get(center.subCollectionNum - 1));
+
+			dense = "";
+			q++;
+		}
 	}
 	
 	/**

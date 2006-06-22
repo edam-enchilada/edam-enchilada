@@ -43,6 +43,7 @@
  */
 package atom;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -65,6 +66,12 @@ public class ATOFMSAtomFromDB extends GeneralAtomFromDB {
 	 * 
 	 */
 	public ATOFMSAtomFromDB() {
+		super.fieldNames.add("AtomID");
+		super.fieldNames.add("Time");
+		super.fieldNames.add("LaserPower");
+		super.fieldNames.add("Size");
+		super.fieldNames.add("ScatDelay");
+		super.fieldNames.add("OrigFilename");
 	}
 	
 	public ATOFMSAtomFromDB(int aID, String fname, int sDelay, float lPower, Date tStamp)
@@ -74,6 +81,20 @@ public class ATOFMSAtomFromDB extends GeneralAtomFromDB {
 		laserPower = lPower;
 		timeStamp = tStamp;
 		scatDelay = sDelay;
+		super.fieldNames = new ArrayList<String>();
+		super.fieldNames.add("AtomID");
+		super.fieldNames.add("Time");
+		super.fieldNames.add("LaserPower");
+		super.fieldNames.add("Size");
+		super.fieldNames.add("ScatDelay");
+		super.fieldNames.add("OrigFilename");
+		super.fieldValues = new ArrayList<String>();
+		super.fieldValues.add(Integer.toString(aID));
+		super.fieldValues.add(timeStamp.toString());
+		super.fieldValues.add(Float.toString(lPower));
+		super.fieldValues.add("0");	//there is no size info
+		super.fieldValues.add(Integer.toString(sDelay));
+		super.fieldValues.add(fname);
 	}
 
 	/**

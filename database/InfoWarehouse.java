@@ -305,9 +305,12 @@ public interface InfoWarehouse {
 	public int getNextID();
 	public int[] createEmptyCollectionAndDataset(String datatype, int parent, String datasetName, String comment, String params);
 	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection,int datasetID, int nextID);
-	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable table);
+	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection, int nextID);
 	public int getParentCollectionID(int collectionID);
 	public void updateAncestors(Collection collection);
 	public void updateInternalAtomOrder(Collection collection);
 	public String aggregateColumn(DynamicTable atomInfoDense, String string, ArrayList<Integer> curIDs, String oldDatatype);
+	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable atomInfoSparse);
+	public String getCollectionDatatype(int subCollectionNum);
+	public boolean addCenterAtom(int centerAtomID, int centerCollID);
 }
