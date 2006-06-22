@@ -1,6 +1,7 @@
 package experiments;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,6 +13,7 @@ import collection.Collection;
 
 import database.*;
 
+import ATOFMS.ParticleInfo;
 import analysis.*;
 import analysis.clustering.o.*;
 
@@ -23,7 +25,7 @@ public class Histogrammer {
 	
 	// once this is in a full gui, these could be controlled by a slider,
 	// to set something like the "resolution" of the histogram.  
-	private static final float maxBinCount = 40;
+	private static final float maxBinCount = 60;
 	private static final float paintIncrement = 1f / maxBinCount;
 	// calculated once for speed.
 
@@ -32,13 +34,63 @@ public class Histogrammer {
 	private JFrame window;
 	
 	private class DrawInfo {
-		public HistList[] hists;
+		public ChainingHistogram[] hists;
 		public int count;
 		public Color color;
-		public DrawInfo(int count, HistList[] hists, Color color) {
+		public DrawInfo(int count, ChainingHistogram[] hists, Color color) {
 			this.count = count;
 			this.hists = hists;
 			this.color = color;
+		}
+	}
+	
+	/**
+	 * This histogram actually stores references to the source of
+	 * the hit in each bin.  erm, like, by looking at a bin, you can
+	 * find out what objects are there.  It's a lot like a chaining
+	 * hash table, except that the hash function is meaningful.
+	 */
+	private class ChainingHistogram 
+		extends BinAddressableArrayList<ArrayList<BinnedPeakList>>
+	{	
+		private int hitCount;
+		
+		public ChainingHistogram(float binWidth) {
+			super(binWidth);
+		}
+
+		public void addPeak(float peakHeight, ParticleInfo pInfo) {
+			if (peakHeight > 1) {throw new IllegalArgumentException();} 
+			ArrayList<BinnedPeakList> target;
+			
+			target = get(peakHeight);
+			if (target == null) { // if the list is not this long, or if it is but nothing has been added to this bin yet.
+				target = new ArrayList<BinnedPeakList>();
+				expandAndSet(peakHeight, target);
+			}
+			
+			assert(pInfo.getBinnedList() != null) : "Wrong kind of cursor used on database";
+			
+			target.add(pInfo.getBinnedList());
+			hitCount++;
+		}
+		
+		public int getCountAt(float peakHeight) {
+			return getCountAtIndex(heightToIndex(peakHeight));
+			
+		}
+		
+		public int getCountAtIndex(int index) {
+			ArrayList target;
+			
+			target = getByIndex(index);
+			if (target == null) { return 0; }
+			else { return target.size(); }
+		}
+		
+		public int getHitCount() {
+			// TODO: assert that the hitcount here is equal to the sum of the hits in each arraylist.  how?
+			return hitCount;
 		}
 	}
 	
@@ -59,6 +111,7 @@ public class Histogrammer {
 
 		canvas = new Canvas() {
 			public void paint(Graphics g) {
+				if (g == null) { System.out.println("g is null!!"); }
 				for (DrawInfo dataset : collectionHistograms.values()) {
 					float R = dataset.color.getRed() / 255f,
 					      G = dataset.color.getGreen() / 255f,
@@ -68,7 +121,7 @@ public class Histogrammer {
 						if (dataset.hists[mz] == null) continue;
 						for (int i = 0; i < graphHeight; i++) {
 							g.setColor(new Color(R,G,B, 
-								min(dataset.hists[mz].get(i) * paintIncrement,
+								min(dataset.hists[mz].getCountAtIndex(i) * paintIncrement,
 								    1)));
 							g.fillOval(2*mz, graphHeight - i, 2, 2);
 
@@ -94,24 +147,25 @@ public class Histogrammer {
 	public void drawCollection(int collID, Color c) {
 		Collection coll = db.getCollection(collID);
 		CollectionCursor b = db.getBinnedCursor(coll);
-		BinnedPeakList particle;
+		BinnedPeakList peakList;
 		int partnum = 0;
 
-		final HistList[] histograms = new HistList[maxMZ];
+		final ChainingHistogram[] histograms = new ChainingHistogram[maxMZ];
 		
 		while (b.next()) {
-			particle = b.getCurrent().getBinnedList();
-			particle.normalize(DistanceMetric.CITY_BLOCK);
+			ParticleInfo pInfo = b.getCurrent();
+			peakList = pInfo.getBinnedList();
+			peakList.normalize(DistanceMetric.CITY_BLOCK);
 
 			++partnum;
 			
-			for (BinnedPeak p : particle) {
+			for (BinnedPeak p : peakList) {
 				if (p.key >= maxMZ || p.key < 0)
 					continue;
 				if (histograms[p.key] == null) {
-					histograms[p.key] = new HistList(1.0f / graphHeight);
+					histograms[p.key] = new ChainingHistogram(1.0f / graphHeight);
 				}
-				histograms[p.key].addPeak(p.value);
+				histograms[p.key].addPeak(p.value, pInfo);
 			}
 		}
 		
