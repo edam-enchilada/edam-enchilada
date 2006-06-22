@@ -1,10 +1,7 @@
 package experiments;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.sql.*;
 
 import javax.swing.*;
@@ -15,7 +12,6 @@ import database.*;
 
 import ATOFMS.ParticleInfo;
 import analysis.*;
-import analysis.clustering.o.*;
 
 public class Histogrammer {
 	private SQLServerDatabase db;
@@ -27,7 +23,6 @@ public class Histogrammer {
 	// to set something like the "resolution" of the histogram.  
 	private static final float maxBinCount = 60;
 	private static final float paintIncrement = 1f / maxBinCount;
-	// calculated once for speed.
 
 	
 	private JPanel cpane;
@@ -121,13 +116,13 @@ public class Histogrammer {
 						if (dataset.hists[mz] == null) continue;
 						for (int i = 0; i < graphHeight; i++) {
 							g.setColor(new Color(R,G,B, 
-								min(dataset.hists[mz].getCountAtIndex(i) * paintIncrement,
-								    1)));
-							g.fillOval(2*mz, graphHeight - i, 2, 2);
+//								min(dataset.hists[mz].getCountAtIndex(i) * paintIncrement,
+//								    1)));
+//							g.fillOval(2*mz, graphHeight - i, 2, 2);
 
-//						(color etc)	min(20 * 
-//							((float) dataset.hists[mz].get(i)) / dataset.count, 1)));
-//						g.drawLine(2 * mz, graphHeight - i, 2 * mz + 1, graphHeight - i);
+							min(60 * 
+							((float) dataset.hists[mz].getCountAtIndex(i)) / dataset.count, 1)));
+						g.drawLine(2 * mz, graphHeight - i, 2 * mz + 1, graphHeight - i);
 						}
 					}
 				}
