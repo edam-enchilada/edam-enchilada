@@ -6,7 +6,8 @@ import java.sql.*;
 /**
  * This class makes it fairly simple to insert a lot of time series data quickly.
  * <p>
- * It is not synchronized or anything, so only use one at a time!
+ * It is not synchronized or anything, so only use one at a time!  
+ * Otherwise you'll get conflicting AtomIDs.
  * 
  * @author smitht
  *

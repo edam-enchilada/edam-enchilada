@@ -53,9 +53,11 @@ import javax.swing.*;
 import analysis.clustering.ClusterK;
 import java.awt.*;
 /**
- * @author ritza
+ *
  * 
  *TODO:  Problems entering text, getting the buttons to work, and closing the window.
+ *
+ * @author ritza
  */
 public class AdvancedClusterDialog extends JDialog implements ActionListener {
 	private JDialog parent;

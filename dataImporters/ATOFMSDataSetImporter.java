@@ -76,11 +76,13 @@ import collection.Collection;
 
 
 /**
- * @author ritza
- *
  * Creates a new DataSetProcessor object for each dataset that processes the spectra and
  * creates the particle.  It passes a file name, a CalInfo object and a PeakParams object 
  * to DataSetProcessor.
+ * 
+ * 
+ * @author ritza
+ *
  */
 public class ATOFMSDataSetImporter {
 	

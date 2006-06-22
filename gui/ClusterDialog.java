@@ -59,7 +59,6 @@ import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * @author ritza
  * 
  * The ClusterDialog opens a JDialog Object where the user can choose
  * a clustering algorithm to perform on the selected collection.  The user
@@ -67,6 +66,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * algorithm at a time.  When OK is clicked, a new collection is created with the
  * specified name, and the clusters are created as sub-collections of the new 
  * collection.
+ * 
+ * 
+ * @author ritza
  */
 public class ClusterDialog extends JDialog implements ItemListener, ActionListener 
 {
