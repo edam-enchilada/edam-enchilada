@@ -4774,7 +4774,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				stmt.executeBatch();
 				rs = stmt.executeQuery("SELECT MAX(ColumnOrder) FROM MetaData " +
 						"WHERE Datatype = '" + newDatatype + "' AND TableID = 1");
-				assert(rs.next());
+				rs.next();
 				int nextColumnOrder = rs.getInt(1) + 1;
 				String numParts = "INSERT INTO MetaData VALUES ('" + 
 				newDatatype + "', '[NumParticles]', 'REAL',0," + 

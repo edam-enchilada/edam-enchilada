@@ -136,14 +136,15 @@ public class ClusterFeature {
 	public boolean updateCF() {
 		if (child == null || child.getCFs().size() == 0) 
 			return false;
-		atomIDs.clear();
+		atomIDs = new ArrayList<Integer>();
 		ArrayList<ClusterFeature> cfs = child.getCFs();
 		count = 0;
 		sums = new BinnedPeakList(new Normalizer());
 		squareSums = 0;
 		BinnedPeakList temp;
 		for (int i = 0; i < cfs.size(); i++) {
-			temp = cfs.get(i).getSums();
+			temp = new BinnedPeakList();
+			temp.copyBinnedPeakList(cfs.get(i).getSums());
 			temp.multiply(cfs.get(i).count);
 			sums.addAnotherParticle(temp);
 			count += cfs.get(i).count;
@@ -205,7 +206,7 @@ public class ClusterFeature {
 		//System.out.print(delimiter+ "CF : ");
 		//System.out.println(delimiter+"CF magnitude: "+sums.getMagnitude(dMetric));
 		//System.out.println(delimiter+"CF Count: " + count);
-		System.out.print("Count: " + count +" (");
+		System.out.print(delimiter + "CF::: " + count +" (");
 		for (int i = 0; i < atomIDs.size(); i++)
 			System.out.print(atomIDs.get(i) + " ");
 		System.out.println(")");
@@ -218,7 +219,9 @@ public class ClusterFeature {
 		//System.out.println(delimiter+"child node: " + child);
 	}
 	
-	
+	public CFNode getChild(){
+		return child;
+	}
 	/**
 	 * sets the count
 	 * @param c - new count

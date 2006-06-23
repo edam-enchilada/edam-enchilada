@@ -66,10 +66,27 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		normalizable = norm;
 	}
 	
-	/*public BinnedPeakList() {
+	public BinnedPeakList() {
 		peaks = new TreeMap<Integer, Float>();
 		normalizable = null;
-	}*/
+	}
+	
+	public Normalizable getNormalizable(){
+		return normalizable;
+	}
+	/**
+	 * Creates a copy of a binnedPeakList
+	 * @param original
+	 */
+	public void copyBinnedPeakList(BinnedPeakList original) {
+		Iterator<BinnedPeak> i = original.iterator();
+		BinnedPeak p;
+		while (i.hasNext()) {
+			p = i.next();
+			add(p.key, p.value);
+		}
+		normalizable = original.getNormalizable();
+	}
 	
 	/**
 	 * Return the magnitude of this peaklist, according to the supplied
@@ -96,6 +113,8 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			}
 			magnitude = (float) Math.sqrt(magnitude);
 		}
+	//	if(magnitude>1.0)
+	//		System.out.println("BAD MAGNITUDE " + magnitude);
 		return magnitude;
 	}
 

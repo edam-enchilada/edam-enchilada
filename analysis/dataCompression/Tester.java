@@ -152,7 +152,7 @@ public class Tester {
 		new Tester();
 		db = new SQLServerDatabase("BIRCHdb");
 		db.openConnection();
-		BIRCH birch = new BIRCH(db.getCollection(2),db,"BIRCH","comment",false,DistanceMetric.EUCLIDEAN_SQUARED);
+		BIRCH birch = new BIRCH(db.getCollection(2),db,"BIRCH","comment",DistanceMetric.EUCLIDEAN_SQUARED);
 		birch.compress();
 		db.closeConnection();
 	}

@@ -334,7 +334,7 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == compressItem) {
 			//TODO: Provide a way to set the collection's name
 			//or give it better default
-			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",false,DistanceMetric.EUCLIDEAN_SQUARED);
+			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",DistanceMetric.EUCLIDEAN_SQUARED);
 			b.compress();
 			collectionPane.updateTree();
 		}

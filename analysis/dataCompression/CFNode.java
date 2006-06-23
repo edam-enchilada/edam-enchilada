@@ -224,12 +224,12 @@ public class CFNode {
 	 * @param delimiter - delimiter for the given level in the tree
 	 */
 	public void printNode(String delimiter) {
-		System.out.println(delimiter + "node: " + this);
+	//	System.out.println(delimiter + "node: " + this);
 		//System.out.println(delimiter + "  parent node: " + parentNode);
 		//System.out.println(delimiter + "  parent CF: " + parentCF);
 		//System.out.println(delimiter+"memory: " + getMemory());
 		for (int i = 0; i < cfs.size(); i++) {
-			cfs.get(i).printCF(delimiter+" ");
+			cfs.get(i).printCF(delimiter);
 		}
 	}
 	

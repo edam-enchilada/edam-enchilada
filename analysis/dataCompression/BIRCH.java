@@ -81,13 +81,13 @@ public class BIRCH extends CompressData{
 	/*
 	 * Constructor.  Calls the CompressData Class's constructor.
 	 */
-	public BIRCH(Collection c, InfoWarehouse database, String name, String comment, boolean n, DistanceMetric d) 
+	public BIRCH(Collection c, InfoWarehouse database, String name, String comment, DistanceMetric d) 
 	{
 		super(c,database,name,comment,d);
 		// set parameters.
 		branchingFactor = 4; // should be an advanced option in the GUI
 		collectionID = oldCollection.getCollectionID();
-		setCursorType(0);
+		assignCursorType();
 	}
 	
 	/**
@@ -96,6 +96,7 @@ public class BIRCH extends CompressData{
 	 * @param threshold - initial threshold for tree.
 	 */
 	public void buildTree(float threshold) {
+		System.out.println("\n**********BUILDING THE PRELIMINARY TREE**********");
 		curTree = new CFTree(threshold, branchingFactor, distanceMetric); 
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
@@ -103,20 +104,20 @@ public class BIRCH extends CompressData{
 		start = new Date().getTime();
 		while(curs.next()) {
 			particle = curs.getCurrent();
+			System.out.println("inserting particle " + particle.getID());
 			particle.getBinnedList().normalize(distanceMetric);
 			
 			// insert the entry
 			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());	
-			
 			// if it's possible to split the node, do so.
 			lastSplitNode = curTree.splitNodeIfPossible(changedNode);
-	
 			// If there has been a split above the leaves, refine the split
 			if (!lastSplitNode.isLeaf() || 
 					!changedNode.equals(lastSplitNode)) {
 				curTree.refineMerge(lastSplitNode);
 			}	
 			
+			curTree.printTree();
 			// if we have run out of memory, rebuild the tree.
 			if (curTree.getMemory()> MEM_THRESHOLD) {
 				int[] counts = {0,0,0,0,0};
@@ -134,15 +135,24 @@ public class BIRCH extends CompressData{
 					System.exit(0);
 				}
 			
+				System.out.println("OUT OF MEMORY @ "+ curTree.getMemory() + "\n");
 				curTree.countNodes();
-				System.out.println("out of memory @ "+ curTree.getMemory()+": rebuilding tree");
 				
+				System.out.println("\nFINAL TREE: ");
+				curTree.printTree();
+				System.out.println("*****************REBUILDING TREE*****************\n");
+			//	System.out.println("scanning distances...");
+			//	curTree.scanDistances();
 				// rebuild tree.
 				rebuildTree();
 				
 				curTree.countNodes();
 			}
 		}	
+		System.out.println("\nFINAL TREE:");
+		curTree.printTree();
+	//	System.out.println("scanning distances...");
+	//	curTree.scanDistances();
 		end = new Date().getTime();
 		System.out.println("interval: " + (end-start));
 	}
@@ -198,9 +208,10 @@ public class BIRCH extends CompressData{
 			CFNode oldCurNode, CFNode lastLeaf) {
 		newTree.assignLeaves();
 	
-		// if this is the first entry, build the path.
+		//if it's a leaf, we want to insert each cluster feature
+		//into the new tree, merging as many cluster features
+		//as possible
 		if (oldCurNode.isLeaf()) {
-			
 			if (lastLeaf == null)
 				lastLeaf = newTree.getFirstLeaf();
 			else if (lastLeaf.nextLeaf == null)
@@ -209,28 +220,47 @@ public class BIRCH extends CompressData{
 			// reinsert leaf;
 			boolean reinserted;
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
+				System.out.println("\nAdding CF:");
 				ClusterFeature thisCF = oldCurNode.getCFs().get(i);
+				thisCF.printCF("");
+				//try to reinsert the cf
 				reinserted = newTree.reinsertEntry(thisCF);
+				
+				//if reinserting it would have resulted in too many cfs for that node
 				if (!reinserted) {
+					//make a new cluster feature and add it to newCurNode
 					ClusterFeature newLeaf = new ClusterFeature(
 							newCurNode, thisCF.getCount(), thisCF.getSums(), 
 							thisCF.getSumOfSquares(), thisCF.getAtomIDs());				
 					newCurNode.addCF(newLeaf);
+					//update everything
 					newTree.updateNonSplitPath(newLeaf.curNode);
+					for (int j = 0; j < newLeaf.curNode.getCFs().size(); j++){
+						newLeaf.curNode.getCFs().get(j).updateCF();
+					}
 				}
+				newTree.printTree();
 			}
 		}
+		//if it's not a leaf, we just want to build the correct path
 		else {
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
+				System.out.println("adding an empty cluster feature to build the path for");
+				oldCurNode.getCFs().get(i).printCF("");
+				
+				//keep making empty cfs till there are the same number in newCurNode as in oldCurNode
 				while (newCurNode.getSize() <= i) {
 					ClusterFeature newCF = new ClusterFeature(newCurNode, newCurNode.dMetric);
 					newCurNode.addCF(newCF);
 				}
+				//if the child of that cf is null, make a new child and update the pointers
 				if (newCurNode.getCFs().get(i).child == null) {
 					CFNode newChild = new CFNode(newCurNode.getCFs().get(i), distanceMetric);
 					newCurNode.getCFs().get(i).updatePointers(
 							newChild, newCurNode);
 				}
+				newTree.printTree();
+				//rebuild the tree using the child as the new node
 				rebuildTreeRecurse(newTree, newCurNode.getCFs().get(i).child, 
 						oldCurNode.getCFs().get(i).child, lastLeaf);
 			}
@@ -245,7 +275,7 @@ public class BIRCH extends CompressData{
 	 * sets the cursor type to memory binned cursor, since the whole point
 	 * of this algorithm is that it's in memory.
 	 */
-	public boolean setCursorType(int type) {
+	public boolean assignCursorType() {
 		Collection collection = db.getCollection(collectionID);
 		curs = new NonZeroCursor(db.getBinnedCursor(collection));
 		return true;
@@ -255,7 +285,6 @@ public class BIRCH extends CompressData{
 	public void compress() {	
 		buildTree(0.0f);
 		System.out.println();
-		System.out.println("FINAL TREE:");
 		curTree.countNodes();
 		putCollectionInDB();
 	}
