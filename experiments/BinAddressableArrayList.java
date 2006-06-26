@@ -128,7 +128,7 @@ public class BinAddressableArrayList<T> {
 	protected void ensureBinExists(float targetHeight) {
 		int binsToAdd = 1 + 
 			(int) ((targetHeight - indexToMinHeight(list.size())) / binWidth);
-		while (binsToAdd > 0) {
+		while (binsToAdd >= 0) {
 			list.add(null);
 			binsToAdd--;
 		}

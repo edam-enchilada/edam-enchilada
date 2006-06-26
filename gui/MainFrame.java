@@ -123,6 +123,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JPanel particlePanel;
 	private JScrollPane particleTablePane;
 	private JScrollPane collInfoPane;
+	private JMenuItem visualizeItem;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -330,6 +331,11 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
+		else if (source == visualizeItem) {
+			new experiments.Histogrammer()
+				.drawCollection(getSelectedCollection().getCollectionID(),
+						Color.BLACK);
+		}
 		
 		else if (source == compressItem) {
 			//TODO: Provide a way to set the collection's name
@@ -503,12 +509,16 @@ public class MainFrame extends JFrame implements ActionListener
 		queryItem.addActionListener(this);
 		compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
 		compressItem.addActionListener(this);
+		visualizeItem = new JMenuItem("Visualize. . .", KeyEvent.VK_V);
+		visualizeItem.addActionListener(this);
+		
 		
 		analysisMenu.add(clusterItem);
 		analysisMenu.add(labelItem);
 		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
 		analysisMenu.add(compressItem);
+		analysisMenu.add(visualizeItem);
 		
 		//Add a collection menu to the menu bar.
 		JMenu collectionMenu = new JMenu("Collection");

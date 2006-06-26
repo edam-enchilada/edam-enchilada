@@ -857,7 +857,8 @@ public class ChartArea extends JComponent {
 	{
 		GraphAxis actualYAxis = getYAxis(index);
 		Rectangle dataArea = getDataAreaBounds();
-		//whether we've drawn indicators that more data exist to each direction
+		// these booleans show whether we've drawn indicators that 
+		// more data exist in each direction
 		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		Shape oldClip = g2d.getClip();
