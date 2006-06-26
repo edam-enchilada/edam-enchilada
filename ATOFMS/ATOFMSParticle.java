@@ -207,7 +207,6 @@ public class ATOFMSParticle {
 		int peakArea;
 		int temp = 0;
 		int totalArea = 0;
-		HashMap<Double,Peak> newPeaks = new HashMap<Double,Peak>();
 		boolean foundPeak = false;
 		while (i < MAX_BIN_NUMBER)
 		{
@@ -245,15 +244,9 @@ public class ATOFMSParticle {
 				}
 				peakArea = peakArea - baseline*(endLoc-startLoc+1);
 				totalArea += peakArea;
-				double peakLocation = getRoundedMZ(getPosMZ(centerIndex));
-				Peak currPeak = newPeaks.get(peakLocation);
-				if(currPeak == null){
-					newPeaks.put(peakLocation,new Peak(peakHeight, peakArea, peakLocation));
-				}else{
-					 currPeak.height +=peakHeight;
-					 currPeak.area += peakArea;
-						 
-				}
+				double peakLocation = getPosMZ(centerIndex);
+				peakList.add(new Peak(peakHeight, peakArea, peakLocation));
+				
 				foundPeak = false;
 			} // if (foundPeak == true)
 			else
@@ -261,7 +254,6 @@ public class ATOFMSParticle {
 		} // while (i < MAX_BIN_NUMBER)
 		int k = 0;
 		
-		peakList = new ArrayList<Peak>(newPeaks.values());
 		
 		while (k < peakList.size())
 		{
@@ -305,7 +297,6 @@ public class ATOFMSParticle {
 		int temp = 0;
 		int totalArea = 0;
 		boolean foundPeak = false;
-		HashMap<Double,Peak> newPeaks = new HashMap<Double,Peak>();
 		while (i < MAX_BIN_NUMBER)
 		{
 			peakHeight = 0;
@@ -345,15 +336,8 @@ public class ATOFMSParticle {
 				// reducing total value by the value of the peak as we 
 				// cut it.  Nevermind.
 
-				double peakLocation = getRoundedMZ(getPosMZ(centerIndex));
-				Peak currPeak = newPeaks.get(peakLocation);
-				if(currPeak == null){
-					newPeaks.put(peakLocation,new Peak(peakHeight, peakArea, peakLocation));
-				}else{
-					 currPeak.height +=peakHeight;
-					 currPeak.area += peakArea;
-						 
-				}
+				double peakLocation = getPosMZ(centerIndex);
+				peakList.add(new Peak(peakHeight, peakArea, peakLocation));
 				
 				peakHeight = 0;
 				foundPeak = false;
@@ -362,7 +346,6 @@ public class ATOFMSParticle {
 				i++;
 		} // while (i < MAX_BIN_NUMBER)
 		
-		peakList = new ArrayList<Peak>(newPeaks.values());
 		
 		int k = startingListSize;
 
@@ -451,12 +434,28 @@ public class ATOFMSParticle {
 	}
 	
 	public ArrayList<String> particleInfoSparseString() {
+		HashMap<Double, Peak> peakHash = new HashMap<Double, Peak>();
 		ArrayList<String> sparse = new ArrayList<String>();
 		getPeakList();
-		for (int i = 0; i < peakList.size(); i++) 
-			sparse.add(peakList.get(i).massToCharge + ", " + 
-					peakList.get(i).area + ", " + peakList.get(i).relArea + 
-					", " + peakList.get(i).height);
+		for (Peak newPeak : peakList) {
+			int peakHeight = newPeak.height;
+			int peakArea = newPeak.area;
+			double peakLocation = getRoundedMZ(newPeak.massToCharge);
+			Peak oldPeak = peakHash.get(peakLocation);
+			if (oldPeak == null) {
+				peakHash.put(peakLocation, new Peak(peakHeight, peakArea,
+						peakLocation));
+			} else {
+				oldPeak.height += peakHeight;
+				oldPeak.area += peakArea;
+
+			}
+		}
+		for(Peak peak : peakHash.values()){
+			sparse.add(peak.massToCharge + ", "
+					+ peak.area + ", " + peak.relArea
+					+ ", " + peak.height);
+		}
 		return sparse;	
 	}
 }
