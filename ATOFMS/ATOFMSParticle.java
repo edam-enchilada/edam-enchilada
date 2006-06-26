@@ -47,6 +47,7 @@
 package ATOFMS;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * @author ritza
@@ -206,6 +207,7 @@ public class ATOFMSParticle {
 		int peakArea;
 		int temp = 0;
 		int totalArea = 0;
+		HashMap<Double,Peak> newPeaks = new HashMap<Double,Peak>();
 		boolean foundPeak = false;
 		while (i < MAX_BIN_NUMBER)
 		{
@@ -243,14 +245,23 @@ public class ATOFMSParticle {
 				}
 				peakArea = peakArea - baseline*(endLoc-startLoc+1);
 				totalArea += peakArea;
-
-				peakList.add(new Peak(peakHeight, peakArea, getPosMZ(centerIndex)));
+				double peakLocation = getRoundedMZ(getPosMZ(centerIndex));
+				Peak currPeak = newPeaks.get(peakLocation);
+				if(currPeak == null){
+					newPeaks.put(peakLocation,new Peak(peakHeight, peakArea, peakLocation));
+				}else{
+					 currPeak.height +=peakHeight;
+					 currPeak.area += peakArea;
+						 
+				}
 				foundPeak = false;
 			} // if (foundPeak == true)
 			else
 				i++;
 		} // while (i < MAX_BIN_NUMBER)
 		int k = 0;
+		
+		peakList = new ArrayList<Peak>(newPeaks.values());
 		
 		while (k < peakList.size())
 		{
@@ -268,6 +279,15 @@ public class ATOFMSParticle {
 		return true;
 	}
 	
+	private double getRoundedMZ(double rawMZ) {
+		double roundedMZ = Math.round(rawMZ);
+		double error = rawMZ-roundedMZ;
+		if(error <= currPeakParams.maxPeakError || (-1 * error) < currPeakParams.maxPeakError){
+			return roundedMZ;
+		}
+		return -1;
+	}
+
 	/**
 	 * Gets neg peaks and puts them into a sparse peaklist.
 	 * @param baseline
@@ -285,6 +305,7 @@ public class ATOFMSParticle {
 		int temp = 0;
 		int totalArea = 0;
 		boolean foundPeak = false;
+		HashMap<Double,Peak> newPeaks = new HashMap<Double,Peak>();
 		while (i < MAX_BIN_NUMBER)
 		{
 			peakHeight = 0;
@@ -324,8 +345,16 @@ public class ATOFMSParticle {
 				// reducing total value by the value of the peak as we 
 				// cut it.  Nevermind.
 
-				peakList.add(new Peak(peakHeight, peakArea, getNegMZ(centerIndex)));
-
+				double peakLocation = getRoundedMZ(getPosMZ(centerIndex));
+				Peak currPeak = newPeaks.get(peakLocation);
+				if(currPeak == null){
+					newPeaks.put(peakLocation,new Peak(peakHeight, peakArea, peakLocation));
+				}else{
+					 currPeak.height +=peakHeight;
+					 currPeak.area += peakArea;
+						 
+				}
+				
 				peakHeight = 0;
 				foundPeak = false;
 			} // if (foundPeak == true)
@@ -333,9 +362,10 @@ public class ATOFMSParticle {
 				i++;
 		} // while (i < MAX_BIN_NUMBER)
 		
+		peakList = new ArrayList<Peak>(newPeaks.values());
+		
 		int k = startingListSize;
 
-		
 		while (k < peakList.size())
 		{
 			Peak peak = peakList.get(k);

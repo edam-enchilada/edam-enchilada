@@ -27,7 +27,7 @@ public class ImportExperimentParticles {
 		db.openConnection();
 		
 		
-		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f);
+		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f,.50f);
 		try {
 			ATOFMSParticle.currCalInfo = 
 				new CalInfo("Particles for Clustering\\040215a_33.cal", true);

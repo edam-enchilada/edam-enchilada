@@ -54,11 +54,13 @@ public class PeakParams {
 	public int minHeight;
 	public int minArea;
 	public float minRelArea;
+	public float maxPeakError;
 		
-	public PeakParams (int h, int a, float relA) {
+	public PeakParams (int h, int a, float relA, float peakError) {
 		minHeight = h;
 		minArea = a;
 		minRelArea = relA;
+		maxPeakError = peakError;
 	}
 
 }

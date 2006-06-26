@@ -359,6 +359,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public int copyCollection(Collection collection, Collection toCollection)
 	{
+		System.out.println("CollectionA: "+collection.getCollectionID()+
+				"\nCollection B: "+toCollection.getCollectionID());
 		int newID = -1;
 		try {
 			Statement stmt = con.createStatement();
@@ -616,33 +618,29 @@ public class SQLServerDatabase implements InfoWarehouse
 			int datasetID, int nextID)
 	{
 		//System.out.println("next AtomID: "+nextID);
+		StringBuilder sql = new StringBuilder();
+		
 		try {
 			Statement stmt = con.createStatement();
 			//System.out.println("Adding batches");
 			
-			String debug = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
-					nextID + ", " + dense + ")";
-			System.out.println(debug);	//DEBUGGING
-			stmt.addBatch(debug);
-			debug = "INSERT INTO AtomMembership\n" +
+			sql.append("INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+					nextID + ", " + dense + ")\n");
+			sql.append("INSERT INTO AtomMembership\n" +
 					"(CollectionID, AtomID)\n" +
 					"VALUES (" +
 					collection.getCollectionID() + ", " +
-					nextID + ")";
-			System.out.println(debug);	//DEBUGGING
-			stmt.addBatch(debug);
-			debug = "INSERT INTO DataSetMembers\n" +
+					nextID + ")\n");
+			sql.append("INSERT INTO DataSetMembers\n" +
 					"(OrigDataSetID, AtomID)\n" +
 					"VALUES (" +
 					datasetID + ", " + 
-					nextID + ")";
-			System.out.println(debug);	//DEBUGGING
-			stmt.addBatch(debug);
+					nextID + ")\n");
 			
 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
 			
 			// Only bulk insert if client and server are on the same machine...
-			if (url.equals("localhost")) {
+			if (!url.equals("localhost")) {
 				//System.out.println("server is localhost");
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
 				PrintWriter bulkFile = null;
@@ -660,26 +658,25 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				
 				bulkFile.close();
-				String statement = "BULK INSERT " + tableName + "\n" +
+				sql.append("BULK INSERT " + tableName + "\n" +
 						"FROM '" + tempFilename + "'\n" +
-				"WITH (FIELDTERMINATOR=',')";
-				stmt.addBatch(statement);
+				"WITH (FIELDTERMINATOR=',')\n");
 				//System.out.println("Statement: "+statement);
 			} else {
 				for (int j = 0; j < sparse.size(); j++)
-					stmt.addBatch("INSERT INTO " + tableName +  
-							" VALUES (" + nextID + "," + sparse.get(j) + ")");
+					sql.append("INSERT INTO " + tableName +  
+							" VALUES (" + nextID + "," + sparse.get(j) + ")\n");
 				
 			}
 			
 			//System.out.println(tableName);
-			
-			stmt.executeBatch();
+			stmt.execute(sql.toString());
 			
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
+			System.out.println(sql.toString());
 			e.printStackTrace();
 			
 			return -1;
@@ -1128,6 +1125,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public boolean recursiveDelete(Collection collection)
 	{
+		System.out.println("Collection: "+ collection.getCollectionID());
 		Collection parent = collection.getParentCollection();
 		String datatype = collection.getDatatype();
 		System.out.println("Deleting " + collection.getCollectionID());

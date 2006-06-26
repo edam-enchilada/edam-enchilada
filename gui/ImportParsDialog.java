@@ -156,8 +156,8 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		JTable pTable = new JTable(pTableModel);	
         pTable.setDefaultEditor(Float.class, new FloatEditor());
         pTable.setDefaultEditor(Integer.class, new IntegerEditor());
-		TableColumn[] tableColumns = new TableColumn[7];
-		for (int i = 0; i < 7; i++)
+		TableColumn[] tableColumns = new TableColumn[8];
+		for (int i = 0; i < 8; i++)
 			tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
 		tableColumns[0].setCellEditor(
 				new FileDialogPickerEditor("par","Import",this));

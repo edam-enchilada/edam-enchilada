@@ -96,6 +96,7 @@ public class ATOFMSDataSetImporter {
 	private String massCalFile, sizeCalFile;
 	private int height, area;
 	private float relArea;
+	private float peakError;
 	private boolean autoCal;
 	
 	private String particleName;	
@@ -161,7 +162,8 @@ public class ATOFMSDataSetImporter {
 				height= ((Integer)table.getValueAt(i,4)).intValue();
 				area = ((Integer)table.getValueAt(i,5)).intValue();
 				relArea = ((Float)table.getValueAt(i,6)).floatValue();
-				autoCal = ((Boolean)table.getValueAt(i,7)).booleanValue();
+				peakError = ((Float)table.getValueAt(i,7)).floatValue();
+				autoCal = ((Boolean)table.getValueAt(i,8)).booleanValue();
 				positionInBatch = i + 1;
 				// Call relevant methods
 				try {
@@ -204,7 +206,7 @@ public class ATOFMSDataSetImporter {
 		if (!skipFile) { // If we don't have to skip this row due to an error...
 			
 			// Create PeakParam Object.
-			PeakParams peakParams = new PeakParams(height,area,relArea);
+			PeakParams peakParams = new PeakParams(height,area,relArea,peakError);
 			
 			//Read '.par' file and create collection to fill.
 			parFile = new File(name);

@@ -68,7 +68,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			setCount = 0;
 			addTableModelListener(this);
 			
-			columnNames = new String[8]; 
+			columnNames = new String[9]; 
 			columnNames[0] = "#";
 			columnNames[1] = "*.par";
 			columnNames[2] = "mass cal"; 
@@ -76,7 +76,8 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			columnNames[4] = "Min. Height"; 
 			columnNames[5] = "Min. Area";
 			columnNames[6] = "Min. Rel. Area";
-			columnNames[7] = "Autocal";
+			columnNames[7] = "Max. Peak Error";
+			columnNames[8] = "Autocal";
 			
 			newColumn.add(new Integer(++setCount));
 			newColumn.add(new String(".par file"));
@@ -84,6 +85,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			newColumn.add(new String(".noz file"));
 			newColumn.add(new Integer(0));
 			newColumn.add(new Integer(0));
+			newColumn.add(new Float(0.0));
 			newColumn.add(new Float(0.0));
 			newColumn.add(new Boolean(true));
 			rowData.add(newColumn);
@@ -94,6 +96,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			row2.add(new String(""));
 			row2.add(new Integer(0));
 			row2.add(new Integer(0));
+			row2.add(new Float(0.0));
 			row2.add(new Float(0.0));
 			row2.add(new Boolean(true));
 			rowData.add(row2);
@@ -163,7 +166,8 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 				newRow.add((Integer) rowData.get(rowData.size()-1).get(4));
 				newRow.add((Integer) rowData.get(rowData.size()-1).get(5));
 				newRow.add((Float) rowData.get(rowData.size()-1).get(6));
-				newRow.add((Boolean) rowData.get(rowData.size()-1).get(7));
+				newRow.add((Float) rowData.get(rowData.size()-1).get(7));
+				newRow.add((Boolean) rowData.get(rowData.size()-1).get(8));
 				rowData.add(newRow);
 				fireTableRowsInserted(rowData.size()-1,rowData.size()-1);
 			}
@@ -177,7 +181,8 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			lastRow.set(4, (Integer) rowData.get(rowData.size()-2).get(4));
 			lastRow.set(5, (Integer) rowData.get(rowData.size()-2).get(5));
 			lastRow.set(6, (Float) rowData.get(rowData.size()-2).get(6));
-			lastRow.set(7, (Boolean) rowData.get(rowData.size()-2).get(7));
+			lastRow.set(7, (Float) rowData.get(rowData.size()-2).get(7));
+			lastRow.set(8, (Boolean) rowData.get(rowData.size()-2).get(8));
 			fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
 		}
 	

@@ -460,7 +460,7 @@ public class ReadSpec {
 	
 	public static void main(String[] args) throws IOException {
 		ATOFMSParticle.currCalInfo = new CalInfo();
-		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f);
+		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f,.50f);
 		//ReadSpec rs = new ReadSpec
 		//("C:\\Documents and Settings\\andersbe\\My Documents\\" +
 		//		"atofms data\\07-27-2004\\a\\" +
