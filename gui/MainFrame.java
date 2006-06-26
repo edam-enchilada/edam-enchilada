@@ -58,6 +58,7 @@ import collection.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Vector;
@@ -90,7 +91,9 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
+	private JMenuItem importXmlItem;
 	private JMenuItem MSAexportItem;
+	private JMenuItem exportXmlItem;
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
 	private JMenuItem compressItem;
@@ -345,10 +348,55 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.updateTree();
 		}
 		
+		else if (source == exportXmlItem) {
+			FileDialog fileChooser = new FileDialog(this, 
+                    "Create a file to store the database:",
+                     FileDialog.LOAD);
+			String fileFilter = "*.xml";
+			fileChooser.setFile(fileFilter);
+			fileChooser.setVisible(true);
+			String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			System.out.println("File: "+filename);
+			try {
+				db.exportToXml(filename);
+			} catch (FileNotFoundException e1) {
+				JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be created.");
+			}
+			
+		}
+		
+		else if (source == importXmlItem) {
+			FileDialog fileChooser = new FileDialog(this, 
+                    "Choose a database file to restore:",
+                     FileDialog.LOAD);
+			String fileFilter = "*.xml";
+			fileChooser.setFile(fileFilter);
+			fileChooser.setVisible(true);
+			String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			System.out.println("File: "+filename);
+			if (fileChooser.getFile() != null && JOptionPane.showConfirmDialog(this,
+			"Are you sure? " +
+			"This will destroy all data in your database and restore it from the file:\n"+filename) ==
+				JOptionPane.YES_OPTION) {
+				try {
+					db.importFromXml(filename);
+				
+				/*JOptionPane.showMessageDialog(this,
+						"The program will now shut down to reset itself. " +
+				"Start it up again to continue.");*/
+				} catch (FileNotFoundException e1) {
+					JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be found.");
+				}
+				collectionPane.updateTree();
+				
+			}			
+		}
+		
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
 			"Are you sure? This will destroy all data in your database.") ==
 				JOptionPane.YES_OPTION) {
+				//db.rebuildDatabase();
 				db.closeConnection();
 				SQLServerDatabase.rebuildDatabase("SpASMSdb");
 				JOptionPane.showMessageDialog(this,
@@ -440,7 +488,7 @@ public class MainFrame extends JFrame implements ActionListener
 				KeyEvent.VK_N);
 		emptyCollection.addActionListener(this);
 		
-		JMenu importMenu = new JMenu("Import Collection. . . ");
+		JMenu importCollectionMenu = new JMenu("Import Collection. . . ");
 		loadATOFMSItem = new JMenuItem("from ATOFMS data. . .");
 		loadATOFMSItem.addActionListener(this);
 		loadEnchiladaDataItem = new JMenuItem("from Enchilada data. . .");
@@ -449,18 +497,22 @@ public class MainFrame extends JFrame implements ActionListener
 		loadAMSDataItem.addActionListener(this); 
 		batchLoadATOFMSItem = new JMenuItem("from ATOFMS data (with bulk file). . .");
 		batchLoadATOFMSItem.addActionListener(this);
-		importMenu.setMnemonic(KeyEvent.VK_I);
-		importMenu.add(loadATOFMSItem);
-		importMenu.add(batchLoadATOFMSItem);
-		importMenu.add(loadEnchiladaDataItem);
-		importMenu.add(loadAMSDataItem);
+		importCollectionMenu.setMnemonic(KeyEvent.VK_I);
+		importCollectionMenu.add(loadATOFMSItem);
+		importCollectionMenu.add(batchLoadATOFMSItem);
+		importCollectionMenu.add(loadEnchiladaDataItem);
+		importCollectionMenu.add(loadAMSDataItem);
 		
-		JMenu exportMenu = new JMenu("Export Collection. . .");
+		JMenu exportCollectionMenu = new JMenu("Export Collection. . .");
 		MSAexportItem = new JMenuItem("to MS-Analyze. . .");
 		MSAexportItem.addActionListener(this);
-		exportMenu.setMnemonic(KeyEvent.VK_E);
-		exportMenu.add(MSAexportItem);
+		exportCollectionMenu.setMnemonic(KeyEvent.VK_E);
+		exportCollectionMenu.add(MSAexportItem);
 		
+		importXmlItem = new JMenuItem("Restore Database from XML");
+		importXmlItem.addActionListener(this);
+		exportXmlItem = new JMenuItem("Save Database to XML");
+		exportXmlItem.addActionListener(this);
 		rebuildItem = new JMenuItem("Rebuild Database", KeyEvent.VK_R);
 		rebuildItem.addActionListener(this);
 		
@@ -469,9 +521,11 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		fileMenu.add(emptyCollection);
 		fileMenu.addSeparator();
-		fileMenu.add(importMenu);
-		fileMenu.add(exportMenu);
+		fileMenu.add(importCollectionMenu);
+		fileMenu.add(exportCollectionMenu);
 		fileMenu.addSeparator();
+		fileMenu.add(importXmlItem);
+		fileMenu.add(exportXmlItem);
 		fileMenu.add(rebuildItem);
 		fileMenu.addSeparator();
 		fileMenu.add(exitItem);
@@ -723,6 +777,11 @@ public class MainFrame extends JFrame implements ActionListener
 		setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 	}
 	
+	/**
+	 * Display collection information
+	 * @param collection
+	 * @return
+	 */
 	private boolean setupRightWindowForCollection(Collection collection) {
 		mainSplitPane.setBottomComponent(collectionViewPanel);
 		
@@ -810,6 +869,12 @@ public class MainFrame extends JFrame implements ActionListener
 		return true;
 	}
 	
+	
+	/**
+	 * Display time-series information
+	 * @param collection
+	 * @return
+	 */
 	private boolean setupRightWindowForSynchronization(Collection collection) {
 		Component rightWindow = mainSplitPane.getBottomComponent();
 		

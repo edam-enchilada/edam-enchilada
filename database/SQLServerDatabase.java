@@ -77,6 +77,14 @@ import gui.*;
 import java.io.*;
 import java.util.Scanner;
 
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.DatabaseSequenceFilter;
+import org.dbunit.dataset.FilteredDataSet;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.filter.ITableFilter;
+import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.ext.mssql.InsertIdentityOperation;
+
 import errorframework.ErrorLogger;
 
 /* 
@@ -1979,9 +1987,49 @@ public class SQLServerDatabase implements InfoWarehouse
 		return -1;
 	}
 	
+	public void exportToXml(String filename) throws FileNotFoundException {
+		DatabaseConnection dbconn = null;
+		IDataSet dataSet = null;
+		PrintWriter output = new PrintWriter(filename);
+		dbconn = new DatabaseConnection(con);
+		try {
+			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
+			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
+			FlatXmlDataSet.write(dataSet, output);
+			//dbconn.close();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+
+	public void importFromXml(String filename) throws FileNotFoundException {
+		DatabaseConnection dbconn = null;
+		//IDataSet dataSet = null;
+		FileInputStream input = new FileInputStream(filename);
+		try {
+			dbconn = new DatabaseConnection(con);
+			//dataSet = dbconn.createDataSet();
+			FlatXmlDataSet data = new FlatXmlDataSet(input);
+			InsertIdentityOperation.CLEAN_INSERT.execute(dbconn, data);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		/*try {
+			dbconn.close();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		*/
+	}
+	
 	/**
-	 * exports a collection to the MSAnalyze database by making up 
-	 * the necessary data to import (.par file, etc).
+	 * exports a collection to the MSAnalyze database by making up the necessary
+	 * data to import (.par file, etc).
+	 * 
 	 * @return date associated with the mock dataset.
 	 */
 	public java.util.Date exportToMSAnalyzeDatabase(
@@ -2298,6 +2346,74 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * rebuilds the database; sets the static tables.
 	 * @param dbName
 	 * @return true if successful
+	 *//*
+	public boolean rebuildDatabase() {
+		Scanner in;
+		DatabaseConnection dbconn = null;
+		IDataSet dataSet = null;
+		try {
+			dbconn = new DatabaseConnection(con);
+			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
+			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
+			InsertIdentityOperation.DELETE_ALL.execute(dbconn, dataSet);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		//System.exit(0);
+		
+		try {
+			Statement stmt = con.createStatement();
+			StringBuilder sql = new StringBuilder();
+			sql.append("EXEC sp_MSForEachTable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'\n");
+			sql.append("EXEC sp_MSForEachTable 'DROP TABLE ?'\n");
+			stmt.execute(sql.toString());
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		// Run all the queries in the SQLServerRebuildDatabase.txt file, which
+		// inserts all of the necessary tables.
+		try {
+			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
+			String query = "";
+			StringTokenizer token;
+			// loop through license block
+			while (in.hasNext()) {
+				query = in.nextLine();
+				token = new StringTokenizer(query);
+				if (token.hasMoreTokens()) {
+					String s = token.nextToken();
+					if (s.equals("CREATE"))
+						break;
+				}
+			}
+			// Update the database according to the stmts.
+			con.createStatement().executeUpdate(query);
+			
+			while (in.hasNext()) {
+				query = in.nextLine();
+				//System.out.println(query);
+				con.createStatement().executeUpdate(query);
+			}
+			
+		} catch (IOException e) {
+			System.err.println("IOException occurred when rebuilding the database.");
+			return true;
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
+			System.err.println("Error in adding tables to database.");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	*/
+	/**
+	 * rebuilds the database; sets the static tables.
+	 * @param dbName
+	 * @return true if successful
 	 */
 	public static boolean rebuildDatabase(String dbName) {
 		SQLServerDatabase db = null;
@@ -2316,6 +2432,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			db.openConnection();
 			con = db.getCon();
 			Statement stmt = con.createStatement();
+			
 			// See if database exists. If it does, drop it.
 			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
 			boolean foundDatabase = false;
@@ -4501,7 +4618,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			//System.out.println(selectAllTimesStr);
 			ResultSet rs;
-			/*rs = stmt.executeQuery(selectAllTimesStr);
+			rs = stmt.executeQuery(selectAllTimesStr);
 			while (rs.next()) {
 				double[] retValues = new double[columnsToReturn.size()];
 				for (int i = 0; i < retValues.length; i++)
@@ -4510,7 +4627,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (ts != null)
 					retData.put(ts, retValues);	
 			}
-			*/
+			
 			//System.out.println(sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
