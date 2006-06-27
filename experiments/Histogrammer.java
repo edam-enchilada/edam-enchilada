@@ -11,15 +11,13 @@ package experiments;
 
 /*
  * In order to make this prototype into a functional part of the real software,
- * a lot remains to be done.  First, it needs to be integrated into the menu
- * system.  I'm thinking as Analyze->Visualize.  It should take the collection
- * to visualize to be the one that is selected when the menu item is chosen.
- * It might even be nice to support visualizing several collections at once 
+ * a lot remains to be done.  
+ * It might be nice to support visualizing several collections at once 
  * (same graph).  
  * 
  * Make the database scan part into a SwingWorker.
  * 
- * Possible enhancements to the graph itself:  somehow represent 0 values.  And
+ * Possible enhancements to the graph itself:  better represent 0 values.  And
  * allow different numbers of histogram bins.
  * 
  * Then, the window needs to
@@ -101,14 +99,14 @@ public class Histogrammer {
 	
 	public void drawCollection(int collID, Color c) {
 		Collection coll = db.getCollection(collID);
-		CollectionCursor b = db.getBinnedCursor(coll);
+		CollectionCursor particleCursor = db.getBinnedCursor(coll);
 		BinnedPeakList peakList;
 		int partnum = 0;
 
 		final ChainingHistogram[] histograms = new ChainingHistogram[maxMZ];
 		
-		while (b.next()) {
-			ParticleInfo pInfo = b.getCurrent();
+		while (particleCursor.next()) {
+			ParticleInfo pInfo = particleCursor.getCurrent();
 			peakList = pInfo.getBinnedList();
 			peakList.normalize(DistanceMetric.CITY_BLOCK);
 
@@ -248,18 +246,4 @@ public class Histogrammer {
 			return hitCount;
 		}
 	}
-	
-	public class VisualizeItem extends JMenuItem implements ActionListener {
-		public VisualizeItem() {
-			super("Visualize...");
-			this.addActionListener(this);
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			
-		}
-		
-		
-	}
-	
 }
