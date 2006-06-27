@@ -91,9 +91,13 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
-	private JMenuItem importXmlItem;
 	private JMenuItem MSAexportItem;
-	private JMenuItem exportXmlItem;
+	private JMenuItem importXmlDatabaseItem;
+	private JMenuItem importXlsDatabaseItem;
+	private JMenuItem importCsvDatabaseItem;
+	private JMenuItem exportXmlDatabaseItem;
+	private JMenuItem exportXlsDatabaseItem;
+	private JMenuItem exportCsvDatabaseItem;
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
 	private JMenuItem compressItem;
@@ -348,28 +352,54 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.updateTree();
 		}
 		
-		else if (source == exportXmlItem) {
+		else if (source == exportXmlDatabaseItem||source==exportXlsDatabaseItem||source==exportCsvDatabaseItem) {
+			int fileType = -1;
+			String fileFilter = "";
+			if(source == exportXmlDatabaseItem){
+				fileFilter = "*.xml";
+				fileType = 1;
+			}
+			else if (source == exportXlsDatabaseItem){
+				fileFilter = "*.xls";
+				fileType = 2;
+			}
+			else{
+				fileFilter = "*.csv";
+				fileType = 3;
+			}
 			FileDialog fileChooser = new FileDialog(this, 
                     "Create a file to store the database:",
                      FileDialog.LOAD);
-			String fileFilter = "*.xml";
 			fileChooser.setFile(fileFilter);
 			fileChooser.setVisible(true);
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
 			System.out.println("File: "+filename);
 			try {
-				db.exportToXml(filename);
+				db.exportDatabase(filename,fileType);
 			} catch (FileNotFoundException e1) {
 				JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be created.");
 			}
 			
 		}
 		
-		else if (source == importXmlItem) {
+		else if (source == importXmlDatabaseItem||source==importXlsDatabaseItem||source==importCsvDatabaseItem) {
+			int fileType = -1;
+			String fileFilter = "";
+			if(source == importXmlDatabaseItem){
+				fileFilter = "*.xml";
+				fileType = 1;
+			}
+			else if (source == importXlsDatabaseItem){
+				fileFilter = "*.xls";
+				fileType = 2;
+			}
+			else{
+				fileFilter = "*.csv";
+				fileType = 3;
+			}
 			FileDialog fileChooser = new FileDialog(this, 
                     "Choose a database file to restore:",
                      FileDialog.LOAD);
-			String fileFilter = "*.xml";
 			fileChooser.setFile(fileFilter);
 			fileChooser.setVisible(true);
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
@@ -379,7 +409,7 @@ public class MainFrame extends JFrame implements ActionListener
 			"This will destroy all data in your database and restore it from the file:\n"+filename) ==
 				JOptionPane.YES_OPTION) {
 				try {
-					db.importFromXml(filename);
+					db.importDatabase(filename,fileType);
 				
 				/*JOptionPane.showMessageDialog(this,
 						"The program will now shut down to reset itself. " +
@@ -509,10 +539,29 @@ public class MainFrame extends JFrame implements ActionListener
 		exportCollectionMenu.setMnemonic(KeyEvent.VK_E);
 		exportCollectionMenu.add(MSAexportItem);
 		
-		importXmlItem = new JMenuItem("Restore Database from XML");
-		importXmlItem.addActionListener(this);
-		exportXmlItem = new JMenuItem("Save Database to XML");
-		exportXmlItem.addActionListener(this);
+		JMenu importDatabaseMenu = new JMenu("Restore Database. . . ");
+		importXmlDatabaseItem = new JMenuItem("from XML. . .");
+		importXmlDatabaseItem.addActionListener(this);
+		importXlsDatabaseItem = new JMenuItem("from Xls. . .");
+		importXlsDatabaseItem.addActionListener(this);
+		importCsvDatabaseItem = new JMenuItem("from Csv. . .");
+		importCsvDatabaseItem.addActionListener(this);
+		importDatabaseMenu.add(importXmlDatabaseItem);
+		importDatabaseMenu.add(importXlsDatabaseItem);
+		importDatabaseMenu.add(importCsvDatabaseItem);
+		
+		JMenu exportDatabaseMenu = new JMenu("Export Database. . . ");
+		exportXmlDatabaseItem = new JMenuItem("to XML. . .");
+		exportXmlDatabaseItem.addActionListener(this);
+		exportXlsDatabaseItem = new JMenuItem("to Xls. . .");
+		exportXlsDatabaseItem.addActionListener(this);
+		exportCsvDatabaseItem = new JMenuItem("to Csv. . .");
+		exportCsvDatabaseItem.addActionListener(this);
+		exportDatabaseMenu.add(exportXmlDatabaseItem);
+		exportDatabaseMenu.add(exportXlsDatabaseItem);
+		exportDatabaseMenu.add(exportCsvDatabaseItem);
+		
+		
 		rebuildItem = new JMenuItem("Rebuild Database", KeyEvent.VK_R);
 		rebuildItem.addActionListener(this);
 		
@@ -524,8 +573,8 @@ public class MainFrame extends JFrame implements ActionListener
 		fileMenu.add(importCollectionMenu);
 		fileMenu.add(exportCollectionMenu);
 		fileMenu.addSeparator();
-		fileMenu.add(importXmlItem);
-		fileMenu.add(exportXmlItem);
+		fileMenu.add(importDatabaseMenu);
+		fileMenu.add(exportDatabaseMenu);
 		fileMenu.add(rebuildItem);
 		fileMenu.addSeparator();
 		fileMenu.add(exitItem);

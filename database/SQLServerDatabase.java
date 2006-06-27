@@ -81,6 +81,8 @@ import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.DatabaseSequenceFilter;
 import org.dbunit.dataset.FilteredDataSet;
 import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.csv.CsvDataSetWriter;
+import org.dbunit.dataset.excel.XlsDataSet;
 import org.dbunit.dataset.filter.ITableFilter;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.ext.mssql.InsertIdentityOperation;
@@ -1987,7 +1989,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		return -1;
 	}
 	
-	public void exportToXml(String filename) throws FileNotFoundException {
+	public void exportDatabase(String filename,int fileType) throws FileNotFoundException {
 		DatabaseConnection dbconn = null;
 		IDataSet dataSet = null;
 		PrintWriter output = new PrintWriter(filename);
@@ -1995,7 +1997,30 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
 			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
-			FlatXmlDataSet.write(dataSet, output);
+			switch(fileType){
+			case 1:
+				FlatXmlDataSet.write(dataSet, output);
+				break;
+			case 2:
+				XlsDataSet.write(dataSet,new FileOutputStream(filename));
+				break;
+			case 3:
+				FileWriter dummy = new FileWriter(filename);
+				dummy.write("#this is a dummy file\n" +
+						"#the real data is stored in the directory of the same name");
+				String dirName = filename.substring(0,filename.lastIndexOf("."));
+				File dir = new File(dirName);
+				boolean success = dir.mkdir();
+			    if (!success) {
+			    	throw new FileNotFoundException();
+			    }
+			    CsvDataSetWriter.write(dataSet,dir);
+			    break;
+			default:
+				System.err.println("Invalid fileType: "+fileType);
+			}
+			
+			//
 			//dbconn.close();
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -2003,7 +2028,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 	}
 
-	public void importFromXml(String filename) throws FileNotFoundException {
+	public void importDatabase(String filename, int fileType) throws FileNotFoundException {
 		DatabaseConnection dbconn = null;
 		//IDataSet dataSet = null;
 		FileInputStream input = new FileInputStream(filename);
