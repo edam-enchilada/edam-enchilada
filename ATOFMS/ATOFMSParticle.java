@@ -48,6 +48,8 @@ package ATOFMS;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author ritza
@@ -336,7 +338,7 @@ public class ATOFMSParticle {
 				// reducing total value by the value of the peak as we 
 				// cut it.  Nevermind.
 
-				double peakLocation = getPosMZ(centerIndex);
+				double peakLocation = getNegMZ(centerIndex);
 				peakList.add(new Peak(peakHeight, peakArea, peakLocation));
 				
 				peakHeight = 0;
@@ -434,28 +436,44 @@ public class ATOFMSParticle {
 	}
 	
 	public ArrayList<String> particleInfoSparseString() {
-		HashMap<Double, Peak> peakHash = new HashMap<Double, Peak>();
-		ArrayList<String> sparse = new ArrayList<String>();
+		ArrayList<String> peaks = new ArrayList<String>();
 		getPeakList();
-		for (Peak newPeak : peakList) {
-			int peakHeight = newPeak.height;
-			int peakArea = newPeak.area;
-			double peakLocation = getRoundedMZ(newPeak.massToCharge);
-			Peak oldPeak = peakHash.get(peakLocation);
-			if (oldPeak == null) {
-				peakHash.put(peakLocation, new Peak(peakHeight, peakArea,
-						peakLocation));
-			} else {
-				oldPeak.height += peakHeight;
-				oldPeak.area += peakArea;
+		Map<Integer, Peak> map = new LinkedHashMap<Integer, Peak>();
+		
 
+		for (Peak p : peakList) {
+			// see BinnedPeakList.java for source of this routine
+			int mzInt; double mz = p.massToCharge;
+			
+			if (mz >= 0.0)
+				mzInt = (int) (mz + 0.5);
+			else
+				mzInt = (int) (mz - 0.5);
+			
+			//new Peak(int height, int area, double masstocharge)
+			if (map.containsKey(mzInt))
+			{
+				Peak soFar = map.get(mzInt);
+				map.put(mzInt, 
+						new Peak(soFar.height + p.height,
+								soFar.area + p.area,
+								soFar.relArea + p.relArea,
+								mzInt));
+			} else {
+				map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
 			}
 		}
-		for(Peak peak : peakHash.values()){
-			sparse.add(peak.massToCharge + ", "
+		for(Peak peak : map.values()){
+			peaks.add(peak.massToCharge + ", "
 					+ peak.area + ", " + peak.relArea
 					+ ", " + peak.height);
 		}
-		return sparse;	
+		
+		/*for(Peak peak : peakList){
+			peaks.add(peak.massToCharge + ", "
+					+ peak.area + ", " + peak.relArea
+					+ ", " + peak.height);
+		}*/
+		return peaks;	
 	}
 }
