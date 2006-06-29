@@ -131,6 +131,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JScrollPane particleTablePane;
 	private JScrollPane collInfoPane;
 	private JMenuItem visualizeItem;
+	private JMenuItem aboutItem;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -209,6 +210,18 @@ public class MainFrame extends JFrame implements ActionListener
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
+		
+		if (source == aboutItem) {
+			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
+					"is supported by NSF ITR Grant IIS-0326328.\n" +
+					"For support, please contact dmusican@carleton.edu."
+//					+"Carleton Contributors:\n" +
+//					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
+//					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
+//					"Janara Christensen, David Musicant, Jon Sulman\n" +
+//					"Madison Contributors:\n"
+					);
+		}
 		
 		if (source == importEnchiladaDataButton ||
 				source == loadEnchiladaDataItem) {
@@ -657,13 +670,11 @@ public class MainFrame extends JFrame implements ActionListener
 		helpMenu.setMnemonic(KeyEvent.VK_H);
 		menuBar.add(helpMenu);
 		
-		JMenuItem helpItem = new JMenuItem("Help Contents", 
-				KeyEvent.VK_H);        
-		JMenuItem aboutItem = new JMenuItem("About Enchilada", 
-				KeyEvent.VK_A);
-		
-		helpMenu.add(helpItem);
-		helpMenu.addSeparator();
+		aboutItem = new JMenuItem("About Enchilada", 
+						KeyEvent.VK_A);
+		aboutItem.addActionListener(this);
+		//		helpMenu.add(helpItem);
+//		helpMenu.addSeparator();
 		helpMenu.add(aboutItem);
 		
 		setJMenuBar(menuBar);  //Add menu bar to the frame
