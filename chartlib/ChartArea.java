@@ -848,8 +848,7 @@ public class ChartArea extends JComponent {
 	/**
 	 * Draws the data in a continuous line by drawing only one
 	 * data point per horizontal pixel.
-
-	 * which of overlapping data points to draw.
+	 * 
 	 * @param g2d
 	 * @param ds
 	 */

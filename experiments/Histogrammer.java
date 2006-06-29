@@ -169,15 +169,22 @@ public class Histogrammer {
 				float factor = 60f / (float) dataset.count;
 				
 				for (int mz = 0; mz < maxMZ; mz++) {
-					g.setColor(new Color(R, G, B, 0.5f));
+					// revision with bars for the 0s: 1.7
+					
+					float opacity;
 					
 					if (dataset.hists[mz] == null) {
-						g.fillRect(2 * mz, graphHeight + 2, 2, 10);
-						continue;
+						opacity = 1;
+					} else {
+						opacity = ((float) dataset.count 
+										- dataset.hists[mz].getHitCount()
+									) / dataset.count;
 					}
-					g.fillRect(2 * mz, graphHeight + 2, 2,
-							(int) ((dataset.count - dataset.hists[mz].getHitCount())
-												/ (float) dataset.count * 10f));
+					g.setColor(new Color(R, G, B, opacity));
+					g.fillRect(2 * mz, graphHeight + 2, 2, 10);
+					
+					if (dataset.hists[mz] == null) continue;
+					
 					for (int i = 0; i < graphHeight; i++) {
 						if (dataset.hists[mz].getCountAtIndex(i) > 1) {
 							g.setColor(new Color(R,G,B, 
