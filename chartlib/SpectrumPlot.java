@@ -18,4 +18,26 @@ public class SpectrumPlot extends Chart {
 		this.setColor(0,Color.red);
 		this.setColor(1,Color.blue);
 	}
+	
+	public void displaySpectra(Dataset pos, Dataset neg) {
+		setTitleY(0, "Intensity");
+		setTitleY(1, "Intensity");
+		
+		setDataset(0, pos);
+		setDataset(1, neg);
+		
+		packData(false, true); //updates the Y axis scale.
+		setDataDisplayType(false, true);
+	}
+	
+	public void displayPeaks(Dataset pos, Dataset neg) {
+		setTitleY(0, "Area");
+		setTitleY(1, "Area");
+	
+		setDataset(0, pos);
+		setDataset(1, neg);
+		
+		packData(false, true); //updates the Y axis scale.
+		setDataDisplayType(true, false);
+	}
 }

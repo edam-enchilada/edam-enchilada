@@ -78,7 +78,7 @@ import database.SQLServerDatabase;
 public class ParticleAnalyzeWindow extends JFrame 
 implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	//GUI elements
-	private Chart chart;
+	private SpectrumPlot chart;
 	private ZoomableChart zchart;
 	private JTable peaksTable; 
 	private JRadioButton peakButton, specButton;
@@ -672,14 +672,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
 
-		chart.setTitleY(0,"Area");
-		chart.setTitleY(1,"Area");
-		
-		chart.setDataset(0,posDS);
-		chart.setDataset(1,negDS);
-
-		chart.packData(false, true); //updates the Y axis scale.
-		chart.setDataDisplayType(true, false);
+		chart.displayPeaks(posDS, negDS);
 	}
 	
 	public void displaySpectrum()
@@ -697,15 +690,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				//peakButton.setSelected(true);
 			}
 		}
-
-		chart.setDataset(1,negSpecDS);
-		chart.setDataset(0,posSpecDS);
-		
-		chart.setTitleY(0,"Intensity");
-		chart.setTitleY(1,"Intensity");
-		
-		chart.packData(false, true);
-		chart.setDataDisplayType(false, true);
+		chart.displaySpectra(posSpecDS, negSpecDS);
 	}
 	
 	/**
