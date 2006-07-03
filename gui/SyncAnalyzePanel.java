@@ -324,20 +324,11 @@ public class SyncAnalyzePanel extends JPanel {
 			}
 
 			if (numSequences > 1) {
-				Chart scatterChart = new Chart(2, true);
-				scatterChart.setHasKey(false);
+				Chart scatterChart = new ScatterPlot(datasets[0], datasets[1]);
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
-				scatterChart.setTitleY(0, "Sequence 1 Value");
-				scatterChart.setTitleY(1, "Sequence 2 Value");
 				scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
 				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
-				scatterChart.setDataset(0, datasets[0]);
-				scatterChart.setDataset(1, datasets[1]);
-				scatterChart.drawAsScatterPlot();
-
-				scatterChart.setPreferredSize(new Dimension(400, 400));
-				scatterChart.setBorder(new EmptyBorder(15, 0, 0, 0));
-
+				
 				bottomPanel = addComponent(scatterChart, bottomPanel);
 			}
 		} else {

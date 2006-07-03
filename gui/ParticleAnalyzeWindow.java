@@ -61,6 +61,7 @@ import ATOFMS.ReadSpec;
 import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
+import chartlib.SpectrumPlot;
 import chartlib.ZoomableChart;
 
 import database.SQLServerDatabase;
@@ -201,18 +202,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		atomFile = null;
 		
 		// sets up chart
-		chart = new chartlib.Chart(2, false);
-		chart.setHasKey(false);
-		chart.setTitle("Positive and negative peak values");
-		chart.setTitleX(0,"Positive mass-to-charge ratios");
-		chart.setTitleY(0,"Area"); // XXX
-		chart.setTitleY(1,"Area");
-		chart.setTitleX(1,"Negative mass-to-charge ratios");
-		chart.setAxisBounds(0,400, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-		chart.setNumTicks(10,10, 1,1);
-		chart.setBarWidth(3);
-		chart.setColor(0,Color.red);
-		chart.setColor(1,Color.blue);
+		chart = new SpectrumPlot();
 		
 		zchart = new ZoomableChart(chart);
 		zchart.addMouseMotionListener(this);
