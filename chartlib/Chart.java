@@ -374,43 +374,6 @@ public class Chart extends JPanel
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
 	}
 
-	
-	/**
-	 * Sets new values for the axis ticks.  To retain the current value for
-	 * a tick parameter, use the flag CURRENT_VALUE.
-	 * @param bigX Big ticks on the X axis are multiples of this.
-	 * @param bigY Big ticks on the Y axis are multiples of this.
-	 * @param smallX Number of small ticks on the X axis between each big tick.
-	 * @param smallY Number of small ticks on the Y axis between each big tick.
-	 * @param index The index of the chart to change.
-	 */
-	public void setTicks(int index, double bigX, double bigY, int smallX, int smallY )
-	{	
-		if(bigX == CURRENT_VALUE) bigX = chartAreas[index].getBigTicksX();
-		if(bigY == CURRENT_VALUE) bigY = chartAreas[index].getBigTicksY();
-		if(smallX == CURRENT_VALUE) smallX = chartAreas[index].getSmallTicksX();
-		if(smallY == CURRENT_VALUE) smallY = chartAreas[index].getSmallTicksY();
-		chartAreas[index].setTicksX(bigX, smallX);
-		chartAreas[index].setTicksY(bigY, smallY);
-	}
-	
-	
-	
-	/**
-	 * Sets new values for the axis ticks of all charts.
-	 * To retain the current value for
-	 * a tick parameter, use the flag CURRENT_VALUE.
-	 * @param bigX Big ticks on the X axis are multiples of this.
-	 * @param bigY Big ticks on the Y axis are multiples of this.
-	 * @param smallX Number of small ticks on the X axis between each big tick.
-	 * @param smallY Number of small ticks on the Y axis between each big tick.
-	 */
-	public void setTicks( double bigX, double bigY, int smallX, int smallY )
-	{
-		for(int count = 0; count < chartAreas.length; count++)
-			setTicks(count, bigX, bigY, smallX, smallY);
-	}
-	
 	/**
 	 * Sets new values for the axis ticks by setting the number of ticks.
 	 * To retain the current value for
