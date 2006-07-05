@@ -53,8 +53,6 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import javax.swing.text.html.*;
 
-import collection.Collection;
-
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.CalInfo;
 import ATOFMS.Peak;
@@ -748,7 +746,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		{
 			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
-
 		chart.displayPeaks(posDS, negDS);
 	}
 	
