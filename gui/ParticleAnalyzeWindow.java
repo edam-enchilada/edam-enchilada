@@ -53,6 +53,8 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import javax.swing.text.html.*;
 
+import collection.Collection;
+
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.CalInfo;
 import ATOFMS.Peak;
@@ -82,16 +84,18 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private ZoomableChart zchart;
 	private JTable peaksTable; 
 	private JRadioButton peakButton, specButton;
-	private JButton nextButton, zoomDefaultButton, prevButton;
+	private JButton nextButton, zoomDefaultButton, prevButton, origPButton;
 	private JTextPane labelText;
 	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
 	private IntegerPeakCheckBox intPeaks;
+	private MainFrame mf;
 	
 	//Data elements
 	private SQLServerDatabase db;
 	private JTable particlesTable;
 	private int curRow;
+	private Collection coll;
 	
 	private LabelLoader labelLoader;
 	private AbstractTableModel peaksDataModel;
@@ -102,6 +106,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private ArrayList<LabelingIon> negLabels;
 	private Dataset posSpecDS, negSpecDS;
 	private int atomID;
+	private int clusterID;
 	private String atomFile;
 	private double selectedMZ = 0;
 	
@@ -163,7 +168,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * Both begin empty.
 	 * @param chart
 	 */
-	public ParticleAnalyzeWindow(final SQLServerDatabase db, JTable dt, int curRow) {
+	public ParticleAnalyzeWindow(final SQLServerDatabase db, JTable dt, int curRow,
+			Collection collection) {
 		super();
 		
 		// Do one-time loading of ion signature information from file, db
@@ -195,6 +201,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.db = db;
 	    this.particlesTable = dt;
 	    this.curRow = curRow;
+	    this.coll = collection;
 	    
 	    labelLoader = new LabelLoader(this);
 		
@@ -309,11 +316,32 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		peakButton.setSelected(true);
 		buttonPanel.add(specButton);
 		buttonPanel.add(peakButton);
+		JPanel bottomPanel;
+		JPanel peakButtonPanel = new JPanel(new GridLayout(2,1));
 		
-		JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
-		bottomPanel.add(buttonPanel);
-		JPanel peakButtonPanel = new JPanel(new GridLayout(2, 1));
-		bottomPanel.add(peakButtonPanel);
+		int aID = ((Integer) 
+				particlesTable.getValueAt(curRow, 0)).intValue();
+		
+		clusterID = db.getRepresentedCluster(aID);
+		
+		//If the atom is a cluster center, create link to see its represented
+		//cluster
+		if (clusterID != -1){
+			JPanel origParticles = new JPanel(new FlowLayout());
+			origPButton = new JButton("See original particles.");
+			origPButton.setActionCommand("orig");
+			origPButton.addActionListener(this);
+			origParticles.add(origPButton);
+			bottomPanel = new JPanel(new GridLayout(1,3));
+			bottomPanel.add(buttonPanel);
+			bottomPanel.add(peakButtonPanel);
+			bottomPanel.add(origParticles);
+		} else{
+			bottomPanel = new JPanel (new GridLayout(1, 2));
+			bottomPanel.add(buttonPanel);
+			bottomPanel.add(peakButtonPanel);
+		}
+		
 		peakButtonPanel.add(intPeaks = new IntegerPeakCheckBox());
 		peakButtonPanel.add(labelPeaks = new JCheckBox("Label Peaks", true));
 		labelPeaks.addItemListener(new ItemListener() {
@@ -493,6 +521,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 	
 	/**
+	 * Sets the owner of this window.
+	 * @param owner	The parent window	
+	 */
+	public void setOwner(MainFrame owner){
+		mf = owner;
+	}
+	
+	/**
 	 * Returns the chart to its original zoom.
 	 *
 	 */
@@ -510,7 +546,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void showPreviousParticle() {
 		if (curRow > 0)
 			curRow--;
-		
+		//need to do something else, first.
 		showGraph();
 		unZoom();
 	}
@@ -518,13 +554,19 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void showNextParticle() {
 		if (curRow < particlesTable.getRowCount() - 1)
 			curRow++;
+	
+		//find out if the current collection is the same as the collection
+		//that this particle was pulled from (if the main window has changed)
 		showGraph();
 		unZoom();
 	}
 	
-	private void showGraph() {
-		int atomID = ((Integer) 
-				particlesTable.getValueAt(curRow, 0)).intValue();
+	/**
+	 * Helper method grabs necessary info from table and database and sets up
+	 * window to show the next particle.
+	 * @param atomID	The atomID of the particle to show.
+	 */
+	private void showGraph(int atomID){
 		if(curRow==0){
 			prevButton.setEnabled(false);
 		}else{
@@ -554,6 +596,17 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setPeaks(peaks, atomID, filename);		
 		
 		db.buildAtomRemovedIons(atomID, posIons, negIons);
+	}
+	
+	/**
+	 * Grabs the atomID from the table of particles, then sets up graph for it.
+	 *
+	 */
+	private void showGraph() {
+		int atomID = ((Integer) 
+				particlesTable.getValueAt(curRow, 0)).intValue();
+		showGraph(atomID);
+
 	}
 	
 	/**
@@ -645,16 +698,40 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			displaySpectrum();
 		else if (source == prevButton || source == nextButton) {
 			db.saveAtomRemovedIons(atomID, posIons, negIons);
-			
-			if (source == prevButton)
-				showPreviousParticle();
-			else
-				showNextParticle();
+			//get the current collection the window is showing
+			Collection current = mf.getSelectedCollection();
+			if (current.getCollectionID() == coll.getCollectionID()){
+				if (source == prevButton)
+					showPreviousParticle();
+				else
+					showNextParticle();
+			} else{
+					int nextID = db.getAdjacentAtomInCollection(coll.getCollectionID(),
+							atomID, 1);
+			}
 		}
 		else if (source == zoomDefaultButton)
 			unZoom();
 		else if (source == zoomOutButton)
 			zoomOut();
+		else if (source == origPButton){
+			assert(clusterID != -1):"There is no cluster to show.";
+			showParent(clusterID);
+		}
+
+	}
+	
+	/**
+	 * Shows collection in the main window of Enchilada.  (Used to show clusters.)
+	 * @param cID - the collection to display
+	 */
+	private void showParent(int cID){
+		//get hold of the main window and pretend to click on the proper collection
+		//in the collection tree
+		assert(mf != null): "Owner of this window wasn't set.";
+		mf.updateCurrentCollection(cID);
+		//display the main window on top
+		mf.toFront();
 	}
 	
 	/**

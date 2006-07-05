@@ -77,16 +77,6 @@ import gui.*;
 import java.io.*;
 import java.util.Scanner;
 
-import org.dbunit.database.DatabaseConnection;
-import org.dbunit.database.DatabaseSequenceFilter;
-import org.dbunit.dataset.FilteredDataSet;
-import org.dbunit.dataset.IDataSet;
-import org.dbunit.dataset.csv.CsvDataSetWriter;
-import org.dbunit.dataset.excel.XlsDataSet;
-import org.dbunit.dataset.filter.ITableFilter;
-import org.dbunit.dataset.xml.FlatXmlDataSet;
-import org.dbunit.ext.mssql.InsertIdentityOperation;
-
 import errorframework.ErrorLogger;
 
 /* 
@@ -369,8 +359,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public int copyCollection(Collection collection, Collection toCollection)
 	{
-		System.out.println("CollectionA: "+collection.getCollectionID()+
-				"\nCollection B: "+toCollection.getCollectionID());
 		int newID = -1;
 		try {
 			Statement stmt = con.createStatement();
@@ -628,29 +616,33 @@ public class SQLServerDatabase implements InfoWarehouse
 			int datasetID, int nextID)
 	{
 		//System.out.println("next AtomID: "+nextID);
-		StringBuilder sql = new StringBuilder();
-		
 		try {
 			Statement stmt = con.createStatement();
 			//System.out.println("Adding batches");
 			
-			sql.append("INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
-					nextID + ", " + dense + ")\n");
-			sql.append("INSERT INTO AtomMembership\n" +
+			String debug = "INSERT INTO " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + " VALUES (" + 
+					nextID + ", " + dense + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
+			debug = "INSERT INTO AtomMembership\n" +
 					"(CollectionID, AtomID)\n" +
 					"VALUES (" +
 					collection.getCollectionID() + ", " +
-					nextID + ")\n");
-			sql.append("INSERT INTO DataSetMembers\n" +
+					nextID + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
+			debug = "INSERT INTO DataSetMembers\n" +
 					"(OrigDataSetID, AtomID)\n" +
 					"VALUES (" +
 					datasetID + ", " + 
-					nextID + ")\n");
+					nextID + ")";
+			System.out.println(debug);	//DEBUGGING
+			stmt.addBatch(debug);
 			
 			String tableName = getDynamicTableName(DynamicTable.AtomInfoSparse,collection.getDatatype());
 			
 			// Only bulk insert if client and server are on the same machine...
-			if (!url.equals("localhost")) {
+			if (url.equals("localhost")) {
 				//System.out.println("server is localhost");
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
 				PrintWriter bulkFile = null;
@@ -668,25 +660,26 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				
 				bulkFile.close();
-				sql.append("BULK INSERT " + tableName + "\n" +
+				String statement = "BULK INSERT " + tableName + "\n" +
 						"FROM '" + tempFilename + "'\n" +
-				"WITH (FIELDTERMINATOR=',')\n");
+				"WITH (FIELDTERMINATOR=',')";
+				stmt.addBatch(statement);
 				//System.out.println("Statement: "+statement);
 			} else {
 				for (int j = 0; j < sparse.size(); j++)
-					sql.append("INSERT INTO " + tableName +  
-							" VALUES (" + nextID + "," + sparse.get(j) + ")\n");
+					stmt.addBatch("INSERT INTO " + tableName +  
+							" VALUES (" + nextID + "," + sparse.get(j) + ")");
 				
 			}
 			
 			//System.out.println(tableName);
-			stmt.execute(sql.toString());
+			
+			stmt.executeBatch();
 			
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
-			System.out.println(sql.toString());
 			e.printStackTrace();
 			
 			return -1;
@@ -1135,7 +1128,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public boolean recursiveDelete(Collection collection)
 	{
-		System.out.println("Collection: "+ collection.getCollectionID());
 		Collection parent = collection.getParentCollection();
 		String datatype = collection.getDatatype();
 		System.out.println("Deleting " + collection.getCollectionID());
@@ -1889,6 +1881,36 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * Returns the adjacent atomID for the collection, according to InternalAtomOrder.
+	 * @param collection	The ID of the collection under scrutiny.
+	 * @param currentID		The current atom's ID.
+	 * @param position		1 for next atomID, -1 for previous atomID.
+	 * @return	The ID of the adjacent atom in the collection.
+	 */
+	public int getAdjacentAtomInCollection(int collection, int currentID, int position){
+		int nextID = -1;
+		String query = "SELECT AtomID FROM  InternalAtomOrder"
+			+ "WHERE (AtomID = "
+		                   +"(SELECT OrderNumber FROM   InternalAtomOrder"
+		                   +" WHERE (AtomID = " + currentID +") AND "
+		                   +"(CollectionID = " + collection +")) + " + position + ")"
+		                   +"AND (CollectionID = " + collection;
+		Statement stmt;
+		try {
+			stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			nextID = rs.getInt(1);
+			stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return nextID;
+	}
+	
+	/**
 	 * gets the dynamic table name according to the datatype and the table
 	 * type.
 	 * @param table
@@ -1989,72 +2011,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		return -1;
 	}
 	
-	public void exportDatabase(String filename,int fileType) throws FileNotFoundException {
-		DatabaseConnection dbconn = null;
-		IDataSet dataSet = null;
-		PrintWriter output = new PrintWriter(filename);
-		dbconn = new DatabaseConnection(con);
-		try {
-			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
-			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
-			switch(fileType){
-			case 1:
-				FlatXmlDataSet.write(dataSet, output);
-				break;
-			case 2:
-				XlsDataSet.write(dataSet,new FileOutputStream(filename));
-				break;
-			case 3:
-				FileWriter dummy = new FileWriter(filename);
-				dummy.write("#this is a dummy file\n" +
-						"#the real data is stored in the directory of the same name");
-				String dirName = filename.substring(0,filename.lastIndexOf("."));
-				File dir = new File(dirName);
-				boolean success = dir.mkdir();
-			    if (!success) {
-			    	throw new FileNotFoundException();
-			    }
-			    CsvDataSetWriter.write(dataSet,dir);
-			    break;
-			default:
-				System.err.println("Invalid fileType: "+fileType);
-			}
-			
-			//
-			//dbconn.close();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-	}
-
-	public void importDatabase(String filename, int fileType) throws FileNotFoundException {
-		DatabaseConnection dbconn = null;
-		//IDataSet dataSet = null;
-		FileInputStream input = new FileInputStream(filename);
-		try {
-			dbconn = new DatabaseConnection(con);
-			//dataSet = dbconn.createDataSet();
-			FlatXmlDataSet data = new FlatXmlDataSet(input);
-			InsertIdentityOperation.CLEAN_INSERT.execute(dbconn, data);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		/*try {
-			dbconn.close();
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		*/
-	}
-	
 	/**
-	 * exports a collection to the MSAnalyze database by making up the necessary
-	 * data to import (.par file, etc).
-	 * 
+	 * exports a collection to the MSAnalyze database by making up 
+	 * the necessary data to import (.par file, etc).
 	 * @return date associated with the mock dataset.
 	 */
 	public java.util.Date exportToMSAnalyzeDatabase(
@@ -2371,74 +2330,6 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * rebuilds the database; sets the static tables.
 	 * @param dbName
 	 * @return true if successful
-	 *//*
-	public boolean rebuildDatabase() {
-		Scanner in;
-		DatabaseConnection dbconn = null;
-		IDataSet dataSet = null;
-		try {
-			dbconn = new DatabaseConnection(con);
-			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
-			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
-			InsertIdentityOperation.DELETE_ALL.execute(dbconn, dataSet);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
-		//System.exit(0);
-		
-		try {
-			Statement stmt = con.createStatement();
-			StringBuilder sql = new StringBuilder();
-			sql.append("EXEC sp_MSForEachTable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'\n");
-			sql.append("EXEC sp_MSForEachTable 'DROP TABLE ?'\n");
-			stmt.execute(sql.toString());
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		// Run all the queries in the SQLServerRebuildDatabase.txt file, which
-		// inserts all of the necessary tables.
-		try {
-			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
-			String query = "";
-			StringTokenizer token;
-			// loop through license block
-			while (in.hasNext()) {
-				query = in.nextLine();
-				token = new StringTokenizer(query);
-				if (token.hasMoreTokens()) {
-					String s = token.nextToken();
-					if (s.equals("CREATE"))
-						break;
-				}
-			}
-			// Update the database according to the stmts.
-			con.createStatement().executeUpdate(query);
-			
-			while (in.hasNext()) {
-				query = in.nextLine();
-				//System.out.println(query);
-				con.createStatement().executeUpdate(query);
-			}
-			
-		} catch (IOException e) {
-			System.err.println("IOException occurred when rebuilding the database.");
-			return true;
-		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
-			System.err.println("Error in adding tables to database.");
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-	*/
-	/**
-	 * rebuilds the database; sets the static tables.
-	 * @param dbName
-	 * @return true if successful
 	 */
 	public static boolean rebuildDatabase(String dbName) {
 		SQLServerDatabase db = null;
@@ -2457,7 +2348,6 @@ public class SQLServerDatabase implements InfoWarehouse
 			db.openConnection();
 			con = db.getCon();
 			Statement stmt = con.createStatement();
-			
 			// See if database exists. If it does, drop it.
 			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
 			boolean foundDatabase = false;
@@ -4643,7 +4533,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			//System.out.println(selectAllTimesStr);
 			ResultSet rs;
-			rs = stmt.executeQuery(selectAllTimesStr);
+			/*rs = stmt.executeQuery(selectAllTimesStr);
 			while (rs.next()) {
 				double[] retValues = new double[columnsToReturn.size()];
 				for (int i = 0; i < retValues.length; i++)
@@ -4652,7 +4542,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				if (ts != null)
 					retData.put(ts, retValues);	
 			}
-			
+			*/
 			//System.out.println(sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
@@ -4946,6 +4836,31 @@ public class SQLServerDatabase implements InfoWarehouse
 		}	 
 		
 		return strings;
+	}
+	
+	/**
+	 * Determines if the atom in question represents a cluster center, and if so,
+	 * which cluster it represents.
+	 * @param atomID - the potential cluster center atom
+	 * @return	-1 if not a cluster center, the collectionID of the cluster if it is
+	 */
+	public int getRepresentedCluster(int atomID){
+		int collectionID = -1;
+		
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT CollectionID FROM CenterAtoms"
+					+ " WHERE AtomID = " + atomID);
+			if (rs.next()){
+				collectionID = rs.getInt("CollectionID");
+			}
+			stmt.close();
+		} catch (SQLException e){
+			//TODO: figure out the error-logging procedures
+			e.printStackTrace();
+		}
+		
+		return collectionID;
 	}
 	
 	/**

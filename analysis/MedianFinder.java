@@ -504,7 +504,7 @@ public class MedianFinder {
 			}
 
 			assert (maxNumEntries > 0) : 
-				"maxValue remained 0.  List size: " + sortedList[0].length;
+				"maxNumEntries remained 0.  List size: " + sortedList[0].length;
 			
 			// Minify the median at this key, adjust the count
 			// at this key for how many peaklists are bigger
@@ -550,7 +550,7 @@ public class MedianFinder {
 						}
 					}
 					assert (maxNumEntries > 0) : 
-						"maxValue remained 0";
+						"maxNumEntries remained 0";
 						
 				}
 				else

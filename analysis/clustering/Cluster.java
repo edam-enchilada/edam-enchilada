@@ -342,7 +342,6 @@ public abstract class Cluster extends CollectionDivider {
 			
 		}// end with no particle remaining
 		putInSubCollectionBatchExecute();
-		ArrayList<Integer> ids = this.subCollectionIDs;
 		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {
@@ -350,7 +349,7 @@ public abstract class Cluster extends CollectionDivider {
 			centroidList.get(i).peaks = sums.get(i);
 		}
 
-		createCenterAtoms(centroidList, ids);
+		createCenterAtoms(centroidList, subCollectionIDs);
 		
 		printDescriptionToDB(particleCount, centroidList);
 		
@@ -430,9 +429,12 @@ public abstract class Cluster extends CollectionDivider {
 		}// end while there are particles remaining
 		putInSubCollectionBatchExecute();
 		curs.reset();
+
+		createCenterAtoms(centroidList, subCollectionIDs);
 		totalDistancePerPass.add(new Double(totalDistance));
 		printDescriptionToDB(particleCount, centroidList);
 
+		
 		return newHostID;
 	}
 	
@@ -514,6 +516,8 @@ public abstract class Cluster extends CollectionDivider {
 					}
 				}
 			}
+			
+			
 			
 			//get the dense info for each particle in the cluster.
 			//iterate through the atoms in the cluster

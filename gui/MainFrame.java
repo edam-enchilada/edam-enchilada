@@ -50,6 +50,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
+import javax.swing.tree.TreePath;
 
 import analysis.dataCompression.BIRCH;
 import analysis.DistanceMetric;
@@ -387,12 +388,12 @@ public class MainFrame extends JFrame implements ActionListener
 			fileChooser.setVisible(true);
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
 			System.out.println("File: "+filename);
-			try {
+/*			try {
 				db.exportDatabase(filename,fileType);
 			} catch (FileNotFoundException e1) {
 				JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be created.");
 			}
-			
+*/			
 		}
 		
 		else if (source == importXmlDatabaseItem||source==importXlsDatabaseItem||source==importCsvDatabaseItem) {
@@ -421,16 +422,16 @@ public class MainFrame extends JFrame implements ActionListener
 			"Are you sure? " +
 			"This will destroy all data in your database and restore it from the file:\n"+filename) ==
 				JOptionPane.YES_OPTION) {
-				try {
-					db.importDatabase(filename,fileType);
+	/*			try {
+			//		db.importDatabase(filename,fileType);
 				
 				/*JOptionPane.showMessageDialog(this,
 						"The program will now shut down to reset itself. " +
 				"Start it up again to continue.");*/
-				} catch (FileNotFoundException e1) {
+	/*			} catch (FileNotFoundException e1) {
 					JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be found.");
 				}
-				collectionPane.updateTree();
+	*/			collectionPane.updateTree();
 				
 			}			
 		}
@@ -485,7 +486,7 @@ public class MainFrame extends JFrame implements ActionListener
 		ErrorLogger.flushLog(this);
 	}
 	
-	private Collection getSelectedCollection() {
+	public Collection getSelectedCollection() {
 		Collection c = collectionPane.getSelectedCollection();
 		if (c != null)
 			return c;
@@ -505,7 +506,11 @@ public class MainFrame extends JFrame implements ActionListener
 		int[] selectedRows = particlesTable.getSelectedRows();
 		
 		for (int row : selectedRows) {
-			ParticleAnalyzeWindow pw = new ParticleAnalyzeWindow(db, particlesTable, row);
+			Collection coll = collectionPane.getSelectedCollection();
+			ParticleAnalyzeWindow pw = 
+				new ParticleAnalyzeWindow(db, particlesTable, row, coll);
+			//set this as the owner
+			pw.setOwner(this);
 			pw.setVisible(true);
 		}
 	}
@@ -1069,7 +1074,7 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (colTree == synchronizedPane)
 			collectionPane.clearSelection();
 	}
-	
+		
 	/* (non-Javadoc)
 	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
 	 */
@@ -1131,5 +1136,14 @@ public class MainFrame extends JFrame implements ActionListener
 			particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
 			particlesTable.doLayout();
 		}
+	}
+	
+	/**
+	 * Updates the collection tree to show the requested collection.
+	 * @param cID	The collection to highlight.
+	 */
+	public void updateCurrentCollection(int cID){
+		
+		collectionPane.switchCollections(cID);
 	}
 }

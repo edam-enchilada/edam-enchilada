@@ -127,6 +127,16 @@ public class CollectionTree extends JPanel
     	treeModel.fireTreeStructureChanged(getCollectionsUpFrom(c));
     }
     
+    /**
+     * Switch which collection is being displayed in the main window.
+     * @param cID	The target collection to display.
+     */
+    public void switchCollections(int cID){
+		Collection[] path = getCollectionsUpFrom(db.getCollection(cID));
+		TreePath newPath = new TreePath(path);
+		tree.getSelectionModel().setSelectionPath(newPath);
+    }
+    
     public ArrayList<Collection> getCollectionsInTreeOrderFromRoot(int depthToStart, Collection collection) {
     	Collection[] collectionList = getCollectionsUpFrom(collection);
     	

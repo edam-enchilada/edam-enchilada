@@ -338,7 +338,8 @@ public class SQLServerDatabaseTest extends TestCase {
 		final int scatterDelay = 10;
 		
 		ATOFMSParticle.currCalInfo = new CalInfo();
-		ATOFMSParticle.currPeakParams = new PeakParams(12,20,(float)0.005);
+//		ATOFMSParticle.currPeakParams = new PeakParams(12,20,(float)0.005);
+		
 		
 		int posPeakLocation1 = 19;
 		int negPeakLocation1 = -20;
