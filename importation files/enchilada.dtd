@@ -13,7 +13,5 @@
 <!ELEMENT atominfodense (field*, atominfosparse*)>
 
 <!ELEMENT atominfosparse (field*)>
-	<!-- The AIS elements MUST specify which AIS table they belong to.  -->
-	<!ATTLIST atominfosparse table CDATA #REQUIRED>
 	
 <!ELEMENT field (#PCDATA)>

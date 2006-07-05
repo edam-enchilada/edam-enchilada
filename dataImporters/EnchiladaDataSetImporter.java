@@ -58,9 +58,10 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	private int atomID;
 	private String DSIparams;
 	private String AIDparams;
+	private String AISparams;
 	private int collectionID;
 	private int datasetID;
-	private TreeMap<String, ArrayList<String>> AISinfo;
+	private ArrayList<String> AISinfo;
 	private static final String quote = "'";
 	private Frame parent;
 	private ImportEnchiladaDataDialog ench;
@@ -137,14 +138,14 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				for (String eachFile : fNames) {
 					setStatus("Importing "+eachFile);
 					if (terminate) { return; }
-try {
-	read(eachFile);
-} catch (WriteException e) {
-	ErrorLogger.writeExceptionToLog("EnchiladaImporting",e.getMessage());
-}
-					pInc();
-				}
+			try {
+				read(eachFile);
+			} catch (WriteException e) {
+				ErrorLogger.writeExceptionToLog("EnchiladaImporting",e.getMessage());
 			}
+								pInc();
+							}
+						}
 		};
 		task.start();
 		return collectionID;
@@ -263,7 +264,7 @@ try {
 			AIDparams="";
 			
 			//set up to receive sparse info
-			AISinfo = new TreeMap<String, ArrayList<String>>();
+			AISinfo = new ArrayList<String>();
 			
 			//if this is the first particle, create a new dataset & collection
 			if (!DSIparams.equals("")){
@@ -281,15 +282,8 @@ try {
 		}
 		else if (eName.equals("atominfosparse")){
 			inAtomInfoSparse = true;
-			sparseName = "AtomInfoSparse" + attrs.getValue(0);
-			
-			//check if this flavor of AIS has an entry in AISinfo yet,
-			//create one if necessary
-			if (!AISinfo.containsKey(sparseName))
-				AISinfo.put(sparseName, new ArrayList<String>());
-			
-			//initialize AISparams string
-			AISinfo.get(sparseName).add("");
+			AISparams = "";
+			AISinfo.add(AISparams);
 		}
 		
 	}
@@ -309,15 +303,13 @@ try {
 		 * we can check in reverse-heirarchical order to reduce if statements.
 		 */
 		if (qName.equals("field")){
-			//if it's a sparse info field, add it to the last sparse entry for this
-			//sparse table
+			//if it's a sparse info field, add it to the last sparse entry
 			if (inAtomInfoSparse){
-				ArrayList<String> list = AISinfo.get(sparseName);
-				String AISparams = list.get(list.size()-1);
+				AISparams = AISinfo.get(AISinfo.size()-1);	
 				AISparams = intersperse(data, AISparams);
 				//replace old with new
-				list.remove(list.size()-1);
-				list.add(AISparams);
+				AISinfo.remove(AISinfo.size()-1);
+				AISinfo.add(AISparams);
 				//System.out.println("AISparams: " + AISparams);//debugging
 			}
 			else if (inAtomInfoDense){
@@ -352,7 +344,6 @@ try {
 		}
 		else if (qName.equals("atominfosparse")){
 			inAtomInfoSparse = false;
-			sparseName = null;
 		}
 	}
 	

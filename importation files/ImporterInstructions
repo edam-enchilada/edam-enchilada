@@ -26,8 +26,7 @@ The dataset info is information about the dataset itself (e.g., the date it
 was collected, the location, etc.).  The dense atom info describes information 
 that is unique to each atom (e.g., timestamp, size, direction, etc.).  The 
 sparse atom info describes multiple pieces of information about an atom (e.g., 
-peak locations and areas).  Multiple sparse tables can be used to hold 
-different types of sparse info about the same atom.
+peak locations and areas).
 
 
 
@@ -46,14 +45,12 @@ meta.dtd
 <!ELEMENT atominfodense (field*)>
 
 <!ELEMENT atominfosparse (field*)>
-	<!-- In case more than one AIS table is required, each must have a name/number. -->
-	<!ATTLIST atominfosparse table CDATA #REQUIRED>
 	
 <!ELEMENT field (#PCDATA)>
 	<!-- The name of the field/columns in the database.  -->
 	<!-- Attributes are the type of data in that field (using SQLServer's 
 	datatype naming scheme, and whether or not it is a primary key - used for 
-	the AIS table(s).  -->
+	the AIS table.  -->
 	<!ATTLIST field 
 					type CDATA #REQUIRED
 			  		primaryKey (true | false) "false"
@@ -76,8 +73,6 @@ enchilada.dtd
 <!ELEMENT atominfodense (field*, atominfosparse*)>
 
 <!ELEMENT atominfosparse (field*)>
-	<!-- The AIS elements MUST specify which AIS table they belong to.  -->
-	<!ATTLIST atominfosparse table CDATA #REQUIRED>
 	
 <!ELEMENT field (#PCDATA)>
 	<!-- The field tags surround the actual data. -->

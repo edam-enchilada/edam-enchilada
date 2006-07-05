@@ -37,10 +37,6 @@ public class DynamicTableGenerator extends DefaultHandler {
 	private boolean datasetinfo;
 	private boolean atominfodense;
 	private boolean atominfosparse;
-		//the extra bit of name to be appended to 
-		//"AtomInfoSparse" to distinguish one AIS table from another
-	private HashMap<Integer, String> sparseNames = new HashMap<Integer,String>(); 
-	private int sparseCounter = DynamicTable.AtomInfoSparse.ordinal();
 	private String fieldType;
 	private int primaryKey;
 	private int columnCounter = 0;
@@ -143,7 +139,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 			table = DynamicTable.AtomInfoDense.ordinal();
 		//the only possible remaining option, since the XML is validated
 		else{
-			table = sparseCounter;
+			table = DynamicTable.AtomInfoSparse.ordinal();
 		}
 		String s = new String(buf, offset, len);
 		String statement = "INSERT INTO MetaData VALUES ('" + datatype +
@@ -204,9 +200,9 @@ public class DynamicTableGenerator extends DefaultHandler {
 			atominfosparse = true;
 			//record AtomID as a primary key of type INT for each AtomInfoSparse table
 			statement = "INSERT INTO MetaData VALUES ('" + datatype +
-				"','[AtomID]','INT',1," + sparseCounter + "," + columnCounter + ")";
+				"','[AtomID]','INT',1," + DynamicTable.AtomInfoSparse.ordinal()
+				+ "," + columnCounter + ")";
 			columnCounter++;
-			sparseNames.put(sparseCounter, attrs.getValue(0));
 		}
 		else if (eName.equals("field")){
 			fieldType = attrs.getValue("type").toUpperCase();
@@ -257,7 +253,6 @@ public class DynamicTableGenerator extends DefaultHandler {
 		 else if (qName.equals("atominfosparse")){
 			 atominfosparse = false;
 			 columnCounter = 0;
-			 sparseCounter ++;
 		 }
 		 else if (qName.equals("field")){
 			 primaryKey = 0;
@@ -277,18 +272,16 @@ public class DynamicTableGenerator extends DefaultHandler {
 		 //read file and put info into MetaData
 		 read(file);
 		 
-		 return createDynamicTables(datatype, false);
+		 return createDynamicTables(datatype);
 		 
 	 }
 	 
-	 public String createDynamicTables(String datatype, boolean fromCompressData) {
+	 public String createDynamicTables(String datatype) {
 		 		 
 		 String tableStr;
 		 
 		 /*
 		  * The code for creating these tables is from Anna's original importer.
-		  * I only adapted the AtomInfoSparse code to handle multiple AIS tables.
-		  * - Leah
 		  */
 		 //Create DataSetInfo table
 		 tableStr = "CREATE TABLE " + datatype + "DataSetInfo (";	
@@ -323,31 +316,23 @@ public class DynamicTableGenerator extends DefaultHandler {
 			 System.out.println(tableStr);
 			 stmt.execute(tableStr);
 	
-			 // if from CompressData, set variables.
-			 if (fromCompressData) {
-				 sparseCounter = DynamicTable.AtomInfoSparse.ordinal()+1;
-				 sparseNames.clear();
-				 sparseNames.put(new Integer(DynamicTable.AtomInfoSparse.ordinal()),"");
-			 }
 			 
 			 //create as many AtomInfoSparse tables as were specified in the .md
-			 for (int i=DynamicTable.AtomInfoSparse.ordinal(); i< sparseCounter; i++){
-				 tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse" +
-				 sparseNames.get((Integer)i) +" (";
-				 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
-						 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
-						 i + "ORDER BY ColumnOrder");
-				 pText = "PRIMARY KEY (";
-				 while (rs.next()) {
-					 if (rs.getBoolean(3)) {
-						 pText += rs.getString(1) + ", ";
-					 }
-					 tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
+			 tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse" + " (";
+			 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
+					 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
+					 DynamicTable.AtomInfoSparse.ordinal() + "ORDER BY ColumnOrder");
+			 pText = "PRIMARY KEY (";
+			 while (rs.next()) {
+				 if (rs.getBoolean(3)) {
+					 pText += rs.getString(1) + ", ";
 				 }
-				 tableStr += pText.substring(0,pText.length()-2) + "))";
-				 System.out.println(tableStr);
-				 stmt.execute(tableStr);	
+				 tableStr += rs.getString(1) + " " + rs.getString(2) + ", ";
 			 }
+			 tableStr += pText.substring(0,pText.length()-2) + "))";
+			 System.out.println(tableStr);
+			 stmt.execute(tableStr);	
+		
 	
 			 rs.close();
 	
