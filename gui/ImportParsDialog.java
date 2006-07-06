@@ -44,6 +44,9 @@
 package gui;
 
 
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.event.*;
@@ -57,6 +60,8 @@ import java.util.Date;
 import javax.swing.*;
 import javax.swing.table.TableColumn;
 
+import analysis.clustering.ClusterK;
+
 import dataImporters.ATOFMSDataSetImporter;
 import errorframework.*;
 
@@ -67,16 +72,15 @@ import errorframework.*;
  */
 
 public class ImportParsDialog extends JDialog implements ActionListener {
-	
-	private JButton okButton;
-	private JButton cancelButton;
+	private JButton okButton, cancelButton, advancedOptionsButton;
 	private JRadioButton parentButton;
 	private JLabel parentLabel;
-	private ParTableModel pTableModel;
+	private JPanel listPane;
+	private ParTableModel pTableModel,advancedTableModel,basicTableModel;
 	private JProgressBar progressBar;
 	private int dataSetCount;
 	private static Window parent = null;
-	private boolean importedTogether = false;
+	private boolean importedTogether = false, showAdvancedOptions = false;
 	private int parentID = 0; //default parent collection is root
 	
 	/**
@@ -93,13 +97,12 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		// dialog modal.  
 		super(owner, "Import MS-Analyze *.pars as Collections", true);
 		parent = owner;
-		setSize(1000,600);
+		setSize(900,500);
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
-		JTable parTable = getParTable();
+		JLabel label = new JLabel("Choose Datasets to Convert");
 		
-		JScrollPane scrollPane = new JScrollPane(parTable);
 		
 		okButton = new JButton("OK");
 		okButton.setMnemonic(KeyEvent.VK_O);
@@ -108,6 +111,9 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		cancelButton = new JButton("Cancel");
 		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(this);
+		
+		advancedOptionsButton = new JButton("Advanced>>>");
+		advancedOptionsButton.addActionListener(this);
 		
 		//an option to import all the datasets into one parent collection
 		parentButton = new JRadioButton(
@@ -118,29 +124,28 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		
 		parentLabel = new JLabel();
 		
-		scrollPane.setPreferredSize(new Dimension(795,500));
 		
-		JPanel listPane = new JPanel();
-		listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
-		JLabel label = new JLabel("Choose Datasets to Convert");
-		label.setLabelFor(parTable);
-		listPane.add(label);
-		listPane.add(Box.createRigidArea(new Dimension(0,5)));
-		listPane.add(scrollPane);
-		listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+		listPane = getListPane();
+		
+		JPanel panel = new JPanel();
+		panel.add(label);
+		panel.add(listPane);
+		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		
 		JPanel buttonPane = new JPanel();
 		buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
-		buttonPane.setBorder(BorderFactory.createEmptyBorder(0,10,10,10));
+		buttonPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 		
 		buttonPane.add(parentButton);
 		buttonPane.add(parentLabel);
 		buttonPane.add(Box.createHorizontalGlue());
 		buttonPane.add(okButton);
-		buttonPane.add(Box.createRigidArea(new Dimension(10,0)));
+		buttonPane.add(Box.createRigidArea(new Dimension(5,0)));
+		buttonPane.add(advancedOptionsButton);
+		buttonPane.add(Box.createRigidArea(new Dimension(5,0)));
 		buttonPane.add(cancelButton);
-				
-		add(listPane, BorderLayout.CENTER);
+		
+		add(panel, BorderLayout.NORTH);
 		add(buttonPane, BorderLayout.SOUTH);
 		
 		setVisible(true);	
@@ -149,15 +154,22 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	public ImportParsDialog() {
 		// TODO Auto-generated constructor stub
 	}
-
+	
 	private JTable getParTable()
 	{
-		pTableModel = new ParTableModel();
+		return getParTable(showAdvancedOptions);
+	}
+	
+	private JTable getParTable(boolean advanced)
+	{
+		pTableModel = new ParTableModel(advanced);
 		JTable pTable = new JTable(pTableModel);	
         pTable.setDefaultEditor(Float.class, new FloatEditor());
         pTable.setDefaultEditor(Integer.class, new IntegerEditor());
-		TableColumn[] tableColumns = new TableColumn[8];
-		for (int i = 0; i < 8; i++)
+        int numColumns = 7;
+        if(showAdvancedOptions)numColumns = 8;
+		TableColumn[] tableColumns = new TableColumn[numColumns];
+		for (int i = 0; i < numColumns; i++)
 			tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
 		tableColumns[0].setCellEditor(
 				new FileDialogPickerEditor("par","Import",this));
@@ -175,13 +187,51 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		return pTable;
 	}
 	
+	private JPanel getListPane(){
+		JPanel simple = new JPanel();
+		JTable parTable;
+		parTable = getParTable(false);
+		basicTableModel = (ParTableModel)parTable.getModel();
+		JScrollPane scrollPane = new JScrollPane(parTable);
+		scrollPane.setPreferredSize(new Dimension(795,200));
+		//simple.add(Box.createRigidArea(new Dimension(0, 4)));
+		simple.add(scrollPane);
+		
+		
+		JPanel complex = new JPanel();
+		parTable = getParTable(true);
+		advancedTableModel = (ParTableModel)parTable.getModel();
+		scrollPane = new JScrollPane(parTable);
+		scrollPane.setPreferredSize(new Dimension(850,200));
+		//complex.add(Box.createRigidArea(new Dimension(0, 4)));
+		complex.add(scrollPane);
+		
+		
+		
+		JPanel panel = new JPanel();
+		panel = new JPanel(new CardLayout());
+		panel.add(simple, "Simple");
+		panel.add(complex, "Advanced");
+		
+		
+		return panel;
+	}
+	
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
 		if (source == okButton) {
-				ATOFMSDataSetImporter dsi = 
-					new ATOFMSDataSetImporter(
-							pTableModel, parent);
+				ATOFMSDataSetImporter dsi;
+				CardLayout card = (CardLayout)(listPane.getLayout());
+				if(showAdvancedOptions){
+					dsi = 
+						new ATOFMSDataSetImporter(
+								advancedTableModel, parent);
+				}else{
+					dsi = 
+						new ATOFMSDataSetImporter(
+								basicTableModel, parent);
+				}
 				if (importedTogether)
 					dsi.setParentID(parentID);
 				// If a .par file or a .cal file is missing, don't start the process.
@@ -217,6 +267,17 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			} else {
 				parentLabel.setText("Importing into collection # " + parentID);
 				importedTogether = true;
+			}
+		}
+		else if (source == advancedOptionsButton){
+			showAdvancedOptions = !showAdvancedOptions;
+			CardLayout card = (CardLayout)(listPane.getLayout());
+			if(showAdvancedOptions){
+				advancedOptionsButton.setText("<<<Simple");
+				card.show(listPane, "Advanced");
+			}else{
+				advancedOptionsButton.setText("Advanced>>>");
+				card.show(listPane, "Simple");
 			}
 		}
 		else if (source == cancelButton)

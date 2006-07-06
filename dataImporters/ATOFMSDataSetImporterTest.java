@@ -90,7 +90,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		assertEquals(true, db.openConnection());
 		
 		// create table with one entry.
-		table = new ParTableModel();
+		table = new ParTableModel(true);
 		// TODO: insert dummy row.
 		table.setValueAt("testRow\\b\\b.par", 0, 1);
 		table.setValueAt("testRow\\b\\cal.cal", 0, 2);

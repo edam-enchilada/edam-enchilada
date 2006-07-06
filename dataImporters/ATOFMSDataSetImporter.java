@@ -156,14 +156,19 @@ public class ATOFMSDataSetImporter {
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
 				// Table values for this row.
-				name = (String)table.getValueAt(i,1);
-				massCalFile = (String)table.getValueAt(i,2);
-				sizeCalFile = (String)table.getValueAt(i,3);
-				height= ((Integer)table.getValueAt(i,4)).intValue();
-				area = ((Integer)table.getValueAt(i,5)).intValue();
-				relArea = ((Float)table.getValueAt(i,6)).floatValue();
-				peakError = ((Float)table.getValueAt(i,7)).floatValue();
-				autoCal = ((Boolean)table.getValueAt(i,8)).booleanValue();
+				int nextCol = 1;
+				name = (String)table.getValueAt(i,nextCol++);
+				massCalFile = (String)table.getValueAt(i,nextCol++);
+				sizeCalFile = (String)table.getValueAt(i,nextCol++);
+				height= ((Integer)table.getValueAt(i,nextCol++)).intValue();
+				area = ((Integer)table.getValueAt(i,nextCol++)).intValue();
+				relArea = ((Float)table.getValueAt(i,nextCol++)).floatValue();
+				if(table.getColumnCount() == 9){
+					peakError = ((Float)table.getValueAt(i,nextCol++)).floatValue();
+				}else{
+					peakError = .50f;
+				}
+				autoCal = ((Boolean)table.getValueAt(i,nextCol++)).booleanValue();
 				positionInBatch = i + 1;
 				// Call relevant methods
 				try {

@@ -59,25 +59,31 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 	private ArrayList<ArrayList<Object>> rowData = new ArrayList<ArrayList<Object>>();
 	private ArrayList<Object> newColumn = new ArrayList<Object>();
 	private ArrayList<Object> row2 = new ArrayList<Object>();
+	private boolean showAdvancedOptions;
 	public int setCount;
 	
 	
-	public ParTableModel() {
+	public ParTableModel(boolean advancedOptions) {
 		super();
 		
+			this.showAdvancedOptions = advancedOptions;
 			setCount = 0;
 			addTableModelListener(this);
 			
-			columnNames = new String[9]; 
-			columnNames[0] = "#";
-			columnNames[1] = "*.par";
-			columnNames[2] = "mass cal"; 
-			columnNames[3] = "size cal";
-			columnNames[4] = "Min. Height"; 
-			columnNames[5] = "Min. Area";
-			columnNames[6] = "Min. Rel. Area";
-			columnNames[7] = "Max. Peak Error";
-			columnNames[8] = "Autocal";
+			int numColumns = 8, nextColumn = 0;
+			if(showAdvancedOptions)numColumns = 9;
+			columnNames = new String[numColumns]; 
+			columnNames[nextColumn++] = "#";
+			columnNames[nextColumn++] = "*.par";
+			columnNames[nextColumn++] = "mass cal"; 
+			columnNames[nextColumn++] = "size cal";
+			columnNames[nextColumn++] = "Min. Height"; 
+			columnNames[nextColumn++] = "Min. Area";
+			columnNames[nextColumn++] = "Min. Rel. Area";
+			if(showAdvancedOptions){
+				columnNames[nextColumn++] = "Max. Peak Error";
+			}
+			columnNames[nextColumn++] = "Autocal";
 			
 			newColumn.add(new Integer(++setCount));
 			newColumn.add(new String(".par file"));
@@ -86,7 +92,9 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			newColumn.add(new Integer(0));
 			newColumn.add(new Integer(0));
 			newColumn.add(new Float(0.0));
-			newColumn.add(new Float(0.0));
+			if(showAdvancedOptions){
+				newColumn.add(new Float(0.0));
+			}
 			newColumn.add(new Boolean(true));
 			rowData.add(newColumn);
 			
@@ -97,7 +105,9 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			row2.add(new Integer(0));
 			row2.add(new Integer(0));
 			row2.add(new Float(0.0));
-			row2.add(new Float(0.0));
+			if(showAdvancedOptions){
+				row2.add(new Float(0.0));
+			}
 			row2.add(new Boolean(true));
 			rowData.add(row2);
 		
@@ -153,6 +163,7 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 			if (!((String)rowData.get(e.getLastRow()).get(1)).equals(""))
 			{
 				ArrayList<Object> newRow = new ArrayList<Object>(8);
+				int nextCol = 2;
 				newRow.add(new Integer(++setCount));
 				newRow.add(new String(""));
 				// You don't need to use new statements here to create new
@@ -161,13 +172,15 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 				// creating a new instance of a String, Double or Boolean
 				// and setting a single reference to point to the new instance
 				// while all other references still point to the old instance. 
-				newRow.add(((String) rowData.get(rowData.size()-1).get(2)));
-				newRow.add(((String) rowData.get(rowData.size()-1).get(3)));
-				newRow.add((Integer) rowData.get(rowData.size()-1).get(4));
-				newRow.add((Integer) rowData.get(rowData.size()-1).get(5));
-				newRow.add((Float) rowData.get(rowData.size()-1).get(6));
-				newRow.add((Float) rowData.get(rowData.size()-1).get(7));
-				newRow.add((Boolean) rowData.get(rowData.size()-1).get(8));
+				newRow.add(((String) rowData.get(rowData.size()-1).get(nextCol++)));
+				newRow.add(((String) rowData.get(rowData.size()-1).get(nextCol++)));
+				newRow.add((Integer) rowData.get(rowData.size()-1).get(nextCol++));
+				newRow.add((Integer) rowData.get(rowData.size()-1).get(nextCol++));
+				newRow.add((Float) rowData.get(rowData.size()-1).get(nextCol++));
+				if(showAdvancedOptions){
+					newRow.add((Float) rowData.get(rowData.size()-1).get(nextCol++));
+				}
+				newRow.add((Boolean) rowData.get(rowData.size()-1).get(nextCol++));
 				rowData.add(newRow);
 				fireTableRowsInserted(rowData.size()-1,rowData.size()-1);
 			}
@@ -176,13 +189,16 @@ public class ParTableModel extends AbstractTableModel implements TableModelListe
 				(e.getType() == TableModelEvent.UPDATE))
 		{
 			ArrayList<Object> lastRow = (ArrayList<Object>) rowData.get(rowData.size()-1);
-			lastRow.set(2, (String) rowData.get(rowData.size()-2).get(2));
-			lastRow.set(3, (String) rowData.get(rowData.size()-2).get(3));
-			lastRow.set(4, (Integer) rowData.get(rowData.size()-2).get(4));
-			lastRow.set(5, (Integer) rowData.get(rowData.size()-2).get(5));
-			lastRow.set(6, (Float) rowData.get(rowData.size()-2).get(6));
-			lastRow.set(7, (Float) rowData.get(rowData.size()-2).get(7));
-			lastRow.set(8, (Boolean) rowData.get(rowData.size()-2).get(8));
+			int nextCol = 2;
+			lastRow.set(nextCol, (String) rowData.get(rowData.size()-2).get(nextCol++));
+			lastRow.set(nextCol, (String) rowData.get(rowData.size()-2).get(nextCol++));
+			lastRow.set(nextCol, (Integer) rowData.get(rowData.size()-2).get(nextCol++));
+			lastRow.set(nextCol, (Integer) rowData.get(rowData.size()-2).get(nextCol++));
+			lastRow.set(nextCol, (Float) rowData.get(rowData.size()-2).get(nextCol++));
+			if(showAdvancedOptions){
+				lastRow.set(nextCol, (Float) rowData.get(rowData.size()-2).get(nextCol++));
+			}
+			lastRow.set(nextCol, (Boolean) rowData.get(rowData.size()-2).get(nextCol++));
 			fireTableRowsUpdated(rowData.size()-1,rowData.size()-1);
 		}
 	
