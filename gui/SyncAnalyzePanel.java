@@ -253,24 +253,12 @@ public class SyncAnalyzePanel extends JPanel {
 			}
 
 			// sets up chart
-			Chart chart = new Chart(numSequences, true);
-			chart.setHasKey(false);
+			TimeSeriesPlot chart = new TimeSeriesPlot(datasets);
 			chart.setTitle("<html><b>Time Series Comparison</b></html>");
-			chart.setTitleX(0, "Time");
-			chart.drawXAxisAsDateTime(0);
 
-			for (int i = 0; i < numSequences; i++) {
-				chart.setTitleY(i, "Sequence " + (i + 1) + " Value");
-				chart.setColor(i, i == 0 ? Color.red : Color.blue);
+			for (int i = 0; i < numSets; i++) {
 				chart.setAxisBounds(i, xMin, xMax, 0, maxValue[i]);
-				chart.setDataset(i, datasets[i]);
-				chart.setDataDisplayType((datasets[i].size() == 1), true);
 			}
-
-			chart.setNumTicks(10, 10, 1, 1);
-			chart.setBarWidth(3);
-			chart.setPreferredSize(new Dimension(400, 400));
-
 			chart.repaint();
 
 			zchart = new ZoomableChart(chart);

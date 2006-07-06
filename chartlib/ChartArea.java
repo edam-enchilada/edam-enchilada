@@ -48,9 +48,12 @@ import java.awt.geom.*;
 import java.util.Iterator;
 
 /**
- * @author sulmanj
- *
  * A single data chart with labeled axes and data.
+ * 
+ * @author sulmanj
+ * @author smitht
+ * @author others
+ *
  */
 public class ChartArea extends JComponent {
 	private GraphAxis xAxis;
@@ -588,7 +591,7 @@ public class ChartArea extends JComponent {
 		pack(1, true, true);
 	}
 	
-	public double[][] findAllMinsMaxes(Dataset dataset) {
+	public static double[][] findAllMinsMaxes(Dataset dataset) {
 		double xmin, ymin, xmax, ymax;	
 		xmin = ymin = Double.MAX_VALUE;
 		xmax = ymax = Double.MIN_VALUE;
