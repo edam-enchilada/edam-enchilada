@@ -64,6 +64,8 @@ import chartlib.Dataset;
 import chartlib.SpectrumPlot;
 import chartlib.ZoomableChart;
 
+import collection.Collection;
+
 import database.SQLServerDatabase;
 
 
@@ -93,6 +95,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private SQLServerDatabase db;
 	private JTable particlesTable;
 	private int curRow;
+	private int totRows;
 	private Collection coll;
 	
 	private LabelLoader labelLoader;
@@ -200,6 +203,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.particlesTable = dt;
 	    this.curRow = curRow;
 	    this.coll = collection;
+	    this.totRows = particlesTable.getRowCount()-1;
 	    
 	    labelLoader = new LabelLoader(this);
 		
@@ -544,20 +548,30 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private void showPreviousParticle() {
 		if (curRow > 0)
 			curRow--;
-		//need to do something else, first.
 		showGraph();
+		unZoom();
+	}
+	
+	/**
+	 * Shows the previous particle when the current particle is not in the selected
+	 * collection.
+	 * @param next	The particle to display.
+	 * 					next[0] = atomID
+	 * 					next[1] = curRow
+	 */
+	private void showAdjacentParticle(int[] next){
+		curRow = next[1] - 1;
+		showGraph(next[0]);
 		unZoom();
 	}
 	
 	private void showNextParticle() {
 		if (curRow < particlesTable.getRowCount() - 1)
 			curRow++;
-	
-		//find out if the current collection is the same as the collection
-		//that this particle was pulled from (if the main window has changed)
 		showGraph();
 		unZoom();
 	}
+	
 	
 	/**
 	 * Helper method grabs necessary info from table and database and sets up
@@ -570,7 +584,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		}else{
 			prevButton.setEnabled(true);
 		}
-		if(curRow==particlesTable.getRowCount()-1){
+		//need to check if it's bigger than its own collection
+		if(curRow==totRows){
 			nextButton.setEnabled(false);
 		}else{
 			nextButton.setEnabled(true);
@@ -578,7 +593,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
-		String filename = (String)particlesTable.getValueAt(curRow, 5);
+		//need to get this from the correct collection, not always the current table
+		//String filename = (String)particlesTable.getValueAt(curRow, 5);
+		//however, this must be slower - going to db . . .
+		String filename = db.getATOFMSFileName(atomID);
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -703,9 +721,17 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 					showPreviousParticle();
 				else
 					showNextParticle();
-			} else{
-					int nextID = db.getAdjacentAtomInCollection(coll.getCollectionID(),
+			} else{ //if the main window is not showing the collection of this
+					//atom, go to the db to find the next atom in its collection 
+				int[] nextAtom = new int[2];
+				if (source == prevButton)
+					nextAtom = db.getAdjacentAtomInCollection(coll.getCollectionID(),
+							atomID, -1);
+				else
+					nextAtom = db.getAdjacentAtomInCollection(coll.getCollectionID(),
 							atomID, 1);
+				
+				showAdjacentParticle(nextAtom);
 			}
 		}
 		else if (source == zoomDefaultButton)

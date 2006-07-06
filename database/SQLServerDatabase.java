@@ -1601,33 +1601,35 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
-	 * Returns the adjacent atomID for the collection, according to InternalAtomOrder.
+	 * Returns the adjacent atom for the collection, according to InternalAtomOrder.
 	 * @param collection	The ID of the collection under scrutiny.
 	 * @param currentID		The current atom's ID.
 	 * @param position		1 for next atomID, -1 for previous atomID.
-	 * @return	The ID of the adjacent atom in the collection.
+	 * @return	index[0] The ID of the adjacent atom in the collection.
+	 * 			index[1] The position of the adjacent atom in the collection.
 	 */
-	public int getAdjacentAtomInCollection(int collection, int currentID, int position){
-		int nextID = -1;
-		String query = "SELECT AtomID FROM  InternalAtomOrder"
-			+ "WHERE (AtomID = "
-		                   +"(SELECT OrderNumber FROM   InternalAtomOrder"
-		                   +" WHERE (AtomID = " + currentID +") AND "
-		                   +"(CollectionID = " + collection +")) + " + position + ")"
-		                   +"AND (CollectionID = " + collection;
+	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
+		int nextID = -99;
+		int pos = -77;
+		String query = "SELECT AtomID, OrderNumber FROM InternalAtomOrder " +  
+		"WHERE (CollectionID = " + collection + ") AND (OrderNumber = " +
+		                   "(SELECT OrderNumber FROM InternalAtomOrder " +
+		                    "WHERE CollectionID = " + collection +
+		                    " AND AtomID = " + currentID + ") + " + position + ")";
 		Statement stmt;
 		try {
 			stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(query);
 			rs.next();
 			nextID = rs.getInt(1);
+			pos = rs.getInt(2);
 			stmt.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		return nextID;
+		return new int[]{nextID, pos};
 	}
 	
 	/**
@@ -4442,6 +4444,33 @@ public class SQLServerDatabase implements InfoWarehouse
 			return false;
 		}
 		
+	}
+	
+	/**
+	 * Gets the atoms's original filename for display purposes.  ATOFMS-specific
+	 * because it needs to grab a particular field from the dense data.
+	 * @param atomID	the id of the atom whose filename we want
+	 * @return			the filename for that atom
+	 */
+	public String getATOFMSFileName(int atomID){
+		String fileName = "";
+		Statement stmt;
+		try {
+			stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT OrigFilename FROM ATOFMSAtomInfoDense"
+					+ " WHERE AtomID = " + atomID);
+			rs.next();
+			fileName = rs.getString(1);
+			//System.out.println("FILENAME " + fileName);		//DEBUGGING
+			stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Could not retrieve filename");
+			e.printStackTrace();
+		}
+
+				
+		return fileName;
 	}
 	
 	/** 
