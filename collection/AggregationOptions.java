@@ -39,12 +39,13 @@ public class AggregationOptions {
 		
 		ArrayList<Integer> tempValues = new ArrayList<Integer>();
 		
+
+		allMZValues = false;
 		if (mzString.trim().equals("")) {
 			allMZValues = true;
 			mzValues = null;
 			return;
 		}
-	
 		
 		String[] ranges = mzString.split(",");
 		for (int i = 0; i < ranges.length; i++) {

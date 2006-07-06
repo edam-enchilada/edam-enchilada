@@ -290,6 +290,8 @@ public interface InfoWarehouse {
 			Collection curColl, int[] mzValues);
 	public int[] getValidSelectedMZValuesForCollection(Collection collection, Date startDate, Date endDate);
 	
+	public ArrayList<Date> getCollectionDates(Collection seq1, Collection seq2);
+	
 	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
 

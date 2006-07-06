@@ -4187,10 +4187,55 @@ public class SQLServerDatabase implements InfoWarehouse
 		return null;
 	}
 	
+	public ArrayList<Date> getCollectionDates(Collection seq1, Collection seq2){
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		int parentSeq1 = this.getParentCollectionID(seq1.getCollectionID());
+		int parentSeq2 = -1;
+		if(seq2 != null) parentSeq2 = this.getParentCollectionID(seq2.getCollectionID());
+		String selectAllTimesStr = 
+			"SELECT DISTINCT T.Time\n" +
+			"FROM (SELECT CollectionID, Time, Value\n" +
+			"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+			" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+			"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)" +
+			"WHERE ParentID = " + parentSeq1+"";
+		if (seq2 != null) {
+			selectAllTimesStr += "\nOR ParentID = " + parentSeq2 + "";
+		}
+		selectAllTimesStr += "\n     Order BY Time";
+		selectAllTimesStr += ";";
+		
+		ArrayList<Date> retData = new ArrayList<Date>();
+		
+		try{
+			Statement stmt = con.createStatement();
+			//System.out.println(selectAllTimesStr);
+			ResultSet rs;
+			rs = stmt.executeQuery(selectAllTimesStr);
+			while (rs.next()) {
+				String dateTime = rs.getString("Time");
+				if (dateTime != null)
+					retData.add(parser.parse(dateTime));	
+			}
+			
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
+			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return retData;
+	}
 	
 	public Hashtable<java.util.Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs) {
 		
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		ArrayList<String> columnsToReturn = new ArrayList<String>();
 		columnsToReturn.add("Ts1Value");
 		int parentSeq1 = this.getParentCollectionID(seq1.getCollectionID());
@@ -4260,26 +4305,31 @@ public class SQLServerDatabase implements InfoWarehouse
 				double[] retValues = new double[columnsToReturn.size()];
 				for (int i = 0; i < retValues.length; i++)
 					retValues[i] = 0;
-				Timestamp ts = rs.getTimestamp("Time");
+				String dateTime = rs.getDate("Time");
 				if (ts != null)
-					retData.put(ts, retValues);	
-			}
-			*/
+					retData.add(parser.parse(dateTime), retValues);	
+			}*/
+			
 			//System.out.println(sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
 				double[] retValues = new double[columnsToReturn.size()];
-				for (int i = 0; i < retValues.length; i++)
+				for (int i = 0; i < retValues.length; i++){
 					retValues[i] = rs.getDouble(columnsToReturn.get(i));
-				if (rs.getTimestamp("Time") != null)
-					retData.put(rs.getTimestamp("Time"), retValues);	
+				}
+				String dateTime = rs.getString("Time");
+				if (dateTime != null)
+					retData.put(parser.parse(dateTime), retValues);	
 			}
 			stmt.close();
 			rs.close();
 		} catch (SQLException e){
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
