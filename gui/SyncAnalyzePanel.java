@@ -329,7 +329,10 @@ public class SyncAnalyzePanel extends JPanel {
 	private void exportDataToCSV() {
 		// Rebuild data, and show new graph before exporting...
 		setupBottomPane();
-		ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
+		ArrayList<Date> dateSet;
+		//dateSet = new ArrayList<Date>(data.keySet());
+		dateSet = db.getCollectionDates((Collection) firstSeq.getSelectedItem(),
+				(Collection) secondSeq.getSelectedItem());
 		Collections.sort(dateSet);
 
 		try {
@@ -343,10 +346,11 @@ public class SyncAnalyzePanel extends JPanel {
 
 				Collection seq1 = (Collection) firstSeq.getSelectedItem();
 				Collection seq2 = (Collection) secondSeq.getSelectedItem();
-
-				if (seq2 != null)
+				int numCollections = 1;
+				if (seq2 != null){
 					fWriter.println("R^2: "	+ datasets[0].getCorrelationStats(datasets[1]).r2);
-
+					numCollections++;
+				}
 				String condString = "";
 				for (int i = 0; i < numConditions; i++) {
 					Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
@@ -410,12 +414,17 @@ public class SyncAnalyzePanel extends JPanel {
 				}
 				fWriter.println(line1);
 				fWriter.println(line2);
-
 				for (Date d : dateSet) {
 					double[] values = data.get(d);
+					String[] stringVals = new String[numCollections];
+					if(values != null){
+						for (int i = 0; i < values.length; i++){
+							stringVals[i] = ""+values[i];
+						}
+					}
 					fWriter.print(dformat.format(d));
-					for (int i = 0; i < values.length; i++)
-						fWriter.print("," + values[i]);
+					for (int i = 0; i < stringVals.length; i++)
+						fWriter.print("," + stringVals[i]);
 					fWriter.println();
 				}
 				fWriter.close();
