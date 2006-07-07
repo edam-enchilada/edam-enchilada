@@ -77,6 +77,17 @@ import gui.*;
 import java.io.*;
 import java.util.Scanner;
 
+import org.dbunit.*;
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.DatabaseSequenceFilter;
+import org.dbunit.dataset.FilteredDataSet;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.csv.CsvDataSetWriter;
+import org.dbunit.dataset.excel.XlsDataSet;
+import org.dbunit.dataset.filter.ITableFilter;
+import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.ext.mssql.InsertIdentityOperation;
+
 import errorframework.ErrorLogger;
 
 /* 
@@ -1592,7 +1603,67 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		return particleInfo;
 	}
-	
+	public void exportDatabase(String filename,int fileType) throws FileNotFoundException {
+		DatabaseConnection dbconn = null;
+		IDataSet dataSet = null;
+		PrintWriter output = new PrintWriter(filename);
+		dbconn = new DatabaseConnection(con);
+		try {
+			ITableFilter filter = new DatabaseSequenceFilter(dbconn);
+			dataSet = new FilteredDataSet(filter, dbconn.createDataSet());
+			switch(fileType){
+			case 1:
+				FlatXmlDataSet.write(dataSet, output);
+				break;
+			case 2:
+				XlsDataSet.write(dataSet,new FileOutputStream(filename));
+				break;
+			case 3:
+				FileWriter dummy = new FileWriter(filename);
+				dummy.write("#this is a dummy file\n" +
+						"#the real data is stored in the directory of the same name");
+				String dirName = filename.substring(0,filename.lastIndexOf("."));
+				File dir = new File(dirName);
+				boolean success = dir.mkdir();
+			    if (!success) {
+			    	throw new FileNotFoundException();
+			    }
+			    CsvDataSetWriter.write(dataSet,dir);
+			    break;
+			default:
+				System.err.println("Invalid fileType: "+fileType);
+			}
+			
+			//
+			//dbconn.close();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+
+	public void importDatabase(String filename, int fileType) throws FileNotFoundException {
+		DatabaseConnection dbconn = null;
+		//IDataSet dataSet = null;
+		FileInputStream input = new FileInputStream(filename);
+		try {
+			dbconn = new DatabaseConnection(con);
+			//dataSet = dbconn.createDataSet();
+			FlatXmlDataSet data = new FlatXmlDataSet(input);
+			InsertIdentityOperation.CLEAN_INSERT.execute(dbconn, data);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		/*try {
+			dbconn.close();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		*/
+	}
 	/**
 	 * Returns the adjacent atom for the collection, according to InternalAtomOrder.
 	 * @param collection	The ID of the collection under scrutiny.
