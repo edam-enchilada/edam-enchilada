@@ -12,6 +12,11 @@ import javax.swing.JComponent;
  * 
  * It has axes but doesn't pay too much attention to them.
  * 
+ * I've commented out methods for doing titley stuff.  AxisTitle.java is almost done, but
+ * this doesn't use it yet.
+ * 
+ * See LineChartArea for an example of a use of this.
+ * 
  * @author smitht
  *
  */
@@ -21,7 +26,7 @@ public abstract class GenericChartArea extends JComponent {
 	protected GraphAxis yAxis;
 	
 	//public abstract Double getBarAt(Point p, int buf);
-	public abstract void drawData(Graphics2D g2d);
+	protected abstract void drawData(Graphics2D g2d);
 
 	private static final int H_AXIS_PADDING = 15;
 	private static final int V_AXIS_PADDING = 50;
@@ -30,11 +35,6 @@ public abstract class GenericChartArea extends JComponent {
 	private static final int RIGHT_HAND_V_TITLE_PADDING = 5;
 	private static final int RIGHT_PADDING = 15;
 	private static final int TOP_PADDING = 15;
-	
-	private boolean backgroundOpaque = true;
-	
-//	protected String titleX;
-//	protected String titleY;
 	
 	public GenericChartArea() {
 		super();
@@ -78,6 +78,9 @@ public abstract class GenericChartArea extends JComponent {
 
 	/**
 	 * Indicates the portion of the chart value in which data is displayed.
+	 * <p>
+	 * This gets called a lot, it might be worth it to implement cacheing.
+	 * 
 	 * @return A rectangle containing the data display value.
 	 */
 	public Rectangle getDataAreaBounds() {
@@ -92,6 +95,11 @@ public abstract class GenericChartArea extends JComponent {
 		return new Rectangle(xStart, yStart, width, height);
 	}
 	
+	/**
+	 * Called after the location of the axes on the screen might have changed,
+	 * this method tells them so.
+	 *
+	 */
 	protected void updateAxes() {
 		Rectangle dataArea = getDataAreaBounds();
 		if (xAxis == null) {xAxis = new GraphAxis(getXBaseLine(dataArea));}
@@ -100,18 +108,32 @@ public abstract class GenericChartArea extends JComponent {
 		yAxis.setPosition(getYBaseLine(dataArea));
 	}
 	
+	/**
+	 * updateAxes() tests for the axes not existing yet, so this method actually
+	 * just calls that one.
+	 *
+	 */
 	protected void createAxes() {
-		Rectangle dataArea = getDataAreaBounds();
-		
-		xAxis = new GraphAxis(getXBaseLine(dataArea));
-		yAxis = new GraphAxis(getYBaseLine(dataArea));
+		updateAxes();
 	}
 	
+	/**
+	 * From the given dataArea, calculates a line suitable for being the X axis.
+	 * 
+	 * @param dataArea
+	 * @return an X axis line
+	 */
 	protected Line2D.Double getXBaseLine(Rectangle dataArea) {
 		return new Line2D.Double(dataArea.x ,dataArea.y + dataArea.height,
 				dataArea.x + dataArea.width, dataArea.y + dataArea.height);
 	}
 	
+	/**
+	 * From the given dataArea (gotten from getDataAreaBounds), calculates a line
+	 * suitable for being the Y axis (on the left).
+	 * 
+	 * @param dataArea
+	 */
 	protected Line2D.Double getYBaseLine(Rectangle dataArea) {
 		return new Line2D.Double(dataArea.x, dataArea.y,
 				dataArea.x, dataArea.y + dataArea.height);
@@ -119,11 +141,11 @@ public abstract class GenericChartArea extends JComponent {
 	
 
 	/**
-	 * Tells whether a point is in the data value of the
+	 * Tells whether a point is in the data area of the
 	 * chartArea (not the title or axis areas).
+	 * 
 	 * @param p The point to check.
-	 * @return True if the point is in the data display value of
-	 * the chart.
+	 * @return True if the point is in the data display value of the chart.
 	 */
 	public boolean isInDataArea(Point p) {
 		return getDataAreaBounds().contains(p);
@@ -131,34 +153,39 @@ public abstract class GenericChartArea extends JComponent {
 
 	
 	/**
-	 * Draws the graph
+	 * Draws the graph.  This call might be overridden, but probably shouldn't be,
+	 * you should probably just override one of:
+	 * drawBackground(Graphics2D), drawAxes(Graphics2D), or drawData(Graphics2D).
+	 * 
+	 * For instance, say you want to make a chart with a transparent background.
+	 * Then just override drawBackground to do nothing, and make sure you do
+	 * .setOpaque(false).
 	 */
 	public void paintComponent(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g.create();
-		
-		updateAxes();
-		
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		if (backgroundOpaque) {
-			//gets the bounds of the drawing value
-			Dimension size = this.getSize();
-			Insets insets = getInsets();
-			
-			//paints the background first
-			g.setColor(Color.WHITE);
-			g.fillRect(insets.left,insets.top,size.width - insets.left - insets.right,
-					size.height - insets.top - insets.bottom);
-		}
-		
+		drawBackground(g2d);
+		updateAxes();
 		drawAxes(g2d);
-		
 		drawData(g2d);
 
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
 	}
 	
+	protected void drawBackground(Graphics2D g2d) {
+			//gets the bounds of the drawing value
+			Dimension size = this.getSize();
+			Insets insets = getInsets();
+			
+			//paints the background first
+			g2d.setColor(Color.WHITE);
+			g2d.fillRect(insets.left,insets.top,size.width - insets.left - insets.right,
+					size.height - insets.top - insets.bottom);
+	}
+
+
 	/**
 	 * If you didn't want to draw both axes, or if you wanted to draw extra ones,
 	 * you would override this method.
@@ -216,17 +243,6 @@ public abstract class GenericChartArea extends JComponent {
 
 	public boolean isDoubleBuffered() {
 		return false;
-	}
-
-
-	public boolean isBackgroundOpaque() {
-		return backgroundOpaque;
-	}
-
-
-	public void setBackgroundOpaque(boolean backgroundOpaque) {
-		this.backgroundOpaque = backgroundOpaque;
-		this.setOpaque(backgroundOpaque);
 	}
 
 }
