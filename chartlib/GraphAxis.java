@@ -96,6 +96,7 @@ public class GraphAxis {
 		public String label(double value);
 	}
 	
+	// you could change this via subclassing or via setLabeller...
 	protected AxisLabeller labeller = new AxisLabeller() {
 		// a default labeller, which reports the value rounded to the 100s place.
 		public String label(double value) {
@@ -227,9 +228,9 @@ public class GraphAxis {
 		else
 		{
 			double xCoord = position.getX1();
-			double length = position.getP1().distance(position.getP2());
-			double bottom = Math.min(position.getY1(), position.getY2());
-			double yCoord = bottom - relPos * length;
+			double axisLen = position.getP1().distance(position.getP2());
+			double bottom = Math.max(position.getY1(), position.getY2());
+			double yCoord = bottom - relPos * axisLen;
 			g2d.draw(new Line2D.Double(
 					xCoord,
 					yCoord,
@@ -429,7 +430,6 @@ public class GraphAxis {
 	 */
 	public double[] getSmallTicks()
 	{
-		
 	    double[] ticks = new double[smallTicksRel.length];
 	    for(int count = 0; count < ticks.length; count++)
 			ticks[count] = smallTicksRel[count];

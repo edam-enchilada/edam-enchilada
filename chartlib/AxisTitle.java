@@ -8,7 +8,7 @@ import java.lang.Math;
 public class AxisTitle {
 	private String title;
 	private AxisPosition position;
-	private Point2D anchorPoint;
+	private Point anchorPoint;
 	
 	
 	public static enum AxisPosition {
@@ -28,19 +28,19 @@ public class AxisTitle {
 		
 		public AffineTransform getTransform(Point2D anchor) {
 			AffineTransform trans = new AffineTransform();
-			trans.rotate(textAngle);
+			trans.rotate(textAngle, anchor.getX(), anchor.getY());
 			return trans;
 		}
 		
 		public AffineTransform getInverseTransform(Point2D anchor) {
 			AffineTransform trans = new AffineTransform();
-			trans.rotate(- textAngle);
+			trans.rotate(- textAngle, anchor.getX(), anchor.getY());
 			return trans;
 		}
 	}
 	
 	
-	public AxisTitle(String title, AxisPosition position, Point2D anchorPoint) {
+	public AxisTitle(String title, AxisPosition position, Point anchorPoint) {
 		this.title = title;
 		this.position = position;
 		this.anchorPoint = anchorPoint;
@@ -48,6 +48,12 @@ public class AxisTitle {
 	
 	// not done anything with this yet
 
+	public void draw(Graphics2D g2d) {
+		g2d.setColor(Color.BLACK);
+		g2d.transform(position.getTransform(anchorPoint));
+		g2d.drawString(title, (int) anchorPoint.getX(), (int) anchorPoint.getY());
+		g2d.transform(position.getInverseTransform(anchorPoint));
+	}
 	
 	
 //	private void drawAxisTitleX(Graphics2D g2d) {
