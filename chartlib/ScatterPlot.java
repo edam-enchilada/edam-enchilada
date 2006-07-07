@@ -22,8 +22,10 @@ public class ScatterPlot extends Chart {
 		this.setTitleY(1, "Sequence 2 Value");
 		this.setAxisBounds(0, 0, 1, 0, 1);
 		this.setAxisBounds(1, 0, 1, 0, 1);
-		this.setDataset(0, ds1);
-		this.setDataset(1, ds2);
+		//this.setDataset(0, ds1);
+		chartAreas[0].setDataset(0, ds1);
+		//this.setDataset(1, ds2);
+		chartAreas[0].setDataset(1, ds2);
 		this.drawAsScatterPlot();
 		this.setPreferredSize(new Dimension(400, 400));
 		this.setBorder(new EmptyBorder(15, 0, 0, 0));

@@ -12,12 +12,13 @@ public class TimeSeriesPlot extends Chart {
 		this.setHasKey(false);
 		this.setTitleX(0, "Time");
 		this.drawXAxisAsDateTime(0);
-
+		
 		for (int i = 0; i < numSequences; i++) {
 			this.setTitleY(i, "Sequence " + (i + 1) + " Value");
 			this.setColor(i, i == 0 ? Color.red : Color.blue);
 			this.setAxisBounds(i, 0, 1, 0, 1);
-			this.setDataset(i, datasets[i]);
+			//this.setDataset(i, datasets[i]);
+			chartAreas[0].setDataset(i, datasets[i]);
 			this.setDataDisplayType((datasets[i].size() == 1), true);
 		}
 

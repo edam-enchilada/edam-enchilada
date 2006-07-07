@@ -22,9 +22,10 @@ public class SpectrumPlot extends Chart {
 	public void displaySpectra(Dataset pos, Dataset neg) {
 		setTitleY(0, "Intensity");
 		setTitleY(1, "Intensity");
-		
-		setDataset(0, pos);
-		setDataset(1, neg);
+		//setDataset(0, pos);
+		chartAreas[0].setDataset(pos);
+		//setDataset(1, neg);
+		chartAreas[1].setDataset(neg);
 		
 		packData(false, true); //updates the Y axis scale.
 		setDataDisplayType(false, true);
@@ -34,8 +35,10 @@ public class SpectrumPlot extends Chart {
 		setTitleY(0, "Area");
 		setTitleY(1, "Area");
 	
-		setDataset(0, pos);
-		setDataset(1, neg);
+		//setDataset(0, pos);
+		chartAreas[0].setDataset(pos);
+		//setDataset(1, neg);
+		chartAreas[1].setDataset(neg);
 		
 		packData(false, true); //updates the Y axis scale.
 		setDataDisplayType(true, false);
