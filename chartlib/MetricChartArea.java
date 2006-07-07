@@ -118,13 +118,14 @@ public abstract class MetricChartArea extends GenericChartArea {
 	}
 	
 	/**
-	 * Call this after you fiddle with smartticks or setticks or anything.
+	 * This is called automatically 
+	 * after you fiddle with smartticks or setticks or anything.
 	 * It notifies the axes of the fact that they have new tick values to
 	 * think about.
-	 * 
+	 * <p>
 	 * Doesn't repaint.
 	 */
-	protected void recalculateTicks() {
+	private void recalculateTicks() {
 		if(numSmartTicksX > 0)
 		{
 			bigTicksX = (getXMax() - getXMin()) / numSmartTicksX;
