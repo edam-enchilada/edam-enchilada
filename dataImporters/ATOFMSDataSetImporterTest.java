@@ -49,6 +49,7 @@ import java.sql.*;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.event.TableModelEvent;
 
 import atom.ATOFMSAtomFromDB;
@@ -85,7 +86,15 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	protected void setUp()
 	{
 		//TODO: commented this out AR
-		SQLServerDatabase.rebuildDatabase("TestDB");
+		try {
+			SQLServerDatabase.rebuildDatabase("TestDB");
+		} catch (SQLException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Could not rebuild the database." +
+					"  Close any other programs that may be accessing the database and try again.");
+		}
 		db = new SQLServerDatabase("TestDB");
 		assertEquals(true, db.openConnection());
 		

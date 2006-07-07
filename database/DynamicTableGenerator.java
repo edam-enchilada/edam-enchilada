@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
+import javax.swing.JOptionPane;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -352,8 +353,16 @@ public class DynamicTableGenerator extends DefaultHandler {
 		//tester main
 		public static void main(String[] args){
 			
-			SQLServerDatabase.rebuildDatabase("SpASMSdb");
-			SQLServerDatabase db = new SQLServerDatabase();
+			try {
+				SQLServerDatabase.rebuildDatabase("SpASMSdb");
+			} catch (SQLException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+				JOptionPane.showMessageDialog(null,
+						"Could not rebuild the database." +
+						"  Close any other programs that may be accessing the database and try again.");
+			}
+	    	SQLServerDatabase db = new SQLServerDatabase();
 			db.openConnection();
 			Connection connect = db.getCon();
 			DynamicTableGenerator echo = new DynamicTableGenerator(connect);

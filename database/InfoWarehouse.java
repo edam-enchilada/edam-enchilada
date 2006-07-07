@@ -292,7 +292,7 @@ public interface InfoWarehouse {
 	
 	public ArrayList<Date> getCollectionDates(Collection seq1, Collection seq2);
 	
-	public Hashtable<Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
+	public Hashtable<Date, Double> getConditionalTSCollectionData(Collection seq, 
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs);
 
 	public void syncWithIonsInDB(ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);

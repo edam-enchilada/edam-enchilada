@@ -2117,7 +2117,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param dbName
 	 * @return true if successful
 	 */
-	public static boolean rebuildDatabase(String dbName) {
+	public static boolean rebuildDatabase(String dbName) throws SQLException{
 		SQLServerDatabase db = null;
 		Scanner in = null;
 		Connection con = null;
@@ -2149,7 +2149,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
 			System.err.println("Error in rebuilding SQL Server database.");
 			e.printStackTrace();
-			return false;
+			throw new SQLException();
 		} finally {
 			if (db != null)
 				db.closeConnection();
@@ -4308,45 +4308,35 @@ public class SQLServerDatabase implements InfoWarehouse
 		return retData;
 	}
 	
-	public Hashtable<java.util.Date, double[]> getConditionalTSCollectionData(Collection seq1, Collection seq2, 
+	public Hashtable<java.util.Date, Double> getConditionalTSCollectionData(Collection seq,
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs) {
 		
 		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		ArrayList<String> columnsToReturn = new ArrayList<String>();
 		columnsToReturn.add("Ts1Value");
-		int parentSeq1 = this.getParentCollectionID(seq1.getCollectionID());
-		int parentSeq2 = -1;
-		if(seq2 != null) parentSeq2 = this.getParentCollectionID(seq2.getCollectionID());
+		int parentSeq1 = this.getParentCollectionID(seq.getCollectionID());
 		
 		
-		String atomSelStr = "select CollectionID, Time, Value from " +
+		String atomSelStr = "SELECT CollectionID, Time, Value\n FROM " +
 		getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + 
-		" D join AtomMembership M on (D.AtomID = M.AtomID)";
+		" D \nJOIN AtomMembership M ON (D.AtomID = M.AtomID)";
 		
 		
 		
-		String selectAllTimesStr = 
-			"SELECT T.Time\n" +
-			"FROM (SELECT CollectionID, Time, Value\n" +
-			"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
-			" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
-			"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)" +
-			"WHERE ParentID = " + parentSeq1+"";
-		if (seq2 != null) {
-			selectAllTimesStr += "\nOR ParentID = " + parentSeq2 + "";
+		String selectStr = "SELECT T.Time as Time";
+		String tableJoinStr = "FROM (" + atomSelStr + ") T \n";
+		String collCondStr = "WHERE T.CollectionID = " + seq.getCollectionID() + " \n";
+		
+		if (conditionStrs.size() > 0) {
+			for (int i = 0; i < conditionalSeqs.size(); i++) {
+				tableJoinStr += "JOIN (" + atomSelStr + ") C" + i + " on (C" + i + ".Time = T.Time) \n";
+				//selectStr += ", C" + i + ".Value as C" + i + "Value";
+				collCondStr += "AND C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + "\n" +
+						"AND "+conditionStrs.get(i)+"\n";
+			}
 		}
-		selectAllTimesStr += ";";
 		
-		String selectStr = "select T1.Time as Time";
-		String tableJoinStr = "from (" + atomSelStr + ") T1 \n";
-		String collCondStr = "where T1.CollectionID = " + seq1.getCollectionID() + " \n";
-		String condStr = ", %s as %s";
-		
-		if (seq2 != null) {
-			tableJoinStr += "join (" + atomSelStr + ") T2 on (T2.Time = T1.Time) \n";
-			collCondStr += "OR T2.CollectionID = " + seq2.getCollectionID() + " \n";
-			columnsToReturn.add("Ts2Value");
-		}
+		/*String condStr = ", %s as %s";
 		
 		if (conditionStrs.size() > 0) {
 			condStr = ", case when (";
@@ -4364,13 +4354,17 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		}
 		
-		selectStr += String.format(condStr, "T1.Value", "Ts1Value");
+		selectStr += String.format(condStr, "T.Value", "TsValue");
+		*/
+		String timesStr = selectStr + " \n" + tableJoinStr + collCondStr;
+		String sqlStr;
+		sqlStr = "SELECT S.Time as Time, S.Value as TsValue\n" +
+				"FROM (" + atomSelStr + ") S \n" +
+				"JOIN ("+timesStr+") T on (S.Time = T.Time)\n" +
+				"WHERE S.CollectionID = "+seq.getCollectionID()+";";
 		
-		if (seq2 != null)
-			selectStr += String.format(condStr, "T2.Value", "Ts2Value");
-		
-		String sqlStr = selectStr + " \n" + tableJoinStr + collCondStr;
-		Hashtable<java.util.Date, double[]> retData = new Hashtable<java.util.Date, double[]>();
+		//String sqlStr = selectStr + ", T.Value AS TsValue \n" + tableJoinStr + collCondStr;
+		Hashtable<java.util.Date, Double> retData = new Hashtable<java.util.Date, Double>();
 		
 		try{
 			Statement stmt = con.createStatement();
@@ -4387,13 +4381,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			}*/
 			
 			//System.out.println(sqlStr);
+			System.out.println(sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
-				double[] retValues = new double[columnsToReturn.size()];
-				for (int i = 0; i < retValues.length; i++){
-					retValues[i] = rs.getDouble(columnsToReturn.get(i));
-				}
+				double retValues;
+				retValues = rs.getDouble("TsValue");
+				
 				String dateTime = rs.getString("Time");
 				if (dateTime != null)
 					retData.put(parser.parse(dateTime), retValues);	

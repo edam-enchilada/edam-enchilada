@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import javax.swing.JOptionPane;
+
 import analysis.DistanceMetric;
 
 import database.CreateTestDatabase;
@@ -25,7 +27,15 @@ public class Tester {
         tempDB.openConnection();
         con = tempDB.getCon();
         
-        SQLServerDatabase.rebuildDatabase("BIRCHdb");
+        try {
+			SQLServerDatabase.rebuildDatabase("BIRCHdb");
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Could not rebuild the database." +
+					"  Close any other programs that may be accessing the database and try again.");
+		}
 				
 		try {
 			Statement stmt = con.createStatement();

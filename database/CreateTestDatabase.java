@@ -52,6 +52,8 @@ import java.sql.Statement;
 import java.sql.Connection;
 import java.util.ArrayList;
 
+import javax.swing.JOptionPane;
+
 /**
  * @author ritza
  */
@@ -64,7 +66,16 @@ public class CreateTestDatabase {
         tempDB = new SQLServerDatabase();
         tempDB.openConnection();
         con = tempDB.getCon();
-        SQLServerDatabase.rebuildDatabase("TestDB");
+        
+        try {
+			SQLServerDatabase.rebuildDatabase("TestDB");
+		} catch (SQLException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Could not rebuild the database." +
+					"  Close any other programs that may be accessing the database and try again.");
+		}
     		
 		try {
 			assert (con.createStatement() != null): "con should not be null";

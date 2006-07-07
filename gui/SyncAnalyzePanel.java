@@ -27,8 +27,9 @@ public class SyncAnalyzePanel extends JPanel {
 	private SyncCollectionModel[] conditionModel, conditionModel2;
 	private JTextField[] conditionValue;
 	private JComboBox[] booleanOps;
-	private Hashtable<Date, double[]> data;
+	private ArrayList<Hashtable<Date,Double>> data;
 	private Dataset[] datasets;
+	private Dataset[] scatterplotData;
 
 	private int numConditions = 2;
 
@@ -209,45 +210,68 @@ public class SyncAnalyzePanel extends JPanel {
 					conditionStrs.add(condStr);
 				}
 			}
-
-			data = db.getConditionalTSCollectionData(seq1, seq2, condCollections, conditionStrs);
+			
+			data = new ArrayList<Hashtable<Date,Double>>();
+			
+			data.add(db.getConditionalTSCollectionData(seq1, condCollections, conditionStrs));
+			if(seq2!=null)
+				data.add(db.getConditionalTSCollectionData(seq2, condCollections, conditionStrs));
 		}
 
-		if (data != null && data.size() > 0) {
+		if (data.size() > 0 && data.get(0).size() > 0) {
 			int numSequences = (seq2 != null ? 2 : 1);
-			int numSets = numSequences + condCollections.size();
-
-			datasets = new Dataset[numSets];
-			for (int i = 0; i < numSets; i++)
+			
+			datasets = new Dataset[numSequences];
+			for (int i = 0; i < numSequences; i++)
 				datasets[i] = new Dataset();
-
-			ArrayList<Date> dateSet = new ArrayList<Date>(data.keySet());
-			Collections.sort(dateSet);
+			scatterplotData = new Dataset[numSequences];
+			for(int i=0;i<numSequences;i++){
+				scatterplotData[i] = new Dataset();
+			}
+			
+			ArrayList<ArrayList<Date>> dateSet = new ArrayList<ArrayList<Date>>();
+			for(int i=0;i<data.size();i++){
+				dateSet.add(new ArrayList<Date>(data.get(i).keySet()));
+				Collections.sort(dateSet.get(i));
+			}
 
 			// This casting longs to doubles could come back to bite
 			// me in the ass... but it's the only way to shove both
 			// dates and regular data into the x-axis of a datapoint...
 			double lastTimePoint = 0;
-			double maxValue[] = new double[numSets];
-			double startTime = (double) dateSet.get(0).getTime();
-			for (Date d : dateSet) {
-				lastTimePoint = (double) d.getTime();
-				double[] values = data.get(d);
-
-				for (int i = 0; i < numSets; i++) {
-					double value = values[i];
-
+			double maxValue[] = new double[numSequences];
+			double startTime = (double) dateSet.get(0).get(0).getTime();
+			for(int i=0;i<numSequences;i++){
+				if(startTime > (double) dateSet.get(i).get(0).getTime())
+					startTime = (double) dateSet.get(i).get(0).getTime();
+				for (Date d : dateSet.get(i)) {
+					lastTimePoint = (double) d.getTime();
+					double value = data.get(i).get(d);
+					
 					if (value > maxValue[i])
 						maxValue[i] = value;
-
+					
 					datasets[i].add(new DataPoint(lastTimePoint, value));
+					
 				}
 			}
-			
+			for (Date d : dateSet.get(0)) {
+				boolean plottable = true;
+				for (int i = 1; i < numSequences && plottable; i++) {
+					plottable = (data.get(i).get(d) != null);
+				}
+				if (plottable) {
+					for (int i = 0; i < numSequences; i++) {
+						lastTimePoint = (double) d.getTime();
+						double value = data.get(i).get(d);
+						scatterplotData[i].add(new DataPoint(lastTimePoint, value));
+					}
+				}
+			}
 			xMin = startTime - 1000;
 			xMax = lastTimePoint + 1000;
 			
-			for (int i = 0; i < numSets; i++) {
+			for (int i = 0; i < numSequences; i++) {
 				if (maxValue[i] <= 0)
 					maxValue[i] = 10;
 			}
@@ -256,7 +280,7 @@ public class SyncAnalyzePanel extends JPanel {
 			TimeSeriesPlot chart = new TimeSeriesPlot(datasets);
 			chart.setTitle("<html><b>Time Series Comparison</b></html>");
 
-			for (int i = 0; i < numSets; i++) {
+			for (int i = 0; i < numSequences; i++) {
 				chart.setAxisBounds(i, xMin, xMax, 0, maxValue[i]);
 			}
 			chart.repaint();
@@ -271,7 +295,7 @@ public class SyncAnalyzePanel extends JPanel {
 
 			int dataSetIndex = numSequences;
 			
-			for (int i = 0; dataSetIndex < numSets; i++) {
+			/*for (int i = 0; dataSetIndex < numSequences; i++) {
 				Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
 				Collection compareColl = (Collection) conditionSeq2[i].getSelectedItem();
 				
@@ -309,10 +333,10 @@ public class SyncAnalyzePanel extends JPanel {
 				compChart.setBorder(new EmptyBorder(15, 0, 0, 0));
 
 				bottomPanel = addComponent(compChart, bottomPanel);
-			}
+			}*/
 
 			if (numSequences > 1) {
-				Chart scatterChart = new ScatterPlot(datasets[0], datasets[1]);
+				Chart scatterChart = new ScatterPlot(scatterplotData[0], scatterplotData[1]);
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
 				scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
 				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
@@ -415,16 +439,14 @@ public class SyncAnalyzePanel extends JPanel {
 				fWriter.println(line1);
 				fWriter.println(line2);
 				for (Date d : dateSet) {
-					double[] values = data.get(d);
-					String[] stringVals = new String[numCollections];
-					if(values != null){
-						for (int i = 0; i < values.length; i++){
-							stringVals[i] = ""+values[i];
-						}
-					}
 					fWriter.print(dformat.format(d));
-					for (int i = 0; i < stringVals.length; i++)
-						fWriter.print("," + stringVals[i]);
+					
+					for(Hashtable<Date,Double> table : data){
+						Double value = table.get(d);
+						String stringVal = "";
+						if(value != null) stringVal = ""+value;
+						fWriter.print("," + stringVal);
+					}
 					fWriter.println();
 				}
 				fWriter.close();

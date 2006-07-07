@@ -60,6 +60,7 @@ import collection.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.FileNotFoundException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Vector;
@@ -442,11 +443,17 @@ public class MainFrame extends JFrame implements ActionListener
 				JOptionPane.YES_OPTION) {
 				//db.rebuildDatabase();
 				db.closeConnection();
-				SQLServerDatabase.rebuildDatabase("SpASMSdb");
-				JOptionPane.showMessageDialog(this,
-						"The program will now shut down to reset itself. " +
-				"Start it up again to continue.");
-				dispose();
+				try{
+					SQLServerDatabase.rebuildDatabase("SpASMSdb");
+					JOptionPane.showMessageDialog(this,
+							"The program will now shut down to reset itself. " +
+					"Start it up again to continue.");
+					dispose();
+				}catch(SQLException s){
+					JOptionPane.showMessageDialog(this,
+							"Could not rebuild the database." +
+							"  Close any other programs that may be accessing the database and try again.");
+				}
 			}			
 		}
 		
@@ -1018,7 +1025,13 @@ public class MainFrame extends JFrame implements ActionListener
 					+ "since this will remove any pre-existing Enchilada database.") ==
 						JOptionPane.YES_OPTION) {
 				
-				SQLServerDatabase.rebuildDatabase("SpASMSdb");
+				try{
+					SQLServerDatabase.rebuildDatabase("SpASMSdb");
+				}catch(SQLException s){
+					JOptionPane.showMessageDialog(null,
+							"Could not rebuild the database." +
+							"  Close any other programs that may be accessing the database and try again.");
+				}
 			} else {
 				return; // no database?  we shouldn't do anything at all.
 			}
