@@ -667,7 +667,7 @@ public class Chart extends JPanel
 	 * 
 	 * @param titleString The title of the chart.
 	 */
-	private void setupLayout()
+	protected void setupLayout()
 	{
 		//Border layout is good for having spacing on the sides
 		//and a dynamically resizing center value (the ChartArea)
@@ -738,7 +738,7 @@ public class Chart extends JPanel
 	 * @param index Which chart to locate.
 	 * @return A Point containing the key.
 	 */
-	private Point getChartLocation(int index)
+	protected Point getChartLocation(int index)
 	{
 		Point p = new Point();
 		p.x = 10;
