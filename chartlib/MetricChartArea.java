@@ -6,8 +6,10 @@ import javax.swing.*;
 
 
 /**
- * 
- * 
+ * This is a GenericChartArea that knows about numbers.  Its axes have reasonable
+ * ranges that you can set, and there are convenient methods for finding the 
+ * location of a point or the length of a line in screen coordinates (XAbs and friends).
+ * <p>
  * note: the getters and setters of xmax and min don't cause this to repaint.
  * setAxisBounds does.
  * 
@@ -16,24 +18,12 @@ import javax.swing.*;
  */
 
 public abstract class MetricChartArea extends GenericChartArea {
-
-
 	protected double bigTicksX = 0;
 	protected double bigTicksY = 0;
 	private int numSmartTicksX = -1;
 	private int numSmartTicksY = -1;
 	private int smallTicksX = 1;
 	private int smallTicksY = 1;
-	
-	
-	protected double yDrawFactor() {
-		return getGraphicCoords(0, 0).getY() - getGraphicCoords(0, 1).getY();
-	}
-	
-	protected double xDrawFactor() {
-		return getGraphicCoords(0, 0).getY() - getGraphicCoords(1, 0).getY();
-	}
-
 	
 	/**
 	 * Translates a point in screen space to chart coordinates.
@@ -71,20 +61,36 @@ public abstract class MetricChartArea extends GenericChartArea {
 		return result;
 	}
 
+	/**
+	 * Translates a length in data coordinates to a length in screen coordinates,
+	 * as long as that length is parallel to the X axis.
+	 */
 	public int XLen(double dataValue) {
 		return (int) (xAxis.relativePosition(dataValue) 
 						* getDataAreaBounds().width);
 	}
 	
+	/**
+	 * Translates a length in data coordinates to a length in screen coordinates,
+	 * as long as that length is parallel to the Y axis.
+	 */
 	public int YLen(double dataValue) {
 		return (int) (yAxis.relativePosition(dataValue) 
 						* getDataAreaBounds().height);
 	}
 	
+	/**
+	 * Translates a value in data coordinates to its absolute x-position in 
+	 * screen coordinates.
+	 */
 	public int XAbs(double dataValue) {
 		return XLen(dataValue) + getDataAreaBounds().x;
 	}
 	
+	/**
+	 * Translates a value in data coordinates to its absolute y-position in 
+	 * screen coordinates.
+	 */
 	public int YAbs(double dataValue) {
 		Rectangle dataArea = getDataAreaBounds();
 		return dataArea.y + dataArea.height - YLen(dataValue);
@@ -101,13 +107,22 @@ public abstract class MetricChartArea extends GenericChartArea {
 		return new Point(XAbs(dataCoords.x), YAbs(dataCoords.y));
 	}
 	
+	/**
+	 * Translates a point in chart space to a point in screen space.  Then you
+	 * can draw with it.
+	 * 
+	 * @return a point suitable for use in a Graphics2D.something call.
+	 */
 	public Point getGraphicCoords(double dataX, double dataY) {
 		return getGraphicCoords(new Point2D.Double(dataX, dataY));
 	}
 	
 	/**
+	 * Call this after you fiddle with smartticks or setticks or anything.
+	 * It notifies the axes of the fact that they have new tick values to
+	 * think about.
+	 * 
 	 * Doesn't repaint.
-	 *
 	 */
 	protected void recalculateTicks() {
 		if(numSmartTicksX > 0)
@@ -130,6 +145,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 
 	/**
 	 * Sets new values for the X axis ticks.
+	 * 
 	 * @param bigX Big ticks on the X axis are multiples of this.
 	 * @param smallX Number of small ticks on the X axis between each big tick.
 	 */
@@ -161,6 +177,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 
 	/**
 	 * Sets new values for the Y axis ticks.
+	 * 
 	 * @param bigY Big ticks on the Y axis are multiples of this.
 	 * @param smallY Number of small ticks on the Y axis between each big tick.
 	 */
@@ -178,6 +195,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 	 * bigTicks number of big ticks and smallTicks number of small ticks between
 	 * each big tick.  The number of ticks may be off by one or two because
 	 * ticks may be on endpoints.
+	 * 
 	 * @param numTicks Number of big ticks on the Y axis.
 	 * @param smallX Number of small ticks between each big tick.
 	 */
@@ -191,6 +209,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 
 	/**
 	 * Sets new boundaries for the axes and displayed data.
+	 * 
 	 * @param xmin Minimum of X axis.
 	 * @param xmax Maximum of X axis.
 	 * @param ymin Minimum of Y axis.
@@ -221,27 +240,26 @@ public abstract class MetricChartArea extends GenericChartArea {
 	}
 
 	/**
-	 * @return Returns the number of small ticks between each big tick on the X axis.
+	 * @return Returns the number of small ticks between each big tick on the Y axis.
 	 */
 	public int getSmallTicksY() {
 		return smallTicksY;
 	}
 
 
-	/**
-	 * @return Returns upper limit of the x axis.
+	/*
+	 * 
+	 * BORING GETTERS AND SETTERS.
+	 * 
 	 */
+
 	public double getXMax() {
 		return xAxis.getMax();
 	}
-
-	/**
-	 * @return Returns the lower limit of the x axis.
-	 */
+	
 	public double getXMin() {
 		return xAxis.getMin();
 	}
-	
 
 	public double getYMax() {
 		return yAxis.getMax();
@@ -251,22 +269,17 @@ public abstract class MetricChartArea extends GenericChartArea {
 		return yAxis.getMin();
 	}
  
-
 	public void setYMax(double ymax) {
 		yAxis.setMax(ymax);
 	}
-
-
 
 	public void setYMin(double ymin) {
 		yAxis.setMin(ymin);
 	}
 
-
 	public void setXMax(double xmax) {
 		xAxis.setMax(xmax);
 	}
-
 
 	public void setXMin(double xmin) {
 		xAxis.setMin(xmin);
@@ -277,8 +290,8 @@ public abstract class MetricChartArea extends GenericChartArea {
 		JFrame f = new JFrame("woopdy doo");
 		MetricChartArea mca = new MetricChartArea() {
 			public void drawData(Graphics2D g2d) {
-				double xFact = xDrawFactor();
-				double yFact = yDrawFactor();
+				
+				g2d.setColor(Color.RED);
 				
 				g2d.draw(new Rectangle(XAbs(20), YAbs(20), XLen(5), YLen(5)));
 				g2d.draw(new Rectangle(XAbs(40), YAbs(20), XLen(5), YLen(5)));
@@ -288,6 +301,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 		};
 		mca.setAxisBounds(0, 100, 0, 100);
 		mca.setPreferredSize(new Dimension(400, 400));
+		mca.setNumTicksY(5, 1);
 		f.getContentPane().add(mca);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setPreferredSize(new Dimension(400, 400));
