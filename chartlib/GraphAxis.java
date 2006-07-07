@@ -43,6 +43,13 @@
 package chartlib;
 import java.util.ArrayList;
 import java.util.Date;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.geom.Line2D;
 import java.text.SimpleDateFormat;
 
 /**
@@ -52,6 +59,12 @@ import java.text.SimpleDateFormat;
  * 
  */
 public class GraphAxis {
+	public enum Orientation {
+		HORIZONTAL, VERTICAL
+	}
+	
+	private Orientation orientation;
+	
 	private static SimpleDateFormat dateFormat = 
 		new SimpleDateFormat("M/dd/yy");
 	private static SimpleDateFormat timeFormat = 
@@ -60,6 +73,9 @@ public class GraphAxis {
 	//the range of the axis
 	private double min;
 	private double max;
+	
+	// the position in the graphics area of the axis
+	private Line2D position;
 	
 	//tick marks
 	private double bigTicksFactor; //big ticks will appear on multiples of 
@@ -71,80 +87,157 @@ public class GraphAxis {
 	private double[] smallTicksRel;	//relative locations of the small ticks
 	
 	
-	//title of this axis	
-	private String title;
+	private static final int BIG_TICK_LENGTH = 10;
+
+	private static final int SMALL_TICK_LENGTH = 5;
 	
 	
-	/**
-	 * Constructs an empty axis.
-	 *
-	 */
-	public GraphAxis()
-	{
-		min = 0;
-		max = 0;
-		bigTicksFactor = 0;
-		smallTicks = 0;
-		bigTicksRel = null;
-		bigTicksVals = null;
-		smallTicksRel = null;
-		title = "";
+	public interface AxisLabeller {
+		public String label(double value);
 	}
 	
+	protected AxisLabeller labeller = new AxisLabeller() {
+		// a default labeller, which reports the value rounded to the 100s place.
+		public String label(double value) {
+			return  Double.toString((double)(Math.round(value * 100)) / 100); 
+		}
+	};
 	
-	/**
-	 * Constructs a new axis with a specified range
-	 * and a default 10 big ticks and 1 small tick between each big.
-	 * @param newMin Minimum of range.
-	 * @param newMax Maximum of range.
-	 * @throws IllegalArgumentException if max is less than min.
-	 */
-	public GraphAxis(double newMin, double newMax)  throws IllegalArgumentException
-	{
-		if(newMin > newMax) throw new IllegalArgumentException();
-		min = newMin;
-		max = newMax;
-		
-		bigTicksFactor = (max - min)/10;
-		
+	public GraphAxis(Line2D position) {
+		this.position = position;
+		min = 0;
+		max = 1;
+		bigTicksFactor = (max - min) / 10;
 		smallTicks = 1;
 		makeTicks();
-		title = "";
+		orientation = findOrientation();
 	}
 	
+	private Orientation findOrientation() {
+		if (position.getX1() == position.getX2()) {
+			return Orientation.VERTICAL;
+		} else {
+			return Orientation.HORIZONTAL;
+		}
+	}
+	
+	public void draw(Graphics2D g2d) {
+		g2d.setPaint(Color.BLACK);
+		g2d.setStroke(new BasicStroke(2));
+		g2d.draw(position);
+		drawTicks(g2d);
+	}
+	
+	private void drawTicks(Graphics2D g2d) {
+		g2d.setStroke(new BasicStroke(1));
+		
+		// gets big ticks as proportions of the axis length
+		double[] bigTicks = getBigTicksRel();
+		
+		String[] bigTicksLabels = getBigTicksLabels(false);
+		//String[] xBigTicksLabelsTop = axis.getBigTicksLabelsTop(drawXAxisAsDateTime);
+		//String[] xBigTicksLabelsBottom = drawXAxisAsDateTime ? axis.getBigTicksLabelsBottom() : null;
+		
+		// use Rectangles (getStringBounds in fontmetrics), and then check if they hit each other with that method
+		// Rectangle.setLocation
+		
+		
+		if(bigTicks.length == 0 || bigTicksLabels.length == 0)
+			return;
+
+		int count=0;
+		int lastDrawnPosTop = -1000, lastDrawnPosBottom = -1000;
+		double tickValue = bigTicks[0];
+		
+		FontMetrics metrics = g2d.getFontMetrics();
+		while(tickValue >= 0 && tickValue <= 1 && count < bigTicks.length)
+		{
+			tickValue = bigTicks[count];
+			if(tickValue >= 0 && tickValue <= 1)
+				drawTick(g2d,tickValue, true);
+			
+			/*
+			// aaaaaaaaaaaargh, no labels yet.
+			//label on each big tick, rounded to nearest hundredth
+			String labelTop = bigTicksLabels[count];
+			
+			int labelWidthTop = metrics.stringWidth(labelTop);
+			int xPos = (int) (dataArea.x + tickValue * dataArea.width);
+			int xPosTop = xPos - labelWidthTop / 2;
+			
+			// Only draw label if it's not going to overlap previous label
+			if (xPosTop > lastDrawnPosTop + 4 && xPosBottom > lastDrawnPosBottom + 4) {
+				g2d.drawString(labelTop, xPosTop, firstLineYPos);
+				lastDrawnPosTop = xPosTop + labelWidthTop;
+			}
+			*/
+			count++;
+		}
+		
+		
+		// x axis small ticks
+		double[] smallTicks = getSmallTicks();
+		count = 0;
+		tickValue = smallTicks[0];
+		
+		while(tickValue >= 0 && tickValue <= 1 && count < smallTicks.length)
+		{
+			tickValue = smallTicks[count];
+			if(tickValue >= 0 && tickValue <= 1)
+				drawTick(g2d,tickValue, false);
+			count++;
+			
+		}
+	}
+
 	/**
-	 * Constructs a new axis with specified range and tick marks.
-	 * @param newMin Minimum of range.
-	 * @param newMax Maximum of range.
-	 * @param tickFactor Big ticks will be multiples of this factor.
-	 * @param smallTicks Number of small ticks between each big tick.
-	 * @throws IllegalArgumentException
+	 * Draws a tick on a graph axis.
+	 *
+	 * @param g The graphics context for the graph.
+	 * @param relPos The relative position of the tick on the axis as a double
+	 * between 0 and 1.
+	 * @param xAxis True to draw on X axis, false to draw on Y axis.
+	 * @param big True to draw big tick, false to draw small tick.
+	 * @param leftSide True if drawing left-side ticks, false for right side... only applicable to y axis
 	 */
-	public GraphAxis(double newMin, double newMax, 
-			double tickFactor, int smallTicks) 
-	throws IllegalArgumentException
-	{
-		if(newMin > newMax
-				|| tickFactor < 0
-				|| smallTicks < 0) throw new IllegalArgumentException();
-		min = newMin;
-		max = newMax;
-		bigTicksFactor = tickFactor;
-		this.smallTicks = smallTicks;
-		makeTicks();
-		title = "";
-	}
+	private void drawTick(Graphics2D g2d, double relPos, boolean big) {
+		int tickSize;
+		if(big)
+			tickSize = BIG_TICK_LENGTH;
+		else
+			tickSize = SMALL_TICK_LENGTH;
+		
+		//for x axis
+		if(orientation == Orientation.HORIZONTAL)
+		{
+			double left = Math.min(position.getX1(), position.getX2());
+			double length = position.getP1().distance(position.getP2());
+			//converts from relative position to screen coordinates
+			double xCoord = left + relPos * length;
 	
-	
-	public void setTitle(String newTitle)
-	{
-		title = newTitle;
+			g2d.draw(new Line2D.Double(
+					xCoord,
+					position.getY1(),
+					xCoord,
+					position.getY1() - tickSize
+			));
+		}
+		
+		//for y axis
+		else
+		{
+			double xCoord = position.getX1();
+			double length = position.getP1().distance(position.getP2());
+			double bottom = Math.min(position.getY1(), position.getY2());
+			double yCoord = bottom - relPos * length;
+			g2d.draw(new Line2D.Double(
+					xCoord,
+					yCoord,
+					xCoord + tickSize,
+					yCoord));
+		}
 	}
-	
-	public String getTitle()
-	{
-		return title;
-	}
+
 	
 	public double getMin() 
 	{
@@ -216,7 +309,7 @@ public class GraphAxis {
 	 *
 	 * @return
 	 */
-	private void makeTicks()
+	public void makeTicks()
 	{
 		
 		//int count = 0;
@@ -316,23 +409,17 @@ public class GraphAxis {
 		return ticks;
 	}
 	
-	public String[] getBigTicksLabelsTop(boolean drawAsDateTime) {		
+	public String[] getBigTicksLabels(boolean drawAsDateTime) {		
 		String[] labels = new String[bigTicksVals.length];
 		for(int count = 0; count < labels.length; count++)
-			labels[count] = 
-				drawAsDateTime ? 
-						dateFormat.format(new Date((long) this.bigTicksVals[count])) : 
-				        Double.toString((double)(Math.round(bigTicksVals[count] * 100)) / 100);
+			labels[count] = getLabelFor(bigTicksVals[count]);
 		return labels;
 	}
 	
-	public String[] getBigTicksLabelsBottom() {
-		String[] labels = new String[bigTicksVals.length];
-		for(int count = 0; count < labels.length; count++)
-			labels[count] = timeFormat.format(new Date((long) this.bigTicksVals[count]));
-		return labels;
+	protected String getLabelFor(double value) {
+		return labeller.label(value);
 	}
-	
+
 	/**
 	 * Returns an array of doubles representing the relative locations of all small ticks
 	 * as numbers between zero and one.
@@ -372,4 +459,33 @@ public class GraphAxis {
 	{
 		return (x - min) / (max - min);
 	}
+
+	public Line2D getPosition() {
+		return position;
+	}
+
+	public void setPosition(Line2D position) {
+		this.position = position;
+		assert(orientation == findOrientation());
+		//don't want to change from horizontal to vertical, do we?
+		orientation = findOrientation();
+	}
+
+	public AxisLabeller getLabeller() {
+		return labeller;
+	}
+
+	public void setLabeller(AxisLabeller labeller) {
+		this.labeller = labeller;
+	}
+
+	public void setMax(double max) {
+		this.max = max;
+	}
+
+	public void setMin(double min) {
+		this.min = min;
+	}
+	
+
 }
