@@ -954,11 +954,13 @@ public class ChartArea extends JComponent {
 			if (dpY != null) {
 				double x = dpX.y, y = dpY.y;
 				
-				double xCoord = xAxis.relativePosition(x) * dataArea.width + dataArea.x;
+				/*double xCoord = xAxis.relativePosition(x) * dataArea.width + dataArea.x;
 				double yCoord = dataArea.y + dataArea.height 
 						- (yAxis.relativePosition(y) * dataArea.height);
 
 				g2d.draw(new Line2D.Double(xCoord, yCoord, xCoord, yCoord));
+				*/
+				drawPoint(g2d,x,y);
 			}
 		}
 		
@@ -980,6 +982,25 @@ public class ChartArea extends JComponent {
 		g2d.draw(new Line2D.Double(startX, startY, endX, endY));
 		
 		//cleanup
+		g2d.setClip(oldClip);
+		g2d.setStroke(oldStroke);
+	}
+	
+	private void drawPoint(Graphics2D g2d, double x, double y){
+		Shape oldClip = g2d.getClip();
+		Stroke oldStroke = g2d.getStroke();
+		Rectangle dataArea = getDataAreaBounds();
+		
+		g2d.setColor(Color.BLACK);
+		g2d.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		
+		double xCoord = xAxis.relativePosition(x) * dataArea.width + dataArea.x;
+		double yCoord = dataArea.y + dataArea.height 
+				- (yAxis.relativePosition(y) * dataArea.height);
+
+		g2d.draw(new Line2D.Double(xCoord, yCoord, xCoord, yCoord));
+		
+		//		cleanup
 		g2d.setClip(oldClip);
 		g2d.setStroke(oldStroke);
 	}
