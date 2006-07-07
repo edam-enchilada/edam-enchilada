@@ -53,22 +53,32 @@ import java.awt.geom.Line2D;
 import java.text.SimpleDateFormat;
 
 /**
- * @author sulmanj
- *
- * Contains data necessary for drawing an axis.
+ * Contains data necessary for drawing an axis, and the ability to draw one.
  * 
+ * An important thing to understand is that graph axes ALSO hold information
+ * on how to draw data points---the relativePosition(double) method.
+ * 
+ * @author sulmanj
+ * @author smitht
+ *
  */
 public class GraphAxis {
+	/**
+	 * Orientation - say whether the axis is horizontal or vertical.
+	 * 
+	 * @author smitht
+	 */
 	public enum Orientation {
 		HORIZONTAL, VERTICAL
 	}
 	
+	// whether this axis is horizontal or vertical.
 	private Orientation orientation;
 	
-	private static SimpleDateFormat dateFormat = 
-		new SimpleDateFormat("M/dd/yy");
-	private static SimpleDateFormat timeFormat = 
-		new SimpleDateFormat("HH:mm:ss");
+//	private static SimpleDateFormat dateFormat = 
+//		new SimpleDateFormat("M/dd/yy");
+//	private static SimpleDateFormat timeFormat = 
+//		new SimpleDateFormat("HH:mm:ss");
 
 	//the range of the axis
 	private double min;
@@ -78,25 +88,40 @@ public class GraphAxis {
 	private Line2D position;
 	
 	//tick marks
-	private double bigTicksFactor; //big ticks will appear on multiples of 
-	//this factor
-	private int smallTicks; //number of small ticks between each big tick
+	//	big ticks will appear on multiples of this factor	
+	private double bigTicksFactor;
 	
+	//number of small ticks between each big tick
+	private int smallTicks;
+	
+	// these three arrays are generated from the above variables by the
+	// makeTicks method.
 	private double[] bigTicksRel;	//relative locations of the big ticks
 	private double[] bigTicksVals;	//numerical values of the big ticks
 	private double[] smallTicksRel;	//relative locations of the small ticks
 	
-	
+	// how big the ticks are on the screen, in pixels I assume
 	private static final int BIG_TICK_LENGTH = 10;
-
 	private static final int SMALL_TICK_LENGTH = 5;
 	
-	
+	/**
+	 * Though labelling the ticks is not implemented yet, this will be how
+	 * you can control the labels of the tick marks.
+	 * 
+	 * @author smitht
+	 *
+	 */
 	public interface AxisLabeller {
 		public String label(double value);
 	}
 	
-	// you could change this via subclassing or via setLabeller...
+	/**
+	 * This is the AxisLabeler that the axis will use to draw labels for its
+	 * big tick marks.
+	 * <p>
+	 * The default one is to draw the value at the tick mark, rounded to the 
+	 * 100ths place.
+	 */
 	protected AxisLabeller labeller = new AxisLabeller() {
 		// a default labeller, which reports the value rounded to the 100s place.
 		public String label(double value) {
@@ -104,6 +129,9 @@ public class GraphAxis {
 		}
 	};
 	
+	/**
+	 * Create a new graph axis on the line in this position.
+	 */
 	public GraphAxis(Line2D position) {
 		this.position = position;
 		min = 0;
@@ -114,14 +142,31 @@ public class GraphAxis {
 		orientation = findOrientation();
 	}
 	
+	/**
+	 * Figures out whether this axis is vertical or horizontal, using the line.
+	 */
 	private Orientation findOrientation() {
 		if (position.getX1() == position.getX2()) {
 			return Orientation.VERTICAL;
 		} else {
+			if (position.getY1() != position.getY2()) {
+				throw new RuntimeException("Axes should be axial!");
+			}
 			return Orientation.HORIZONTAL;
 		}
 	}
 	
+	/**
+	 * Call this to draw the axis.  Actually, GenericChartArea will do it for 
+	 * you, but you could if you wanted.
+	 * <p>
+	 * The Graphics2D object you send in must be in the same coordinate space
+	 * as the GraphAxis is in, otherwise it will get drawn in a weird space.
+	 * This is taken care of for you by GenericChartArea in the normal
+	 * case.
+	 * 
+	 * @param g2d a Graphics2D object with coordinates that work.
+	 */
 	public void draw(Graphics2D g2d) {
 		g2d.setPaint(Color.BLACK);
 		g2d.setStroke(new BasicStroke(2));
@@ -129,6 +174,9 @@ public class GraphAxis {
 		drawTicks(g2d);
 	}
 	
+	/**
+	 * Draws all of the ticks, big and small, using drawTick().
+	 */
 	private void drawTicks(Graphics2D g2d) {
 		g2d.setStroke(new BasicStroke(1));
 		
@@ -194,12 +242,10 @@ public class GraphAxis {
 	/**
 	 * Draws a tick on a graph axis.
 	 *
-	 * @param g The graphics context for the graph.
+	 * @param g2d The graphics context for the graph.
 	 * @param relPos The relative position of the tick on the axis as a double
 	 * between 0 and 1.
-	 * @param xAxis True to draw on X axis, false to draw on Y axis.
 	 * @param big True to draw big tick, false to draw small tick.
-	 * @param leftSide True if drawing left-side ticks, false for right side... only applicable to y axis
 	 */
 	private void drawTick(Graphics2D g2d, double relPos, boolean big) {
 		int tickSize;
@@ -239,18 +285,25 @@ public class GraphAxis {
 		}
 	}
 
-	
+	/**
+	 * The minimum value represented on the axis.
+	 */
 	public double getMin() 
 	{
 		return min;
 	}
 	
+	/**
+	 * The maximum value represented on the axis.
+	 */
 	public double getMax() 
 	{
 		return max;
 	}
+	
 	/**
-	 * Sets a new range, keeping tick marks as they are.
+	 * Sets a new range, keeping tick marks at the same numeric intervals.
+	 * 
 	 * @param newMin
 	 * @param newMax
 	 * @throws IllegalArgumentException
@@ -266,6 +319,7 @@ public class GraphAxis {
 	
 	/**
 	 * Sets new Tick parameters.
+	 * 
 	 * @param tickFactor Big ticks will be on multiples of this number.
 	 * @param smallTicks Number of small ticks between each big tick.
 	 */
@@ -290,6 +344,7 @@ public class GraphAxis {
 	
 	/**
 	 * Calculates the number of big ticks on the axis.
+	 * 
 	 * @return the number of big ticks on the axis.
 	 */
 	public int numTicks()
@@ -391,7 +446,6 @@ public class GraphAxis {
 	
 	/**
 	 * Returns an array containing the relative locations of the big ticks.
-	 * @return
 	 */
 	public double[] getBigTicksRel()
 	{
@@ -402,6 +456,10 @@ public class GraphAxis {
 		return ticks;
 	}
 	
+	/**
+	 * Returns an array containing the locations of the big ticks, in data
+	 * numbers.
+	 */
 	public double[] getBigTicksVals()
 	{
 		double[] ticks = new double[bigTicksVals.length];
@@ -410,6 +468,13 @@ public class GraphAxis {
 		return ticks;
 	}
 	
+	/**
+	 * Not working yet<p>
+	 * deprecated cuz that's a reasonable way to remind me to fix it.  sort of.
+	 * @param drawAsDateTime
+	 * @return
+	 */
+	@Deprecated
 	public String[] getBigTicksLabels(boolean drawAsDateTime) {		
 		String[] labels = new String[bigTicksVals.length];
 		for(int count = 0; count < labels.length; count++)
@@ -464,6 +529,10 @@ public class GraphAxis {
 		return position;
 	}
 
+	/**
+	 * Set the axis to a new place in screen space.  This gets called fairly
+	 * often cuz of screen resizing and stuff.
+	 */
 	public void setPosition(Line2D position) {
 		this.position = position;
 		assert(orientation == findOrientation());
