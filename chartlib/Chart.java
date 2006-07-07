@@ -58,20 +58,20 @@ import java.awt.*;
 public class Chart extends JPanel
 {
 	//collection of datasets
-	private Dataset[] datasets; 
-	private String title;
-	private int numCharts;
-	private boolean combineCharts;
+	protected Dataset[] datasets; 
+	protected String title;
+	protected int numCharts;
+	protected boolean combineCharts;
 	
 	//graphical elements
-	private ChartTitle titleLabel;
-	private JPanel bottomHalf;
-	private ChartKey key;
-	private ChartArea[] chartAreas;
+	protected ChartTitle titleLabel;
+	protected JPanel bottomHalf;
+	protected ChartKey key;
+	protected ChartArea[] chartAreas;
 	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
 	
 	//graphics settings
-	private boolean hasKey; //does the chart have a key to the data colors
+	protected boolean hasKey; //does the chart have a key to the data colors
 	
 	//flag to indicate that the chart's current value should be kept for
 	//a parameter.
