@@ -371,6 +371,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	}
 	
 	/**
+	 * A method to reduce the peak area by the power passed in (preprocessing
+	 * to be used before clustering).
+	 * @param power	The power to which to raise the area of the peaks.  (.5 is good.)
+	 */
+	public void preProcess(double power){
+		normalizable.reducePeaks(this, power);
+	}
+	
+	/**
 	 * Change the Normalizer that will be used during calls to normalize() on
 	 * this peaklist.
 	 * @param norm the new normalizer.

@@ -324,6 +324,7 @@ public abstract class ClusterK extends Cluster {
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
 				curs.next();
+				curs.getCurrent().getBinnedList().preProcess(power);
 				curs.getCurrent().getBinnedList().normalize(distanceMetric);
 				centroidList.add(new Centroid(curs.getCurrent().getBinnedList(),1));
 			}
@@ -358,6 +359,7 @@ public abstract class ClusterK extends Cluster {
 		    boolean status = curs.next();
 		    assert status : "Cursor is empty.";
 		    Centroid newCent = null; 
+			curs.getCurrent().getBinnedList().preProcess(power);
 		    curs.getCurrent().getBinnedList().normalize(distanceMetric);
 		    newCent = new Centroid(curs.getCurrent().getBinnedList(),0);
 		  

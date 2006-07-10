@@ -165,7 +165,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		Object source = e.getSource();
 		if (source == okButton) {
 			if(!nameField.getText().equals("")) {
-				if(datatypeBox.getSelectedIndex()!=0) {
+				if(datatypeBox.getSelectedIndex()!= -1) {
 					SQLServerDatabase db = new SQLServerDatabase();
 					db.openConnection();
 					collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");

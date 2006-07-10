@@ -206,6 +206,7 @@ public class Art2A extends Cluster
 				//		particleCount);
 				thisParticleInfo = curs.getCurrent();
 				thisBinnedPeakList = thisParticleInfo.getBinnedList();
+				thisBinnedPeakList.preProcess(power);
 				thisBinnedPeakList.normalize(distanceMetric);
 				
 						

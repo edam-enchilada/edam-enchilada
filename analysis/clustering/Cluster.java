@@ -72,6 +72,9 @@ public abstract class Cluster extends CollectionDivider {
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	protected ClusterInformation clusterInfo;
+	protected static double power = 0.5;	//the power to which the peak areas are raised
+									//during preprocessing.
+	//TODO: make power an advanced user option
 	
 	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	
@@ -101,6 +104,14 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	public void addInfo(ClusterInformation cl){
 		clusterInfo = cl;
+	}
+	
+	/**
+	 * Resets the power to which peaks will be raised during preprocessing.
+	 * @param newPower	The new power to which the peaks will be raised.
+	 */
+	public static void setPower(double newPower){
+		power = newPower;
 	}
 	
 	/**
@@ -582,21 +593,13 @@ public abstract class Cluster extends CollectionDivider {
 			while (i.hasNext()) {
 				p = i.next();
 				//TODO: waaaaaaaaay too type-specific
-				//if (sparseNamesTypes.get(1).equals("INT"))
-					s = EnchiladaDataSetImporter.intersperse(
+				s = EnchiladaDataSetImporter.intersperse(
 							Integer.toString(new Float(p.value).intValue()), Integer.toString(p.key));
-				//else
-				//	s = EnchiladaDataSetImporter.intersperse(
-				//		Float.toString(p.value), Integer.toString(p.key));
 			
 				for (int j=0; j<2; j++)
 					s = EnchiladaDataSetImporter.intersperse("1", s);
 				sparse.add(s);
 			}
-			
-			/*debugging*/
-		//	for (String sp : sparse)
-		//		System.out.print(" SPARSE " + sp);	
 			
 			centerAtomID = db.insertParticle(dense, sparse, db.getCollection(centerCollID),
 					db.getNextID());

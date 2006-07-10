@@ -50,6 +50,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 
+import analysis.clustering.Cluster;
 import analysis.clustering.ClusterK;
 import java.awt.*;
 /**
@@ -71,6 +72,7 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 	
 	private JTextField errorField;
 	private JTextField numSamplesField;
+	private JTextField powerField;
 	
 	public AdvancedClusterDialog(JDialog frame) {
 		super(frame,"Advanced Cluster Options", true);
@@ -94,6 +96,16 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		k.add(kSampNum);
 		k.add(numSamplesField);
 		
+		/*A section for setting the preprocessing power for peaks.*/
+		JLabel preProcess = new JLabel("Preprocessing parameters:");		
+		JPanel p = new JPanel();
+		JLabel peakPower = new JLabel("peak power:");
+		String initialPower = Double.toString(0.5);//get the current power
+		powerField = new JTextField(initialPower, 5);
+		p.add(peakPower);
+		p.add(powerField);
+		
+		/*Add the buttons to the bottom of the dialog*/
 		JPanel buttons = new JPanel();
 		okButton = new JButton("OK");
 		okButton.addActionListener(this);
@@ -107,6 +119,8 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		
 		add(kHeader);
 		add(k);
+		add(preProcess);
+		add(p);
 		add(buttons);
 		setLayout(new FlowLayout());
 		
@@ -122,12 +136,15 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 			ClusterK.setError(Float.parseFloat(text));
 			text = numSamplesField.getText();
 			ClusterK.setNumSamples(Integer.parseInt(text));
+			text = powerField.getText();
+			Cluster.setPower(Double.parseDouble(text));
 			} catch (Exception exception) {
 				JOptionPane.showMessageDialog(parent,
 						"Error with parameters.\n" +
 						"Make sure there are no empty entries,\n" +
 						"the 'error' field contains a real number,\n" +
-						"and the '# of subsamples' field contains an integer.",
+						"the '# of subsamples' field contains an integer,\n" +
+						" and the 'peak power' field contains a decimal number.",
 						"Exception",
 						JOptionPane.ERROR_MESSAGE);
 			}
@@ -139,6 +156,7 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		if(source == restoreDefault) {
 			errorField.setText("0.01");
 			numSamplesField.setText("10");
+			powerField.setText("0.5");
 		}
 	}
 }

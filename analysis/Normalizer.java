@@ -3,7 +3,7 @@ package analysis;
 import java.util.Iterator;
 import java.util.Map;
 
-public class Normalizer implements Normalizable {
+public class Normalizer extends Normalizable {
 
 	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
 		float magnitude = peakList.getMagnitude(dMetric);	
@@ -30,5 +30,6 @@ public class Normalizer implements Normalizable {
 		}
 		return distance;
 	}
+
 
 }
