@@ -163,7 +163,8 @@ public class ClusterFeature {
 	 * @param newCurNode - new current node.
 	 */
 	public void updatePointers(CFNode newChild, CFNode newCurNode) {
-		child = newChild;
+		if(newChild!=null)
+			child = newChild;
 		curNode = newCurNode;
 	}
 

@@ -64,7 +64,7 @@ public class CFTree {
 	private ClusterFeature recentlySplitB = null;
 	
 	private ArrayList<BinnedPeakList> testDisList; //used for test purposes only
-	
+	private final double problem = 0.00000000001;
 	private long memory;
 	/**
 	 * Constructor.  
@@ -102,11 +102,15 @@ public class CFTree {
 		
 		memory-=closestNode.getMemory();
 		// if distance is below the threshold, CF absorbs the new entry.
-		if (closestLeaf.getSums().getDistance(
-				entry, dMetric) <= threshold) {
+		if (threshold == 0 && closestLeaf.getSums().getDistance(
+					entry, dMetric) <= threshold + problem) {
 			closestLeaf.updateCF(entry, atomID);
 		}
-		// else, add it to the closestNode as a new CF.
+		else if (threshold!=0 && closestLeaf.getSums().getDistance(
+					entry, dMetric) <= threshold) {
+			closestLeaf.updateCF(entry, atomID);
+		}
+//		else, add it to the closestNode as a new CF.
 		else {
 			ClusterFeature newEntry;
 			if (closestNode.parentNode == null)
@@ -134,7 +138,7 @@ public class CFTree {
 			System.out.println("reinserting cluster feature # " + numDataPoints);
 		
 		// If this is the first entry, make it the root.
-		if (root.getSize() == 1 && root.getCFs().get(0).getCount() == 0){
+		if (root.getSize() == 1 && root.getCFs().get(0).getCount() == 0) {
 			firstLeaf.addCF(cf);
 			cf.updatePointers(null, firstLeaf);
 			updateNonSplitPath(firstLeaf);
@@ -192,13 +196,6 @@ public class CFTree {
 	 */
 	public ClusterFeature findClosestLeafEntry(BinnedPeakList entry, 
 			CFNode curNode) {
-		/*System.out.println("**************************");
-		System.out.println("curNode: " + curNode);
-		System.out.println("CF size: " + curNode.getCFs().size());
-		System.out.println("***************************");
-		System.out.println("Printing tree from curNOde:");
-		System.out.flush();
-		printTreeRecurse(curNode,"");*/
 		if (curNode == null)
 			return null;
 		// get the closest cf in the current node;
@@ -206,6 +203,7 @@ public class CFTree {
 		if(minFeature==null) {
 			return null;
 		}
+		// get the closest cf in the current node;
 		if (minFeature.curNode.isLeaf()) {
 			return minFeature;
 		}
@@ -244,9 +242,8 @@ public class CFTree {
 	 */
 	private CFNode splitNodeRecurse(CFNode node) {	
 		memory-=node.getMemory();
-	
-		CFNode nodeA = new CFNode(node.parentCF, dMetric);
-		CFNode nodeB = new CFNode(node.parentCF, dMetric);
+		CFNode nodeA = new CFNode(null, dMetric);
+		CFNode nodeB = new CFNode(null, dMetric);
 	
 		ClusterFeature[] farthestTwo = node.getTwoFarthest();
 		assert (farthestTwo != null) : "trying to split a node with 1 CF";
@@ -302,29 +299,28 @@ public class CFTree {
 		if (origParent == null) {
 			root = new CFNode(null, dMetric);
 			parentNode = root;
-			//memory-=parentNode.getMemory();
 		}
 		else {
 			memory-=origParent.curNode.getMemory();
 			parentNode = origParent.curNode;
 			parentNode.removeCF(origParent);
 		}	
+		//update all the parents etc.  
 		parentA = new ClusterFeature(parentNode, dMetric);
 		parentA.updatePointers(nodeA, parentNode);
 		parentA.updateCF();
-		CFNode child = parentA.getChild();
+		parentNode.addCF(parentA);
+		nodeA.updateParent(parentA);
+		
 		parentB = new ClusterFeature(parentNode, dMetric);
 		parentB.updatePointers(nodeB, parentNode);
 		parentB.updateCF();
-		child = parentB.getChild();
-		parentNode.addCF(parentA);
 		parentNode.addCF(parentB);
+		nodeB.updateParent(parentB);
 		memory+=parentNode.getMemory();
 		
 		removeNode(node);
 		
-		nodeA.updateParent(parentA);
-		nodeB.updateParent(parentB);	
 		assert (parentA.curNode.equals(parentB.curNode)) : 
 			"parents aren't in same node.";
 		if (nodeA.isLeaf()) {
@@ -437,7 +433,7 @@ public class CFTree {
 			ClusterFeature entryToMerge) {
 		assert (entry.curNode.equals(entryToMerge.curNode)) : 
 			"entries aren't in same node!";		
-		
+			
 		CFNode curNode = entry.curNode;
 		
 		memory-=curNode.getMemory();
@@ -464,10 +460,11 @@ public class CFTree {
 		returnThis.child = entry.child;
 		if (returnThis.child != null)
 			returnThis.child.parentCF = returnThis;
-		
+			
 		if (!curNode.isLeaf()) {
-			for (int i = 0; i < entryToMerge.child.getSize(); i++) 
+			for (int i = 0; i < entryToMerge.child.getSize(); i++) {
 				returnThis.child.addCF(entryToMerge.child.getCFs().get(i));
+			}
 		}
 		
 		curNode.removeCF(entry);
@@ -598,52 +595,111 @@ public class CFTree {
 	public boolean scanOutliers() {
 		return true;
 	}
-	/**
-	 * scanDistances() and getDistancesRecurse() simply get
-	 * all the distances between all the cluster features
-	 * and print them all out.  This will break the program
-	 * if any of the distances are above 2.0 because the
-	 * assert will fail in Normalizer.
-	 *
-	 */
-	public void scanDistances() {
-		testDisList = new ArrayList<BinnedPeakList>();	
-		getDistancesRecurse(root);
-		float distance;
-		for (int i = 0; i<testDisList.size(); i++){
-			for (int j = i+1; j<testDisList.size(); j++) {
-				distance = testDisList.get(i).getDistance(testDisList.get(j), dMetric);
-				System.out.println("distance from " + i + " to " + j + " = "+ distance);
-			}
-		}
+	
+	public void scanAllNodes() {
+		
+		scanAllNodesRecurse(root);
+	}
+	public void scanAllNodesRecurse(CFNode node) {
+		//start at the bottom left leaf cluster feature
+		//compare the cluster feature to the summary cluster
+		//feature one level up, repeat for all cluster features
+		//in the tree
+		for (int i = 0; i < node.getCFs().size(); i++) {
 			
+			ClusterFeature tempCF = node.getCFs().get(i);
+			ClusterFeature closestCF = null;
+			float parentDistance;
+			float otherDistance = 3;
+			
+			if(node!=root && node.getSize() != 0 && tempCF.getCount() != 0) {
+	//		for (int i = 0; i < node.getCFs().size(); i++) {
+	//			tempCF = node.getCFs().get(i);
+				//get the distance to the parent cluster feature
+			//	parentDistance = tempCF.getSums().getDistance(node.parentCF.getSums(), dMetric);
+				//get the smallest distance to the other cluster features in the parent node
+				for (int j = 0; j < node.parentNode.getCFs().size(); j++) {
+					if (otherDistance>tempCF.getSums().getDistance(node.parentNode.getCFs().get(j).getSums(), dMetric)) {
+						otherDistance = tempCF.getSums().getDistance(node.parentNode.getCFs().get(j).getSums(), dMetric);
+						closestCF = node.parentNode.getCFs().get(j);
+					}
+				}
+			//	closestCF.printCF("");
+				if(closestCF!=node.parentCF) {
+			//		System.out.println("****very bad");
+			//		System.out.println("tempCF");
+			//		tempCF.printCF("");
+			//		System.out.println("closestCF");
+			//		closestCF.printCF("");
+				}
+			}
+			//now move on to the child
+			if (tempCF.child!=null)
+				scanAllNodesRecurse(tempCF.child);
+		}
+		
+	}
+	/**
+	 * scanDistances() and getDistancesRecurse() 
+	 * find the closest leaf clusterFeature to each
+	 * leaf clusterFeature
+	 * it's a test method
+	 */
+	public void scanDistances() {	
+		getDistancesRecurse(firstLeaf);
+		float distance;
 	}
 	public void getDistancesRecurse(CFNode node) {
-	//	System.out.println("building testDisList");
-		if (!node.isLeaf()) 
-		{	
-			for (int i = 0; i < node.getSize(); i++) 
-			{
-				//System.out.print("Inserting at " + testDisList.size() + " ");
-				//for (int j = 0; j<node.getCFs().get(i).getAtomIDs().size(); j++)
-				//	System.out.print(node.getCFs().get(i).getAtomIDs().get(j));
-				//System.out.println();
-				//testDisList.add(node.getCFs().get(i).getSums());
-				getDistancesRecurse(node.getCFs().get(i).child);
+		for (int i = 0; i < node.getSize(); i++) {
+			//find largest distance inside the node
+			float largestDisInNode = 0;
+			float tempDist;
+			for (int j = 0; j < node.getSize(); j++) {
+				if(j!=i)
+				{
+					tempDist = node.getCFs().get(i).getSums().getDistance(node.getCFs().get(j).getSums(), dMetric);
+					if(tempDist>largestDisInNode)
+						largestDisInNode = tempDist;
+				}
 			}
-		}
-		else
-		{
-			for (int i = 0; i < node.getSize(); i++) 
-			{
-				System.out.print("Inserting at " + testDisList.size() + " ");
-				for (int j = 0; j<node.getCFs().get(i).getAtomIDs().size(); j++)
-					System.out.print(node.getCFs().get(i).getAtomIDs().get(j));
-				System.out.println();
-				testDisList.add(node.getCFs().get(i).getSums());
+			node.getCFs().get(i).printCF("");
+	//		System.out.println("largest " + largestDisInNode);
+			
+			//find smallest distance outside the node
+			CFNode leaf = firstLeaf;
+			ClusterFeature closestCF = null;
+			float smallestDisOutNode = 3;
+			while(leaf.nextLeaf!=null){
+				if(leaf.nextLeaf!=node){
+					leaf = leaf.nextLeaf;
+					for (int j = 0; j < leaf.getSize(); j++) {
+						tempDist = node.getCFs().get(i).getSums().getDistance(leaf.getCFs().get(j).getSums(), dMetric);
+						if(tempDist<smallestDisOutNode) {
+							smallestDisOutNode = tempDist;
+							closestCF = leaf.getCFs().get(j);
+						}
+					}
+				}
 			}
+	//		System.out.println("smallest " + smallestDisOutNode);
+	//		System.out.println("closestCF ");
+	//		closestCF.printCF("");
+			//compare the distances
+			if(smallestDisOutNode<largestDisInNode)
+				System.out.println("****not good");
 		}
+		if(node.nextLeaf!=null)
+			getDistancesRecurse(node.nextLeaf);
 	}
+
+/*	public float getError(ParticleInfo particle){
+		float error = 0;
+		//find the clusterFeature with that AtomID
+		int id = particle.getID();
+		ClusterFeature cf = findCFWithID(id);
+		//get the distance from the clusterFeature to the particle
+		return error;
+	}*/
 
 	/**
 	 * prints the tree.
@@ -652,6 +708,7 @@ public class CFTree {
 		System.out.println("\nPrinting CF Tree:");
 		printTreeRecurse(root, "");
 		System.out.println();
+		System.out.println("printTree done");
 		System.out.flush();
 	}
 	
@@ -660,11 +717,10 @@ public class CFTree {
 	 * @param node - current node in tree traversal
 	 * @param delimiter - current delimiter for level.
 	 */
-	private void printTreeRecurse(CFNode node, String delimiter) {
+	public void printTreeRecurse(CFNode node, String delimiter) {
 		if (!node.isLeaf()) {	
 			System.out.println(delimiter + "NEW NODE");
 			for (int i = 0; i < node.getSize(); i++) {
-			//	System.out.println(delimiter + "CF");
 				node.getCFs().get(i).printCF(delimiter);
 				node.getCFs().get(i).getSums().getMagnitude(dMetric);
 				printTreeRecurse(node.getCFs().get(i).child, delimiter + "    ");
@@ -673,7 +729,6 @@ public class CFTree {
 		else {
 			System.out.println(delimiter + "NEW LEAF");
 			for (int i = 0; i < node.getSize(); i++) {
-			//	System.out.println(delimiter + "CF ");
 				node.getCFs().get(i).printCF(delimiter);
 				node.getCFs().get(i).getSums().getMagnitude(dMetric);
 			}

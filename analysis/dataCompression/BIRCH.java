@@ -39,8 +39,9 @@
 
 package analysis.dataCompression;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -48,7 +49,6 @@ import java.util.Iterator;
 import collection.Collection;
 import ATOFMS.ParticleInfo;
 import analysis.*;
-import analysis.clustering.*;
 import database.*;
 
 /**
@@ -66,6 +66,7 @@ public class BIRCH extends CompressData{
 	private int collectionID;
 	private CFTree curTree;
 	private long start, end;
+	private int rebuildCount;
 	
 	/**
 	 * MEM_THRESHOLD is a new way of calculating memory predictably.  This threshold
@@ -74,8 +75,12 @@ public class BIRCH extends CompressData{
 	 * that running Tester works well if MEM_THRESHOLD = 1000.
 	 * 
 	 * This should be an advanced option that the user can change in the GUI.
+	 * 
+	 * memory is in bytes - janara
 	 */
-	private final float MEM_THRESHOLD = 1000;
+	
+	//1000 for test data, 150118 for i
+	private final float MEM_THRESHOLD = 150000;
 
 	
 	/*
@@ -88,6 +93,7 @@ public class BIRCH extends CompressData{
 		branchingFactor = 4; // should be an advanced option in the GUI
 		collectionID = oldCollection.getCollectionID();
 		assignCursorType();
+		rebuildCount = 0; 
 	}
 	
 	/**
@@ -117,7 +123,7 @@ public class BIRCH extends CompressData{
 				curTree.refineMerge(lastSplitNode);
 			}	
 			
-			curTree.printTree();
+		//	curTree.printTree();
 			// if we have run out of memory, rebuild the tree.
 			if (curTree.getMemory()> MEM_THRESHOLD) {
 				int[] counts = {0,0,0,0,0};
@@ -134,7 +140,7 @@ public class BIRCH extends CompressData{
 							" so the clustering is pointless.\nExiting.");
 					System.exit(0);
 				}
-			
+				rebuildCount++;
 				System.out.println("OUT OF MEMORY @ "+ curTree.getMemory() + "\n");
 				curTree.countNodes();
 				
@@ -151,10 +157,11 @@ public class BIRCH extends CompressData{
 		}	
 		System.out.println("\nFINAL TREE:");
 		curTree.printTree();
-	//	System.out.println("scanning distances...");
-	//	curTree.scanDistances();
+		System.out.println("scanning distances...");
+		curTree.scanAllNodes();
 		end = new Date().getTime();
 		System.out.println("interval: " + (end-start));
+		System.out.println("rebuildCount : " + rebuildCount);
 	}
 	
 	/**
@@ -239,7 +246,9 @@ public class BIRCH extends CompressData{
 						newLeaf.curNode.getCFs().get(j).updateCF();
 					}
 				}
-				newTree.printTree();
+			//	newTree.printTree();
+			//	System.out.println("scanning distances");
+			//	newTree.scanAllNodes();
 			}
 		}
 		//if it's not a leaf, we just want to build the correct path
@@ -259,7 +268,7 @@ public class BIRCH extends CompressData{
 					newCurNode.getCFs().get(i).updatePointers(
 							newChild, newCurNode);
 				}
-				newTree.printTree();
+			//	newTree.printTree();
 				//rebuild the tree using the child as the new node
 				rebuildTreeRecurse(newTree, newCurNode.getCFs().get(i).child, 
 						oldCurNode.getCFs().get(i).child, lastLeaf);
@@ -268,7 +277,22 @@ public class BIRCH extends CompressData{
 		oldCurNode = null;
 		return newTree;
 	}
-	
+	//THIS IS GOING TO BE SUPER SLOW--FIX THIS
+/*	public void getError() {
+		Collection collection = db.getCollection(collectionID);
+		curs = new NonZeroCursor(db.getBinnedCursor(collection));
+		ParticleInfo particle;
+		float totalError = 0;
+		int numParticles = 0;
+		while(curs.next()) {
+			particle = curs.getCurrent();
+			System.out.println("inserting particle " + particle.getID());
+			particle.getBinnedList().normalize(distanceMetric);
+			totalError = totalError + curTree.getError(particle);
+			numParticles ++;
+		}
+		totalError = totalError/numParticles;
+	}*/
 	/**
 	 * @Override
 	 * 
@@ -297,6 +321,7 @@ public class BIRCH extends CompressData{
 	 */
 	protected void putCollectionInDB() {	
 		// Create new collection and dataset:
+		ArrayList<ArrayList<Integer>> centroidList = new ArrayList<ArrayList<Integer>>();
 		String compressedParams = getDatasetParams(oldDatatype);
 		int[] IDs = db.createEmptyCollectionAndDataset(newDatatype,0,name,comment,""); 
 		int newCollectionID = IDs[0];
@@ -309,12 +334,15 @@ public class BIRCH extends CompressData{
 		CFNode leaf = curTree.getFirstLeaf();
 		ArrayList<ClusterFeature> curCF;
 		ArrayList<Integer> curIDs;
-		
-		
+		ArrayList<String> sparseArray = new ArrayList<String>();
+		ArrayList<Integer> cfAtomIDs;
 		// Enter the CFS of each leaf
 		while (leaf != null) {
 			curCF = leaf.getCFs();
 			for (int i = 0; i < curCF.size(); i++) {
+				cfAtomIDs = curCF.get(i).getAtomIDs();
+				centroidList.add(cfAtomIDs);
+				
 				atomID = db.getNextID();
 				
 				// create denseAtomInfo string.
@@ -330,7 +358,7 @@ public class BIRCH extends CompressData{
 				denseStr+=curCF.get(i).getCount();
 				
 				// create sparseAtomInfo string arraylist.
-				ArrayList<String> sparseArray = new ArrayList<String>();
+				sparseArray = new ArrayList<String>();
 				Iterator iter = curCF.get(i).getSums().iterator();
 				while (iter.hasNext()) {
 					BinnedPeak p=(BinnedPeak) iter.next();
@@ -344,7 +372,32 @@ public class BIRCH extends CompressData{
 			}
 			leaf=leaf.nextLeaf;
 		}
+		
+		ArrayList<String> list = new ArrayList<String>();
 		db.updateInternalAtomOrder(collection);
+
+		for (int i = 0; i<centroidList.size(); i++) {
+			
+			Integer j = new Integer(i);
+			System.out.println("Set: " + i);
+			for (int k = 0; k<centroidList.get(i).size(); k++) {
+				try {
+					Statement stmt = db.getCon().createStatement();
+					
+					String query = "SELECT *\n" +
+					" FROM ATOFMSAtomInfoDense" +
+					" WHERE AtomID = " + centroidList.get(i).get(k);
+					ResultSet rs = stmt.executeQuery(query);
+					rs.next();
+					System.out.println("AtomID: " + centroidList.get(i).get(k) + " file: " + rs.getString(6));
+					stmt.close();
+				} catch (SQLException e) {
+					System.err.println("Exception creating the dataset entries:");
+					e.printStackTrace();
+				}
+				
+			}
+		}
 		System.out.println("Done inserting BIRCH into DB.");
 	}
 }

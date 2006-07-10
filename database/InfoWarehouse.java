@@ -46,7 +46,7 @@ package database;
 
 import gui.ProgressBarWrapper;
 import gui.LabelingIon;
-
+import java.sql.*;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -273,7 +273,7 @@ public interface InfoWarehouse {
 	public double getNumber();
 	
 	public ArrayList<String> getColNames(String datatype, DynamicTable table);
-	
+	public Connection getCon();
 	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleTable, int lowAtomID, int hightAtomID);
 	
 	public int saveMap(String name, Vector<int[]> mapRanges);

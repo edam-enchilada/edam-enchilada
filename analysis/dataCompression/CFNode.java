@@ -71,7 +71,23 @@ public class CFNode {
 			parentNode = p.curNode;
 		dMetric = d;
 	}
-	
+	public boolean sameContents(CFNode nodeToCompare) {
+		boolean same = true;
+		int i = 0;
+		for (i = 0; i < cfs.size(); i++) {
+			System.out.println("nodeToCompare");
+			nodeToCompare.getCFs().get(i).printCF("");
+			System.out.println("node");
+			cfs.get(i).printCF("");
+			if(!nodeToCompare.getCFs().get(i).isEqual((cfs.get(i)))) {
+				same = false;
+				break;
+			}
+		}
+		if(i > nodeToCompare.getCFs().size())
+			same = false;
+		return same;
+	}
 	/**
 	 * Adds a cluster feature
 	 * @param cf - cf to add
@@ -267,4 +283,9 @@ public class CFNode {
 			returnThis+=cfs.get(i).getMemory();
 		return returnThis;
 	}
+	/*public static void main(String args) {
+		CFNode node = new CFNode();
+		node.cfs.add(new ClusterFeature())
+		
+	}*/
 }
