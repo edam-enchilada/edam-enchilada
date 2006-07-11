@@ -14,12 +14,11 @@ import java.util.Iterator;
 
 import javax.swing.JFrame;
 
-public class LineChartArea extends MetricChartArea {
-	private Dataset dataset;
+public class LineChartArea extends ChartArea {
 	private AxisTitle at;
 	
 	public LineChartArea(Dataset dataset) {
-		this.dataset = dataset;
+		super(dataset);
 		setPreferredSize(new Dimension(400, 400));
 		at = new AxisTitle("W00t", AxisTitle.AxisPosition.LEFT, new Point(200, 200));
 	}
@@ -43,10 +42,13 @@ public class LineChartArea extends MetricChartArea {
 	 */
 	@Override
 	public void drawData(Graphics2D g2d) {
-		drawDataLines(g2d,dataset);
-		drawDataPoints(g2d,dataset);
+		drawDataLines(g2d,datasets.get(0));
+		drawDataPoints(g2d,datasets.get(0));
 	}
 	
+	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
+		drawPointX(g2d,xCoord,yCoord);
+	}
 	
 	
 	/**

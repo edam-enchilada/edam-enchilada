@@ -20,16 +20,16 @@ import javax.swing.JFrame;
  * @author olsonja
  *
  */
-public class CorrelationChartArea extends MetricChartArea {
-	protected Dataset dataset1,dataset2;
+public class CorrelationChartArea extends ChartArea {
 	protected AxisTitle at;
 
 	/**
 	 * 
 	 */
 	public CorrelationChartArea(Dataset dataset1,Dataset dataset2,String title) {
-		this.dataset1 = dataset1;
-		this.dataset2 = dataset2;
+		super();
+		datasets.add(dataset1);
+		datasets.add(dataset2);
 		setPreferredSize(new Dimension(400, 400));
 		at = new AxisTitle(title, AxisTitle.AxisPosition.LEFT, new Point(200, 200));
 	}
@@ -54,7 +54,9 @@ public class CorrelationChartArea extends MetricChartArea {
 	 */
 	@Override
 	protected void drawData(Graphics2D g2d) {
-		assert(dataset1 != null && dataset2 != null);
+		assert(datasets.size()==2);
+		Dataset dataset1 = datasets.get(0);
+		Dataset dataset2 = datasets.get(1);
 		assert(dataset1.size() == dataset2.size());
 		
 		Shape oldClip = g2d.getClip();

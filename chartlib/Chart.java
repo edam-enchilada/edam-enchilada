@@ -213,12 +213,12 @@ public class Chart extends JPanel
 	 * @param p The point in screen coordinates.
 	 * @return The x coordinate of the value found.
 	 */
-	public Double getBarForPoint(int index, Point p)
+	public Double getBarForPoint(int index, Point p) throws ClassCastException
 	{
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
 		q.y = p.y - q.y;
-		return chartAreas[index].getBarAt(q, 3);
+		return ((BarChartArea)chartAreas[index]).getBarAt(q, 3);
 	}
 	
 	public Double getBarForPoint(Point p)
@@ -270,7 +270,7 @@ public class Chart extends JPanel
 	 */
 	public double getXmin(int index)
 	{
-		return chartAreas[index].getXmin();
+		return chartAreas[index].xAxis.getMin();
 	}
 	
 	/**
@@ -280,7 +280,7 @@ public class Chart extends JPanel
 	 */
 	public double getXmax(int index)
 	{
-		return chartAreas[index].getXmax();
+		return chartAreas[index].xAxis.getMax();
 	}
 	
 	/**
@@ -290,7 +290,7 @@ public class Chart extends JPanel
 	 */
 	public double getYmin(int index)
 	{
-		return chartAreas[index].getYmin();
+		return chartAreas[index].yAxis.getMin();
 	}
 	
 	/**
@@ -300,7 +300,7 @@ public class Chart extends JPanel
 	 */
 	public double getYmax(int index)
 	{
-		return chartAreas[index].getYmax();
+		return chartAreas[index].yAxis.getMax();
 	}
 	
 	/**
@@ -347,15 +347,15 @@ public class Chart extends JPanel
 	throws IllegalArgumentException
 	{
 			//translates the flag CURRENT_VALUE into the actual value.
-		if (xmin == CURRENT_VALUE) xmin = chartAreas[index].getXmin();
-		if (xmax == CURRENT_VALUE) xmax = chartAreas[index].getXmax();
-		if (ymin == CURRENT_VALUE) ymin = chartAreas[index].getYmin();
-		if (ymax == CURRENT_VALUE) ymax = chartAreas[index].getYmax();
+		if (xmin == CURRENT_VALUE) xmin = getXmin(index);
+		if (xmax == CURRENT_VALUE) xmax = getXmax(index);
+		if (ymin == CURRENT_VALUE) ymin = getYmin(index);
+		if (ymax == CURRENT_VALUE) ymax = getYmax(index);
 		
 		if (combineCharts)
-			chartAreas[0].setAxisBounds(index, xmin, xmax, ymin, ymax);
+			chartAreas[0].setAxisBounds(xmin, xmax, ymin, ymax);
 		else
-			chartAreas[index].setAxisBounds(0, xmin, xmax, ymin, ymax);
+			chartAreas[index].setAxisBounds(xmin, xmax, ymin, ymax);
 	}
 	
 	/**
@@ -504,9 +504,9 @@ public class Chart extends JPanel
 	public void setBarWidth(int index, int width)
 	{
 		if (combineCharts)
-			chartAreas[0].setBarWidth(index, width);
+			chartAreas[0].setBarWidth(width);
 		else
-			chartAreas[index].setBarWidth(0, width);
+			chartAreas[index].setBarWidth(width);
 	}
 	
 	/**
@@ -530,23 +530,13 @@ public class Chart extends JPanel
 	public void setColor(int index, Color c)
 	{
 		if (combineCharts)
-			chartAreas[0].setColor(index, c);
+			chartAreas[0].setForegroundColor(c);
 		else
-			chartAreas[index].setColor(0, c);
+			chartAreas[index].setForegroundColor(c);
 
 		key.setColor(index, c);
 	}
 	
-	/**
-	 * Sets chart display to be a scatter plot. This requires
-	 * combineCharts to be true, and will fail if not.
-	 */
-	public void drawAsScatterPlot() {
-		assert(combineCharts);
-		
-		chartAreas[0].drawAsScatterPlot();
-	}
-
 	/**
 	 * Set the chart to draw the x-axis as a date instead
 	 * of as a number...
@@ -558,48 +548,6 @@ public class Chart extends JPanel
 		else
 			chartAreas[index].drawXAxisAsDateTime();
 	}
-	
-	/**
-	 * Determines how data is displayed.  If neither parameter is true, no data
-	 * will be displayed.
-	 * @param index Which chart to change.
-	 * @param showBars If true, chart will display data in bars.
-	 * @param showLines If true, chart will dislay data in lines.
-	 */
-	public void setDataDisplayType(int index, boolean showBars, boolean showLines)
-	{
-		if (combineCharts)
-			chartAreas[0].setDataDisplayType(index, showBars, showLines);
-		else
-			chartAreas[index].setDataDisplayType(0, showBars, showLines);
-	}
-	
-	/**
-	 * Determines how data is displayed in all charts.
-	 * If neither is true, no data will be displayed.
-	 * @param showBars If true, chart will display data in bars.
-	 * @param showLines If true, chart will dislay data in lines.
-	 */
-	public void setDataDisplayType(boolean showBars, boolean showLines)
-	{
-		for(int count = 0; count < datasets.length; count++)
-			setDataDisplayType(count, showBars, showLines);
-	}
-	
-	/**
-	 * Registers the given data x coordinates to be used for hit detection.
-	 * Overwrites previous hit detection data.
-	 * In Enchilada, this allows a graph to display a full spectrum while still
-	 * allowing the user to find the peaks.
-	 * @param index The chart to affect.
-	 * @param xCoords An array of x coordinates in data space.
-	 */
-	public void setHitDetectCoords(int index, double[] xCoords)
-	{
-		if (index < chartAreas.length)
-			chartAreas[index].setHitDetectCoords(xCoords);
-	}
-	
 	
 	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.
@@ -684,31 +632,19 @@ public class Chart extends JPanel
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
 		
-		if (combineCharts) {
-			Dataset ds1 = datasets.length > 0 ? datasets[0] : null;
-			Dataset ds2 = datasets.length > 1 ? datasets[1] : null;
-			
-			chartAreas = new ChartArea[1];
-			chartAreas[0] = new ChartArea(ds1, ds2);
-			chartPanel.add(chartAreas[0]);
-		} else {
-			chartAreas = new ChartArea[numCharts];
-			for(int count = 0; count < numCharts; count++)
-			{
-			
-				if(datasets[count] != null)
-				{	
-					chartAreas[count] = new ChartArea(datasets[count]);
-				}
-				else
-				{
-					chartAreas[count] = new ChartArea();
-				}
-			
-				//chartAreas[count].setPreferredSize(new Dimension(500,500));
-				chartPanel.add(chartAreas[count]);
+		chartAreas = new ChartArea[numCharts];
+		for (int count = 0; count < numCharts; count++) {
+
+			if (datasets[count] != null) {
+				chartAreas[count] = new ChartArea(datasets[count]);
+			} else {
+				chartAreas[count] = new ChartArea();
 			}
+
+			// chartAreas[count].setPreferredSize(new Dimension(500,500));
+			chartPanel.add(chartAreas[count]);
 		}
+		
 		
 		ckPanel.add(chartPanel);
 		
