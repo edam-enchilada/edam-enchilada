@@ -135,7 +135,7 @@ public class Dataset extends TreeSet<DataPoint>
 		while(iterator.hasNext())
 		{
 			DataPoint dpX = iterator.next();
-			DataPoint dpY = dataset2.get(dpX.x);
+			DataPoint dpY = dataset2.get(dpX.x,.50);
 			
 			if (dpY != null) {
 				numValidPoints++;
@@ -162,6 +162,10 @@ public class Dataset extends TreeSet<DataPoint>
 		cachedStats = ret;
 		
 		return ret;
+	}
+	
+	public Statistics getCorrelationStats() {
+		return getCorrelationStats(this);
 	}
 	
 	public static class Statistics {

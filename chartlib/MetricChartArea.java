@@ -134,7 +134,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
-		g2d.setColor(color);
+		g2d.setColor(foregroundColor);
 		g2d.clip(dataArea);	//constrains drawing to the data value
 		g2d.setStroke(new BasicStroke(1.5f));
 		
@@ -212,10 +212,11 @@ public abstract class MetricChartArea extends GenericChartArea {
 		GraphAxis actualYAxis = yAxis;
 		Rectangle dataArea = getDataAreaBounds();
 		
-		Shape oldClip = g2d.getClip();
+		/*Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(Color.BLACK);
 		g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		*/
 		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		int maxX = 0;
@@ -228,7 +229,7 @@ public abstract class MetricChartArea extends GenericChartArea {
 			DataPoint curPoint = iterator.next();
 			
 			double x = curPoint.y, y = curPoint.y;
-			System.out.println("X: "+x+"\tY:: "+y);
+			//System.out.println("X: "+x+"\tY:: "+y);
 			/*if (x >= 0 && x <= 1) {
 */
 				int xCoord = (int) (dataArea.x + xAxis
@@ -250,8 +251,9 @@ public abstract class MetricChartArea extends GenericChartArea {
 		
 		
 		//cleanup
-		g2d.setClip(oldClip);
+		/*g2d.setClip(oldClip);
 		g2d.setStroke(oldStroke);
+		*/
 	}
 	
 	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
@@ -262,8 +264,6 @@ public abstract class MetricChartArea extends GenericChartArea {
 	protected void drawPointBar(Graphics2D g2d,double xCoord, double yCoord){
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
-		g2d.setColor(Color.BLACK);
-		g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		Rectangle dataArea = getDataAreaBounds();
 		Rectangle bar;
 		int width = 5;
@@ -272,7 +272,10 @@ public abstract class MetricChartArea extends GenericChartArea {
 				(int)( yCoord),
 				(int)(width),
 				(int)(-1*yCoord)+ (dataArea.y + dataArea.height) );
-		g2d.setColor(color);				
+		
+		//draw the bar
+		g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g2d.setColor(foregroundColor);				
 		g2d.fill(bar);
 		
 		//draws border around bar

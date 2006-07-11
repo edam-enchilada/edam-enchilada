@@ -2,6 +2,7 @@ package chartlib;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.util.Iterator;
 
 import javax.swing.JComponent;
 
@@ -27,7 +28,9 @@ public abstract class GenericChartArea extends JComponent {
 	
 	//public abstract Double getBarAt(Point p, int buf);
 	protected abstract void drawData(Graphics2D g2d);
-
+	
+	protected Color foregroundColor = Color.RED;
+	protected Color backgroundColor = Color.WHITE;
 	private static final int H_AXIS_PADDING = 15;
 	private static final int V_AXIS_PADDING = 50;
 	private static final int H_TITLE_PADDING = 20;
@@ -180,7 +183,7 @@ public abstract class GenericChartArea extends JComponent {
 			Insets insets = getInsets();
 			
 			//paints the background first
-			g2d.setColor(Color.WHITE);
+			g2d.setColor(backgroundColor);
 			g2d.fillRect(insets.left,insets.top,size.width - insets.left - insets.right,
 					size.height - insets.top - insets.bottom);
 	}
@@ -195,7 +198,8 @@ public abstract class GenericChartArea extends JComponent {
 		xAxis.draw(g2d);
 		yAxis.draw(g2d);
 	}
-
+	
+	
 	/**
 	 * drawMorePointsIndicator - draw symbols indicating more points exist.
 	 * 
