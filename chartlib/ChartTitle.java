@@ -45,9 +45,10 @@ import javax.swing.JLabel;
 import java.awt.Font;
 
 /**
+ * A text value that manages the title.
+ * 
  * @author sulmanj
  *
- * A text value that manages the title.
  */
 public class ChartTitle extends JLabel 
 {
