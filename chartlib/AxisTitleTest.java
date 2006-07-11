@@ -28,15 +28,16 @@ public class AxisTitleTest {
 		testPanel = new JComponent() {
 			public void paintComponent(Graphics g) {
 				Graphics2D g2d = (Graphics2D)g.create();
-				g2d.setColor(Color.RED);
-				for (Point anchor : anchorPoints) {
-					g2d.fillRect(anchor.x, anchor.y, 5, 5);
-				}
+				
 				g2d.setColor(Color.BLACK);
 
 				g2d.setFont(new Font("Courier", Font.PLAIN, 14));
 				for (AxisTitle title : titles) {
 					title.draw(g2d);
+				}
+				g2d.setColor(Color.RED);
+				for (Point anchor : anchorPoints) {
+					g2d.fillRect(anchor.x, anchor.y, 1, 1);
 				}
 			}
 		};

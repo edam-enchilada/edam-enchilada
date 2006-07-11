@@ -2,20 +2,16 @@ package chartlib;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.Iterator;
+import static chartlib.AxisTitle.AxisPosition;
 
 import javax.swing.JComponent;
 
 /**
  * This class just handles the basic task of being a place where charts are drawn.
- * 
+ * <p>
  * It doesn't know anything about x and y coordinates of data, just about drawing itself.
- * 
  * It has axes but doesn't pay too much attention to them.
- * 
- * I've commented out methods for doing titley stuff.  AxisTitle.java is almost done, but
- * this doesn't use it yet.
- * 
+ * It has axis labels that you can manipulate.
  * See LineChartArea for an example of a use of this.
  * 
  * @author smitht
@@ -26,7 +22,8 @@ public abstract class GenericChartArea extends JComponent {
 	protected GraphAxis xAxis;
 	protected GraphAxis yAxis;
 	
-	//public abstract Double getBarAt(Point p, int buf);
+	protected AxisTitle xAxisTitle, yAxisTitle;
+
 	protected abstract void drawData(Graphics2D g2d);
 	
 	protected Color foregroundColor = Color.RED;
@@ -43,40 +40,7 @@ public abstract class GenericChartArea extends JComponent {
 		super();
 		createAxes();
 	}
-//
-//	/**
-//	 * Sets a new title for the X axis.
-//	 * @param titleX New X axis title.
-//	 */
-//	public void setTitleX(String titleX) {
-//		this.titleX = titleX;
-//		
-//		repaint();
-//	}
-//
-//	/**
-//	 * Sets a new title for the Y axis.
-//	 * @param titleY New Y axis title.
-//	 */
-//	public void setTitleY(String titleY) {
-//		this.titleY = titleY;
-//	
-//		repaint();
-//	}
-//
-//	/**
-//	 * @return Returns the title of the X axis.
-//	 */
-//	public String getTitleX() {
-//		return titleX;
-//	}
-//
-//	/**
-//	 * @return Returns the title of the Y axis.
-//	 */
-//	public String getTitleY() {
-//		return titleY;
-//	}
+
 
 
 	/**
@@ -101,6 +65,8 @@ public abstract class GenericChartArea extends JComponent {
 	/**
 	 * Called after the location of the axes on the screen might have changed,
 	 * this method tells them so.
+	 * 
+	 * It also updates the AxisTitles.
 	 *
 	 */
 	protected void updateAxes() {
@@ -109,6 +75,14 @@ public abstract class GenericChartArea extends JComponent {
 		if (yAxis == null) {yAxis = new GraphAxis(getYBaseLine(dataArea));}
 		xAxis.setPosition(getXBaseLine(dataArea));
 		yAxis.setPosition(getYBaseLine(dataArea));
+		
+		Point xAnch = getAxisTitlePointX(), yAnch = getAxisTitlePointY();
+		if (xAxisTitle == null)
+			xAxisTitle = new AxisTitle("", AxisPosition.BOTTOM, xAnch);
+		if (yAxisTitle == null)
+			yAxisTitle = new AxisTitle("", AxisPosition.LEFT, yAnch);
+		xAxisTitle.setAnchorPoint(xAnch);
+		yAxisTitle.setAnchorPoint(yAnch);
 	}
 	
 	/**
@@ -171,12 +145,27 @@ public abstract class GenericChartArea extends JComponent {
 		drawBackground(g2d);
 		updateAxes();
 		drawAxes(g2d);
+		drawAxisTitles(g2d);
 		drawData(g2d);
 
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
 	}
 	
+	protected void drawAxisTitles(Graphics2D g2d) {
+		xAxisTitle.draw(g2d);
+		yAxisTitle.draw(g2d);
+	}
+
+	/**
+	 * This draws a white rectangle that covers the background of the chart.
+	 * <p>
+	 * You probably want to override this if you're making a transparent chart.
+	 * <p>
+	 * The method is called by the default implementation of paintComponent(Graphics).
+	 * 
+	 * @param g2d
+	 */
 	protected void drawBackground(Graphics2D g2d) {
 			//gets the bounds of the drawing value
 			Dimension size = this.getSize();
@@ -248,5 +237,61 @@ public abstract class GenericChartArea extends JComponent {
 	public boolean isDoubleBuffered() {
 		return false;
 	}
+	
+	/**
+	 * Used by updateAxes() to position the label on the Y axis.
+	 * 
+	 * @return the point that will be at the center of the text, on the side closest to the axis
+	 */
+	protected Point getAxisTitlePointY() {
+		Rectangle dataArea = getDataAreaBounds();
+		return new Point(dataArea.x - H_AXIS_PADDING,
+				dataArea.y + (dataArea.height / 2));
+	}
+	
+	/**
+	 * Used by updateAxes() to position the label for the X axis.
+	 * 
+	 * @return the point that will be at the center of the text, on the side closest to the axis
+	 */
+	protected Point getAxisTitlePointX() {
+		Rectangle dataArea = getDataAreaBounds();
+		return new Point(dataArea.x + (dataArea.width / 2),
+				dataArea.y + dataArea.height + V_AXIS_PADDING);
+	}
 
+	
+	/**
+	 * Sets a new title for the X axis.
+	 * @param titleX New X axis title.
+	 */
+	public void setTitleX(String titleX) {
+		xAxisTitle.setTitle(titleX);
+		
+		repaint();
+	}
+
+	/**
+	 * Sets a new title for the Y axis.
+	 * @param titleY New Y axis title.
+	 */
+	public void setTitleY(String titleY) {
+		yAxisTitle.setTitle(titleY);
+		
+		repaint();
+	}
+
+	/**
+	 * @return Returns the title of the X axis.
+	 */
+	public String getTitleX() {
+		return xAxisTitle.getTitle();
+	}
+
+	/**
+	 * @return Returns the title of the Y axis.
+	 */
+	public String getTitleY() {
+		return yAxisTitle.getTitle();
+	}
 }
