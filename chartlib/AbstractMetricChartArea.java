@@ -22,17 +22,14 @@ import javax.swing.*;
 
 public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	// these are handled somewhat magically.  see setNumTicksX, for example.
-	private double bigTicksX = 0;
-	private double bigTicksY = 0;
-	private int numSmartTicksX = -1;
-	private int numSmartTicksY = -1;
+
+	private int bigTicksX = 5;
+	private int bigTicksY = 5;
 	private int smallTicksX = 1;
 	private int smallTicksY = 1;
 	
 	public AbstractMetricChartArea() {
 		super();
-		setNumTicksX(5, 1);
-		setNumTicksY(5, 1);
 	}
 	
 	/**
@@ -138,16 +135,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 * Doesn't repaint.
 	 */
 	private void recalculateTicks() {
-		if(numSmartTicksX > 0)
-		{
-			bigTicksX = (getXMax() - getXMin()) / numSmartTicksX;
-		}
 		
-		if(numSmartTicksY > 0)
-		{
-			bigTicksY = (getYMax() - getYMin()) / numSmartTicksY;
-		}
-	
 		if(bigTicksX != 0)
 			xAxis.setTicks(bigTicksX, smallTicksX);
 		
@@ -156,20 +144,20 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	}
 	
 
-	/**
-	 * Sets new values for the X axis ticks.
-	 * 
-	 * @param bigX Big ticks on the X axis are multiples of this.
-	 * @param smallX Number of small ticks on the X axis between each big tick.
-	 */
-	public void setTicksX(double bigX, int smallX) {
-		bigTicksX = bigX;
-		smallTicksX = smallX;
-		numSmartTicksX = -1;
-		
-		recalculateTicks();
-		repaint();
-	}
+//	/**
+//	 * Sets new values for the X axis ticks.
+//	 * 
+//	 * @param bigX Big ticks on the X axis are multiples of this.
+//	 * @param smallX Number of small ticks on the X axis between each big tick.
+//	 */
+//	public void setTicksX(double bigX, int smallX) {
+//		bigTicksX = bigX;
+//		smallTicksX = smallX;
+//		numSmartTicksX = -1;
+//		
+//		recalculateTicks();
+//		repaint();
+//	}
 
 	/**
 	 * Sets new values for the x axis ticks by ensuring that there are always
@@ -182,26 +170,28 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	public void setNumTicksX(int bigTicks, int smallTicks) {
 		assert(bigTicks > 1 && smallTicks >= 0);
 		// BUG!! nothing is ever done with smallTicks.
-		numSmartTicksX = bigTicks;
+		bigTicksX = bigTicks;
+		
+		smallTicksX = smallTicks;
 		
 		recalculateTicks();
 		repaint();
 	}
 
-	/**
-	 * Sets new values for the Y axis ticks.
-	 * 
-	 * @param bigY Big ticks on the Y axis are multiples of this.
-	 * @param smallY Number of small ticks on the Y axis between each big tick.
-	 */
-	public void setTicksY(double bigY, int smallY) {
-		bigTicksY = bigY;
-		smallTicksY = smallY;
-		numSmartTicksY = -1;
-		
-		recalculateTicks();
-		repaint();
-	}
+//	/**
+//	 * Sets new values for the Y axis ticks.
+//	 * 
+//	 * @param bigY Big ticks on the Y axis are multiples of this.
+//	 * @param smallY Number of small ticks on the Y axis between each big tick.
+//	 */
+//	public void setTicksY(double bigY, int smallY) {
+//		bigTicksY = bigY;
+//		smallTicksY = smallY;
+//		numSmartTicksY = -1;
+//		
+//		recalculateTicks();
+//		repaint();
+//	}
 
 	/**
 	 * Sets new values for the y axis ticks by ensuring that there are
@@ -214,7 +204,9 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 */
 	public void setNumTicksY(int bigTicks, int smallTicks) {
 		assert(bigTicks > 1 && smallTicks >= 0);
-		numSmartTicksY = bigTicks;
+		bigTicksY = bigTicks;
+		
+		this.smallTicksY = smallTicks;
 
 		recalculateTicks();
 		repaint();
@@ -244,6 +236,13 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		repaint();
 	}
 
+
+
+	/*
+	 * 
+	 * BORING GETTERS AND SETTERS.
+	 * 
+	 */
 	
 
 	/**
@@ -259,27 +258,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	public int getSmallTicksY() {
 		return smallTicksY;
 	}
-
-	/**
-	 * @return Returns the number of small ticks between each big tick on the X axis.
-	 */
-	public double getBigTicksX() {
-		return bigTicksX;
-	}
-
-	/**
-	 * @return Returns the number of small ticks between each big tick on the Y axis.
-	 */
-	public double getBigTicksY() {
-		return bigTicksY;
-	}
 	
-	/*
-	 * 
-	 * BORING GETTERS AND SETTERS.
-	 * 
-	 */
-
 	public double getXMax() {
 		return xAxis.getMax();
 	}

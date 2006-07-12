@@ -367,56 +367,56 @@ public class Chart extends JPanel
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
 	}
 
-	/**
-	 * Sets new values for the axis ticks by setting the number of ticks.
-	 * To retain the current value for
-	 * a tick parameter, use the flag CURRENT_VALUE.
-	 * @param bigX This many big ticks will be evenly spaced on the X axis.
-	 * @param bigY This many big ticks will be evenly spaced on the Y axis.
-	 * @param smallX Number of small ticks on the X axis between each big tick.
-	 * @param smallY Number of small ticks on the Y axis between each big tick.
-	 * @param index The index of the chart to change.
-	 */
-	public void setNumTicks(int index, int bigX, int bigY, int smallX, int smallY )
-	{	
-		//X ticks
-		if(bigX == CURRENT_VALUE && smallX != CURRENT_VALUE)
-				chartAreas.get(index).setTicksX(chartAreas.get(index).getBigTicksX(), smallX);
-		else
-		{
-			if(smallX == CURRENT_VALUE)
-				chartAreas.get(index).setNumTicksX(bigX, chartAreas.get(index).getSmallTicksX());
-			else
-				chartAreas.get(index).setNumTicksX(bigX, smallX);
-		}
-		//Y ticks
-		if(bigY == CURRENT_VALUE && smallY != CURRENT_VALUE)
-				chartAreas.get(index).setTicksY(chartAreas.get(index).getBigTicksY(), smallY);
-		else
-		{
-			if(smallY == CURRENT_VALUE)
-				chartAreas.get(index).setNumTicksY(bigY, chartAreas.get(index).getSmallTicksY());
-			else
-				chartAreas.get(index).setNumTicksY(bigY, smallY);
-		}
-	}
+//	/**
+//	 * Sets new values for the axis ticks by setting the number of ticks.
+//	 * To retain the current value for
+//	 * a tick parameter, use the flag CURRENT_VALUE.
+//	 * @param bigX This many big ticks will be evenly spaced on the X axis.
+//	 * @param bigY This many big ticks will be evenly spaced on the Y axis.
+//	 * @param smallX Number of small ticks on the X axis between each big tick.
+//	 * @param smallY Number of small ticks on the Y axis between each big tick.
+//	 * @param index The index of the chart to change.
+//	 */
+//	public void setNumTicks(int index, int bigX, int bigY, int smallX, int smallY )
+//	{	
+//		//X ticks
+//		if(bigX == CURRENT_VALUE && smallX != CURRENT_VALUE)
+//				chartAreas.get(index).setTicksX(chartAreas.get(index).getBigTicksX(), smallX);
+//		else
+//		{
+//			if(smallX == CURRENT_VALUE)
+//				chartAreas.get(index).setNumTicksX(bigX, chartAreas.get(index).getSmallTicksX());
+//			else
+//				chartAreas.get(index).setNumTicksX(bigX, smallX);
+//		}
+//		//Y ticks
+//		if(bigY == CURRENT_VALUE && smallY != CURRENT_VALUE)
+//				chartAreas.get(index).setTicksY(chartAreas.get(index).getBigTicksY(), smallY);
+//		else
+//		{
+//			if(smallY == CURRENT_VALUE)
+//				chartAreas.get(index).setNumTicksY(bigY, chartAreas.get(index).getSmallTicksY());
+//			else
+//				chartAreas.get(index).setNumTicksY(bigY, smallY);
+//		}
+//	}
 	
 	
 	
-	/**
-	 * Sets new values for the axis ticks of all charts.
-	 * To retain the current value for
-	 * a tick parameter, use the flag CURRENT_VALUE.
-	 * @param bigX Big ticks on the X axis are multiples of this.
-	 * @param bigY Big ticks on the Y axis are multiples of this.
-	 * @param smallX Number of small ticks on the X axis between each big tick.
-	 * @param smallY Number of small ticks on the Y axis between each big tick.
-	 */
-	public void setNumTicks( int bigX, int bigY, int smallX, int smallY )
-	{
-		for(int count = 0; count < chartAreas.size(); count++)
-			setNumTicks(count, bigX, bigY, smallX, smallY);
-	}
+//	/**
+//	 * Sets new values for the axis ticks of all charts.
+//	 * To retain the current value for
+//	 * a tick parameter, use the flag CURRENT_VALUE.
+//	 * @param bigX Big ticks on the X axis are multiples of this.
+//	 * @param bigY Big ticks on the Y axis are multiples of this.
+//	 * @param smallX Number of small ticks on the X axis between each big tick.
+//	 * @param smallY Number of small ticks on the Y axis between each big tick.
+//	 */
+//	public void setNumTicks( int bigX, int bigY, int smallX, int smallY )
+//	{
+//		for(int count = 0; count < chartAreas.size(); count++)
+//			setNumTicks(count, bigX, bigY, smallX, smallY);
+//	}
 	
 	
 	/**

@@ -7,6 +7,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
@@ -19,7 +20,7 @@ import java.util.Iterator;
  */
 public class ChartArea extends AbstractMetricChartArea {
 	protected ArrayList<Dataset> datasets;
-	protected int barWidth = 5;
+	protected int barWidth = 3;
 	
 	/**
 	 * 
@@ -202,8 +203,12 @@ public class ChartArea extends AbstractMetricChartArea {
 	}
 	
 	protected void drawPointBar(Graphics2D g2d,double xCoord, double yCoord){
+		Object oldAntialias = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_OFF);
+		
 		Rectangle dataArea = getDataAreaBounds();
 		Rectangle bar;
 		bar = new Rectangle(
@@ -213,15 +218,19 @@ public class ChartArea extends AbstractMetricChartArea {
 				(int)(-1*yCoord)+ (dataArea.y + dataArea.height) );
 		
 		//draw the bar
-		g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		g2d.setColor(foregroundColor);				
 		g2d.fill(bar);
 		
 		//draws border around bar
 		g2d.setColor(Color.BLACK);
 		g2d.draw(bar);
+		
+		
 		g2d.setClip(oldClip);
 		g2d.setStroke(oldStroke);
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				oldAntialias);
 	}
 	
 	protected void drawPointX(Graphics2D g2d,double xCoord, double yCoord){

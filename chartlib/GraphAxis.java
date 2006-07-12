@@ -198,7 +198,8 @@ public class GraphAxis {
 				try {
 					drawable.put(thisPoint, thisVec);
 				} catch (ClassCastException e) {
-					System.out.println(e.getMessage());
+					System.out.println("A " +Coord.class 
+							+" is not a " +e.getMessage());
 				}
 			}
 		}
@@ -365,15 +366,13 @@ public class GraphAxis {
 	 * @param tickFactor Big ticks will be on multiples of this number.
 	 * @param smallTicks Number of small ticks between each big tick.
 	 */
-	public void setTicks(double tickFactor, int smallTicks)
+	public void setTicks(int bigTicks, int smallTicks)
 	{
-		bigTicksFactor = tickFactor;
+		System.out.println("setting ticks for axis " + this.orientation);
+		bigTicksFactor = (max - min) / bigTicks;
 		this.smallTicks = smallTicks;
 		makeTicks();
 	}
-	
-	
-	
 	
 	
 	private static boolean isDivisible(double a, double b)
@@ -608,10 +607,12 @@ public class GraphAxis {
 
 	public void setMax(double max) {
 		this.max = max;
+		makeTicks();
 	}
 
 	public void setMin(double min) {
 		this.min = min;
+		makeTicks();
 	}
 	
 

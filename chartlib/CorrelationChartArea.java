@@ -98,8 +98,6 @@ public class CorrelationChartArea extends ChartArea {
 		CorrelationChartArea cca = new CorrelationChartArea(d);
 		
 		cca.setAxisBounds(0, 4, 0, 4);
-		cca.setTicksX(1, 1);
-		cca.setTicksY(1, 1);
 		
 		
 		

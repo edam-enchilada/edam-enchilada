@@ -44,8 +44,6 @@ public class LineChartArea extends ChartArea {
 		LineChartArea lca = new LineChartArea(d);
 		
 		lca.setAxisBounds(0, 4, 0, 4);
-		lca.setTicksX(1, 1);
-		lca.setTicksY(1, 1);
 		lca.setTitleX("Boogie");
 		lca.setTitleY("Groove");
 		
