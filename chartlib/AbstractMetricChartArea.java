@@ -23,11 +23,6 @@ import javax.swing.*;
 public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	// these are handled somewhat magically.  see setNumTicksX, for example.
 
-	private int bigTicksX = 5;
-	private int bigTicksY = 5;
-	private int smallTicksX = 1;
-	private int smallTicksY = 1;
-	
 	public AbstractMetricChartArea() {
 		super();
 	}
@@ -125,24 +120,6 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	}
 	
 	
-	
-	/**
-	 * This is called automatically 
-	 * after you fiddle with smartticks or setticks or anything.
-	 * It notifies the axes of the fact that they have new tick values to
-	 * think about.
-	 * <p>
-	 * Doesn't repaint.
-	 */
-	private void recalculateTicks() {
-		
-		if(bigTicksX != 0)
-			xAxis.setTicks(bigTicksX, smallTicksX);
-		
-		if(bigTicksY != 0)
-			yAxis.setTicks(bigTicksY, smallTicksY);
-	}
-	
 
 //	/**
 //	 * Sets new values for the X axis ticks.
@@ -169,12 +146,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 */
 	public void setNumTicksX(int bigTicks, int smallTicks) {
 		assert(bigTicks > 1 && smallTicks >= 0);
-		// BUG!! nothing is ever done with smallTicks.
-		bigTicksX = bigTicks;
-		
-		smallTicksX = smallTicks;
-		
-		recalculateTicks();
+		xAxis.setTicks(bigTicks, smallTicks);
 		repaint();
 	}
 
@@ -204,11 +176,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 */
 	public void setNumTicksY(int bigTicks, int smallTicks) {
 		assert(bigTicks > 1 && smallTicks >= 0);
-		bigTicksY = bigTicks;
-		
-		this.smallTicksY = smallTicks;
-
-		recalculateTicks();
+		yAxis.setTicks(bigTicks, smallTicks);
 		repaint();
 	}
 
@@ -232,7 +200,6 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		setYMin(ymin);
 		setYMax(ymax);
 		
-		recalculateTicks();
 		repaint();
 	}
 
@@ -243,21 +210,6 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 * BORING GETTERS AND SETTERS.
 	 * 
 	 */
-	
-
-	/**
-	 * @return Returns the number of small ticks between each big tick on the X axis.
-	 */
-	public int getSmallTicksX() {
-		return smallTicksX;
-	}
-
-	/**
-	 * @return Returns the number of small ticks between each big tick on the Y axis.
-	 */
-	public int getSmallTicksY() {
-		return smallTicksY;
-	}
 	
 	public double getXMax() {
 		return xAxis.getMax();

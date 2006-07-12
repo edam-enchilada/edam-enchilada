@@ -92,7 +92,7 @@ public class GraphAxis {
 	
 	//tick marks
 	//	big ticks will appear on multiples of this factor	
-	private double bigTicksFactor;
+	private int bigTicks;
 	
 	//number of small ticks between each big tick
 	private int smallTicks;
@@ -139,7 +139,7 @@ public class GraphAxis {
 		setPosition(position);
 		min = 0;
 		max = 1;
-		bigTicksFactor = (max - min) / 10;
+		bigTicks = 5;
 		smallTicks = 1;
 		makeTicks();
 		orientation = findOrientation();
@@ -369,7 +369,7 @@ public class GraphAxis {
 	public void setTicks(int bigTicks, int smallTicks)
 	{
 		System.out.println("setting ticks for axis " + this.orientation);
-		bigTicksFactor = (max - min) / bigTicks;
+		this.bigTicks = bigTicks;
 		this.smallTicks = smallTicks;
 		makeTicks();
 	}
@@ -382,25 +382,6 @@ public class GraphAxis {
 	}
 	
 	
-	
-	/**
-	 * Calculates the number of big ticks on the axis.
-	 * 
-	 * @return the number of big ticks on the axis.
-	 */
-	public int numTicks()
-	{
-		int numTicks = (int)Math.round((max - min)/bigTicksFactor);
-		
-		//corrects off by one errors
-		if(isDivisible(min , bigTicksFactor)
-				|| isDivisible(max, bigTicksFactor))
-		{
-			numTicks++;
-		}
-		return numTicks;
-	}
-	
 	/**
 	 * Fills the three tick arrays with appropriate values.
 	 *
@@ -410,6 +391,7 @@ public class GraphAxis {
 	{
 		
 		//int count = 0;
+		double bigTicksFactor = (max - min) / bigTicks;
 		
 		double range = max - min;
 		double relInc = bigTicksFactor / range;	//amount by which the relative
@@ -423,8 +405,8 @@ public class GraphAxis {
 			return;
 		}
 		
-		ArrayList<Double> bigRel = new ArrayList<Double>(numTicks() + 3);
-		ArrayList<Double> bigVal = new ArrayList<Double>(numTicks() + 3);
+		ArrayList<Double> bigRel = new ArrayList<Double>(bigTicks + 3);
+		ArrayList<Double> bigVal = new ArrayList<Double>(bigTicks + 3);
 		
 		//this is the lowest multiple of bigTicksFactor greater than min
 			//actual numerical values
@@ -548,7 +530,7 @@ public class GraphAxis {
 	 */
 	public double getTickWidth()
 	{
-		return bigTicksFactor / (max - min);
+		return (max - min) / bigTicks;
 	}
 	
 	
