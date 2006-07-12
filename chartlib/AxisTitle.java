@@ -71,6 +71,10 @@ public class AxisTitle {
 		g2d.rotate(- position.textAngle, fixed.getX(), fixed.getY());
 	}
 	
+	public int getTextHeight(Graphics2D g2d) {
+		return glyphVec(title, g2d).getOutline().getBounds().height;
+	}
+	
 	private static GlyphVector glyphVec(String title, Graphics2D g2d) {
 		return g2d.getFont().createGlyphVector(g2d.getFontRenderContext(), title);
 	}

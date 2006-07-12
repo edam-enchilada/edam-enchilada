@@ -41,16 +41,10 @@
  * 
  */
 package chartlib;
-import java.util.ArrayList;
-import java.util.Date;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.geom.Line2D;
-import java.text.SimpleDateFormat;
+import java.util.*;
+import java.awt.*;
+import java.awt.font.GlyphVector;
+import java.awt.geom.*;
 
 /**
  * Contains data necessary for drawing an axis, and the ability to draw one.
@@ -63,6 +57,15 @@ import java.text.SimpleDateFormat;
  *
  */
 public class GraphAxis {
+	private class Coord extends Point2D.Double {
+		public Coord(double x, double y) {
+			super(x, y);
+		}
+		public String toString() {
+			return "Special "+super.toString();
+		}
+	}
+	
 	/**
 	 * Orientation - say whether the axis is horizontal or vertical.
 	 * 
@@ -133,7 +136,7 @@ public class GraphAxis {
 	 * Create a new graph axis on the line in this position.
 	 */
 	public GraphAxis(Line2D position) {
-		this.position = position;
+		setPosition(position);
 		min = 0;
 		max = 1;
 		bigTicksFactor = (max - min) / 10;
@@ -174,6 +177,59 @@ public class GraphAxis {
 		drawTicks(g2d);
 	}
 	
+	private Map<Coord, GlyphVector> getLabelsForDrawing
+		(double[] ticks, String[] labels, Graphics2D g2d) 
+	{
+		Map<Coord, GlyphVector> drawable 
+			= new HashMap<Coord, GlyphVector>();
+		GlyphVector thisVec;
+		Coord thisPoint;
+		Font f = g2d.getFont();
+		Map.Entry<Coord, GlyphVector> lastDrawn = null;
+		
+		for (int tickNum = 0; tickNum < ticks.length; tickNum++) {
+			thisVec =  f.createGlyphVector(
+					g2d.getFontRenderContext(), labels[tickNum]);
+			thisPoint = getLabelOrigin(thisVec, ticks[tickNum]);
+			
+			System.out.println("** " + thisPoint.getClass());
+			
+			if (lastDrawn == null 
+				|| !boundsAt(lastDrawn).intersects(boundsAt(thisPoint, thisVec)))
+			{
+				try {
+					drawable.put(thisPoint, thisVec);
+				} catch (ClassCastException e) {
+					System.out.println(e.getMessage());
+				}
+			}
+		}
+		return drawable;
+	}
+	
+	private static Rectangle boundsAt(Coord point, GlyphVector vec) {
+		return vec.getOutline((float) point.getX(), (float) point.getY())
+		.getBounds();
+	}
+	
+	private static Rectangle boundsAt(Map.Entry<Coord, GlyphVector> entry) {
+		return boundsAt(entry.getKey(), entry.getValue());
+	}
+	
+	private Coord getLabelOrigin(GlyphVector gVec, double tickRel) {
+		double length = position.getP1().distance(position.getP2());
+		Rectangle bounds = gVec.getOutline().getBounds();
+		if (orientation == Orientation.VERTICAL) {
+			return new Coord(
+				position.getX1() - 3 - bounds.width,
+				position.getY2() - length * tickRel + (bounds.height / 2));
+		} else {
+			return new Coord(
+				(float) (position.getX1() + length * tickRel - (bounds.width / 2)),
+				(float) (position.getY1() + bounds.height + 3));
+		}
+	}
+
 	/**
 	 * Draws all of the ticks, big and small, using drawTick().
 	 */
@@ -183,44 +239,32 @@ public class GraphAxis {
 		// gets big ticks as proportions of the axis length
 		double[] bigTicks = getBigTicksRel();
 		
-		String[] bigTicksLabels = getBigTicksLabels(false);
-		//String[] xBigTicksLabelsTop = axis.getBigTicksLabelsTop(drawXAxisAsDateTime);
-		//String[] xBigTicksLabelsBottom = drawXAxisAsDateTime ? axis.getBigTicksLabelsBottom() : null;
-		
-		// use Rectangles (getStringBounds in fontmetrics), and then check if they hit each other with that method
-		// Rectangle.setLocation
 		
 		
-		if(bigTicks.length == 0 || bigTicksLabels.length == 0)
+		if(bigTicks.length == 0)
 			return;
 
 		int count=0;
-		int lastDrawnPosTop = -1000, lastDrawnPosBottom = -1000;
 		double tickValue = bigTicks[0];
 		
-		FontMetrics metrics = g2d.getFontMetrics();
+		// Draw big ticks
 		while(tickValue >= 0 && tickValue <= 1 && count < bigTicks.length)
 		{
 			tickValue = bigTicks[count];
 			if(tickValue >= 0 && tickValue <= 1)
 				drawTick(g2d,tickValue, true);
-			
-			/*
-			// aaaaaaaaaaaargh, no labels yet.
-			//label on each big tick, rounded to nearest hundredth
-			String labelTop = bigTicksLabels[count];
-			
-			int labelWidthTop = metrics.stringWidth(labelTop);
-			int xPos = (int) (dataArea.x + tickValue * dataArea.width);
-			int xPosTop = xPos - labelWidthTop / 2;
-			
-			// Only draw label if it's not going to overlap previous label
-			if (xPosTop > lastDrawnPosTop + 4 && xPosBottom > lastDrawnPosBottom + 4) {
-				g2d.drawString(labelTop, xPosTop, firstLineYPos);
-				lastDrawnPosTop = xPosTop + labelWidthTop;
-			}
-			*/
 			count++;
+		}
+		
+		// draw tick labels
+		String[] bigTicksLabels = getBigTicksLabels();
+		Map<Coord, GlyphVector> drawableLabels 
+				= getLabelsForDrawing(bigTicks, bigTicksLabels, g2d);
+		for (Map.Entry<Coord, GlyphVector> label 
+				: drawableLabels.entrySet()) 
+		{
+			Coord p = label.getKey();
+			g2d.drawGlyphVector(label.getValue(), (float) p.getX(), (float) p.getY());
 		}
 		
 		
@@ -474,8 +518,7 @@ public class GraphAxis {
 	 * @param drawAsDateTime
 	 * @return
 	 */
-	@Deprecated
-	public String[] getBigTicksLabels(boolean drawAsDateTime) {		
+	public String[] getBigTicksLabels() {		
 		String[] labels = new String[bigTicksVals.length];
 		for(int count = 0; count < labels.length; count++)
 			labels[count] = getLabelFor(bigTicksVals[count]);
@@ -534,7 +577,24 @@ public class GraphAxis {
 	 * often cuz of screen resizing and stuff.
 	 */
 	public void setPosition(Line2D position) {
-		this.position = position;
+		double x1, y1, x2, y2;
+		if (position.getX1() < position.getX2()) {
+			x1 = position.getX1();
+			x2 = position.getX2();
+		} else {
+			x1 = position.getX2();
+			x2 = position.getX1();
+		}
+		if (position.getY1() < position.getY2()) {
+			y1 = position.getY1();
+			y2 = position.getY2();
+		} else {
+			y1 = position.getY2();
+			y2 = position.getY1();
+		}
+		
+		
+		this.position = new Line2D.Double(x1, y1, x2, y2);
 		assert(orientation == findOrientation());
 		//don't want to change from horizontal to vertical, do we?
 		orientation = findOrientation();

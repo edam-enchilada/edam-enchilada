@@ -28,11 +28,11 @@ public abstract class AbstractChartArea extends JComponent {
 	
 	protected Color foregroundColor = Color.RED;
 	protected Color backgroundColor = Color.WHITE;
+	
 	private static final int H_AXIS_PADDING = 15;
 	private static final int V_AXIS_PADDING = 50;
 	private static final int H_TITLE_PADDING = 20;
 	private static final int V_TITLE_PADDING = 20;
-	private static final int RIGHT_HAND_V_TITLE_PADDING = 5;
 	private static final int RIGHT_PADDING = 15;
 	private static final int TOP_PADDING = 15;
 	
@@ -47,6 +47,10 @@ public abstract class AbstractChartArea extends JComponent {
 	 * Indicates the portion of the chart value in which data is displayed.
 	 * <p>
 	 * This gets called a lot, it might be worth it to implement cacheing.
+	 * <p>
+	 * It could also be worthwhile to check the size of the components that padding
+	 * is being allocated for, and use those sizes, rather than the private static
+	 * final variables.
 	 * 
 	 * @return A rectangle containing the data display value.
 	 */
