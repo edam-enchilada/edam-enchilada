@@ -595,7 +595,7 @@ public class GraphAxis {
 		
 		
 		this.position = new Line2D.Double(x1, y1, x2, y2);
-		assert(orientation == findOrientation());
+		assert(orientation == null || orientation == findOrientation());
 		//don't want to change from horizontal to vertical, do we?
 		orientation = findOrientation();
 	}
