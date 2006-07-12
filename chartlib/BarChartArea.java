@@ -7,7 +7,6 @@ import java.awt.Rectangle;
 import java.util.Iterator;
 
 public class BarChartArea extends ChartArea{
-	private AxisTitle at;
 	public BarChartArea(){
 		super();
 	}
@@ -15,13 +14,11 @@ public class BarChartArea extends ChartArea{
 	public BarChartArea(Dataset dataset) {
 		super(dataset);
 		setPreferredSize(new Dimension(400, 400));
-		at = new AxisTitle("W00t", AxisTitle.AxisPosition.LEFT, new Point(200, 200));
 	}
 
 	@Override
 	public void drawAxes(Graphics2D g2d) {
 		super.drawAxes(g2d);
-		at.draw(g2d);
 	}
 	
 	/**
