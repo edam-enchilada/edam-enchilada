@@ -192,8 +192,6 @@ public class GraphAxis {
 					g2d.getFontRenderContext(), labels[tickNum]);
 			thisPoint = getLabelOrigin(thisVec, ticks[tickNum]);
 			
-			System.out.println("** " + thisPoint.getClass());
-			
 			if (lastDrawn == null 
 				|| !boundsAt(lastDrawn).intersects(boundsAt(thisPoint, thisVec)))
 			{
