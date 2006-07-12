@@ -245,7 +245,7 @@ public abstract class AbstractChartArea extends JComponent {
 	 */
 	protected Point getAxisTitlePointY() {
 		Rectangle dataArea = getDataAreaBounds();
-		return new Point(dataArea.x - H_AXIS_PADDING,
+		return new Point(dataArea.x - V_AXIS_PADDING,
 				dataArea.y + (dataArea.height / 2));
 	}
 	
@@ -257,7 +257,7 @@ public abstract class AbstractChartArea extends JComponent {
 	protected Point getAxisTitlePointX() {
 		Rectangle dataArea = getDataAreaBounds();
 		return new Point(dataArea.x + (dataArea.width / 2),
-				dataArea.y + dataArea.height + V_AXIS_PADDING);
+				dataArea.y + dataArea.height + H_AXIS_PADDING);
 	}
 
 	

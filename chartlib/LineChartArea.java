@@ -1,37 +1,19 @@
 package chartlib;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.Stroke;
-import java.awt.geom.Line2D;
-import java.util.Arrays;
-import java.util.Iterator;
-
 import javax.swing.JFrame;
 
 public class LineChartArea extends ChartArea {
-	private AxisTitle at;
-	
 	public LineChartArea(Dataset dataset) {
 		super(dataset);
 		setPreferredSize(new Dimension(400, 400));
-		at = new AxisTitle("W00t", AxisTitle.AxisPosition.LEFT, new Point(200, 200));
 	}
 	
 	public LineChartArea(Dataset dataset, Color color) {
 		this(dataset);
 		this.foregroundColor = color;
-	}
-	
-	@Override
-	public void drawAxes(Graphics2D g2d) {
-		super.drawAxes(g2d);
-		at.draw(g2d);
 	}
 	
 	/**
@@ -65,7 +47,8 @@ public class LineChartArea extends ChartArea {
 		lca.setAxisBounds(0, 4, 0, 4);
 		lca.setTicksX(1, 1);
 		lca.setTicksY(1, 1);
-		
+		lca.setTitleX("Boogie");
+		lca.setTitleY("Groove");
 		
 		
 		JFrame f = new JFrame("woopdy doo");
