@@ -29,6 +29,12 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	private int smallTicksX = 1;
 	private int smallTicksY = 1;
 	
+	public AbstractMetricChartArea() {
+		super();
+		setNumTicksX(5, 1);
+		setNumTicksY(5, 1);
+	}
+	
 	/**
 	 * Translates a point in screen space to chart coordinates.
 	 * @param p The point in screen coordinates.
@@ -234,6 +240,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		setYMin(ymin);
 		setYMax(ymax);
 		
+		recalculateTicks();
 		repaint();
 	}
 
@@ -289,19 +296,19 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		return yAxis.getMin();
 	}
  
-	public void setYMax(double ymax) {
+	private void setYMax(double ymax) {
 		yAxis.setMax(ymax);
 	}
 
-	public void setYMin(double ymin) {
+	private void setYMin(double ymin) {
 		yAxis.setMin(ymin);
 	}
 
-	public void setXMax(double xmax) {
+	private void setXMax(double xmax) {
 		xAxis.setMax(xmax);
 	}
 
-	public void setXMin(double xmin) {
+	private void setXMin(double xmin) {
 		xAxis.setMin(xmin);
 	}
 	
