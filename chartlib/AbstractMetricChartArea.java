@@ -21,8 +21,9 @@ import javax.swing.*;
  */
 
 public abstract class AbstractMetricChartArea extends AbstractChartArea {
-	protected double bigTicksX = 0;
-	protected double bigTicksY = 0;
+	// these are handled somewhat magically.  see setNumTicksX, for example.
+	private double bigTicksX = 0;
+	private double bigTicksY = 0;
 	private int numSmartTicksX = -1;
 	private int numSmartTicksY = -1;
 	private int smallTicksX = 1;
