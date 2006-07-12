@@ -1,9 +1,15 @@
 package chartlib;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
+
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 
 public class LineChartArea extends ChartArea {
 	public LineChartArea(Dataset dataset) {
@@ -36,6 +42,7 @@ public class LineChartArea extends ChartArea {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+
 		Dataset d = new Dataset();
 		d.add(new DataPoint(1, 1));
 		d.add(new DataPoint(2, 2));
@@ -46,10 +53,13 @@ public class LineChartArea extends ChartArea {
 		lca.setAxisBounds(0, 4, 0, 4);
 		lca.setTitleX("Boogie");
 		lca.setTitleY("Groove");
-		
+
 		
 		JFrame f = new JFrame("woopdy doo");
-		f.getContentPane().add(lca);
+		f.setLayout(new BorderLayout());
+		
+		f.getContentPane().add(lca,BorderLayout.CENTER);
+		
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setPreferredSize(new Dimension(400, 400));
 		f.pack();

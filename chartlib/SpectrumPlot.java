@@ -91,27 +91,7 @@ public class SpectrumPlot extends Chart {
 
 		}
 		
-		/*ChartArea chart = new BarChartArea(datasets[0]){
-			protected void drawBackground(Graphics2D g2d){
-				;
-			}
-		};
-		chart.setOpaque(false);
-		for (int count = 1; count < numCharts; count++) {
-			ChartArea nextChart = new BarChartArea(datasets[count]){
-				protected void drawBackground(Graphics2D g2d){
-					;
-				}
-			};
-			nextChart.setOpaque(false);
-			chart.add(nextChart);
-			
-			// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-			
-		}
-		chartPanel.add(chart);
-		chartAreas.add(chart);
-		*/
+		
 		return chartPanel;
 	}
 	
