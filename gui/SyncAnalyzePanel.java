@@ -338,9 +338,9 @@ public class SyncAnalyzePanel extends JPanel {
 			if (numSequences > 1) {
 				Chart scatterChart = new ScatterPlot(scatterplotData[0], scatterplotData[1]);
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
-				scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
+				/*scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
 				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
-				
+				*/
 				bottomPanel = addComponent(scatterChart, bottomPanel);
 			}
 		} else {

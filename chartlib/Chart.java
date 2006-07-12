@@ -44,6 +44,7 @@ package chartlib;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 /**
  * @author sulmanj
@@ -61,13 +62,12 @@ public class Chart extends JPanel
 	protected Dataset[] datasets; 
 	protected String title;
 	protected int numCharts;
-	protected boolean combineCharts;
 	
 	//graphical elements
 	protected ChartTitle titleLabel;
 	protected JPanel bottomHalf;
 	protected ChartKey key;
-	protected ChartArea[] chartAreas;
+	protected ArrayList<ChartArea> chartAreas;
 	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
 	
 	//graphics settings
@@ -112,7 +112,7 @@ public class Chart extends JPanel
 	 * Creates a dataset with multiple chart areas, stacked vertically.
 	 * @param numAreas The number of chart areas.
 	 */ 
-	public Chart( int numAreas, boolean combineArea )
+	/*public Chart( int numAreas, boolean combineArea )
 	{
 		numCharts = numAreas;
 		combineCharts = combineArea;
@@ -120,7 +120,7 @@ public class Chart extends JPanel
 		hasKey = true;
 		datasets = new Dataset[numAreas];
 		setupLayout();
-	}
+	}*/
 	
 	/**
 	 * Returns the index of the chart value at point p in the Chart.
@@ -145,8 +145,8 @@ public class Chart extends JPanel
 		Component cp = findComponentAt(p);
 		int result = -1;
 		
-		for(int count = 0; count < chartAreas.length; count++)
-			if(cp == chartAreas[count]) result = count;
+		for(int count = 0; count < chartAreas.size(); count++)
+			if(cp == chartAreas.get(count)) result = count;
 		
 		if(result != -1 && dataAreaOnly)
 		{
@@ -182,7 +182,7 @@ public class Chart extends JPanel
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
 		q.y = p.y - q.y;
-		return chartAreas[index].getDataValueForPoint(q);
+		return chartAreas.get(index).getDataValueForPoint(q);
 //		}
 	}
 	
@@ -218,7 +218,7 @@ public class Chart extends JPanel
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
 		q.y = p.y - q.y;
-		return ((BarChartArea)chartAreas[index]).getBarAt(q, 3);
+		return ((BarChartArea)chartAreas.get(index)).getBarAt(q, 3);
 	}
 	
 	public Double getBarForPoint(Point p)
@@ -238,7 +238,7 @@ public class Chart extends JPanel
 //     */
 //	public int getXCoordForDataValue(int index, double x)
 //	{
-//		return chartAreas[index].getXCoordForDataValue(x);
+//		return chartAreas.get(index].getXCoordForDataValue(x);
 //	}
 	
 	/**
@@ -248,10 +248,7 @@ public class Chart extends JPanel
 	 */
 	public Dataset getDataset(int index)
 	{
-		if (combineCharts)
-			return chartAreas[0].getDataset(index);
-		else
-			return chartAreas[index].getDataset(0);
+		return chartAreas.get(index).getDataset(0);
 	}
 	
 	/**
@@ -270,7 +267,7 @@ public class Chart extends JPanel
 	 */
 	public double getXmin(int index)
 	{
-		return chartAreas[index].xAxis.getMin();
+		return chartAreas.get(index).xAxis.getMin();
 	}
 	
 	/**
@@ -280,7 +277,7 @@ public class Chart extends JPanel
 	 */
 	public double getXmax(int index)
 	{
-		return chartAreas[index].xAxis.getMax();
+		return chartAreas.get(index).xAxis.getMax();
 	}
 	
 	/**
@@ -290,7 +287,7 @@ public class Chart extends JPanel
 	 */
 	public double getYmin(int index)
 	{
-		return chartAreas[index].yAxis.getMin();
+		return chartAreas.get(index).yAxis.getMin();
 	}
 	
 	/**
@@ -300,7 +297,7 @@ public class Chart extends JPanel
 	 */
 	public double getYmax(int index)
 	{
-		return chartAreas[index].yAxis.getMax();
+		return chartAreas.get(index).yAxis.getMax();
 	}
 	
 	/**
@@ -310,7 +307,7 @@ public class Chart extends JPanel
 	 */
 	public void setDataset(Dataset ds )
 	{
-		for(int count=0; count < chartAreas.length; count++)
+		for(int count=0; count < chartAreas.size(); count++)
 			setDataset(count, ds);
 	}
 	
@@ -324,11 +321,8 @@ public class Chart extends JPanel
 	{
 		datasets[index] = ds;
 		
-		if (combineCharts)
-			chartAreas[0].setDataset(index, ds);
-		else
-			chartAreas[index].setDataset(ds);
-			//repaint();
+		chartAreas.get(index).setDataset(ds);
+		//repaint();
 	}
 	
 	
@@ -352,10 +346,7 @@ public class Chart extends JPanel
 		if (ymin == CURRENT_VALUE) ymin = getYmin(index);
 		if (ymax == CURRENT_VALUE) ymax = getYmax(index);
 		
-		if (combineCharts)
-			chartAreas[0].setAxisBounds(xmin, xmax, ymin, ymax);
-		else
-			chartAreas[index].setAxisBounds(xmin, xmax, ymin, ymax);
+		chartAreas.get(index).setAxisBounds(xmin, xmax, ymin, ymax);
 	}
 	
 	/**
@@ -370,7 +361,7 @@ public class Chart extends JPanel
 	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax )
 	throws IllegalArgumentException
 	{
-		for(int count=0; count < chartAreas.length; count++)
+		for(int count=0; count < chartAreas.size(); count++)
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
 	}
 
@@ -388,23 +379,23 @@ public class Chart extends JPanel
 	{	
 		//X ticks
 		if(bigX == CURRENT_VALUE && smallX != CURRENT_VALUE)
-				chartAreas[index].setTicksX(chartAreas[index].getBigTicksX(), smallX);
+				chartAreas.get(index).setTicksX(chartAreas.get(index).getBigTicksX(), smallX);
 		else
 		{
 			if(smallX == CURRENT_VALUE)
-				chartAreas[index].setNumTicksX(bigX, chartAreas[index].getSmallTicksX());
+				chartAreas.get(index).setNumTicksX(bigX, chartAreas.get(index).getSmallTicksX());
 			else
-				chartAreas[index].setNumTicksX(bigX, smallX);
+				chartAreas.get(index).setNumTicksX(bigX, smallX);
 		}
 		//Y ticks
 		if(bigY == CURRENT_VALUE && smallY != CURRENT_VALUE)
-				chartAreas[index].setTicksY(chartAreas[index].getBigTicksY(), smallY);
+				chartAreas.get(index).setTicksY(chartAreas.get(index).getBigTicksY(), smallY);
 		else
 		{
 			if(smallY == CURRENT_VALUE)
-				chartAreas[index].setNumTicksY(bigY, chartAreas[index].getSmallTicksY());
+				chartAreas.get(index).setNumTicksY(bigY, chartAreas.get(index).getSmallTicksY());
 			else
-				chartAreas[index].setNumTicksY(bigY, smallY);
+				chartAreas.get(index).setNumTicksY(bigY, smallY);
 		}
 	}
 	
@@ -421,7 +412,7 @@ public class Chart extends JPanel
 	 */
 	public void setNumTicks( int bigX, int bigY, int smallX, int smallY )
 	{
-		for(int count = 0; count < chartAreas.length; count++)
+		for(int count = 0; count < chartAreas.size(); count++)
 			setNumTicks(count, bigX, bigY, smallX, smallY);
 	}
 	
@@ -442,8 +433,9 @@ public class Chart extends JPanel
 	 */
 	public void setTitleX(String titleX)
 	{
-		for(int count = 0; count < datasets.length; count++)
-			setTitleX(count, titleX);
+		for(int count = 0; count < chartAreas.size(); count++)
+			//setTitleX(count, titleX);
+			;
 	}
 	
 	/**
@@ -453,10 +445,7 @@ public class Chart extends JPanel
 	 */
 	public void setTitleX(int index, String titleX)
 	{
-		if (combineCharts)
-			chartAreas[0].setTitleX(titleX);
-		else
-			chartAreas[index].setTitleX(titleX);
+		//chartAreas.get(index).setTitleX(titleX);
 	}
 	
 	
@@ -467,8 +456,9 @@ public class Chart extends JPanel
 	 */
 	public void setTitleY(String titleY)
 	{
-		for(int count = 0; count < datasets.length; count++)
-			setTitleY(count, titleY);
+		for(int count = 0; count < chartAreas.size(); count++)
+			//setTitleY(count, titleY);
+			;
 	}
 	
 	
@@ -479,10 +469,7 @@ public class Chart extends JPanel
 	 */
 	public void setTitleY(int index, String titleY)
 	{
-		if (combineCharts)
-			chartAreas[0].setTitleY(index, titleY);
-		else
-			chartAreas[index].setTitleY(0, titleY);
+		//chartAreas.get(index).setTitleY(0, titleY);
 	}
 	
 	
@@ -492,7 +479,7 @@ public class Chart extends JPanel
 	 */
 	public void setBarWidth(int width )
 	{
-		for(int count = 0; count < datasets.length; count++)
+		for(int count = 0; count < chartAreas.size(); count++)
 			setBarWidth(count, width);
 	}
 	
@@ -503,10 +490,7 @@ public class Chart extends JPanel
 	 */
 	public void setBarWidth(int index, int width)
 	{
-		if (combineCharts)
-			chartAreas[0].setBarWidth(width);
-		else
-			chartAreas[index].setBarWidth(width);
+		chartAreas.get(index).setBarWidth(width);
 	}
 	
 	/**
@@ -517,7 +501,7 @@ public class Chart extends JPanel
 	 */
 	public void setColor(Color c)
 	{
-		for(int count = 0; count < datasets.length; count++)
+		for(int count = 0; count < chartAreas.size(); count++)
 			setColor(count, c);
 	}
 	
@@ -529,10 +513,7 @@ public class Chart extends JPanel
 	 */
 	public void setColor(int index, Color c)
 	{
-		if (combineCharts)
-			chartAreas[0].setForegroundColor(c);
-		else
-			chartAreas[index].setForegroundColor(c);
+		chartAreas.get(index).setForegroundColor(c);
 
 		key.setColor(index, c);
 	}
@@ -543,10 +524,7 @@ public class Chart extends JPanel
 	 * @param index The chart to act on
 	 */
 	public void drawXAxisAsDateTime(int index) {
-		if (combineCharts)
-			chartAreas[0].drawXAxisAsDateTime();
-		else
-			chartAreas[index].drawXAxisAsDateTime();
+		chartAreas.get(index).drawXAxisAsDateTime();
 	}
 	
 	/**
@@ -554,18 +532,19 @@ public class Chart extends JPanel
 	 */
 	public void packData()
 	{
-		for(int count = 0; count < chartAreas.length; count++)
-			packData(count);
+		for(int count = 0; count < chartAreas.size(); count++)
+			chartAreas.get(count).packData(true,true);
 	}
 	
 	/**
 	 * Sets the given chart's axis limits to new values that fit the dataset.
 	 * @param index The chart to alter.
 	 */
-	public void packData(int index)
+	/*public void packData(int index)
 	{
-		chartAreas[index].pack();
-	}
+		chartAreas.get(index).pack();
+	}*/
+	
 	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.
 	 * If only the Y axis is specified, packs the Y axis to fit the data that is
@@ -575,16 +554,13 @@ public class Chart extends JPanel
 	 */
 	public void packData(boolean packX, boolean packY)
 	{
-		for(int count = 0; count < chartAreas.length; count++)
+		for(int count = 0; count < chartAreas.size(); count++)
 			packData(count, packX, packY);
 	}
 	
 	public void packData(int index, boolean packX, boolean packY)
 	{
-		if (combineCharts)
-			chartAreas[0].pack(index, packX, packY);
-		else
-			chartAreas[index].pack(0, packX, packY);
+		chartAreas.get(index).packData(packX, packY);
 	}
 	
 	/**
@@ -629,22 +605,8 @@ public class Chart extends JPanel
 		JPanel ckPanel = new JPanel(); //panel for chart and key
 		ckPanel.setLayout(new BoxLayout(ckPanel,BoxLayout.X_AXIS));
 		
-		JPanel chartPanel = new JPanel();
-		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
 		
-		chartAreas = new ChartArea[numCharts];
-		for (int count = 0; count < numCharts; count++) {
-
-			if (datasets[count] != null) {
-				chartAreas[count] = new ChartArea(datasets[count]);
-			} else {
-				chartAreas[count] = new ChartArea();
-			}
-
-			// chartAreas[count].setPreferredSize(new Dimension(500,500));
-			chartPanel.add(chartAreas[count]);
-		}
-		
+		JPanel chartPanel = createChartPanel();
 		
 		ckPanel.add(chartPanel);
 		
@@ -668,6 +630,25 @@ public class Chart extends JPanel
 		add(ckPanel,BorderLayout.CENTER);
 	}
 	
+	protected JPanel createChartPanel(){
+		JPanel chartPanel = new JPanel();
+		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
+		
+		chartAreas = new ArrayList<ChartArea>();
+		for (int count = 0; count < numCharts; count++) {
+
+			if (datasets[count] != null) {
+				chartAreas.add(new ChartArea(datasets[count]));
+			} else {
+				chartAreas.add(new ChartArea());
+			}
+
+			// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
+			chartPanel.add(chartAreas.get(count));
+		}
+		return chartPanel;
+	}
+	
 	/**
 	 * Returns the key of the upper left corner of a chart value in
 	 * the Chart object's coordinate system.
@@ -680,7 +661,7 @@ public class Chart extends JPanel
 		p.x = 10;
 		p.y = titleLabel.getHeight();
 		for(int count=0; count < index; count++)
-			p.y += chartAreas[count].getHeight();
+			p.y += chartAreas.get(count).getHeight();
 		return p;
 	}
 	

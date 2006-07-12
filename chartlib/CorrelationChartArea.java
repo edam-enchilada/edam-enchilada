@@ -26,64 +26,41 @@ public class CorrelationChartArea extends ChartArea {
 	/**
 	 * 
 	 */
-	public CorrelationChartArea(Dataset dataset1,Dataset dataset2,String title) {
+	public CorrelationChartArea(Dataset correlationDataset,String title) {
 		super();
-		datasets.add(dataset1);
-		datasets.add(dataset2);
+		datasets.add(correlationDataset);
 		setPreferredSize(new Dimension(400, 400));
 		at = new AxisTitle(title, AxisTitle.AxisPosition.LEFT, new Point(200, 200));
+		
+		
 	}
 	
 	/**
 	 * 
 	 */
-	public CorrelationChartArea(Dataset dataset1,Dataset dataset2) {
-		this(dataset1,dataset2,"Correlation Comparison");		
+	public CorrelationChartArea(Dataset correlationDataset) {
+		this(correlationDataset,"Correlation Comparison");		
 	}
 	
-	/**
-	 * 
-	 */
-	public CorrelationChartArea(Dataset dataset1,Dataset dataset2,Color color) {
-		this(dataset1,dataset2);
-		this.foregroundColor = color;
-	}
+	
 
 	/* (non-Javadoc)
 	 * @see chartlib.GenericChartArea#drawData(java.awt.Graphics2D)
 	 */
 	@Override
 	protected void drawData(Graphics2D g2d) {
-		assert(datasets.size()==2);
-		Dataset dataset1 = datasets.get(0);
-		Dataset dataset2 = datasets.get(1);
-		assert(dataset1.size() == dataset2.size());
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(Color.BLACK);
 		g2d.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		
-		
-		Dataset correlationData = new Dataset();
 		Rectangle dataArea = getDataAreaBounds();
-		Iterator<DataPoint> iterator = dataset1.iterator();
-		while(iterator.hasNext())
-		{
-			DataPoint dpX = iterator.next();
-			System.out.println("Time: "+dpX.x);
-			DataPoint dpY = dataset2.get(dpX.x,.50);
-			
-			if (dpY != null) {
-				double x = dpX.y, y = dpY.y;
-				if(dpX.x != dpY.x)System.out.println("UNEQUAL");
-				System.out.println("Y1: "+x+"\tY2: "+y);
-				correlationData.add(new DataPoint(x,y));
-			}
-		}
+		
+		Dataset correlationData = datasets.get(0);
 		this.drawDataPoints(g2d,correlationData);
 		
-		Dataset.Statistics stats = dataset1.getCorrelationStats();
+		Dataset.Statistics stats = correlationData.getCorrelationStats();
 		
 		double leftSideY = stats.b * xAxis.getMin() + stats.a;
 		double rightSideY = stats.b * xAxis.getMax() + stats.a;
@@ -116,9 +93,9 @@ public class CorrelationChartArea extends ChartArea {
 		Dataset d = new Dataset();
 		d.add(new DataPoint(1, 1));
 		d.add(new DataPoint(2, 2));
-		d.add(new DataPoint(3, 1));
+		d.add(new DataPoint(3, 3));
 		
-		CorrelationChartArea cca = new CorrelationChartArea(d,d);
+		CorrelationChartArea cca = new CorrelationChartArea(d);
 		
 		cca.setAxisBounds(0, 4, 0, 4);
 		cca.setTicksX(1, 1);

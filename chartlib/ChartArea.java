@@ -44,6 +44,7 @@ public class ChartArea extends AbstractMetricChartArea {
 	 * @param g2d
 	 */
 	protected void drawDataLines(Graphics2D g2d,Dataset dataset){
+		if(dataset == null) return;
 		Rectangle dataArea = getDataAreaBounds();
 		// these booleans show whether we've drawn indicators that 
 		// more data exist in each direction
@@ -55,15 +56,22 @@ public class ChartArea extends AbstractMetricChartArea {
 		g2d.clip(dataArea);	//constrains drawing to the data value
 		g2d.setStroke(new BasicStroke(1.5f));
 		
-		double[] coords = new double[dataArea.width];
+		//double[] coords = new double[dataArea.width];
 		
 		//	loops through all data points building array of points to draw
+		int lastX = 0;
+		double lastY = -999.0;
+		int numPoints = 0;
 		Iterator<DataPoint> iterator = dataset.iterator();
 		while(iterator.hasNext())
 		{
 			DataPoint curPoint = iterator.next();
 			
-			double pointPos = xAxis.relativePosition(curPoint.x);
+			double x = curPoint.y, y = curPoint.y;
+			//System.out.println("X: "+x+"\tY:: "+y);
+			/*if (x >= 0 && x <= 1) {
+*/
+			double pointPos = xAxis.relativePosition(x);
 			if (pointPos < 0 && !drawnMoreLeft) {
 				drawnMoreLeft = true;
 				drawMorePointsIndicator(0, g2d);
@@ -73,18 +81,23 @@ public class ChartArea extends AbstractMetricChartArea {
 				drawMorePointsIndicator(1, g2d);
 			}
 			else {
-				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) * dataArea.width);
+				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
+						* dataArea.width);
 				double yCoord = (dataArea.y + dataArea.height 
 						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
-				
-				if (yCoord > 0 && yCoord <= (dataArea.y + dataArea.height) && xCoord >= 0 && xCoord < dataArea.width) {
-					if (coords[xCoord] == 0 || yCoord < coords[xCoord])
-						coords[xCoord] = yCoord;
-				} else if (curPoint.y == -999)
-					coords[xCoord] = -999.0;
+			
+				if(numPoints==0){
+				g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
+					- (yAxis.relativePosition(0) * dataArea.height)), (double) xCoord, yCoord));
+				}else{
+					g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
+				}
+				numPoints++;
+				lastX = xCoord;
+				lastY = yCoord;
 			}
 		}
-		
+		/*
 		// Then draws them:
 		int lastX = 0;
 		double lastY = -999.0;
@@ -110,8 +123,9 @@ public class ChartArea extends AbstractMetricChartArea {
 			lastY = coords[i];
 		}
 		
-		if(lastX<=dataArea.x+coords.length-1){
-			g2d.draw(new Line2D.Double((double) lastX, lastY, (double) dataArea.x+coords.length-1,(dataArea.y + dataArea.height 
+		*/
+		if(lastX<=dataArea.x+dataArea.width-1){
+			g2d.draw(new Line2D.Double((double) lastX, lastY, (double) dataArea.x+dataArea.width-1,(dataArea.y + dataArea.height 
 				- (yAxis.relativePosition(0) * dataArea.height))));
 		}
 		//cleanup
@@ -148,12 +162,22 @@ public class ChartArea extends AbstractMetricChartArea {
 			//System.out.println("X: "+x+"\tY:: "+y);
 			/*if (x >= 0 && x <= 1) {
 */
+			double pointPos = xAxis.relativePosition(x);
+			if (pointPos < 0 && !drawnMoreLeft) {
+				drawnMoreLeft = true;
+				drawMorePointsIndicator(0, g2d);
+			}
+			else if (pointPos > 1 && !drawnMoreRight) {
+				drawnMoreRight = true;
+				drawMorePointsIndicator(1, g2d);
+			}else{
 				int xCoord = (int) (dataArea.x + xAxis
 						.relativePosition(curPoint.x)
 						* dataArea.width);
 				double yCoord = (dataArea.y + dataArea.height - (yAxis
 						.relativePosition(curPoint.y) * dataArea.height));
 				drawPoint(g2d, xCoord, yCoord);
+			}
 			/*} else if (x < 0 && !drawnMoreLeft) {
 				drawnMoreLeft = true;
 				drawMorePointsIndicator(0, g2d);
@@ -220,7 +244,14 @@ public class ChartArea extends AbstractMetricChartArea {
 		// TODO Auto-generated method stub
 		drawDataPoints(g2d,datasets.get(0));
 	}
+	
+	public void drawXAxisAsDateTime(){
+		
+	}
 
+	public void packData(boolean packX, boolean packY){
+		
+	}
 	
 	public Dataset getDataset(int i){
 		return datasets.get(i);
@@ -235,13 +266,41 @@ public class ChartArea extends AbstractMetricChartArea {
 		datasets.add(newDataset);
 	}
 	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+	public void setDatasets(Dataset[] newDatasets){
+		datasets.clear();
+		for(Dataset newDataset : newDatasets){
+			datasets.add(newDataset);
+		}
 	}
+	
+	
+	public double[][] findAllMinsMaxes(Dataset dataset) {
+		double xmin, ymin, xmax, ymax;	
+		xmin = ymin = Double.MAX_VALUE;
+		xmax = ymax = Double.MIN_VALUE;
+		DataPoint dp;
+		int size = dataset.size();
+		
+		java.util.Iterator iterator = dataset.iterator();
+
+		while(iterator.hasNext())
+		{
+			dp = (DataPoint)(iterator.next());
+			if(dp.y < ymin) ymin = dp.y;
+			if(dp.y > ymax) ymax = dp.y;
+			if(dp.x < xmin) xmin = dp.x;
+			if(dp.x > xmax) xmax = dp.x;
+		}
+		
+		double[][] ret = new double[2][2];
+		ret[0][0] = xmin;
+		ret[0][1] = xmax;
+		ret[1][0] = ymin;
+		ret[1][1] = ymax;
+		return ret;
+	}
+	
+	
 
 	/**
 	 * @return Returns the barWidth.
@@ -276,5 +335,13 @@ public class ChartArea extends AbstractMetricChartArea {
 	 */
 	public void setForegroundColor(Color foregroundColor) {
 		this.foregroundColor = foregroundColor;
+	}
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
 	}
 }

@@ -477,7 +477,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		doLabeling(true);
 		
 		//sets up chart to detect mouse hits on peaks
-		double[] xCoords = new double[posPeaks.size()];
+		/*double[] xCoords = new double[posPeaks.size()];
 		for(int i = 0; i<xCoords.length; i++)
 		{
 			xCoords[i] = posPeaks.get(i).massToCharge;
@@ -490,7 +490,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			xCoords[i] = -negPeaks.get(i).massToCharge;
 		}
 		chart.setHitDetectCoords(1,xCoords);
-		
+		*/
 		
 		if(peakButton.isSelected())
 			displayPeaks();
