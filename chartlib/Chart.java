@@ -68,6 +68,8 @@ public class Chart extends JPanel
 	protected JPanel bottomHalf;
 	protected ChartKey key;
 	protected ArrayList<ChartArea> chartAreas;
+	protected JPanel chartPanel;
+	protected JPanel ckPanel;
 	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
 	
 	//graphics settings
@@ -602,11 +604,11 @@ public class Chart extends JPanel
 		
 		
 		//	ChartArea and key layout
-		JPanel ckPanel = new JPanel(); //panel for chart and key
+		ckPanel = new JPanel(); //panel for chart and key
 		ckPanel.setLayout(new BoxLayout(ckPanel,BoxLayout.X_AXIS));
 		
 		
-		JPanel chartPanel = createChartPanel();
+		chartPanel = createChartPanel();
 		
 		ckPanel.add(chartPanel);
 		

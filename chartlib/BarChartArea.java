@@ -8,6 +8,9 @@ import java.util.Iterator;
 
 public class BarChartArea extends ChartArea{
 	private AxisTitle at;
+	public BarChartArea(){
+		super();
+	}
 	
 	public BarChartArea(Dataset dataset) {
 		super(dataset);
@@ -46,13 +49,13 @@ public class BarChartArea extends ChartArea{
 		while (iterator.hasNext()) {
 			DataPoint curPoint = iterator.next();
 
-			double x = curPoint.y, y = curPoint.y;
+			double x = curPoint.x, y = curPoint.y;
 
 			int xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x)
 					* dataArea.width);
 			double yCoord = (dataArea.y + dataArea.height - (yAxis
 					.relativePosition(curPoint.y) * dataArea.height));
-
+			
 			testbar = new Rectangle(
 					(int)( xCoord - barWidth / 2), //centers the bar on the value
 					(int)( yCoord),

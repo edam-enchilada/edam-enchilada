@@ -36,7 +36,7 @@ public class TimeSeriesPlot extends Chart {
 		
 		chartAreas = new ArrayList<ChartArea>();
 		for (int count = 0; count < numCharts; count++) {
-			ChartArea nextChart = new LineChartArea(datasets[count]);
+			ChartArea nextChart = new LinePointsChartArea(datasets[count]);
 			//nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 			nextChart.setAxisBounds( 0, 1, 0, 1);
 			

@@ -90,6 +90,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JCheckBox labelPeaks;
 	private IntegerPeakCheckBox intPeaks;
 	private MainFrame mf;
+	private JPanel centerPanel;
+	private JPanel peaksPanel;
+	private JPanel rightPanel;
+	private JPanel labelPanel;
+	private JPanel sigPanel;
+	private JPanel bottomPanel;
 	
 	//Data elements
 	private SQLServerDatabase db;
@@ -220,83 +226,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		zchart.setCScrollMin(DEFAULT_XMIN);
 		zchart.setCScrollMax(DEFAULT_XMAX);
 		
-		JPanel centerPanel = new JPanel(new BorderLayout());
-		JPanel nextPrevPanel = new JPanel(new FlowLayout());
-		nextPrevPanel.add(prevButton = new JButton("Previous"));
-		prevButton.addActionListener(this);
-		nextPrevPanel.add(zoomDefaultButton = new JButton("Zoom ->Default"));
-		zoomDefaultButton.addActionListener(this);
-		nextPrevPanel.add(zoomOutButton = new JButton("Zoom Out"));
-		zoomOutButton.addActionListener(this);
-		nextPrevPanel.add(nextButton = new JButton("Next"));
-		nextButton.addActionListener(this);
-		centerPanel.add(zchart, BorderLayout.CENTER);
-		centerPanel.add(nextPrevPanel, BorderLayout.SOUTH);
+		setupCenterPanel();
 		
-		//sets up table
-		peaksDataModel = new PeaksTableModel();
-		peaksTable = new JTable(peaksDataModel);
-		peaksTable.setFocusable(false);
-		peaksTable.getColumnModel().getColumn(1).setPreferredWidth(50);
-		peaksTable.getColumnModel().getColumn(2).setPreferredWidth(50);
-		peaksTable.setPreferredScrollableViewportSize(new Dimension(300, 200));
-		peaksTable.setRowSelectionAllowed(true);
-		peaksTable.setColumnSelectionAllowed(false);
-		peaksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		ListSelectionModel rowSM = peaksTable.getSelectionModel();
-		rowSM.addListSelectionListener(new ListSelectionListener() {
-		    public void valueChanged(ListSelectionEvent e) {
-		        //Ignore extra messages.
-		        if (e.getValueIsAdjusting()) return;
-
-		        ListSelectionModel lsm =
-		            (ListSelectionModel)e.getSource();
-		        if (!lsm.isSelectionEmpty()) {
-		            int selectedRow = lsm.getMinSelectionIndex();
-		            selectedMZ = 
-		            	((Number) peaksDataModel.getValueAt(selectedRow, 0))
-		            			.doubleValue();
-					setLabels();
-		        } else 
-		        	selectedMZ = 0;
-		    }
-		});
+		setupPeaksPanel();
 		
-		JPanel peaksPanel = new JPanel(new BorderLayout());
-		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
-		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
+		setupLabelPanel();
 		
-		labelText = new JTextPane();
-		labelText.setEditable(false);
-		labelText.setContentType("text/html");			
-		labelText.setText("Processing labels...");
-		
-		labelScrollPane = new JScrollPane(labelText);
-		
-		JPanel labelPanel = new JPanel(new BorderLayout());
-		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
-		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
-		labelPanel.setPreferredSize(new Dimension(300, 200));
-		
-		JPanel sigPanel = new JPanel(new BorderLayout());
-		JPanel signatures = new JPanel(new GridLayout(numIonRows + 1, 2));
-		signatures.add(new JLabel("Negative Ions:"));
-		signatures.add(new JLabel("Positive Ions:"));
-		for (int i = 0; i < numIonRows; i++) {
-			if (i < negIons.size())
-				signatures.add(negIons.get(i).getCheckboxPanelForIon(this));
-			else
-				signatures.add(new JPanel());
-			
-			if (i < posIons.size())
-				signatures.add(posIons.get(i).getCheckboxPanelForIon(this));
-			else
-				signatures.add(new JPanel());
-		}
-		
-		sigPanel.add(new JLabel("Signature", SwingConstants.CENTER), BorderLayout.NORTH);
-		sigPanel.add(new JScrollPane(signatures), BorderLayout.CENTER);
-		sigPanel.setPreferredSize(new Dimension(100, 150));
+		setupSignaturePanel();
 		
 		final JSplitPane labelingControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, labelPanel, sigPanel);
@@ -304,6 +240,42 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		final JSplitPane mainControlPane
 			= new JSplitPane(JSplitPane.VERTICAL_SPLIT, peaksPanel, labelingControlPane);
 		
+		setupBottomPanel(labelingControlPane, mainControlPane);
+		
+		rightPanel = new JPanel(new BorderLayout());
+		rightPanel.add(mainControlPane, BorderLayout.CENTER);
+		rightPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+		JPanel mainPanel = new JPanel(new BorderLayout());
+		mainPanel.add(centerPanel, BorderLayout.CENTER);
+		mainPanel.add(rightPanel, BorderLayout.EAST);
+		add(mainPanel);
+
+		showGraph();
+		pack();
+		
+		// If we never found data files, then disable labeling permanently...
+		if (numIonRows == 0) {
+			labelPeaks.setSelected(false);
+			labelPeaks.setEnabled(false);
+			labelPeaks.setToolTipText("Can't label -- label code/data not found in subfolder: '" + labelingDir + "'");
+		}
+		
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				db.saveAtomRemovedIons(atomID, posIons, negIons);
+			}
+		});
+	}
+
+	/**
+	 * @param db
+	 * @param curRow
+	 * @param labelingControlPane
+	 * @param mainControlPane
+	 * @return
+	 */
+	private void setupBottomPanel(final JSplitPane labelingControlPane, final JSplitPane mainControlPane) {
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
 
@@ -318,7 +290,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		peakButton.setSelected(true);
 		buttonPanel.add(specButton);
 		buttonPanel.add(peakButton);
-		JPanel bottomPanel;
 		JPanel peakButtonPanel = new JPanel(new GridLayout(2,1));
 		
 		int aID = ((Integer) 
@@ -364,31 +335,104 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				mainControlPane.validate();
 			}
 		});
-		
-		JPanel rightPanel = new JPanel(new BorderLayout());
-		rightPanel.add(mainControlPane, BorderLayout.CENTER);
-		rightPanel.add(bottomPanel, BorderLayout.SOUTH);
+	}
 
-		JPanel mainPanel = new JPanel(new BorderLayout());
-		mainPanel.add(centerPanel, BorderLayout.CENTER);
-		mainPanel.add(rightPanel, BorderLayout.EAST);
-		add(mainPanel);
-
-		showGraph();
-		pack();
-		
-		// If we never found data files, then disable labeling permanently...
-		if (numIonRows == 0) {
-			labelPeaks.setSelected(false);
-			labelPeaks.setEnabled(false);
-			labelPeaks.setToolTipText("Can't label -- label code/data not found in subfolder: '" + labelingDir + "'");
+	/**
+	 * 
+	 */
+	private void setupSignaturePanel() {
+		sigPanel = new JPanel(new BorderLayout());
+		JPanel signatures = new JPanel(new GridLayout(numIonRows + 1, 2));
+		signatures.add(new JLabel("Negative Ions:"));
+		signatures.add(new JLabel("Positive Ions:"));
+		for (int i = 0; i < numIonRows; i++) {
+			if (i < negIons.size())
+				signatures.add(negIons.get(i).getCheckboxPanelForIon(this));
+			else
+				signatures.add(new JPanel());
+			
+			if (i < posIons.size())
+				signatures.add(posIons.get(i).getCheckboxPanelForIon(this));
+			else
+				signatures.add(new JPanel());
 		}
 		
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				db.saveAtomRemovedIons(atomID, posIons, negIons);
-			}
+		sigPanel.add(new JLabel("Signature", SwingConstants.CENTER), BorderLayout.NORTH);
+		sigPanel.add(new JScrollPane(signatures), BorderLayout.CENTER);
+		sigPanel.setPreferredSize(new Dimension(100, 150));
+	}
+
+	/**
+	 * 
+	 */
+	private void setupLabelPanel() {
+		labelText = new JTextPane();
+		labelText.setEditable(false);
+		labelText.setContentType("text/html");			
+		labelText.setText("Processing labels...");
+		
+		labelScrollPane = new JScrollPane(labelText);
+		
+		labelPanel = new JPanel(new BorderLayout());
+		labelPanel.add(new JLabel("Selected peak labels:", SwingConstants.CENTER), BorderLayout.NORTH);
+		labelPanel.add(labelScrollPane, BorderLayout.CENTER);
+		labelPanel.setPreferredSize(new Dimension(300, 200));
+	}
+
+	/**
+	 * 
+	 */
+	private void setupPeaksPanel() {
+		//sets up table
+		peaksDataModel = new PeaksTableModel();
+		peaksTable = new JTable(peaksDataModel);
+		peaksTable.setFocusable(false);
+		peaksTable.getColumnModel().getColumn(1).setPreferredWidth(50);
+		peaksTable.getColumnModel().getColumn(2).setPreferredWidth(50);
+		peaksTable.setPreferredScrollableViewportSize(new Dimension(300, 200));
+		peaksTable.setRowSelectionAllowed(true);
+		peaksTable.setColumnSelectionAllowed(false);
+		peaksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		ListSelectionModel rowSM = peaksTable.getSelectionModel();
+		rowSM.addListSelectionListener(new ListSelectionListener() {
+		    public void valueChanged(ListSelectionEvent e) {
+		        //Ignore extra messages.
+		        if (e.getValueIsAdjusting()) return;
+
+		        ListSelectionModel lsm =
+		            (ListSelectionModel)e.getSource();
+		        if (!lsm.isSelectionEmpty()) {
+		            int selectedRow = lsm.getMinSelectionIndex();
+		            selectedMZ = 
+		            	((Number) peaksDataModel.getValueAt(selectedRow, 0))
+		            			.doubleValue();
+					setLabels();
+		        } else 
+		        	selectedMZ = 0;
+		    }
 		});
+		
+		peaksPanel = new JPanel(new BorderLayout());
+		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
+		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
+	}
+
+	/**
+	 * 
+	 */
+	private void setupCenterPanel() {
+		centerPanel = new JPanel(new BorderLayout());
+		JPanel nextPrevPanel = new JPanel(new FlowLayout());
+		nextPrevPanel.add(prevButton = new JButton("Previous"));
+		prevButton.addActionListener(this);
+		nextPrevPanel.add(zoomDefaultButton = new JButton("Zoom ->Default"));
+		zoomDefaultButton.addActionListener(this);
+		nextPrevPanel.add(zoomOutButton = new JButton("Zoom Out"));
+		zoomOutButton.addActionListener(this);
+		nextPrevPanel.add(nextButton = new JButton("Next"));
+		nextButton.addActionListener(this);
+		centerPanel.add(zchart, BorderLayout.CENTER);
+		centerPanel.add(nextPrevPanel, BorderLayout.SOUTH);
 	}
 	
 	private void buildLabelSigs(String fileName, ArrayList<LabelingIon> ionListToBuild) {
@@ -660,7 +704,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		if(chartIndex == -1) return; //mouse not pointing at a chart -> don't do anything
 		
 		//java.awt.geom.Point2D.Double dataPoint = chart.getDataValueForPoint(chartIndex, mousePoint);
-		Double dp = chart.getBarForPoint(chartIndex, mousePoint);
+		try{
+			Double dp = chart.getBarForPoint(chartIndex, mousePoint);
 		int multiplier, adder = 0;
 		
 		if(dp != null)
@@ -695,6 +740,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 					setLabels();
 				}
 			}
+		}
+		}catch(ClassCastException c){
+			;
 		}
 	}
 	
@@ -773,6 +821,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
 		chart.displayPeaks(posDS, negDS);
+		unZoom();
 	}
 	
 	public void displaySpectrum()
@@ -791,6 +840,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			}
 		}
 		chart.displaySpectra(posSpecDS, negSpecDS);
+		unZoom();
 	}
 	
 	/**

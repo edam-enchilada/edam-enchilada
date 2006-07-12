@@ -5,13 +5,13 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.swing.JFrame;
 
-public class LineChartArea extends ChartArea {
-	public LineChartArea(Dataset dataset) {
+public class LinePointsChartArea extends ChartArea {
+	public LinePointsChartArea(Dataset dataset) {
 		super(dataset);
 		setPreferredSize(new Dimension(400, 400));
 	}
 	
-	public LineChartArea(Dataset dataset, Color color) {
+	public LinePointsChartArea(Dataset dataset, Color color) {
 		this(dataset);
 		this.foregroundColor = color;
 	}
@@ -25,6 +25,7 @@ public class LineChartArea extends ChartArea {
 	@Override
 	public void drawData(Graphics2D g2d) {
 		drawDataLines(g2d,datasets.get(0));
+		drawDataPoints(g2d,datasets.get(0));
 	}
 	
 	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
@@ -41,7 +42,7 @@ public class LineChartArea extends ChartArea {
 		d.add(new DataPoint(2, 2));
 		d.add(new DataPoint(3, 1));
 		
-		LineChartArea lca = new LineChartArea(d);
+		LinePointsChartArea lca = new LinePointsChartArea(d);
 		
 		lca.setAxisBounds(0, 4, 0, 4);
 		lca.setTicksX(1, 1);

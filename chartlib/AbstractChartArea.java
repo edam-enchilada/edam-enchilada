@@ -170,7 +170,6 @@ public abstract class AbstractChartArea extends JComponent {
 			//gets the bounds of the drawing value
 			Dimension size = this.getSize();
 			Insets insets = getInsets();
-			
 			//paints the background first
 			g2d.setColor(backgroundColor);
 			g2d.fillRect(insets.left,insets.top,size.width - insets.left - insets.right,
