@@ -57,6 +57,18 @@ import java.awt.geom.*;
  *
  */
 public class GraphAxis {
+	
+	/**
+	 * This got put here because I thought it would fix a problem, but it didn't,
+	 * but at least it saves typing.  It would be fine to change everything
+	 * back to Point2D.Double.
+	 * <p>
+	 * By the way, did you know that all the keys in a TreeMap must implement
+	 * Comparable?  I had forgotten.
+	 * 
+	 * @author smitht
+	 *
+	 */
 	private class Coord extends Point2D.Double {
 		public Coord(double x, double y) {
 			super(x, y);
@@ -78,11 +90,6 @@ public class GraphAxis {
 	// whether this axis is horizontal or vertical.
 	private Orientation orientation;
 	
-//	private static SimpleDateFormat dateFormat = 
-//		new SimpleDateFormat("M/dd/yy");
-//	private static SimpleDateFormat timeFormat = 
-//		new SimpleDateFormat("HH:mm:ss");
-
 	//the range of the axis
 	private double min;
 	private double max;
@@ -91,10 +98,11 @@ public class GraphAxis {
 	private Line2D position;
 	
 	//tick marks
-	//	big ticks will appear on multiples of this factor	
+	//	the number of big ticks on the axis.  could make this a double if we
+	//  want more control over spacing (e.g. to put ticks on multiples of 10)
 	private int bigTicks;
 	
-	//number of small ticks between each big tick
+	// number of small ticks between each big tick
 	private int smallTicks;
 	
 	// these three arrays are generated from the above variables by the
@@ -108,13 +116,18 @@ public class GraphAxis {
 	private static final int SMALL_TICK_LENGTH = 5;
 	
 	/**
-	 * Though labelling the ticks is not implemented yet, this will be how
+	 * This is how
 	 * you can control the labels of the tick marks.
-	 * 
-	 * @author smitht
-	 *
 	 */
 	public interface AxisLabeller {
+		/**
+		 * Return the string that will be used on the axis to label the data
+		 * value value.
+		 * <p>
+		 * Feel free to make this a multi-line string, although then you might
+		 * have to change the spacing around at the bottom of the graph, if
+		 * you do it on the X-axis.
+		 */
 		public String label(double value);
 	}
 	
@@ -160,11 +173,11 @@ public class GraphAxis {
 	}
 	
 	/**
-	 * Call this to draw the axis.  Actually, GenericChartArea will do it for 
+	 * Call this to draw the axis.  Actually, AbstractChartArea will do it for 
 	 * you, but you could if you wanted.
 	 * <p>
 	 * The Graphics2D object you send in must be in the same coordinate space
-	 * as the GraphAxis is in, otherwise it will get drawn in a weird space.
+	 * as the GraphAxis is in, otherwise it will get drawn in a weird place.
 	 * This is taken care of for you by GenericChartArea in the normal
 	 * case.
 	 * 
@@ -177,6 +190,15 @@ public class GraphAxis {
 		drawTicks(g2d);
 	}
 	
+	/**
+	 * This figures out where to draw all the labels.  If some would overlap each
+	 * other, it doesn't draw all of them.
+	 * 
+	 * @param ticks the bigTicksRel array, or a copy thereof
+	 * @param labels the labels of the big ticks, in the same order as the previous array
+	 * @param g2d
+	 * @return
+	 */
 	private Map<Coord, GlyphVector> getLabelsForDrawing
 		(double[] ticks, String[] labels, Graphics2D g2d) 
 	{
@@ -206,15 +228,27 @@ public class GraphAxis {
 		return drawable;
 	}
 	
+	/**
+	 * Convenience function to compute the bounding rectangle of a label,
+	 * when rendered at a particular point.
+	 */
 	private static Rectangle boundsAt(Coord point, GlyphVector vec) {
 		return vec.getOutline((float) point.getX(), (float) point.getY())
-		.getBounds();
+			.getBounds();
 	}
 	
+	/**
+	 * Convenience function to compute the bounding rectangle of a label,
+	 * when rendered at a particular point.
+	 */
 	private static Rectangle boundsAt(Map.Entry<Coord, GlyphVector> entry) {
 		return boundsAt(entry.getKey(), entry.getValue());
 	}
 	
+	/**
+	 * Finds the top left corner of a label to render, given that it must be
+	 * centered on the given tick.
+	 */
 	private Coord getLabelOrigin(GlyphVector gVec, double tickRel) {
 		double length = position.getP1().distance(position.getP2());
 		Rectangle bounds = gVec.getOutline().getBounds();
@@ -224,13 +258,14 @@ public class GraphAxis {
 				position.getY2() - length * tickRel + (bounds.height / 2));
 		} else {
 			return new Coord(
-				(float) (position.getX1() + length * tickRel - (bounds.width / 2)),
-				(float) (position.getY1() + bounds.height + 3));
+				position.getX1() + length * tickRel - (bounds.width / 2),
+				position.getY1() + bounds.height + 3);
 		}
 	}
 
 	/**
-	 * Draws all of the ticks, big and small, using drawTick().
+	 * Draws all of the ticks, big and small, using drawTick().  It also draws
+	 * the labels.
 	 */
 	private void drawTicks(Graphics2D g2d) {
 		g2d.setStroke(new BasicStroke(1));
@@ -345,11 +380,7 @@ public class GraphAxis {
 	}
 	
 	/**
-	 * Sets a new range, keeping tick marks at the same numeric intervals.
-	 * 
-	 * @param newMin
-	 * @param newMax
-	 * @throws IllegalArgumentException
+	 * Sets a new range.  There will be the same number of ticks.
 	 */
 	public void setRange(double newMin, double newMax)
 	throws IllegalArgumentException
@@ -368,24 +399,15 @@ public class GraphAxis {
 	 */
 	public void setTicks(int bigTicks, int smallTicks)
 	{
-		System.out.println("setting ticks for axis " + this.orientation);
+//		System.out.println("setting ticks for axis " + this.orientation);
 		this.bigTicks = bigTicks;
 		this.smallTicks = smallTicks;
 		makeTicks();
 	}
 	
 	
-	private static boolean isDivisible(double a, double b)
-	{
-		return Math.abs(new Double((a / b)).intValue()
-				- a/b) < .01;
-	}
-	
-	
 	/**
 	 * Fills the three tick arrays with appropriate values.
-	 *
-	 * @return
 	 */
 	public void makeTicks()
 	{
@@ -492,10 +514,7 @@ public class GraphAxis {
 	}
 	
 	/**
-	 * Not working yet<p>
-	 * deprecated cuz that's a reasonable way to remind me to fix it.  sort of.
-	 * @param drawAsDateTime
-	 * @return
+	 * Finds the labels of each big tick.  Uses the labeller.
 	 */
 	public String[] getBigTicksLabels() {		
 		String[] labels = new String[bigTicksVals.length];
@@ -504,7 +523,11 @@ public class GraphAxis {
 		return labels;
 	}
 	
-	protected String getLabelFor(double value) {
+	/**
+	 * Generates a label for a given data value.  Might be useful if you want
+	 * to display where on the axis the mouse is, for example.
+	 */
+	public String getLabelFor(double value) {
 		return labeller.label(value);
 	}
 
@@ -547,6 +570,9 @@ public class GraphAxis {
 		return (x - min) / (max - min);
 	}
 
+	/**
+	 * Returns the position in graphics space that the axis occupies.
+	 */
 	public Line2D getPosition() {
 		return position;
 	}
@@ -579,19 +605,31 @@ public class GraphAxis {
 		orientation = findOrientation();
 	}
 
+	/**
+	 * Gets the {@link AxisLabeller} object used to label this axis.
+	 */
 	public AxisLabeller getLabeller() {
 		return labeller;
 	}
 
+	/**
+	 * Sets the AxisLabeller object used to label this axis.
+	 */
 	public void setLabeller(AxisLabeller labeller) {
 		this.labeller = labeller;
 	}
 
+	/**
+	 * Set the value represented by the far upper or right end of the axis.
+	 */
 	public void setMax(double max) {
 		this.max = max;
 		makeTicks();
 	}
 
+	/**
+	 * Set the value represented by the far lower or left end of the axis.
+	 */
 	public void setMin(double min) {
 		this.min = min;
 		makeTicks();
