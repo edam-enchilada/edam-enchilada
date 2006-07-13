@@ -258,8 +258,67 @@ public class ChartArea extends AbstractMetricChartArea {
 		
 	}
 
+	/**
+	 * Sets the bounds of either or both axes to fit the dataset.
+	 * If the dataset is empty, leaves the axes alone.
+	 * If only packY is true, adjusts the data to fit the y values of the points
+	 * within the current x axis window.
+	 * @param packX Whether to change the x axis.
+	 * @param packY Whether to change the y axis.
+	 */
 	public void packData(boolean packX, boolean packY){
 		
+			Dataset dataset = datasets.get(0);
+			
+			//empty dataset: do nothing
+			if (dataset == null || dataset.size() == 0 || (packX == false && packY == false))
+				return;
+
+			double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+
+			if(packX == true) {
+				double[][] bounds = findAllMinsMaxes(dataset);
+				xmin = bounds[0][0];
+				xmax = bounds[0][1];
+				ymin = bounds[1][0];
+				ymax = bounds[1][1];
+			} else {
+				double[] bounds = findYMinMax(dataset);
+				if (bounds == null) return;
+				ymin = bounds[0];
+				ymax = bounds[1];
+			}
+			
+			double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
+			
+			//one element:
+			if(xmin == xmax && ymin == ymax)
+			{
+				newXmin = xmin - xmin / 2;
+				newXmax = xmax + xmax / 2;
+				newYmin = 0;
+				newYmax = ymax + ymax / 10;
+			}
+			else
+			{
+//				adds some extra space on the edges
+				newXmin = xmin - ((xmax - xmin) / 10);
+				newXmax = xmax + ((xmax - xmin) / 10);
+				newYmin = ymin - ((ymax - ymin) / 10);
+				newYmax = ymax + ((ymax - ymin) / 10);
+			}
+			
+			if (packX) {
+				this.setXMin(newXmin);
+				this.setXMax(newXmax);
+			}
+			if (packY) {
+				this.setYMin(newYmin);
+				this.setYMax(newYmax);
+			}
+				
+			createAxes();
+			repaint();
 	}
 	
 	public Dataset getDataset(int i){
@@ -283,6 +342,12 @@ public class ChartArea extends AbstractMetricChartArea {
 	}
 	
 	
+	/**
+	 * Finds the maximum and minimum x and y.  
+	 * (Finds the (complete) range and domain of the dataset)
+	 * @param dataset
+	 * @return
+	 */
 	public double[][] findAllMinsMaxes(Dataset dataset) {
 		double xmin, ymin, xmax, ymax;	
 		xmin = ymin = Double.MAX_VALUE;
@@ -306,6 +371,40 @@ public class ChartArea extends AbstractMetricChartArea {
 		ret[0][1] = xmax;
 		ret[1][0] = ymin;
 		ret[1][1] = ymax;
+		return ret;
+	}
+	
+	
+	/**
+	 * Finds the minimum and maximum y values PRESERVING the current domain of x.
+	 * (Finds the range of the data for the current (restricted) domain.)
+	 * @param dataset
+	 * @return
+	 */
+	public double[] findYMinMax(Dataset dataset) {
+		double xmin, ymin, xmax, ymax;	
+		xmin = ymin = Double.MAX_VALUE;
+		xmax = ymax = Double.MIN_VALUE;
+		DataPoint dp;
+		int size = 0;
+		
+		java.util.Iterator iterator = dataset.iterator();
+		
+		while(iterator.hasNext())
+		{
+			dp = (DataPoint)(iterator.next());
+			if(dp.x > this.xAxis.getMin() && dp.x < this.xAxis.getMax())
+			{
+				if(dp.y < ymin) ymin = dp.y;
+				if(dp.y > ymax) ymax = dp.y;
+				size++;
+			}
+		}
+		if (size == 0) return null;
+		
+		double[] ret = new double[2];
+		ret[0] = ymin;
+		ret[1] = ymax;
 		return ret;
 	}
 	

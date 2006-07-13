@@ -227,19 +227,19 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		return yAxis.getMin();
 	}
  
-	private void setYMax(double ymax) {
+	protected void setYMax(double ymax) {
 		yAxis.setMax(ymax);
 	}
 
-	private void setYMin(double ymin) {
+	protected void setYMin(double ymin) {
 		yAxis.setMin(ymin);
 	}
 
-	private void setXMax(double xmax) {
+	protected void setXMax(double xmax) {
 		xAxis.setMax(xmax);
 	}
 
-	private void setXMin(double xmin) {
+	protected void setXMin(double xmin) {
 		xAxis.setMin(xmin);
 	}
 	
