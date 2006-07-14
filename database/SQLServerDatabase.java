@@ -612,6 +612,15 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * For backward compatibility - assumes NOT an import if not given boolean.
+	 */
+	public int insertParticle(String dense, ArrayList<String> sparse,
+			Collection collection,
+			int datasetID, int nextID){
+		return insertParticle(dense, sparse, collection, datasetID, nextID, false);
+	}
+	
+	/**
 	 * insertParticle takes a string of dense info, a string of sparse info, 
 	 * the collection, the datasetID and the nextID and inserts the info 
 	 * into the dynamic tables based on the collection's datatype.
@@ -620,11 +629,12 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param collection - current collection
 	 * @param datasetID - current datasetID
 	 * @param nextID - next ID
+	 * @param importing - true if importing, false if inserting for other reason
 	 * @return nextID if successful
 	 */
 	public int insertParticle(String dense, ArrayList<String> sparse,
 			Collection collection,
-			int datasetID, int nextID)
+			int datasetID, int nextID, boolean importing)
 	{
 		//System.out.println("next AtomID: "+nextID);
 		try {
@@ -688,7 +698,10 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			return -1;
 		}
-		updateInternalAtomOrder(collection);
+		if (!importing)
+			updateInternalAtomOrder(collection);
+		else
+			addInternalAtom(nextID, collection.getCollectionID());
 		return nextID;
 	}
 	
@@ -4733,6 +4746,40 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * Adds a new atom to InternalAtomOrder, assuming the atom is the next one
+	 * in its collection.
+	 * @param	atomID	- the atom to add
+	 * @param	collectionID - the collection to which the atom is added
+	 */
+	private void addInternalAtom(int atomID, int collectionID){
+		try {
+			Statement stmt = con.createStatement();
+			
+			String query = "SELECT MAX(OrderNumber) AS MaxOrder " +
+							"FROM InternalAtomOrder " +
+							"WHERE CollectionID = " + collectionID;
+			//System.out.println(query);//debugging
+			ResultSet rs = stmt.executeQuery(query);
+			int order;
+			if (rs.next())
+				order = rs.getInt(1) + 1;
+			else	//if no entries yet, this is the first atom
+				order = 1;
+			query = "INSERT INTO InternalAtomOrder " +
+					"VALUES (" + atomID +", "+ collectionID +", "+ order +")";
+			//System.out.println(query);//debugging
+			stmt.execute(query);
+			stmt.close();
+			
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception adding atom.  Please check incoming data for correct format.");
+			System.err.println("Exception adding particle to InternalAtomOrder.");
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
 	 * internalAtomOrder updated by updating the collection itself,
 	 * recursing through subcollections.  This ONLY updates the specified
 	 * collection, and it works by traversing down to the leaves of the tree.
@@ -4800,6 +4847,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			e.printStackTrace();
 		}
 	}
+	
 	
 	/**
 	 * updates a particular collection and its ancestors.  It does this
@@ -4918,4 +4966,3 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 }
-

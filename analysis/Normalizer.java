@@ -2,14 +2,34 @@ package analysis;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class Normalizer extends Normalizable {
 
 	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
-		float magnitude = peakList.getMagnitude(dMetric);	
 		
+		//first normalize negative peaks
+		float magnitude = peakList.getPartialMag(dMetric, true);
+		BinnedPeak bp;
+		Iterator<BinnedPeak> iter = peakList.posNegIterator(true);
+		while (iter.hasNext()){
+			bp = iter.next();
+			bp.value = bp.value/magnitude;
+		}
+		
+		//next normalize the positive peaks (and zero)
+		magnitude = peakList.getPartialMag(dMetric, false);
+		iter = peakList.posNegIterator(false);
+		while (iter.hasNext()){
+			bp = iter.next();
+			bp.value = bp.value/magnitude;
+		}
+		
+		
+		//normalize altogether
+		magnitude = peakList.getMagnitude(dMetric);	
 		Map.Entry<Integer,Float> entry;
-		Iterator<Map.Entry<Integer,Float>> iterator = peakList.peaks.entrySet().iterator();
+		Iterator<Entry<Integer, Float>> iterator = peakList.peaks.entrySet().iterator();
 		
 		while (iterator.hasNext()) {
 			entry = iterator.next();
@@ -30,6 +50,5 @@ public class Normalizer extends Normalizable {
 		}
 		return distance;
 	}
-
 
 }

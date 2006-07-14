@@ -73,8 +73,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected String parameterString;
 	protected ClusterInformation clusterInfo;
 	protected static double power = 0.5;	//the power to which the peak areas are raised
-									//during preprocessing.
-	//TODO: make power an advanced user option
+											//during preprocessing.
 	
 	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	

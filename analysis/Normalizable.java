@@ -20,7 +20,7 @@ public abstract class Normalizable {
 		while (iter.hasNext()){
 			entry = iter.next();
 			newVal = (float)Math.pow((double)entry.getValue(), powerValue);
-			System.out.println("Old value " + entry.getValue() + " sqrt " + newVal); //DEBUGGING
+			//System.out.println("Old value " + entry.getValue() + " sqrt " + newVal); //DEBUGGING
 			entry.setValue(newVal);
 		}
 	}

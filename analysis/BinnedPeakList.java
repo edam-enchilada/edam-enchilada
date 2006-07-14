@@ -40,6 +40,7 @@
 package analysis;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * @author andersbe
@@ -115,6 +116,31 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	//	if(magnitude>1.0)
 	//		System.out.println("BAD MAGNITUDE " + magnitude);
+		return magnitude;
+	}
+	
+	/**
+	 * Gets the magnitude of either the negative or non-negative peaks only.
+	 * @param dMetric		distance metric to use
+	 * @param negative		true if only negative peaks desired, false for non-neg
+	 * @return	the magnitude
+	 */
+	public float getPartialMag(DistanceMetric dMetric, boolean negative){
+		float magnitude = 0;
+		Iterator<BinnedPeak> iter = posNegIterator(negative);
+		if (dMetric == DistanceMetric.CITY_BLOCK){
+			while (iter.hasNext())
+				magnitude += iter.next().value;
+		} else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
+					dMetric == DistanceMetric.DOT_PRODUCT){
+			float currentArea;
+			while (iter.hasNext()){
+				currentArea = iter.next().value;
+				magnitude += currentArea*currentArea;
+			}
+			magnitude = (float) Math.sqrt(magnitude);
+		}
+		
 		return magnitude;
 	}
 
@@ -422,6 +448,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	}
 	
 	/**
+	 * Return a positive/negative iterator for the binned peak list.
+	 * @param negative - true for negative peaks only, false for non-neg. only
+	 * @return an iterator that only goes through either negative or non-neg. peaks
+	 */
+	public Iterator<BinnedPeak> posNegIterator(boolean negative){
+		return new PosNegIter(this, negative);
+	}
+	
+	/**
 	 * Warning!  This does not actually provide you with access to the
 	 * underlying map structure, so any changes made to elements accessed by
 	 * this iterator will NOT BE REFLECTED in the BPL itself.
@@ -452,5 +487,72 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
+	}
+	
+	/**
+	 * Returns either entries with negative or non-negative keys (locations)
+	 * depending on the requested spectrum.
+	 * @author steinbel
+	 */
+	public class PosNegIter implements Iterator<BinnedPeak>{
+		private Iterator<Map.Entry<Integer,Float>> entries;
+		private Entry<Integer, Float> bp;
+		private boolean negative;
+		
+		/**
+		 * Creates an iterator over either negative or non-negative peaks.
+		 * @param bpl	The list of peaks to iterate over
+		 * @param negative	True for negative peaks, false for non-neg.
+		 */
+		public PosNegIter(BinnedPeakList bpl, boolean negative){
+			this.entries = bpl.peaks.entrySet().iterator();
+			this.negative = negative;
+			this.bp = null;
+		}
+
+		/**
+		 * Returns true if there is at least one peak left with the desired 
+		 * sign of its location (neg or non-neg).
+		 * (Note, advances iterator to the position of the next appropriate peak.)
+		 */
+		public boolean hasNext() {
+			
+			boolean remaining = false;
+			int position;
+			
+			while (entries.hasNext()){
+				bp = entries.next();
+				position = bp.getKey();
+				if (negative == false && position >= 0){
+					remaining = true;
+					break;
+				} else if (negative == true && position < 0){
+					remaining = true;
+					break;
+				}
+			}
+			return remaining;
+		}
+
+		/**
+		 * Return the next appropriate entry.
+		 * @return	the next appropriate peak
+		 */
+		public BinnedPeak next() {
+			//if the current entry is null, get the next appropriate entry
+			if (bp == null){
+				if (!hasNext())
+					throw new NoSuchElementException();
+			}
+			BinnedPeak next = new BinnedPeak(bp.getKey(), bp.getValue());
+			return next;
+		}
+
+		//Doesn't make sense here, but needed to implement Iterator.
+		public void remove() {
+			throw new Error("Not implemented.");
+			
+		}
+		
 	}
 }

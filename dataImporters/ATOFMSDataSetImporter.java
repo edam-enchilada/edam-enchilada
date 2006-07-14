@@ -67,8 +67,8 @@ import java.util.zip.ZipException;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JFrame;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
@@ -369,7 +369,7 @@ public class ATOFMSDataSetImporter {
 										
 										currentParticle.particleInfoDenseString(),
 										currentParticle.particleInfoSparseString(),
-										destination,id[1],nextID);
+										destination,id[1],nextID, true);
 								}
 								catch (Exception e) {
 									ErrorLogger.writeExceptionToLog("Importing","Error reading particle " + 
