@@ -56,7 +56,7 @@ import java.util.ArrayList;
  * The actual handling of graphing and data happens
  * in the ChartArea class.
  */
-public class Chart extends JPanel
+public class Chart extends JPanel implements Zoomable
 {
 	//collection of datasets
 	protected Dataset[] datasets; 
@@ -88,7 +88,7 @@ public class Chart extends JPanel
 	{
 		datasets = new Dataset[1];
 		title = "New Chart";
-		numCharts = 1;
+		numCharts = 0;
 		hasKey = false;
 		
 		setupLayout();
@@ -189,14 +189,8 @@ public class Chart extends JPanel
 //		}
 	}
 	
-	/**
-	 * Given a point in screen coordinates that is on a chart,
-	 * finds what key in chart
-	 * coordinates the screen point is at.
-	 * @param p The point in screen coordinates.
-	 * @return A Point2D.Double object containing the key of p
-	 * in the chart, converted to chart coordinates.  Returns null if
-	 * the point is not within the data value of a chart.
+	/* (non-Javadoc)
+	 * @see chartlib.Zoomable#getDataValueForPoint(java.awt.Point)
 	 */
 	public java.awt.geom.Point2D.Double getDataValueForPoint(Point p)
 	{
@@ -354,14 +348,8 @@ public class Chart extends JPanel
 		chartAreas.get(index).setAxisBounds(xmin, xmax, ymin, ymax);
 	}
 	
-	/**
-	 * Sets new boundaries for the axes and displayed data of all charts.
-	 * Does not change the tick parameters. To keep a bound at its current
-	 * value, use the flag CURRENT_VALUE.
-	 * @param xmin Minimum of X axis.
-	 * @param xmax Maximum of X axis.
-	 * @param ymin Minimum of Y axis.
-	 * @param ymax Maximum of Y axis.
+	/* (non-Javadoc)
+	 * @see chartlib.Zoomable#setAxisBounds(double, double, double, double)
 	 */
 	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax )
 	throws IllegalArgumentException
@@ -549,12 +537,8 @@ public class Chart extends JPanel
 		chartAreas.get(index).pack();
 	}*/
 	
-	/**
-	 * Sets all the charts' axis limits to new values that fit the dataset.
-	 * If only the Y axis is specified, packs the Y axis to fit the data that is
-	 * visible with the current x values.
-	 * @param packX Whether to pack the x axis.
-	 * @param packY Whether to pack the y axis.
+	/* (non-Javadoc)
+	 * @see chartlib.Zoomable#packData(boolean, boolean)
 	 */
 	public void packData(boolean packX, boolean packY)
 	{
@@ -656,6 +640,7 @@ public class Chart extends JPanel
 	/**
 	 * Returns the key of the upper left corner of a chart value in
 	 * the Chart object's coordinate system.
+	 * 
 	 * @param index Which chart to locate.
 	 * @return A Point containing the key.
 	 */
@@ -669,6 +654,9 @@ public class Chart extends JPanel
 		return p;
 	}
 	
+	/* (non-Javadoc)
+	 * @see chartlib.Zoomable#getXRange()
+	 */
 	public double[] getXRange() {
 		double[][] bounds;
 		double xmin = Double.MAX_VALUE, xmax = Double.MIN_VALUE;
@@ -678,5 +666,9 @@ public class Chart extends JPanel
 			if (bounds[0][1] > xmax) xmax = bounds[0][1];
 		}
 		return new double[] {xmin, xmax};
+	}
+
+	public boolean isInDataArea(Point p) {
+		return getChartIndexAt(p, true) != -1;
 	}
 }
