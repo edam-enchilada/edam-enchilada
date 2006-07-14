@@ -671,4 +671,8 @@ public class Chart extends JPanel implements Zoomable
 	public boolean isInDataArea(Point p) {
 		return getChartIndexAt(p, true) != -1;
 	}
+
+	public void setXAxisBounds(double xmin, double xmax) throws IllegalArgumentException {
+		this.setAxisBounds(xmin, xmax, CURRENT_VALUE, CURRENT_VALUE);
+	}
 }
