@@ -44,7 +44,7 @@ public class ScatterPlot extends Chart {
 		datasets[2] = correlationData;
 		
 		setupLayout();
-				
+		packData();
 		//this should not all be here!
 		//It should go in createPanel
 		/*this.setHasKey(false);

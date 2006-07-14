@@ -92,6 +92,7 @@ public class Chart extends JPanel
 		hasKey = false;
 		
 		setupLayout();
+		packData();
 	}
 	
 	public Chart(Dataset ds, String titleString)
@@ -311,6 +312,7 @@ public class Chart extends JPanel
 	{
 		for(int count=0; count < chartAreas.size(); count++)
 			setDataset(count, ds);
+		this.packData();
 	}
 	
 	/**
@@ -324,7 +326,8 @@ public class Chart extends JPanel
 		datasets[index] = ds;
 		
 		chartAreas.get(index).setDataset(ds);
-		//repaint();
+		this.packData();
+		repaint();
 	}
 	
 	
@@ -534,8 +537,7 @@ public class Chart extends JPanel
 	 */
 	public void packData()
 	{
-		for(int count = 0; count < chartAreas.size(); count++)
-			chartAreas.get(count).packData(true,true);
+		packData(true,true);
 	}
 	
 	/**

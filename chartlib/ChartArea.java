@@ -353,8 +353,16 @@ public class ChartArea extends AbstractMetricChartArea {
 		xmin = ymin = Double.MAX_VALUE;
 		xmax = ymax = Double.MIN_VALUE;
 		DataPoint dp;
-		int size = dataset.size();
+		double[][] ret = new double[2][2];
+		ret[0][0] = 0;
+		ret[0][1] = 0;
+		ret[1][0] = 0;
+		ret[1][1] = 0;
+		if(dataset == null){
+			return ret;
+		}
 		
+		int size = dataset.size();
 		java.util.Iterator iterator = dataset.iterator();
 
 		while(iterator.hasNext())
@@ -366,7 +374,6 @@ public class ChartArea extends AbstractMetricChartArea {
 			if(dp.x > xmax) xmax = dp.x;
 		}
 		
-		double[][] ret = new double[2][2];
 		ret[0][0] = xmin;
 		ret[0][1] = xmax;
 		ret[1][0] = ymin;
@@ -386,6 +393,14 @@ public class ChartArea extends AbstractMetricChartArea {
 		xmin = ymin = Double.MAX_VALUE;
 		xmax = ymax = Double.MIN_VALUE;
 		DataPoint dp;
+		
+		double[] ret = new double[2];
+		ret[0] = 0;
+		ret[1] = 0;
+		if(dataset == null){
+			return ret;
+		}
+		
 		int size = 0;
 		
 		java.util.Iterator iterator = dataset.iterator();
@@ -402,7 +417,6 @@ public class ChartArea extends AbstractMetricChartArea {
 		}
 		if (size == 0) return null;
 		
-		double[] ret = new double[2];
 		ret[0] = ymin;
 		ret[1] = ymax;
 		return ret;

@@ -279,10 +279,10 @@ public class SyncAnalyzePanel extends JPanel {
 			// sets up chart
 			TimeSeriesPlot chart = new TimeSeriesPlot(datasets);
 			chart.setTitle("<html><b>Time Series Comparison</b></html>");
-
-			for (int i = 0; i < numSequences; i++) {
+			
+			/*for (int i = 0; i < numSequences; i++) {
 				chart.setAxisBounds(i, xMin, xMax, 0, maxValue[i]);
-			}
+			}*/
 			chart.repaint();
 
 			zchart = new ZoomableChart(chart);

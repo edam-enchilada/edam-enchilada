@@ -20,9 +20,8 @@ public class TimeSeriesPlot extends Chart {
 		hasKey = true;
 		this.datasets = datasets;
 		setupLayout();
+		packData();
 		
-		int numSequences = datasets.length;
-
 		//this should not all be here!
 		//It should go in createPanel
 		/*this.setHasKey(false);
@@ -51,7 +50,7 @@ public class TimeSeriesPlot extends Chart {
 		layeredPane.setPreferredSize(new Dimension(height,width));
 		
 		chartAreas = new ArrayList<ChartArea>();
-		for (int count = 0; count < numCharts; count++) {
+		for (int count = 0; count < datasets.length; count++) {
 			//anonymous class, just like normal except doesn't draw a background
 			//this makes it transparent
 			ChartArea nextChart = new LinePointsChartArea(datasets[count]){
@@ -73,6 +72,82 @@ public class TimeSeriesPlot extends Chart {
 		}
 		chartPanel.add(layeredPane);
 		
+		coordinateChartAreas();
+		
 		return chartPanel;
 	}
+	
+	public void packData(int index, boolean packX, boolean packY) {
+		double xmin = Double.POSITIVE_INFINITY, ymin = Double.POSITIVE_INFINITY, xmax = Double.NEGATIVE_INFINITY, ymax = Double.NEGATIVE_INFINITY;
+		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
+
+		for (int i = 0; i < datasets.length; i++) {
+			ChartArea chartArea = chartAreas.get(i);
+			Dataset dataset = datasets[i];
+
+			// empty dataset: do nothing
+			if (dataset == null || dataset.size() == 0
+					|| (packX == false && packY == false))
+				return;
+
+			if (packX == true) {
+				double[][] bounds = chartArea.findAllMinsMaxes(dataset);
+				if (xmin > bounds[0][0])
+					xmin = bounds[0][0];
+				if (xmax < bounds[0][1])
+					xmax = bounds[0][1];
+				if (ymin > bounds[1][0])
+					ymin = bounds[1][0];
+				if (ymax < bounds[1][1])
+					ymax = bounds[1][1];
+			} else {
+				double[] bounds = chartArea.findYMinMax(dataset);
+				if (bounds == null)
+					return;
+				if (ymin > bounds[0])
+					ymin = bounds[0];
+				if (ymax < bounds[1])
+					ymax = bounds[1];
+				if (xmin > chartArea.xAxis.getMin())
+					xmin = chartArea.xAxis.getMin();
+				if (xmax < chartArea.xAxis.getMax())
+					xmin = chartArea.xAxis.getMax();
+			}
+		}
+
+		// one element:
+		if (xmin == xmax && ymin == ymax) {
+			if (packX) {
+				newXmin = xmin - xmin / 2;
+				newXmax = xmax + xmax / 2;
+			}
+			newYmin = 0;
+			newYmax = ymax + ymax / 10;
+		} else {
+			// adds some extra space on the edges
+			if (packX) {
+				newXmin = xmin - ((xmax - xmin) / 10);
+				newXmax = xmax + ((xmax - xmin) / 10);
+			}
+			newYmin = ymin - ((ymax - ymin) / 10);
+			newYmax = ymax + ((ymax - ymin) / 10);
+		}
+		/*System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
+				+ newYmin + "-" + newYmax);
+		*/
+		for (int i = 0; i < datasets.length; i++) {
+			ChartArea chartArea = chartAreas.get(i);
+			chartArea.setXMin(newXmin);
+			chartArea.setXMax(newXmax);
+			chartArea.setYMin(newYmin);
+			chartArea.setYMax(newYmax);
+			chartArea.createAxes();
+			chartArea.repaint();
+		}
+	}
+	
+	public void coordinateChartAreas() {
+		packData(0,true,true);
+	}
+
 }
