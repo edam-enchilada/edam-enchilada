@@ -68,8 +68,8 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 * as long as that length is parallel to the X axis.
 	 */
 	public int XLen(double dataValue) {
-		return (int) (xAxis.relativePosition(dataValue) 
-						* getDataAreaBounds().width);
+		return (int) ((xAxis.relativePosition(1) - xAxis.relativePosition(0)) 
+						* dataValue * getDataAreaBounds().width);
 	}
 	
 	/**
@@ -77,8 +77,8 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 * as long as that length is parallel to the Y axis.
 	 */
 	public int YLen(double dataValue) {
-		return (int) (yAxis.relativePosition(dataValue) 
-						* getDataAreaBounds().height);
+		return (int) ((yAxis.relativePosition(1) - yAxis.relativePosition(0))
+						* dataValue * getDataAreaBounds().height);
 	}
 	
 	/**
@@ -86,7 +86,9 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 * screen coordinates.
 	 */
 	public int XAbs(double dataValue) {
-		return XLen(dataValue) + getDataAreaBounds().x;
+		Rectangle dataArea = getDataAreaBounds();
+		return (int) ((xAxis.relativePosition(dataValue) * dataArea.width)
+					+ getDataAreaBounds().x);
 	}
 	
 	/**
@@ -95,7 +97,8 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 	 */
 	public int YAbs(double dataValue) {
 		Rectangle dataArea = getDataAreaBounds();
-		return dataArea.y + dataArea.height - YLen(dataValue);
+		return (int) (dataArea.y + dataArea.height 
+						- (yAxis.relativePosition(dataValue) * dataArea.height));
 	}
 
 	/**
@@ -193,12 +196,8 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		if(xmin >= xmax) throw new IllegalArgumentException("Xmin >= Xmax.");
 		else if(ymin >= ymax) throw new IllegalArgumentException("Ymin >= Ymax.");
 		
-		
-		setXMin(xmin);
-		setXMax(xmax);
-		
-		setYMin(ymin);
-		setYMax(ymax);
+		xAxis.setRange(xmin, xmax);
+		yAxis.setRange(ymin, ymax);
 		
 		repaint();
 	}
@@ -266,6 +265,12 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		f.pack();
 		f.setVisible(true);
 		
+	}
+	
+
+	public void setXAxisBounds(double xmin, double xmax) {
+		xAxis.setRange(xmin, xmax);
+		repaint();
 	}
 	
 }
