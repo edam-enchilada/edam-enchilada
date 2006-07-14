@@ -2,6 +2,8 @@ package experiments;
 import database.*;
 import java.sql.*;
 
+import chartlib.hist.HistList;
+
 public class SizeHistogrammer {
 //	private static final int collID = 24; // a 50,000 particle atofms collection
 	private static final int collID = 839;
