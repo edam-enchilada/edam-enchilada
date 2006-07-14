@@ -354,7 +354,7 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
 		else if (source == visualizeItem) {
-			new experiments.Histogrammer()
+			new chartlib.hist.Histogrammer()
 				.drawCollection(getSelectedCollection().getCollectionID(),
 						Color.BLACK);
 		}
