@@ -420,8 +420,17 @@ public class GraphAxis {
 												// key increases
 		
 		//error check
-		if(range == 0 || bigTicksFactor == 0)
+		if(range <= 0 || bigTicksFactor <= 0)
 		{
+			/*
+			 * One thing that can cause this is setting the minimum to something
+			 * greater than the maximum.  This can happen, for instance, when
+			 * adjusting due to a scroll bar event.
+			 * 
+			 * The solution in that case is to set both ends of the range at
+			 * once, using setRange, rather than with setMax and setMin.
+			 * -Thomas
+			 */
 			System.err.println("chartlib: Bad range or tick factor values." +
 					"  Ticks not initialized.");
 			return;

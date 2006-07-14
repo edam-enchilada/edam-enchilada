@@ -56,25 +56,25 @@ public class SpectrumPlot extends Chart {
 		switch(datatype){
 		case SpectrumPlot.UNDEFINED:
 			for (int count = 0; count < numCharts; count++) {
-			//ChartArea nextChart = new BarChartArea(datasets[count]);
-			ChartArea nextChart = new BarChartArea(new Dataset());
-			nextChart.setForegroundColor(DATA_COLORS[count]);
-			chartAreas.add(nextChart);
-			
-			// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-			chartPanel.add(chartAreas.get(count));
-		}
+				//ChartArea nextChart = new BarChartArea(datasets[count]);
+				ChartArea nextChart = new BarChartArea(new Dataset());
+				nextChart.setForegroundColor(DATA_COLORS[count]);
+				chartAreas.add(nextChart);
+				
+				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
+				chartPanel.add(chartAreas.get(count));
+			}
 			break;
 		case SpectrumPlot.PEAK_DATA:
 			for (int count = 0; count < numCharts; count++) {
-			//ChartArea nextChart = new BarChartArea(datasets[count]);
-			ChartArea nextChart = new BarChartArea(datasets[count]);
-			nextChart.setForegroundColor(DATA_COLORS[count]);
-			chartAreas.add(nextChart);
-			
-			// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-			chartPanel.add(chartAreas.get(count));
-		}
+				//ChartArea nextChart = new BarChartArea(datasets[count]);
+				ChartArea nextChart = new BarChartArea(datasets[count]);
+				nextChart.setForegroundColor(DATA_COLORS[count]);
+				chartAreas.add(nextChart);
+				
+				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
+				chartPanel.add(chartAreas.get(count));
+			}
 			break;
 		case SpectrumPlot.SPECTRUM_DATA:
 			for (int count = 0; count < numCharts; count++) {
@@ -86,7 +86,7 @@ public class SpectrumPlot extends Chart {
 				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
 				chartPanel.add(chartAreas.get(count));
 			}
-				break;
+			break;
 		
 
 		}

@@ -66,7 +66,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		AdjustmentListener {
 
 	//the two layers
-	private Chart chart;
+	private Zoomable chart;
 	private ChartZoomGlassPane glassPane;
 	
 	private JScrollBar scrollBar;
@@ -94,7 +94,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
  * Constructs a new ZoomableChart.
  * @param chart The chart the zoomable chart will display.
  */
-	public ZoomableChart(Chart chart)
+	public ZoomableChart(Zoomable chart)
 	{
 		this.chart = chart;
 		this.glassPane = new ChartZoomGlassPane();
@@ -113,7 +113,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		JPanel bottomPanel = new JPanel(new BorderLayout());
 		
-		bottomPanel.add(chart,BorderLayout.CENTER);
+		if (chart instanceof Component) {
+			bottomPanel.add((Component) chart,BorderLayout.CENTER);
+		}
 		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
 		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
@@ -167,7 +169,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	{
 		if(e.getButton() == MouseEvent.BUTTON1 )
 		{
-			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
+			if(chart.isInDataArea(e.getPoint()))
 				
 			{
 				glassPane.start = e.getPoint();
@@ -194,7 +196,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			 * don't need to change for scrollbar changes, since this just
 			 * sees if the point is on the chart or not. 
 			 */
-			if(chart.getChartIndexAt(e.getPoint(),true) != -1)
+			if(chart.isInDataArea(e.getPoint()))
 			{
 				Point oldEnd;
 				if(glassPane.end != null) oldEnd = glassPane.end;
@@ -244,7 +246,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		try
 		{
-			chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
+			chart.setXAxisBounds(xmin, xmax);
 			chart.packData(false, true);
 		}
 		catch (IllegalArgumentException ex){}
@@ -348,7 +350,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 *
 	 */
 	public void zoomOutHalf() {
-		double xmin = chart.getXmin(0), xmax = chart.getXmax(0);
+		double[] range = chart.getXRange();
+		double xmin = range[0], xmax = range[1];
 		double diff = (xmax - xmin) / 2.0;
 		xmin -= diff; xmax += diff;
 		
