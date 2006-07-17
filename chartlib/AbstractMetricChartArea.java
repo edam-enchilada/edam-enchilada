@@ -21,21 +21,21 @@ import javax.swing.*;
  */
 
 public abstract class AbstractMetricChartArea extends AbstractChartArea {
-	// these are handled somewhat magically.  see setNumTicksX, for example.
-
 	public AbstractMetricChartArea() {
 		super();
 	}
 	
 	/**
 	 * Translates a point in screen space to chart coordinates.
+	 * <p>
+	 * It used to return null if the point was not within the data area,
+	 * but that information is available elsewhere and it makes other stuff
+	 * more complicated, so I took that out. -Thomas
+	 * 
 	 * @param p The point in screen coordinates.
-	 * @return The point translated to the chart's coordinate system,
-	 * or null if the point is not within the data value.
+	 * @return The point translated to the chart's coordinate system.
 	 */
 	public Point2D.Double getDataValueForPoint(Point p) {
-		if(!isInDataArea(p)) return null;
-		
 		double xMax = getXMax(), yMax = getYMax(), 
 			xMin = getXMin(), yMin = getYMin();
 		
