@@ -57,6 +57,16 @@ import java.awt.*;
  * this class is implemented as a JLayeredPane with two layers:
  * a lower layer for drawing the chart, and an upper layer for drawing
  * mouse feedback over the chart.
+ * <p>
+ * It could be a good project to make the chart be double buffered, so that it
+ * does not have to redraw from scratch every time you drag the mouse to zoom.
+ * The ComponentListener interface might be useful for detecting when the chart
+ * really needs to be redrawn, rather than when the cached copy can get stuck
+ * on the screen.
+ * <p>
+ * This might also be done with a RepaintManager, or with the Swing property
+ * setDoubleBuffered, or something.  I don't understand how all that works.
+ * http://java.sun.com/products/jfc/tsc/articles/painting/
  * 
  * @author sulmanj
  * @author smitht
