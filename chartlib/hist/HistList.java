@@ -94,10 +94,10 @@ public class HistList {
 	 * in which case return 0 (because there are 0 instances of a hit there).
 	 */
 	public int get(int index) {
-		try {
-			return list.get(index);
-		} catch (IndexOutOfBoundsException e) {
+		if (list.size() <= index) {
 			return 0;
+		} else {
+			return list.get(index);
 		}
 	}
 	
@@ -105,10 +105,11 @@ public class HistList {
 	 * Get the count of hits in the bin that *height* would fall into.
 	 */
 	public Integer get(float height) {
-		try {
-			return list.get(heightToIndex(height));
-		} catch (IndexOutOfBoundsException e) {
-			return 0;
+		int index = heightToIndex(height);
+		if (list.size() <= index) {
+			return null;
+		} else {
+			return list.get(index);
 		}
 	}
 	

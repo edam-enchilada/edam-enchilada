@@ -70,12 +70,17 @@ public class BinAddressableArrayList<T> {
 	
 	/**
 	 * Get this index from the ArrayList
+	 * 
+	 * @note This used to be implemented using a try/catch block, which was
+	 * bad coding style.  But it also made it at least 10 times slower.  There's
+	 * another copy of this code floating around somewhere, which would benefit
+	 * from this speedup if it ever gets used again.
 	 */
 	public T getByIndex(int index) {
-		try {
-			return list.get(index);
-		} catch (IndexOutOfBoundsException e) {
+		if (list.size() <= index) {
 			return null;
+		} else {
+			return list.get(index);
 		}
 	}
 	
@@ -83,10 +88,11 @@ public class BinAddressableArrayList<T> {
 	 * Get the contents of the bin that *height* would fall into.
 	 */
 	public T get(float height) throws IndexOutOfBoundsException {
-		try {
-			return list.get(heightToIndex(height));
-		} catch (IndexOutOfBoundsException e) {
+		int index = heightToIndex(height);
+		if (list.size() <= index) {
 			return null;
+		} else {
+			return list.get(index);
 		}
 	}
 	
