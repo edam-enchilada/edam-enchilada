@@ -136,7 +136,8 @@ public abstract class AbstractChartArea extends JComponent {
 	/**
 	 * Draws the graph.  This call might be overridden, but probably shouldn't be,
 	 * you should probably just override one of:
-	 * drawBackground(Graphics2D), drawAxes(Graphics2D), or drawData(Graphics2D).
+	 * drawBackground(Graphics2D), drawAxes(Graphics2D), drawAxisTitles(Graphics2d),
+	 * or drawData(Graphics2D).  updateAxes() is also called.
 	 * 
 	 * For instance, say you want to make a chart with a transparent background.
 	 * Then just override drawBackground to do nothing, and make sure you do
@@ -144,13 +145,14 @@ public abstract class AbstractChartArea extends JComponent {
 	 */
 	public void paintComponent(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g.create();
+
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		drawBackground(g2d);
+		drawBackground((Graphics2D) g2d.create());
 		updateAxes();
-		drawAxes(g2d);
-		drawAxisTitles(g2d);
-		drawData(g2d);
+		drawAxes((Graphics2D) g2d.create());
+		drawAxisTitles((Graphics2D) g2d.create());
+		drawData((Graphics2D) g2d.create());
 
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
