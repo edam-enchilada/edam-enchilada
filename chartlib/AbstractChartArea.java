@@ -24,21 +24,20 @@ public abstract class AbstractChartArea extends JComponent {
 	
 	protected AxisTitle xAxisTitle, yAxisTitle;
 
-	protected abstract void drawData(Graphics2D g2d);
-	
 	protected Color foregroundColor = Color.RED;
 	protected Color backgroundColor = Color.WHITE;
 	
-	private static final int H_AXIS_PADDING = 15;
-	private static final int V_AXIS_PADDING = 50;
-	private static final int H_TITLE_PADDING = 20;
-	private static final int V_TITLE_PADDING = 20;
-	private static final int RIGHT_PADDING = 15;
-	private static final int TOP_PADDING = 15;
+	protected int H_AXIS_PADDING = 15;
+	protected int V_AXIS_PADDING = 50;
+	protected int H_TITLE_PADDING = 20;
+	protected int V_TITLE_PADDING = 20;
+	protected int RIGHT_PADDING = 15;
+	protected int TOP_PADDING = 15;
 	
 	public AbstractChartArea() {
 		super();
 		createAxes();
+		this.setMinimumSize(new Dimension(10, 10));
 	}
 
 
@@ -152,7 +151,10 @@ public abstract class AbstractChartArea extends JComponent {
 		updateAxes();
 		drawAxes((Graphics2D) g2d.create());
 		drawAxisTitles((Graphics2D) g2d.create());
-		drawData((Graphics2D) g2d.create());
+		
+		Graphics2D dataG = (Graphics2D) g2d.create();
+		dataG.clip(getDataAreaBounds());
+		drawData(dataG);
 
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
@@ -238,7 +240,15 @@ public abstract class AbstractChartArea extends JComponent {
 		g.setClip(oldClip);
 	}
 
-
+	/**
+	 * Override this method to draw the data in some way.  If you want, you can
+	 * use some of the methods in ChartArea.java, in which case you should subclass
+	 * it.  Otherwise, you can implement your own drawing area.  If you do this,
+	 * you might take a look at chartlib.hist.HistogramsChartArea, for an example
+	 * of how to redraw efficiently, if your chart type will be complex.  
+	 */
+	protected abstract void drawData(Graphics2D g2d);
+	
 	public boolean isDoubleBuffered() {
 		return false;
 	}
