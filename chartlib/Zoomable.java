@@ -1,6 +1,9 @@
 package chartlib;
 /**
  * Abstracted out from Chart so that ChartAreas themselves could be zoomy.
+ * <p>
+ * It would probably make sense to change the way charts zoom even further:  an
+ * event/listener/source type design pattern might be the way to go.
  * 
  * @author smitht
  */

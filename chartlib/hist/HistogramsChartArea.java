@@ -27,21 +27,22 @@ import database.SQLServerDatabase;
  * @author smitht
  *
  */
-public class PeakHistogramChartArea 
-	extends AbstractMetricChartArea implements chartlib.Zoomable 
+public class HistogramsChartArea 
+	extends UndecoratedXChartArea implements chartlib.Zoomable 
 {
 	private final List<HistogramDataset> collectionHistograms 
 			= new LinkedList<HistogramDataset>();
-	private static float binWidth = 0.01f; // should be adjustable.
-	private final static int maxMZ = 500; // ugly!  should be fixed sometime!
+
 	
-	public PeakHistogramChartArea() {
+	public HistogramsChartArea() {
 		super();
+		this.setPreferredSize(new Dimension(300, 300));
 	}
 	
-	public PeakHistogramChartArea(HistogramDataset d) {
+	public HistogramsChartArea(HistogramDataset d) {
 		super();
 		collectionHistograms.add(d);
+		this.setPreferredSize(new Dimension(300, 300));
 	}
 	
 
@@ -49,11 +50,8 @@ public class PeakHistogramChartArea
 	/**
 	 * Draws the special histogram.
 	 * <p>
-	 * This uses the Graphics2D's clip in a special way, the way it's supposed
-	 * to be used.  The clip gets set by AWT or SWING or something to the "dirty"
-	 * area that has to be repainted.  Since this chart type is backed by a big
-	 * old data structure that takes a while to traverse, we get to only look
-	 * at the parts of it that are relevant, thanks to this information.  
+	 * Uses the clip from the Graphics2D object to decide how much of the
+	 * histogram needs to be redrawn.
 	 */
 	@Override
 	protected void drawData(Graphics2D g2d) {
@@ -79,6 +77,9 @@ public class PeakHistogramChartArea
 			
 			float factor = 60f / (float) dataset.count;
 			
+			/*
+			 * We define the y axis to be in integer-valued chunks.
+			 */
 			for (int mz = (int) min.x; mz <= max.x; mz++) 
 			{
 				// revision with bars for the 0s: 1.7
@@ -97,9 +98,13 @@ public class PeakHistogramChartArea
 				if (dataset.hists[mz] == null) continue;
 				float binWidth = dataset.hists[mz].getBinWidth();
 				
-				float limit = (float) (max.y / binWidth + 1);
+				int maxInd = (int) (max.y / binWidth) + 2;
+				int minInd = (int) (min.y / binWidth);
 				
-				for (int i = (int) min.y; i < limit; i++) 
+				/*
+				 * This iterates over histogram bins, by index.
+				 */
+				for (int i = minInd; i < maxInd; i++) 
 				{
 					if (dataset.hists[mz].getCountAtIndex(i) > 1) {
 						g2d.setColor(new Color(R,G,B,
@@ -148,22 +153,6 @@ public class PeakHistogramChartArea
 		}
 	}
 	
-	public static void main(String[] args) {
-		JFrame grr = new JFrame("woopdy doo");
-		grr.setLayout(new BorderLayout());
-		
-//		PeakHistogramChartArea p = new PeakHistogramChartArea(24);
-		PeakHistogramChartArea p = new PeakHistogramChartArea(4);
-		p.setAxisBounds(0, 400, 0, 1);
-		ZoomableChart z = new ZoomableChart(p);
-		
-		grr.getContentPane().add(z,BorderLayout.CENTER);
-		grr.validate();
-		grr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		grr.setPreferredSize(new Dimension(400, 400));
-		grr.pack();
-		grr.setVisible(true);
-	}
 
 	public void addDataset(HistogramDataset newSet) {
 		collectionHistograms.add(newSet);
@@ -172,73 +161,7 @@ public class PeakHistogramChartArea
 	public boolean removeDataset(HistogramDataset dset) {
 		return collectionHistograms.remove(dset);
 	}
-
-	public PeakHistogramChartArea(CollectionCursor particleCursor) {
-		super();
-		addDataset(analyseCollection(particleCursor, Color.BLACK));
-	}
-
-	public PeakHistogramChartArea(int collID) {
-		SQLServerDatabase db = getDB();
-		collection.Collection coll = db.getCollection(collID);
-		CollectionCursor particleCursor = db.getBinnedCursor(coll);
-		addDataset(analyseCollection(particleCursor, Color.BLACK));
-	}
-
-	//	/**
-	//	 * Gets called *before* the constructor... even before the static stuff like
-	//	 * initializing chartArea!  ksjdfkajsdkfjaksjdfkj
-	//	 */
-	//	protected JPanel createChartPanel() {
-	//		JPanel foo = new JPanel();
-	//		chartArea.setAxisBounds(0, 400, 0, 1);
-	//		chartArea.setPreferredSize(new Dimension(400, 400));
-	//		foo.add(chartArea);
-	//		foo.validate();
-	//		return foo;
-	//	}
 	
-	private SQLServerDatabase getDB() {
-		if (gui.MainFrame.db != null) {
-			return gui.MainFrame.db;
-		} else {
-			SQLServerDatabase db = new SQLServerDatabase();
-			db.openConnection();
-			return db;
-		}
-	}
 
-	public static HistogramDataset analyseCollection
-		(CollectionCursor particleCursor, Color c) 
-	{
-		BinnedPeakList peakList;
-		int partnum = 0;
-	
-		final ChainingHistogram[] histograms = new ChainingHistogram[maxMZ];
-		
-		while (particleCursor.next()) {
-			ParticleInfo pInfo = particleCursor.getCurrent();
-			peakList = pInfo.getBinnedList();
-			peakList.normalize(DistanceMetric.CITY_BLOCK);
-	
-			++partnum;
-			
-			for (BinnedPeak p : peakList) {
-				if (p.key >= maxMZ || p.key < 0)
-					continue;
-				if (histograms[p.key] == null) {
-					histograms[p.key] = new ChainingHistogram(binWidth);
-				}
-				histograms[p.key].addPeak(p.value, pInfo);
-			}
-		}
-		return new HistogramDataset(partnum, histograms, c);
-	}
-
-	@Override
-	public boolean isDoubleBuffered() {
-		return true;
-	}
-	
 }
 

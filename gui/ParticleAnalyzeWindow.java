@@ -580,7 +580,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 */
 	private void unZoom()
 	{
-		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX - 1);
+		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX);
 	}
 	
 	private void zoomOut()
@@ -681,9 +681,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			showNextParticle();
 		else if(key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP)
 			showPreviousParticle();
-		//Z unzooms the chart.
-		else if(key == KeyEvent.VK_Z)
-			unZoom();
+//		//Z unzooms the chart.
+//		else if(key == KeyEvent.VK_Z)
+//			unZoom();
 	}
 	
 	public void keyReleased(KeyEvent e){}

@@ -78,12 +78,14 @@ public class PeakList {
 	 * @return Returns the peakList.
 	 */
 	public ArrayList<Peak> getPeakList() {
-		return peakList;}
+		return peakList;
+	}
 	
 	/**
 	 * @param peakList The peakList to set.
 	 */
 	public void setPeakList(ArrayList<Peak> peakList) {
-		this.peakList = peakList;}
+		this.peakList = peakList;
+	}
 	
 }

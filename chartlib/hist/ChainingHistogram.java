@@ -20,7 +20,7 @@ public class ChainingHistogram
 		super(binWidth);
 	}
 
-	public void addPeak(float peakHeight, ParticleInfo pInfo) {
+	public void addPeak(float peakHeight, BinnedPeakList bpl) {
 		if (peakHeight > 1) {throw new IllegalArgumentException();} 
 		ArrayList<BinnedPeakList> target;
 		
@@ -30,9 +30,7 @@ public class ChainingHistogram
 			expandAndSet(peakHeight, target);
 		}
 		
-		assert(pInfo.getBinnedList() != null) : "Wrong kind of cursor used on database";
-		
-		target.add(pInfo.getBinnedList());
+		target.add(bpl);
 		hitCount++;
 	}
 	

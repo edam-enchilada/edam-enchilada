@@ -69,7 +69,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	
 	public BinnedPeakList() {
 		peaks = new TreeMap<Integer, Float>();
-		normalizable = null;
+		normalizable = new Normalizer();
 	}
 	
 	public Normalizable getNormalizable(){

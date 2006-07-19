@@ -73,7 +73,7 @@ import java.awt.*;
  * 
  */
 public class ZoomableChart extends JLayeredPane implements MouseInputListener,
-		AdjustmentListener {
+		AdjustmentListener, KeyListener {
 
 	//the two layers
 	private Zoomable chart;
@@ -100,10 +100,11 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	
 	// a rather arbitrary limit on the distance that you can zoom in.
 	private final int MIN_ZOOM = 5;
-/**
- * Constructs a new ZoomableChart.
- * @param chart The chart the zoomable chart will display.
- */
+	
+	/**
+	 * Constructs a new ZoomableChart.
+	 * @param chart The chart the zoomable chart will display.
+	 */
 	public ZoomableChart(Zoomable chart)
 	{
 		this.chart = chart;
@@ -125,12 +126,17 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		if (chart instanceof Component) {
 			bottomPanel.add((Component) chart,BorderLayout.CENTER);
+		} else {
+			// I can't figure out how to re-jigger inheritance so that Zoomable
+			// can force things to be Components.  Nor do I know if I should. -tom
+			throw new RuntimeException("Whoops!  Time to redesign chartlib!");
 		}
 		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
 		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		addMouseListener(this);
 		addMouseMotionListener(this);
+		addKeyListener(this);
 	}
 	
 	/**
@@ -445,6 +451,18 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 					end.x, start.y); // a horizontal line
 			g.fillRect(end.x-5, start.y-5, 10, 10);
 		}
+	}
+
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_Z) {
+			zoom(cScrollMin, defaultCScrollMax);
+		}
+	}
+
+	public void keyReleased(KeyEvent e) {}
+
+	public void keyTyped(KeyEvent e) {
+		
 	}
 
 

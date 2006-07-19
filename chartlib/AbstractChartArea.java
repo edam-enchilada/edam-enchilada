@@ -309,4 +309,10 @@ public abstract class AbstractChartArea extends JComponent {
 	public String getTitleY() {
 		return yAxisTitle.getTitle();
 	}
+	
+	
+	@Override
+	public void repaint() {
+		super.repaint();
+	}
 }
