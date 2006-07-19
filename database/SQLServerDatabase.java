@@ -89,6 +89,7 @@ import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.ext.mssql.InsertIdentityOperation;
 
 import errorframework.ErrorLogger;
+import experiments.Tuple;
 
 /* 
  * Maybe a good way to refactor this file is to separate out methods that
@@ -2491,6 +2492,71 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
+	 * A cursor that returns only AtomID and binnedpeaklist.
+	 * About 15 times faster than a BinnedCursor.
+	 * 
+	 * @author smitht
+	 *
+	 */
+	public class BPLOnlyCursor {
+		private ResultSet rs;
+		private Statement stmt;
+		private int currID; // the current atomID.
+
+		private BPLOnlyCursor(Collection coll) throws SQLException {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("use SpASMSdb;" +
+				"select AtomID, PeakLocation, PeakArea " +
+				" FROM " +
+				" ATOFMSAtomInfoSparse "
+				// The dynamic table generation stuff is rather useless since I 
+				// haven't dynamized the fields that I'm getting.  So uh, yeah.
+				// XXX: Generalize retrieval for multiple datatypes.
+//				getDynamicTableName(DynamicTable.AtomInfoSparse, coll.getDatatype()) 
+				+ " WHERE AtomID in " +
+				"(SELECT AtomID FROM InternalAtomOrder " +
+				"Where CollectionID = "+coll.getCollectionID()+")" +
+			" order by AtomID;");
+			if (! rs.next()) {
+				throw new SQLException("Empty collection or a problem!");
+			}
+			currID = rs.getInt(1);
+		}
+
+		public boolean hasNext() {
+			try {
+				return ! rs.isAfterLast();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+
+		public Tuple<Integer, BinnedPeakList> next() throws SQLException {
+			int retAtom = currID;
+			BinnedPeakList bpl = new BinnedPeakList();
+			while (rs.getInt(1) == retAtom) {
+				bpl.add(rs.getInt(2), rs.getInt(3));
+
+				if (! rs.next()) {
+					break;
+				}
+			}
+
+			if (! rs.isAfterLast())
+				currID = rs.getInt(1);
+
+			return new Tuple<Integer, BinnedPeakList>(retAtom, bpl);
+		}
+		
+		public void close() throws SQLException {
+			rs.close();
+			stmt.close();
+		}
+		
+	}
+	
+	/**
 	 * AtomInfoOnly cursor.  Returns atom info.
 	 */
 	private class AtomInfoOnlyCursor 
@@ -2951,6 +3017,13 @@ public class SQLServerDatabase implements InfoWarehouse
 	public CollectionCursor getPeakCursor(Collection collection)
 	{
 		return new PeakCursor(collection);
+	}
+	
+	/**
+	 * get method for BPLOnlyCursor.
+	 */
+	public BPLOnlyCursor getBPLOnlyCursor(Collection collection) throws SQLException {
+		return new BPLOnlyCursor(collection);
 	}
 	
 	/**
