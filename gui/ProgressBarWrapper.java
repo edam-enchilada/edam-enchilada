@@ -6,8 +6,8 @@ import javax.swing.border.*;
 
 public class ProgressBarWrapper {
 	private JDialog waitBarDialog;
-	private JProgressBar pBar;
-	private JLabel pLabel;
+	private final JProgressBar pBar;
+	private final JLabel pLabel;
 	
 	private int curNum = 0;
 	
@@ -27,20 +27,46 @@ public class ProgressBarWrapper {
 		waitBarDialog.setPreferredSize(new Dimension(500, 100));
 	}
 	
-	public void increment(String text) {
-		pBar.setValue(curNum++);
-		pLabel.setText(text);
-		waitBarDialog.validate();
+	public void increment(final String text) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				pBar.setValue(curNum++);
+				pLabel.setText(text);
+				waitBarDialog.validate();
+			}
+		});
 	}
 	
 	public void constructThis() {
-		waitBarDialog.pack();
-		waitBarDialog.validate();
-		waitBarDialog.setVisible(true);
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				waitBarDialog.pack();
+				waitBarDialog.validate();
+				waitBarDialog.setVisible(true);
+			}
+		});
 	}
 	
 	public void disposeThis() {
-		waitBarDialog.setVisible(false);
-		waitBarDialog.dispose();
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				waitBarDialog.setVisible(false);
+				waitBarDialog.dispose();
+			}
+		});
 	}
+
+	public void setIndeterminate(final boolean indeterminate) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				if (indeterminate) {
+					pBar.setString("");
+				} else {
+					pBar.setString(null);
+				}
+				pBar.setIndeterminate(indeterminate);
+			}
+		});
+	}
+
 }

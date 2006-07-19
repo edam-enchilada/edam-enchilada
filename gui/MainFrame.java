@@ -472,8 +472,9 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		else if (source == aggregateButton)
 		{
+
 			Collection[] selectedCollections = collectionPane.getSelectedCollections();
-			
+
 			if (selectedCollections != null && selectedCollections.length > 0) {
 				AggregateWindow aw = new AggregateWindow(this, db, selectedCollections);
 				aw.setVisible(true);

@@ -61,7 +61,10 @@ public class AggregatorTest extends TestCase {
 		aggregator = new Aggregator(null, db, db.getCollection(2));
 		Collection[] collections = {db.getCollection(2),
 				db.getCollection(4),db.getCollection(5)};
-		int cID = aggregator.createAggregateTimeSeries("aggregated",collections);
+		ProgressBarWrapper progressBar =
+			aggregator.createAggregateTimeSeriesPrepare(collections);
+		int cID = aggregator.createAggregateTimeSeries("aggregated",collections,
+				progressBar);
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
@@ -147,17 +150,24 @@ public class AggregatorTest extends TestCase {
 
 		aggregator = new Aggregator(null, db, db.getCollection(2));
 		Collection[] collections1 = {db.getCollection(2)};
-		int cID = aggregator.createAggregateTimeSeries("aggregated1",collections1);
+		ProgressBarWrapper progressBar1 =
+			aggregator.createAggregateTimeSeriesPrepare(collections1);
+		int cID = aggregator.createAggregateTimeSeries("aggregated1",
+				collections1,progressBar1);
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
 		assertTrue(rs.next());
+		System.out.println("Output = " + rs.getInt(1));
 		assertTrue(rs.getInt(1)==29);
 		
 		
 		aggregator = new Aggregator(null, db, db.getCollection(3));
 		Collection[] collections2 = {db.getCollection(3)};
-		cID = aggregator.createAggregateTimeSeries("aggregated2",collections2);
+		ProgressBarWrapper progressBar2 =
+			aggregator.createAggregateTimeSeriesPrepare(collections2);
+		cID = aggregator.createAggregateTimeSeries("aggregated2",
+				collections2, progressBar2);
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");

@@ -3830,6 +3830,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
 					// it now tracks number of particles instead of sum of m/z particles.	
 				//System.out.println("Statement: "+sql.toString());
+				progressBar.setIndeterminate(true);
 				stmt.execute(sql.toString());
 			}
 			sql = new StringBuilder();

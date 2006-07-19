@@ -3,6 +3,7 @@ package gui;
 import collection.AggregationOptions;
 import collection.Collection;
 import database.*;
+import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -329,8 +330,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	{
 		Object source = e.getSource();
 		if (source == createSeries) {
-			long timingStart = new Date().getTime();
-			String newSeriesName = descriptionField.getText().trim().replace("'", "''");			
+			final long timingStart = new Date().getTime();
+			final String newSeriesName = descriptionField.getText().trim().replace("'", "''");			
 			if (newSeriesName.equals("")) {
     			JOptionPane.showMessageDialog(
     					this, 
@@ -344,7 +345,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			String timeBasisSQLStr = null;
 			boolean baseSequenceOnCollection = selSeqRadio.isSelected(); 
 			
-			Aggregator aggregator;
+			final Aggregator aggregator;
 			if (baseSequenceOnCollection) {
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
 				aggregator = new Aggregator(this, db, selectedCollection);
@@ -375,17 +376,31 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				aggregator = new Aggregator(this, db, start, end, interval);
 			}
 
-			int collectionID = aggregator.createAggregateTimeSeries(newSeriesName, collections);
-			parentFrame.updateSynchronizedTree(collectionID);
-			setVisible(false);
-			long timingEnd = new Date().getTime();
-			System.out.println("Aggregation Time: " + (timingEnd-timingStart));
-			// for all collections, set default Aggregation Options.
-			for (int i = 0; i < collections.length; i++) {
-				collections[i].getAggregationOptions().setDefaultOptions();
-			}
+			final ProgressBarWrapper initProgressBar =
+				aggregator.createAggregateTimeSeriesPrepare(collections);
 			
-			dispose();
+			final SwingWorker aggWorker = new SwingWorker() {
+				private int collectionID;
+				public Object construct() {
+					collectionID = aggregator.createAggregateTimeSeries(
+							newSeriesName, collections,initProgressBar);
+					return null;
+				}
+				public void finished() {
+					parentFrame.updateSynchronizedTree(collectionID);
+					setVisible(false);
+					long timingEnd = new Date().getTime();
+					System.out.println("Aggregation Time: " + (timingEnd-timingStart));
+					// for all collections, set default Aggregation Options.
+					for (int i = 0; i < collections.length; i++) {
+						collections[i].getAggregationOptions().setDefaultOptions();
+					}
+					
+					dispose();		
+				}
+			};
+			aggWorker.start();
+
 		} else if (source == cancel) {
 			// for all collections, set default Aggregation Options.
 			for (int i = 0; i < collections.length; i++) {
