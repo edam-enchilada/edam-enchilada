@@ -3631,6 +3631,9 @@ public class SQLServerDatabase implements InfoWarehouse
 				sql = new StringBuilder();
 				//	create TEMPatoms table
 				
+				
+				//preserved in order to compare the performance of SQL
+				// versus the written-out java code
 				boolean doSQL = true;
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPatoms')\n"+
 				"DROP TABLE TEMPatoms;\n");
@@ -3956,229 +3959,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 	}
 	
-	/**
-	 * This creates the empty collections and the queries and sends it to fillAtomsFromMemory 
-	 * method.  This only handles ATOFMS and TIME SERIES data, which will need to
-	 * be changed.
-	 * 
-	 * @return the list of CIDs that need to be updated in InternalAtomORder.
-	 */
-	/*public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) {
-		int collectionID = curColl.getCollectionID();
-		String collectionName = curColl.getName();
-		AggregationOptions options = curColl.getAggregationOptions();
-		try {
-		Statement stmt = con.createStatement();
-		StringBuilder sql = new StringBuilder();
-		// Create and Populate #atoms table with appropriate information.
-		 IF DATATYPE IS ATOFMS 
-		if (curColl.getDatatype().equals("ATOFMS")) {	
-			if (mzValues == null) {
-				ErrorLogger.writeExceptionToLog("SQLServer","Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
-				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return;
-			} 
-			
-			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
-			if (mzValues.length == 0) {
-				// do nothing!  allow emptiness.
-//				ErrorLogger.writeExceptionToLog("SQLServer","Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
-//				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
-//				System.err.println("Collections need to overlap times in order to be aggregated.");
-			} else {
-				//create and insert MZ Values into temporary #mz table.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
-				"DROP TABLE #mz;\n");
-				sql.append("CREATE TABLE #mz (Value INT);\n");
-				// Only bulk insert if client and server are on the same machine...
-				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "bulkfile.txt";
-					PrintWriter bulkFile = null;
-					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
-					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
-						e.printStackTrace();
-					}
-					for (int i = 0; i < mzValues.length; i++){
-						bulkFile.println(mzValues[i]);
-					}
-					bulkFile.close();
-					sql.append("BULK INSERT #mz\n" +
-							"FROM '" + tempFilename + "'\n" +
-					"WITH (FIELDTERMINATOR=',');\n");
-				} else {
-					for (int i = 0; i < mzValues.length; i++){
-						sql.append("INSERT INTO #mz VALUES("+mzValues[i]+");\n");
-					}
-				}	
-				//	create #atoms table
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
-				"DROP TABLE #atoms;\n");
-				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-				" Time DateTime, \n MZLocation int, \n Value real);\n");
-				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
-				// collects the sum of the Height/Area over all atoms at a given Time and for a specific m/z 
-				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
-						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
-						"FROM #TimeBins TB\n" +
-						"JOIN ATOFMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
-						"JOIN #mz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
-						"GROUP BY BinnedTime,MZ.Value\n"+
-						"ORDER BY Location, BinnedTime;\n");
 
-				// build 2 child collections - one for particle counts time-series,
-				// one for M/Z values time-series.
-				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
-				int mzPeakLoc, mzCollectionID;
-				// for each mz value specified, make a new child collection and populate it.
-				for (int j = 0; j < mzValues.length; j++) {	
-					mzPeakLoc = mzValues[j];
-					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
-					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
-					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
-							"ORDER BY NewAtomID;\n");
-					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
-					"ORDER BY NewAtomID;\n");
-				}
-				sql.append("DROP TABLE #mz;\n");
-				sql.append("DROP TABLE #atoms;\n");
-				progressBar.increment("  Executing M/Z Queries...");
-					// if the particle count is selected, produce that time series as well.
-					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
-					// it now tracks number of particles instead of sum of m/z particles.	
-				stmt.execute(sql.toString());
-			}
-			sql = new StringBuilder();
-			if (options.produceParticleCountTS) {
-				int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atomCount')\n"+
-				"DROP TABLE #atomCount;\n");
-				sql.append("CREATE TABLE #atomCount (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-						" Time DateTime, \n MZLocation int, \n Value real)\n" +
-						"insert #atomCount (Time, Value) \n" +
-						"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM #TimeBins TB\n"+
-						"GROUP BY BinnedTime\n"+
-				"ORDER BY BinnedTime;\n");
-				
-				sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-						"select " + combinedCollectionID + ", NewAtomID from #atomCount;\n");
-				sql.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
-				"select NewAtomID, Time, Value from #atomCount;\n");
-				sql.append("DROP TABLE #atomCount;");
-				
-				progressBar.increment("  " + collectionName + ", Particle Counts");
-				stmt.execute(sql.toString());
-			}
-			
-			 IF DATATYPE IS TIME SERIES 
-		} else if (curColl.getDatatype().equals("TimeSeries")) {
-			sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-			" Time DateTime, \n Value real);\n");
-			sql.append("insert #atoms (Time, Value) \n" +
-					"select BinnedTime, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
-					"from #TimeBins TB \n" +
-					"join TimeSeriesAtomInfoDense AID on (TB.AtomID = AID.AtomID) \n"+
-					"group by BinnedTime \n" +
-			"order by BinnedTime;\n");
-			
-			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
-			sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-					"select " + newCollectionID + ", NewAtomID from #atoms;\n");
-			
-			sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-			"select NewAtomID, Time, Value from #atoms;\n");
-			sql.append("DROP TABLE #atoms;\n");
-			progressBar.increment("  " + collectionName);
-			stmt.execute(sql.toString());
-		}
-		 IF DATATYPE IS AMS 
-		else if (curColl.getDatatype().equals("AMS")) {	
-			if (mzValues == null) {
-				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
-				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
-				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return;
-			} else if (mzValues.length == 0) {
-				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
-				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
-				System.err.println("Collections need to overlap times in order to be aggregated.");
-			} else {
-				//create and insert MZ Values into temporary #mz table.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
-				"DROP TABLE #mz;\n");
-				sql.append("CREATE TABLE #mz (Value INT);\n");
-				// Only bulk insert if client and server are on the same machine...
-				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "bulkfile.txt";
-					PrintWriter bulkFile = null;
-					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
-					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
-						e.printStackTrace();
-					}
-					for (int i = 0; i < mzValues.length; i++){
-						bulkFile.println(mzValues[i]);
-					}
-					bulkFile.close();
-					sql.append("BULK INSERT #mz\n" +
-							"FROM '" + tempFilename + "'\n" +
-					"WITH (FIELDTERMINATOR=',');\n");
-				} else {
-					for (int i = 0; i < mzValues.length; i++){
-						sql.append("INSERT INTO #mz VALUES("+mzValues[i]+");\n");
-					}
-				}	
-				//	create #atoms table
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
-				"DROP TABLE #atoms;\n");
-				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-				" Time DateTime, \n MZLocation int, \n Value real);\n");
-				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
-				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
-						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
-						"FROM #TimeBins TB\n" +
-						"JOIN AMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
-						"JOIN #mz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
-						"GROUP BY BinnedTime,MZ.Value\n"+
-						"ORDER BY Location, BinnedTime;\n");
-
-				// build 2 child collections - one for time series, one for M/Z values.
-				int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
-				int mzRootCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "M/Z", "", "");
-				int mzPeakLoc, mzCollectionID;
-				// for each mz value specified, make a new child collection and populate it.
-				for (int j = 0; j < mzValues.length; j++) {	
-					mzPeakLoc = mzValues[j];
-					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
-					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
-					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
-							"ORDER BY NewAtomID;\n");
-					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
-					"ORDER BY NewAtomID;\n");
-				}
-				sql.append("DROP TABLE #mz;\n");
-				sql.append("DROP TABLE #atoms;\n");
-				progressBar.increment("  Executing M/Z Queries...");	
-				stmt.execute(sql.toString());
-			}
-		}
-		//stmt.execute(sql.toString());
-		stmt.close();
-		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception aggregating collection: " + collectionName);
-			System.err.println("SQL exception aggregating collection: " + collectionName);
-			e.printStackTrace();
-		}
-	}
-	
-	*/
 	public int[] getValidSelectedMZValuesForCollection(Collection collection, Date startDate, Date endDate) {
 		Set<Integer> collectionIDs = collection.getCollectionIDSubTree();
 		AggregationOptions options = collection.getAggregationOptions();
@@ -4300,7 +4081,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		try{
 			Statement stmt = con.createStatement();
-			//System.out.println(selectAllTimesStr);
+			System.out.println("DATES:\n"+selectAllTimesStr);
 			ResultSet rs;
 			rs = stmt.executeQuery(selectAllTimesStr);
 			while (rs.next()) {
@@ -4349,26 +4130,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		}
 		
-		/*String condStr = ", %s as %s";
 		
-		if (conditionStrs.size() > 0) {
-			condStr = ", case when (";
-			
-			for (int i = 0; i < conditionStrs.size(); i++)
-				condStr += conditionStrs.get(i);
-			
-			condStr += ") then %s else -999 end as %s";
-			
-			for (int i = 0; i < conditionalSeqs.size(); i++) {
-				tableJoinStr += "join (" + atomSelStr + ") C" + i + " on (C" + i + ".Time = T1.Time) \n";
-				selectStr += ", C" + i + ".Value as C" + i + "Value";
-				collCondStr += "and C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + " \n";
-				columnsToReturn.add("C" + i + "Value");
-			}
-		}
-		
-		selectStr += String.format(condStr, "T.Value", "TsValue");
-		*/
 		String timesStr = selectStr + " \n" + tableJoinStr + collCondStr;
 		String sqlStr;
 		sqlStr = "SELECT S.Time as Time, S.Value as TsValue\n" +
@@ -4376,25 +4138,15 @@ public class SQLServerDatabase implements InfoWarehouse
 				"JOIN ("+timesStr+") T on (S.Time = T.Time)\n" +
 				"WHERE S.CollectionID = "+seq.getCollectionID()+";";
 		
-		//String sqlStr = selectStr + ", T.Value AS TsValue \n" + tableJoinStr + collCondStr;
+		sqlStr = selectStr + ", T.Value AS TsValue \n" + tableJoinStr + collCondStr;
 		Hashtable<java.util.Date, Double> retData = new Hashtable<java.util.Date, Double>();
 		
 		try{
 			Statement stmt = con.createStatement();
-			//System.out.println(selectAllTimesStr);
 			ResultSet rs;
-			/*rs = stmt.executeQuery(selectAllTimesStr);
-			while (rs.next()) {
-				double[] retValues = new double[columnsToReturn.size()];
-				for (int i = 0; i < retValues.length; i++)
-					retValues[i] = 0;
-				String dateTime = rs.getDate("Time");
-				if (ts != null)
-					retData.add(parser.parse(dateTime), retValues);	
-			}*/
 			
 			//System.out.println(sqlStr);
-			System.out.println(sqlStr);
+			System.out.println("ATOMS:\n"+sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
@@ -4417,6 +4169,252 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 		return retData;
+	}
+	
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromPercent(Collection collection,double magnitude, int minDuration){
+		/*System.out.println("collection: |"+collection+"|");
+		System.out.println("Collection ID: "+collection.getCollectionID());
+		System.out.println("threshold: "+magnitude+"\nduration: "+minDuration);
+		*/int parentCollection = this.getParentCollectionID(collection.getCollectionID());
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		
+		String atomSelStr = "SELECT CollectionID, Time, Value" +
+			"\n FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D \n" +
+			"JOIN AtomMembership M ON (D.AtomID = M.AtomID)";
+		
+		
+		String selectAtomsStr = "SELECT T.Time as Time, T.Value AS Value\n " +
+				"FROM ("+atomSelStr+") T\n" +
+				"WHERE T.CollectionID = "+collection.getCollectionID()+" ";
+		
+		String selectValuesStr = "SELECT DISTINCT T.Time as Time, V.Value as Value\n";
+		
+		String joinStr = 
+		"FROM (SELECT CollectionID, Time, Value\n" +
+		"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+		" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+		"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)";
+		
+		
+		String selectAllTimesStr = 
+			selectValuesStr + joinStr +
+			"WHERE ParentID = " + parentCollection+"\n";
+		
+		String selectAllAtomsTimesStr = 
+			selectValuesStr +
+			joinStr +
+		"	LEFT OUTER JOIN (" + selectAtomsStr + ") V ON (V.Time = T.Time)\n" +
+		"	WHERE ParentID = " + parentCollection+"\n";
+			
+		String datesCountStr = 
+			"SELECT COUNT(DISTINCT T.Time) as Count\n" +
+			joinStr +
+			"WHERE ParentID = " + parentCollection+"\n";
+		
+		String valuesCountStr = "SELECT COUNT(T.Time) as Count\n " +
+		"FROM ("+atomSelStr+") T\n" +
+		"WHERE T.CollectionID = "+collection.getCollectionID()+" \n";
+
+		
+		String orderedByTime = selectAllAtomsTimesStr + "     Order BY Time;\n";
+		String orderedByValue =  selectAllAtomsTimesStr + "     Order BY Value;\n";
+		
+		ArrayList<TreeMap<Date,Double>> plumes = new ArrayList<TreeMap<Date,Double>>();
+		TreeMap<Date,Double> curPlume = new TreeMap<Date,Double>();
+		try{
+			Statement stmt = con.createStatement();
+			
+			ResultSet rs;
+			System.out.println(datesCountStr);
+			rs = stmt.executeQuery(datesCountStr);
+			boolean hasRows = rs.next();
+			assert(hasRows);
+			int numParticles = rs.getInt("Count");
+			
+			System.out.println(valuesCountStr);
+			rs = stmt.executeQuery(valuesCountStr);
+			hasRows = rs.next();
+			assert(hasRows);
+			int numPeaks = rs.getInt("Count");
+			
+			System.out.println(orderedByValue);
+			rs = stmt.executeQuery(orderedByValue);
+			System.out.println("numParticles: "+numParticles+"\nnumPeaks: "+numPeaks);
+			System.out.println("skip to "+(int)(magnitude*numParticles));
+			for(int i = 0; i < (int)(magnitude*numParticles); i++){
+				hasRows = rs.next();
+				//System.out.println("Next value: "+rs.getDouble("Value"));
+				assert(hasRows);
+			}
+			double minValue = rs.getDouble("Value");
+			plumes = createAndDetectPlumesFromValue(collection,minValue,minDuration);
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
+			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} 
+		return plumes;
+	}
+	
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromMedian(Collection collection,double factor, int minDuration){
+		/*System.out.println("collection: |"+collection+"|");
+		System.out.println("Collection ID: "+collection.getCollectionID());
+		System.out.println("threshold: "+magnitude+"\nduration: "+minDuration);
+		*/int parentCollection = this.getParentCollectionID(collection.getCollectionID());
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		
+		String atomSelStr = "SELECT CollectionID, Time, Value" +
+			"\n FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D \n" +
+			"JOIN AtomMembership M ON (D.AtomID = M.AtomID)";
+		
+		
+		String selectAtomsStr = "SELECT T.Time as Time, T.Value AS Value\n " +
+				"FROM ("+atomSelStr+") T\n" +
+				"WHERE T.CollectionID = "+collection.getCollectionID()+" ";
+		
+		String selectValuesStr = "SELECT DISTINCT T.Time as Time, V.Value as Value\n";
+		
+		String joinStr = 
+		"FROM (SELECT CollectionID, Time, Value\n" +
+		"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+		" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+		"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)";
+		
+		
+		String selectAllTimesStr = 
+			selectValuesStr + joinStr +
+			"WHERE ParentID = " + parentCollection+"\n";
+		
+		String selectAllAtomsTimesStr = 
+			selectValuesStr +
+			joinStr +
+		"	LEFT OUTER JOIN (" + selectAtomsStr + ") V ON (V.Time = T.Time)\n" +
+		"	WHERE ParentID = " + parentCollection+"\n";
+			
+		String datesCountStr = 
+			"SELECT COUNT(DISTINCT T.Time) as Count\n" +
+			joinStr +
+			"WHERE ParentID = " + parentCollection+"\n";
+		
+		String valuesCountStr = "SELECT COUNT(T.Time) as Count\n " +
+		"FROM ("+atomSelStr+") T\n" +
+		"WHERE T.CollectionID = "+collection.getCollectionID()+" \n";
+
+		
+		String orderedByTime = selectAllAtomsTimesStr + "     Order BY Time;\n";
+		String orderedByValue =  selectAllAtomsTimesStr + "     Order BY Value;\n";
+		
+		ArrayList<TreeMap<Date,Double>> plumes = new ArrayList<TreeMap<Date,Double>>();
+		try{
+			Statement stmt = con.createStatement();
+			
+			ResultSet rs;
+			boolean hasRows = false;
+			System.out.println(datesCountStr);
+			rs = stmt.executeQuery(datesCountStr);
+			hasRows = rs.next();
+			assert(hasRows);
+			int numParticles = rs.getInt("Count");
+			
+			System.out.println(valuesCountStr);
+			rs = stmt.executeQuery(valuesCountStr);
+			hasRows = rs.next();
+			assert(hasRows);
+			int numPeaks = rs.getInt("Count");
+			
+			System.out.println(orderedByValue);
+			rs = stmt.executeQuery(orderedByValue);
+			for(int i = 0; i < (int)(numParticles - .50*numPeaks); i++){
+				hasRows = rs.next();
+				//System.out.println("Next value: "+rs.getDouble("Value"));
+				assert(hasRows);
+			}
+			double minValue = rs.getDouble("Value");
+			minValue *= factor;
+			plumes = createAndDetectPlumesFromValue(collection,minValue,minDuration);
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
+			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} 
+		return plumes;
+	}
+	
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromValue(Collection collection,double minValue, int minDuration){
+		/*System.out.println("collection: |"+collection+"|");
+		System.out.println("Collection ID: "+collection.getCollectionID());
+		System.out.println("threshold: "+magnitude+"\nduration: "+minDuration);
+		*/int parentCollection = this.getParentCollectionID(collection.getCollectionID());
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		
+		String atomSelStr = "SELECT CollectionID, Time, Value" +
+			"\n FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D \n" +
+			"JOIN AtomMembership M ON (D.AtomID = M.AtomID)";
+		
+		
+		String selectAtomsStr = "SELECT T.Time as Time, T.Value AS Value\n " +
+				"FROM ("+atomSelStr+") T\n" +
+				"WHERE T.CollectionID = "+collection.getCollectionID()+" ";
+		
+		String selectValuesStr = "SELECT DISTINCT T.Time as Time, V.Value as Value\n";
+		
+		String joinStr = 
+		"FROM (SELECT CollectionID, Time, Value\n" +
+		"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+		" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+		"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)";
+		
+		
+		String selectAllTimesStr = 
+			selectValuesStr + joinStr +
+			"WHERE ParentID = " + parentCollection+"\n";
+		
+		String selectAllAtomsTimesStr = 
+			selectValuesStr +
+			joinStr +
+		"	LEFT OUTER JOIN (" + selectAtomsStr + ") V ON (V.Time = T.Time)\n" +
+		"	WHERE ParentID = " + parentCollection+"\n";
+			
+		String orderedByTime = selectAllAtomsTimesStr + "     Order BY Time;\n";
+		
+		
+		ArrayList<TreeMap<Date,Double>> plumes = new ArrayList<TreeMap<Date,Double>>();
+		TreeMap<Date,Double> curPlume = new TreeMap<Date,Double>();
+		try{
+			Statement stmt = con.createStatement();
+			
+			ResultSet rs;
+			System.out.println("MinValue: "+minValue);
+			System.out.println(orderedByTime);
+			rs = stmt.executeQuery(orderedByTime);
+			boolean more = true;
+			more = rs.next();
+			while(more){
+				while(more && rs.getDouble("Value") >= minValue){
+					String dateTime = rs.getString("Time");
+					curPlume.put(parser.parse(dateTime),rs.getDouble("Value"));
+					more = rs.next();
+				}
+				if(!curPlume.isEmpty()&&curPlume.lastKey().getTime() - curPlume.firstKey().getTime() 
+						>= minDuration * 1000){
+					plumes.add(curPlume);
+					System.out.println("Plume: "+curPlume.values().toString());
+				}
+				curPlume = new TreeMap<Date,Double>();
+				
+				while(more && rs.getDouble("Value") < minValue){
+					more = rs.next();
+				}
+			}
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception retrieving time series data.");
+			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return plumes;
 	}
 	
 	public void syncWithIonsInDB(ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons) {

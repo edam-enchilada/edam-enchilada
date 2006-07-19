@@ -89,6 +89,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JButton analyzeParticleButton;
 	private JButton aggregateButton;
 	private JButton mapValuesButton;
+	private JMenu analysisMenu;
 	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
@@ -104,6 +105,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem queryItem;
 	private JMenuItem compressItem;
 	private JMenuItem clusterItem;
+	private JMenuItem detectPlumesItem;
 	private JMenuItem rebuildItem;
 	private JMenuItem exitItem;
 	private JMenuItem cutItem;
@@ -357,6 +359,9 @@ public class MainFrame extends JFrame implements ActionListener
 			new chartlib.hist.Histogrammer()
 				.drawCollection(getSelectedCollection().getCollectionID(),
 						Color.BLACK);
+		}
+		else if (source == detectPlumesItem){
+			new DetectPlumesDialog(this,synchronizedPane, db);
 		}
 		
 		else if (source == compressItem) {
@@ -623,7 +628,7 @@ public class MainFrame extends JFrame implements ActionListener
 		editMenu.add(selectAllItem);
 		
 		// Add an analysis menu to the menu bar.
-		JMenu analysisMenu = new JMenu("Analysis");
+		analysisMenu = new JMenu("Analysis");
 		analysisMenu.setMnemonic(KeyEvent.VK_A);
 		menuBar.add(analysisMenu);
 		
@@ -639,7 +644,8 @@ public class MainFrame extends JFrame implements ActionListener
 		compressItem.addActionListener(this);
 		visualizeItem = new JMenuItem("Visualize. . .", KeyEvent.VK_V);
 		visualizeItem.addActionListener(this);
-		
+		detectPlumesItem = new JMenuItem("Detect Plumes. . .", KeyEvent.VK_W);
+		detectPlumesItem.addActionListener(this);
 		
 		analysisMenu.add(clusterItem);
 		analysisMenu.add(labelItem);
@@ -647,6 +653,7 @@ public class MainFrame extends JFrame implements ActionListener
 		analysisMenu.add(queryItem);
 		analysisMenu.add(compressItem);
 		analysisMenu.add(visualizeItem);
+		//analysisMenu.add(detectPlumesItem);
 		
 		//Add a collection menu to the menu bar.
 		JMenu collectionMenu = new JMenu("Collection");
@@ -831,10 +838,12 @@ public class MainFrame extends JFrame implements ActionListener
 		if (colTree == collectionPane) {
 			panelChanged = setupRightWindowForCollection(collection);
 			aggregateButton.setEnabled(collection.containsData());
+			analysisMenu.remove(detectPlumesItem);
 			mapValuesButton.setEnabled(false);
 		} else if (colTree == synchronizedPane) {
 			panelChanged = setupRightWindowForSynchronization(collection);
 			mapValuesButton.setEnabled(collection.containsData());
+			analysisMenu.add(detectPlumesItem);
 			aggregateButton.setEnabled(false);
 		}
 		

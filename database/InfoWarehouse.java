@@ -53,6 +53,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import analysis.clustering.ClusterInformation;
@@ -288,6 +289,10 @@ public interface InfoWarehouse {
 	
 	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, 
 			Collection curColl, int[] mzValues);
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromPercent(Collection collection,double magnitude, int minDuration);
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromMedian(Collection collection,double magnitude, int minDuration);
+	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromValue(Collection collection,double magnitude, int minDuration);
+	
 	public int[] getValidSelectedMZValuesForCollection(Collection collection, Date startDate, Date endDate);
 	
 	public ArrayList<Date> getCollectionDates(Collection seq1, Collection seq2);
