@@ -128,7 +128,7 @@ public class GraphAxis {
 		 * have to change the spacing around at the bottom of the graph, if
 		 * you do it on the X-axis.
 		 */
-		public String label(double value);
+		public String[] label(double value);
 	}
 	
 	/**
@@ -140,8 +140,10 @@ public class GraphAxis {
 	 */
 	protected AxisLabeller labeller = new AxisLabeller() {
 		// a default labeller, which reports the value rounded to the 100s place.
-		public String label(double value) {
-			return  Double.toString((double)(Math.round(value * 100)) / 100); 
+		public String[] label(double value) {
+			String[] data = new String[1];
+			data[0] = Double.toString((double)(Math.round(value * 100)) / 100);
+			return data;
 		}
 	};
 	
@@ -291,16 +293,17 @@ public class GraphAxis {
 		}
 		
 		// draw tick labels
-		String[] bigTicksLabels = getBigTicksLabels();
+		String[][] bigTicksLabels = getBigTicksLabels();
+		for(int i=0;i<bigTicksLabels.length;i++){
 		Map<Coord, GlyphVector> drawableLabels 
-				= getLabelsForDrawing(bigTicks, bigTicksLabels, g2d);
+				= getLabelsForDrawing(bigTicks, bigTicksLabels[i], g2d);
 		for (Map.Entry<Coord, GlyphVector> label 
 				: drawableLabels.entrySet()) 
 		{
 			Coord p = label.getKey();
-			g2d.drawGlyphVector(label.getValue(), (float) p.getX(), (float) p.getY());
+			g2d.drawGlyphVector(label.getValue(), (float) p.getX(), (float) p.getY()+10*i);
 		}
-		
+		}
 		
 		// x axis small ticks
 		double[] smallTicks = getSmallTicks();
@@ -525,10 +528,17 @@ public class GraphAxis {
 	/**
 	 * Finds the labels of each big tick.  Uses the labeller.
 	 */
-	public String[] getBigTicksLabels() {		
-		String[] labels = new String[bigTicksVals.length];
-		for(int count = 0; count < labels.length; count++)
-			labels[count] = getLabelFor(bigTicksVals[count]);
+	public String[][] getBigTicksLabels() {		
+		String[][] labels;
+		String[] newLabel = getLabelFor(bigTicksVals[0]);
+		labels = new String[newLabel.length][bigTicksVals.length];
+		for(int count = 0; count < labels[0].length; count++){
+			newLabel = getLabelFor(bigTicksVals[count]);
+			for(int i=0;i<labels.length;i++){
+				labels[i][count] = newLabel[i];
+			}
+		}
+			
 		return labels;
 	}
 	
@@ -536,7 +546,7 @@ public class GraphAxis {
 	 * Generates a label for a given data value.  Might be useful if you want
 	 * to display where on the axis the mouse is, for example.
 	 */
-	public String getLabelFor(double value) {
+	public String[] getLabelFor(double value) {
 		return labeller.label(value);
 	}
 

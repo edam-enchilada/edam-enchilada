@@ -20,6 +20,7 @@ import java.util.Iterator;
  */
 public class ChartArea extends AbstractMetricChartArea {
 	protected ArrayList<Dataset> datasets;
+	protected boolean drawXAxisAsDateTime;
 	protected int barWidth = 3;
 	
 	/**
@@ -27,12 +28,14 @@ public class ChartArea extends AbstractMetricChartArea {
 	 */
 	public ChartArea() {
 		super();
+		drawXAxisAsDateTime = false;
 		datasets = new ArrayList<Dataset>();
 		// TODO Auto-generated constructor stub
 	}
 	
 	public ChartArea(Dataset dataset) {
 		super();
+		drawXAxisAsDateTime = false;
 		datasets = new ArrayList<Dataset>();
 		datasets.add(dataset);
 		// TODO Auto-generated constructor stub
@@ -254,9 +257,6 @@ public class ChartArea extends AbstractMetricChartArea {
 		drawDataPoints(g2d,datasets.get(0));
 	}
 	
-	public void drawXAxisAsDateTime(){
-		
-	}
 
 	/**
 	 * Sets the bounds of either or both axes to fit the dataset.

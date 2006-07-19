@@ -146,6 +146,16 @@ public class TimeSeriesPlot extends Chart {
 		}
 	}
 	
+	/**
+	 * Set the chart to draw the x-axis as a date instead
+	 * of as a number...
+	 * @param index The chart to act on
+	 */
+	public void drawXAxisAsDateTime(int index) {
+		((LinePointsChartArea)chartAreas.get(index)).drawXAxisAsDateTime();
+	}
+	
+	
 	public void coordinateChartAreas() {
 		packData(0,true,true);
 	}

@@ -511,14 +511,6 @@ public class Chart extends JPanel implements Zoomable
 		key.setColor(index, c);
 	}
 	
-	/**
-	 * Set the chart to draw the x-axis as a date instead
-	 * of as a number...
-	 * @param index The chart to act on
-	 */
-	public void drawXAxisAsDateTime(int index) {
-		chartAreas.get(index).drawXAxisAsDateTime();
-	}
 	
 	/**
 	 * Sets all the charts' axis limits to new values that fit the dataset.

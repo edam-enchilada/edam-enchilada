@@ -3,9 +3,17 @@ package chartlib;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.swing.JFrame;
 
+import chartlib.GraphAxis.AxisLabeller;
+
 public class LinePointsChartArea extends ChartArea {
+	private static final int EXTRA_DATETIME_SPACE = 15;
+	
 	public LinePointsChartArea(Dataset dataset) {
 		super(dataset);
 		setPreferredSize(new Dimension(400, 400));
@@ -33,6 +41,50 @@ public class LinePointsChartArea extends ChartArea {
 	}
 	
 	
+	
+	public void drawXAxisAsDateTime(){
+		
+	}
+	
+	/**
+	 * updateAxes() tests for the axes not existing yet, so this method actually
+	 * just calls that one.
+	 *
+	 */
+	protected void createAxes() {
+		super.createAxes();
+		this.xAxis.setLabeller(
+				new AxisLabeller() {
+					private SimpleDateFormat dateFormat = 
+						new SimpleDateFormat("M/dd/yy");
+					private SimpleDateFormat timeFormat = 
+						new SimpleDateFormat("HH:mm:ss");
+					// a default labeller, which reports the value rounded to the 100s place.
+					public String[] label(double value) {
+						Date date = new Date();
+						date.setTime((long)value);
+						String[] label = new String[2];
+						label[0] = dateFormat.format(date);
+						label[1] = timeFormat.format(date);
+						return  label;
+					}
+				}
+		);
+		
+	}
+	
+	/**
+	 * Indicates the portion of the chart value in which data is displayed.
+	 * Creates special dimensions for displaying DateTimes on the x-axis
+	 * @return A rectangle containing the data display value.
+	 */
+	public Rectangle getDataAreaBounds()
+	{
+		Rectangle area = super.getDataAreaBounds();
+		area.setSize(area.height-EXTRA_DATETIME_SPACE,
+				area.width - EXTRA_DATETIME_SPACE);
+		return area;
+	}
 	/**
 	 * @param args
 	 */
