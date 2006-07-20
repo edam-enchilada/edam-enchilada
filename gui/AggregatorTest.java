@@ -5,6 +5,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import javax.swing.SwingUtilities;
+
 import collection.Collection;
 
 import database.CreateTestDatabase2;
@@ -59,12 +61,18 @@ public class AggregatorTest extends TestCase {
 			stmt = db.getCon().createStatement();
 
 		aggregator = new Aggregator(null, db, db.getCollection(2));
-		Collection[] collections = {db.getCollection(2),
+		final Collection[] collections = {db.getCollection(2),
 				db.getCollection(4),db.getCollection(5)};
-		ProgressBarWrapper progressBar =
+		final ProgressBarWrapper progressBar =
 			aggregator.createAggregateTimeSeriesPrepare(collections);
-		int cID = aggregator.createAggregateTimeSeries("aggregated",collections,
-				progressBar);
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				MainFrame.db = db;
+				MainFrame mf = new MainFrame();
+				int cID = aggregator.createAggregateTimeSeries("aggregated",collections,
+						progressBar, mf);
+			}
+		});
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
@@ -149,11 +157,17 @@ public class AggregatorTest extends TestCase {
 			stmt = db.getCon().createStatement();
 
 		aggregator = new Aggregator(null, db, db.getCollection(2));
-		Collection[] collections1 = {db.getCollection(2)};
-		ProgressBarWrapper progressBar1 =
+		final Collection[] collections1 = {db.getCollection(2)};
+		final ProgressBarWrapper progressBar1 =
 			aggregator.createAggregateTimeSeriesPrepare(collections1);
-		int cID = aggregator.createAggregateTimeSeries("aggregated1",
-				collections1,progressBar1);
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				MainFrame.db = db;
+				MainFrame mf = new MainFrame();
+				int cID = aggregator.createAggregateTimeSeries("aggregated1",
+						collections1,progressBar1, mf);
+			}
+		});
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
@@ -163,11 +177,17 @@ public class AggregatorTest extends TestCase {
 		
 		
 		aggregator = new Aggregator(null, db, db.getCollection(3));
-		Collection[] collections2 = {db.getCollection(3)};
-		ProgressBarWrapper progressBar2 =
+		final Collection[] collections2 = {db.getCollection(3)};
+		final ProgressBarWrapper progressBar2 =
 			aggregator.createAggregateTimeSeriesPrepare(collections2);
-		cID = aggregator.createAggregateTimeSeries("aggregated2",
-				collections2, progressBar2);
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				MainFrame.db = db;
+				MainFrame mf = new MainFrame();
+				int cID = aggregator.createAggregateTimeSeries("aggregated2",
+						collections2,progressBar2, mf);
+			}
+		});
 		
 		// check number of collections:
 		rs = stmt.executeQuery("SELECT COUNT(*) FROM Collections;\n");
@@ -181,6 +201,8 @@ public class AggregatorTest extends TestCase {
 		db.closeConnection();
 	}
 	
-	
+	/*
+	 * Need a unit test here for interval aggregation
+	 */
 	
 }

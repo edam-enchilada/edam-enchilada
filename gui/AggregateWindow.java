@@ -384,11 +384,11 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				private int collectionID;
 				public Object construct() {
 					collectionID = aggregator.createAggregateTimeSeries(
-							newSeriesName, collections,initProgressBar);
+							newSeriesName,collections,initProgressBar,
+							parentFrame);
 					return null;
 				}
 				public void finished() {
-					parentFrame.updateSynchronizedTree(collectionID);
 					setVisible(false);
 					long timingEnd = new Date().getTime();
 					System.out.println("Aggregation Time: " + (timingEnd-timingStart));

@@ -61,16 +61,18 @@ public class Aggregator {
 	 * @param syncRootName name for time series
 	 * @param collections the collections to be aggregated
 	 * @param progressBar the initial progress bar, created via createAggregateTimeSeriesPrepare
+	 * @param mainFrame main Enchilada frame containing tree to be updated
 	 * @return collection id for the new collection
 	 * 
 	 * This method should always be called from outside the EDT, e.g. via
 	 * SwingWorker.
 	 */
 	public int createAggregateTimeSeries(String syncRootName,
-			Collection[] collections, ProgressBarWrapper progressBar) {
+			Collection[] collections, ProgressBarWrapper progressBar,
+			MainFrame mainFrame) {
 		int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
 		return createAggregateTimeSeries(rootCollectionID, collections,
-				progressBar);
+				progressBar, mainFrame);
 	}
 
 	/**
@@ -81,7 +83,8 @@ public class Aggregator {
 	 * This method should be private: it depends on the above overloaded version.
 	 */
 	private int createAggregateTimeSeries(final int rootCollectionID,
-			final Collection[] collections, final ProgressBarWrapper progressBar1) {
+			final Collection[] collections,
+			final ProgressBarWrapper progressBar1, MainFrame mainFrame) {
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
 
@@ -162,6 +165,7 @@ public class Aggregator {
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 			db.deleteTempAggregateBasis();
 		}
+		mainFrame.updateSynchronizedTree(rootCollectionID);
 		
 		progressBar2.disposeThis();
 		
