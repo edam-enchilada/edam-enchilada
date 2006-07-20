@@ -108,16 +108,16 @@ public class ClusterFeature {
 	 * @param atomID - atomID
 	 */
 	public void updateCF(BinnedPeakList list, int atomID) {
+		list.normalize(dMetric);
+		
 		//System.out.println("SS: " + squareSums);
 		//System.out.println("mag: "+sums.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED));
 		int oldPeakListMem = 8*sums.length();
-		
 		atomIDs.add(new Integer(atomID));
 		sums.multiply(count);
 		sums.addAnotherParticle(list);
 		count++;
 		sums.normalize(dMetric);
-		makeSumsSparse();
 		// calculate the square sums.
 		BinnedPeak peak;
 		Iterator<BinnedPeak> iterator = list.iterator();
@@ -144,15 +144,12 @@ public class ClusterFeature {
 		BinnedPeakList temp;
 		for (int i = 0; i < cfs.size(); i++) {
 			temp = new BinnedPeakList();
-			temp.copyBinnedPeakList(cfs.get(i).getSums());
-			temp.multiply(cfs.get(i).count);
-			sums.addAnotherParticle(temp);
+			sums.addWeightedParticle(cfs.get(i).getSums(), cfs.get(i).count);
 			count += cfs.get(i).count;
 			squareSums += cfs.get(i).squareSums;
 			atomIDs.addAll(cfs.get(i).getAtomIDs());
 		}
 		sums.normalize(dMetric);
-		makeSumsSparse();
 		memory= 8*sums.length()+4*atomIDs.size();
 		return true;
 	}
@@ -276,7 +273,6 @@ public class ClusterFeature {
 		absorbed.sums.multiply(absorbed.count);
 		sums.addAnotherParticle(absorbed.getSums());
 		sums.normalize(dMetric);
-		makeSumsSparse();
 		squareSums+=absorbed.getSumOfSquares();
 		count+=absorbed.getCount();
 		atomIDs.addAll(absorbed.getAtomIDs());
@@ -293,5 +289,14 @@ public class ClusterFeature {
 			}
 		}
 		sums = newSums;
+	}
+
+	public void containsZeros() {
+		Iterator<BinnedPeak> iter = sums.iterator();
+		BinnedPeak p;
+		while (iter.hasNext()) {
+			p = iter.next();
+			assert (p.value!=0) : "p.value!=0";
+		}
 	}
 }

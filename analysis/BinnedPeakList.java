@@ -88,6 +88,37 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		normalizable = original.getNormalizable();
 	}
+
+	public boolean containsZeros() {
+		
+		Iterator<BinnedPeak> iter = iterator();
+		BinnedPeak p;
+		while (iter.hasNext()) {
+			p = iter.next();
+			if (p.value==0)
+				return true;
+		}
+		return false;
+	}
+	public BinnedPeakList getFilteredZerosList() {
+		BinnedPeakList newSums = new BinnedPeakList(new Normalizer());
+		Iterator<BinnedPeak> iter = iterator();
+		BinnedPeak p;
+		while (iter.hasNext()) {
+			p = iter.next();
+			if (p.value!=0) {
+				newSums.add(p);
+			}
+		}
+		return newSums;
+	}
+	public boolean isNormalized(DistanceMetric dMetric) {
+		float mag = getMagnitude(dMetric);
+		if(mag == (float) 0)
+			return true;
+		else
+			return false;
+	}
 	
 	/**
 	 * Return the magnitude of this peaklist, according to the supplied
@@ -284,9 +315,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @param area
 	 */
 	public void add(int location, float area) {
-		if (peaks.containsKey(location))
+		assert !(peaks.containsKey(location)== true && peaks.get(location)== null) : "null peak is present in list";
+		Float tempArea = peaks.get(location);
+		if (tempArea != null)
 		{
-			peaks.put(location, peaks.get(location) + area);
+			peaks.put(location, tempArea + area);
 		} else {
 			peaks.put(location, area);
 		}
@@ -384,6 +417,24 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	}
 	
+	/** 
+	 * Adds a particle of a certain weight.
+	 * @param  other the binnedPeakList that you are adding
+	 * @param factor the weight of the binnedPeakList you wish to add
+	 */
+	public void addWeightedParticle(BinnedPeakList other, int factor) {
+		Iterator<Map.Entry<Integer, Float>> iter = other.peaks.entrySet().iterator();
+		Map.Entry<Integer,Float> temp;
+		while (iter.hasNext()) {
+			temp = iter.next();
+			assert !(peaks.containsKey(temp.getKey())== true && peaks.get(temp.getKey())== null) : "null peak is present in list";
+			Float curArea = peaks.get(temp.getKey());
+			if(curArea != null) 
+				peaks.put(temp.getKey(), curArea + temp.getValue() * factor);
+			else
+				peaks.put(temp.getKey(), temp.getValue() * factor);
+		}
+	}
 	
 	/**
 	 * A method to normalize this BinnedPeakList.  Depending 

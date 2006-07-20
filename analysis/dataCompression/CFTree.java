@@ -110,7 +110,7 @@ public class CFTree {
 					entry, dMetric) <= threshold) {
 			closestLeaf.updateCF(entry, atomID);
 		}
-//		else, add it to the closestNode as a new CF.
+		//	else, add it to the closestNode as a new CF.
 		else {
 			ClusterFeature newEntry;
 			if (closestNode.parentNode == null)
@@ -159,21 +159,21 @@ public class CFTree {
 		ClusterFeature mergedCF;
 		CFNode closestNode = closestLeaf.curNode;
 		// If distance is within the threshold, the closestEntry absorbs CF.
-		System.out.println("threshold = " + threshold);
+//		System.out.println("threshold = " + threshold);
 		float distance = closestLeaf.getSums().getDistance(cf.getSums(), dMetric);
-		System.out.println("distance = " + distance);
+//		System.out.println("distance = " + distance);
 		if (distance <= threshold) {
-			System.out.println("absorbing the cf");
+//			System.out.println("absorbing the cf");
 			closestLeaf.absorbCF(cf);
 		}
 		// If adding the entry as a new CF results in a split, return false.
 		else if (closestNode.getSize() >= branchFactor-1) {
-			System.out.println("closestNode.getSize() >= branchFactor-1");
+//			System.out.println("closestNode.getSize() >= branchFactor-1");
 			return false;
 		}
 		// Add it as a new CF to the closest Node if it doesn't split it.
 		else {
-			System.out.println("adding as a new clusterFeature to closestNode");
+//			System.out.println("adding as a new clusterFeature to closestNode");
 			memory-=closestNode.getMemory();
 			closestNode.addCF(cf);
 			cf.updatePointers(null, closestNode);
@@ -224,8 +224,6 @@ public class CFTree {
 		if (node.getSize() >= branchFactor) { 
 			node = splitNodeRecurse(node);
 		}
-		else 
-			updateNonSplitPath(node);
 		assignLeaves();
 		return node;	
 	}
@@ -266,10 +264,8 @@ public class CFTree {
 		for (int i = 0; i < cfs.size(); i++) {
 			if (cfs.get(i) != entryA && cfs.get(i) != entryB) {
 				listI = cfs.get(i).getSums();
-				distA = listI.getDistance(entryA.getSums(),
-						dMetric);
-				distB = listI.getDistance(entryB.getSums(),
-						dMetric);
+				distA = listI.getDistance(entryA.getSums(), dMetric);
+				distB = listI.getDistance(entryB.getSums(), dMetric);
 				if (distA <= distB) {
 					nodeA.addCF(cfs.get(i));
 				}
@@ -338,10 +334,6 @@ public class CFTree {
 		recentlySplitA = parentA;
 		recentlySplitB = parentB;
 		
-		updateNonSplitPath(nodeA);	
-		for (int i = 0; i < nodeA.getCFs().size(); i++){
-			nodeA.getCFs().get(i).updateCF();
-		}
 		return parentNode;
 	}
 	
@@ -394,7 +386,6 @@ public class CFTree {
 			CFNode curNode = parentCF.curNode;
 			curNode.removeCF(parentCF);
 			parentCF.child = null;
-			updateNonSplitPath(curNode);
 		}
 	}
 	

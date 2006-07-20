@@ -65,7 +65,12 @@ public class BIRCH extends CompressData{
 	private int branchingFactor; // Number of cluster features each node is allowed to have.
 	private int collectionID;
 	private CFTree curTree;
-	private long start, end;
+	// start and end measure the time it takes
+	// to build the tree and rebuild the tree
+	// realStart and realEnd measure the total time
+	private long start, end, realStart, realEnd;
+	private long buildTotal = 0; 
+	private long rebuildTotal = 0;
 	private int rebuildCount;
 	
 	/**
@@ -79,9 +84,8 @@ public class BIRCH extends CompressData{
 	 * memory is in bytes - janara
 	 */
 	
-	//1000 for test data, 150118 for i
-	private final float MEM_THRESHOLD = 150000;
-
+	//1000 for test data, 150118 for i, 54857600
+	private final float MEM_THRESHOLD = 150118;
 	
 	/*
 	 * Constructor.  Calls the CompressData Class's constructor.
@@ -103,15 +107,18 @@ public class BIRCH extends CompressData{
 	 */
 	public void buildTree(float threshold) {
 		System.out.println("\n**********BUILDING THE PRELIMINARY TREE**********");
+		start = new Date().getTime();
+		realStart = new Date().getTime();
 		curTree = new CFTree(threshold, branchingFactor, distanceMetric); 
+		// Insert particles one by one.
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
-		// Insert particles one by one.
-		start = new Date().getTime();
+
 		while(curs.next()) {
 			particle = curs.getCurrent();
 			System.out.println("inserting particle " + particle.getID());
 			particle.getBinnedList().normalize(distanceMetric);
+			assert!particle.getBinnedList().containsZeros() : "zero present";
 			
 			// insert the entry
 			changedNode = curTree.insertEntry(particle.getBinnedList(), particle.getID());	
@@ -126,6 +133,9 @@ public class BIRCH extends CompressData{
 		//	curTree.printTree();
 			// if we have run out of memory, rebuild the tree.
 			if (curTree.getMemory()> MEM_THRESHOLD) {
+				end = new Date().getTime();
+				buildTotal = buildTotal + (end-start);
+				start = new Date().getTime();
 				int[] counts = {0,0,0,0,0};
 				int leafNum = curTree.countNodesRecurse(curTree.root,counts)[1];
 				
@@ -151,16 +161,22 @@ public class BIRCH extends CompressData{
 			//	curTree.scanDistances();
 				// rebuild tree.
 				rebuildTree();
-				
+				end = new Date().getTime();
+				rebuildTotal = rebuildTotal + (end-start);
+				start = new Date().getTime();
 				curTree.countNodes();
 			}
 		}	
+		end = new Date().getTime();
+		realEnd = new Date().getTime();
+		buildTotal = buildTotal + (end-start);
 		System.out.println("\nFINAL TREE:");
 		curTree.printTree();
 		System.out.println("scanning distances...");
 		curTree.scanAllNodes();
-		end = new Date().getTime();
-		System.out.println("interval: " + (end-start));
+		System.out.println("interval: " + (realEnd-realStart));
+		System.out.println("buildTotal : " + buildTotal);
+		System.out.println("rebuildtotal : " + rebuildTotal);
 		System.out.println("rebuildCount : " + rebuildCount);
 	}
 	

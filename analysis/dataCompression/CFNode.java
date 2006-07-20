@@ -75,10 +75,10 @@ public class CFNode {
 		boolean same = true;
 		int i = 0;
 		for (i = 0; i < cfs.size(); i++) {
-			System.out.println("nodeToCompare");
-			nodeToCompare.getCFs().get(i).printCF("");
-			System.out.println("node");
-			cfs.get(i).printCF("");
+	//		System.out.ln("nodeToCompare");
+	//		nodeToCompare.getCFs().get(i).printCF("");
+	//		System.out.println("node");
+	//		cfs.get(i).printCF("");
 			if(!nodeToCompare.getCFs().get(i).isEqual((cfs.get(i)))) {
 				same = false;
 				break;
