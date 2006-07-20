@@ -51,8 +51,8 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 		for (int i=0; i < peakList.size(); i++) {
 			Peak peak = peakList.get(i);
 			peak.area = peak.area + (int)Math.round(amplitude*randNum.nextGaussian());
-			if (peak.area < 0)
-				peak.area = 0;
+			if (peak.area < 1)
+				peak.area = 1;
 			peakList.set(i,peak);
 		}
 		
@@ -66,8 +66,8 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 		for (int peakCount = 0; peakCount < 20; peakCount++) {
 			int heightAndArea =
 				(int)(Math.round(Math.abs(randNum.nextGaussian()) * amplitude));
-			if(heightAndArea < 0)
-				heightAndArea = 0;
+			if(heightAndArea < 1)
+				heightAndArea = 1;
 			
 			// choose a peakLoc that isn't in the peaklist yet.
 			boolean duplicateLoc = true;
@@ -101,8 +101,8 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 				// find a random HeightAndArea.
 				heightAndArea =
 					(int)(Math.round(Math.abs(randNum.nextGaussian()) * amplitude));
-				if (heightAndArea < 0)
-					heightAndArea = 0;
+				if (heightAndArea < 1)
+					heightAndArea = 1;
 				// If a peak exists at that key, add to it.
 				if (index == -1)
 					peakList.add(new Peak(heightAndArea, heightAndArea, peakLoc));
@@ -115,7 +115,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 		}
 		
 		for (int i = 0; i < peakList.size(); i++) {
-			assert peakList.get(i).area >= 0 : 
+			assert peakList.get(i).area > 0 : 
 				"Area is negative: " + peakList.get(i).area + " @ " + i;	    	
 		}
 		
