@@ -3525,6 +3525,8 @@ public class SQLServerDatabase implements InfoWarehouse
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
 			Statement stmt1 = con.createStatement();
+			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPTimeBins')\n"+
+			"DROP TABLE TEMPTimeBins;\n");
 			tempTable.append("CREATE TABLE TEMPTimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			counter++;
 			// get all times from collection to bin.

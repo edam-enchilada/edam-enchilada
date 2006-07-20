@@ -7,6 +7,7 @@ import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.text.*;
 import java.util.*;
 
 import javax.swing.*;
@@ -468,9 +469,12 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			if (!isInterval) {
 				month  = getComboBox(initDate.get(Calendar.MONTH) + 1, 1, 12, false);
 				day    = getComboBox(initDate.get(Calendar.DAY_OF_MONTH), 1, 31, false);
-				// TODO:  There has been an error here with the upper limit for date 
-				// We need to find a better fix than this.  I'll log it on Sourceforge - AR
-				year   = getComboBox(initDate.get(Calendar.YEAR), 2000, 2006, false);
+
+				// Obtain current year and set upperbound to be 3 years beyond
+				DateFormat df = new SimpleDateFormat("yyyy");
+		        Date date = new Date();
+		        int currentYear = Integer.parseInt(df.format(date));
+				year   = getComboBox(initDate.get(Calendar.YEAR), 2000, currentYear+3, false);
 				day.setPreferredSize(new Dimension(40, 20));
 				month.setPreferredSize(new Dimension(40, 20));
 				year.setPreferredSize(new Dimension(60, 20));

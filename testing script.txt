@@ -70,4 +70,9 @@ that it works.
 	__leaves behind subcollections for each cluster
 	__creates an extra collection with cluster centroids
 	__each cluster centroid can be visualized by double clicking on it
+	
+**Try aggregating a small collection. Check that
+	__Time Basis: Selected Collection runs without errors
+	__Time Basis: Times runs without errors
+	
 
