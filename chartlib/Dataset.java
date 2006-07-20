@@ -104,13 +104,14 @@ public class Dataset extends TreeSet<DataPoint>
 	 */
 	public DataPoint get(double x, double tolerance)
 	{
-		Iterator<DataPoint> iterator = iterator();
-		while(iterator.hasNext()) {
-			DataPoint dp = iterator.next();
-			if(Math.abs(dp.x - x) <= tolerance)
-				return dp;
-		}
-		return null;
+		DataPoint low = new DataPoint(x - tolerance, 0),
+			hi = new DataPoint(x + tolerance, 0);
+		SortedSet<DataPoint> temp = subSet(low, hi);
+		
+		if (temp.isEmpty())
+			return null;
+		else
+			return temp.first();
 	}
 	
 	/**
