@@ -67,6 +67,7 @@ import java.util.Vector;
 
 import database.*;
 import errorframework.ErrorLogger;
+import externalswing.SwingWorker;
 
 /**
  * @author ritza
@@ -373,33 +374,49 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		else if (source == exportXmlDatabaseItem||source==exportXlsDatabaseItem||source==exportCsvDatabaseItem) {
-			int fileType = -1;
+			int temp = -1;
 			String fileFilter = "";
 			if(source == exportXmlDatabaseItem){
 				fileFilter = "*.xml";
-				fileType = 1;
+				temp = 1;
 			}
 			else if (source == exportXlsDatabaseItem){
 				fileFilter = "*.xls";
-				fileType = 2;
+				temp = 2;
 			}
 			else{
 				fileFilter = "*.csv";
-				fileType = 3;
+				temp = 3;
 			}
+			final int fileType = temp;
 			FileDialog fileChooser = new FileDialog(this, 
                     "Create a file to store the database:",
                      FileDialog.LOAD);
 			fileChooser.setFile(fileFilter);
 			fileChooser.setVisible(true);
-			String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			final String filename = fileChooser.getDirectory()+fileChooser.getFile();
 			System.out.println("File: "+filename);
-/*			try {
-				db.exportDatabase(filename,fileType);
-			} catch (FileNotFoundException e1) {
-				JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be created.");
-			}
-*/			
+			ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, "Exporting Database",100);
+			progressBar.setIndeterminate(true);
+			SwingWorker worker = new SwingWorker(){
+				public Object construct(){
+					try {
+						db.exportDatabase(filename,fileType);
+					} catch (FileNotFoundException e1) {
+						SwingUtilities.invokeLater(new Runnable(){
+							public void run(){
+								JOptionPane.showMessageDialog(null,"The file: "+ filename+" could not be created.");
+							}
+						});
+						
+					}
+					return null;
+				}
+			};
+			
+			progressBar.constructThis();
+			
 		}
 		
 		else if (source == importXmlDatabaseItem||source==importXlsDatabaseItem||source==importCsvDatabaseItem) {
