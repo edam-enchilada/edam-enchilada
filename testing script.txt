@@ -60,4 +60,14 @@ check the next & prev buttons for
 		__correct next & prev particles
 		__enabling/disabling of buttons appropriately
 		__displaying a particle with a higher row number than exists in showing collection
+		
+**Try importing two collections into a single parent collection, and verify
+that it works.		
+	__parent collection created with children collections
+
+**Try clustering a small collection. Check that
+	__clustering completes without errors
+	__leaves behind subcollections for each cluster
+	__creates an extra collection with cluster centroids
+	__each cluster centroid can be visualized by double clicking on it
 
