@@ -47,7 +47,7 @@ public class DetectPlumesDialog  extends JDialog implements ActionListener, Item
 		parent = frame;
 		this.cTree = cTree;
 		this.db = db;
-		setSize(500,150);
+		setSize(500,300);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
 		JLabel header = new JLabel("Plumes Detection Parameters:");
