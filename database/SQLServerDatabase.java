@@ -2503,20 +2503,15 @@ public class SQLServerDatabase implements InfoWarehouse
 		private Statement stmt;
 		private int currID; // the current atomID.
 
+		// XXX: Generalize retrieval for multiple datatypes.
 		private BPLOnlyCursor(Collection coll) throws SQLException {
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("use SpASMSdb;" +
+			rs = stmt.executeQuery("use SpASMSdb; " +
 				"select AtomID, PeakLocation, PeakArea " +
-				" FROM " +
-				" ATOFMSAtomInfoSparse "
-				// The dynamic table generation stuff is rather useless since I 
-				// haven't dynamized the fields that I'm getting.  So uh, yeah.
-				// XXX: Generalize retrieval for multiple datatypes.
-//				getDynamicTableName(DynamicTable.AtomInfoSparse, coll.getDatatype()) 
-				+ " WHERE AtomID in " +
+				"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
 				"(SELECT AtomID FROM InternalAtomOrder " +
-				"Where CollectionID = "+coll.getCollectionID()+")" +
-			" order by AtomID;");
+				"Where CollectionID = "+coll.getCollectionID()+") " +
+				"order by AtomID;");
 			if (! rs.next()) {
 				throw new SQLException("Empty collection or a problem!");
 			}
