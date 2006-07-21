@@ -75,4 +75,6 @@ that it works.
 	__Time Basis: Selected Collection runs without errors
 	__Time Basis: Times runs without errors
 	
+**Try "Help, About Enchilada". Check that
+	__It indicates the current version
 
