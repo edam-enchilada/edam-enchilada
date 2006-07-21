@@ -3676,78 +3676,38 @@ public class SQLServerDatabase implements InfoWarehouse
 //				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 //				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
-				//create and insert MZ Values into temporary TEMPmz table.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPmz')\n"+
-				"DROP TABLE TEMPmz;\n");
-				sql.append("CREATE TABLE TEMPmz (Value INT);\n");
-				// Only bulk insert if client and server are on the same machine...
-				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "MZbulkfile.txt";
-					PrintWriter bulkFile = null;
-					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
-					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
-						e.printStackTrace();
-					}
-					for (int i = 0; i < mzValues.length; i++){
-						bulkFile.println(mzValues[i]);
-					}
-					bulkFile.close();
-					sql.append("BULK INSERT TEMPmz\n" +
-							"FROM '" + tempFilename + "'\n" +
-					"WITH (FIELDTERMINATOR=',');\n");
-				} else {
-					for (int i = 0; i < mzValues.length; i++){
-						sql.append("INSERT INTO TEMPmz VALUES("+mzValues[i]+");\n");
-					}
-				}	
-				stmt.execute(sql.toString());
-				sql = new StringBuilder();
-				//	create TEMPatoms table
 				
 				
-				//preserved in order to compare the performance of SQL
-				// versus the written-out java code
-				boolean doSQL = true;
 				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPatoms')\n"+
 				"DROP TABLE TEMPatoms;\n");
 				
-				if(!doSQL){
-				sql.append("CREATE TABLE TEMPatoms (" +
-						"NewAtomID int, \n" +
-				" Time DateTime, \n" +
-				" MZLocation int, \n " +
-				" Value real, \n" +
-				" PRIMARY KEY(NewAtomID) );\n");
-				}else{
+//				create TEMPatoms table
 				sql.append("CREATE TABLE TEMPatoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
-				" Time DateTime, \n MZLocation int, \n Value real);\n");
+				" Time DateTime, \n MZLocation int, \n Value real, \n PRIMARY KEY ([MZLocation],[Time]));\n");
 				
-//				This commented-out code does all of the joins in SQL.  This works, but is extremely slow
-				// when there are a lot of m/z values to aggregate.  Because of this, the 
-				// JOIN TEMPmz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")
-				// join is done in java below, using special information about the data
+				
+				//This code does all of the joins in SQL.  
 				
 				// went back to Greg's JOIN methodology, but retained TEMPmz table, which speeds it up.
 				// collects the sum of the Height/Area over all atoms at a given Time and for a specific m/z 
+				
 				sql.append("insert TEMPatoms (Time, MZLocation, Value) \n" +
-						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
+						"SELECT BinnedTime, AIS.PeakLocation AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
 						"FROM TEMPTimeBins TB\n" +
 						"JOIN ATOFMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
-						"JOIN TEMPmz MZ on (AIS.PeakLocation = MZ.Value)\n"+
-						"GROUP BY BinnedTime,MZ.Value\n"+
+						"GROUP BY BinnedTime,AIS.PeakLocation\n"+
 						"ORDER BY Location, BinnedTime;\n");
-				}
 				
-				if(!doSQL){
-				Statement chargesStmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+			/*sql.append("CREATE TABLE TEMPatoms (" +
+					"NewAtomID int, \n" +
+					" Time DateTime, \n" +
+					" MZLocation int, \n " +
+					" Value real, \n" +
+			" PRIMARY KEY(NewAtomID) );\n");
+			
+			Statement peaksStmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
 						ResultSet.CONCUR_READ_ONLY);
-				ResultSet charges = chargesStmt.executeQuery("SELECT * FROM TEMPmz ORDER BY Value;\n");
-				
-				Statement peaksStmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
-						ResultSet.CONCUR_READ_ONLY);
-				ResultSet peaks = peaksStmt.executeQuery(
+			ResultSet peaks = peaksStmt.executeQuery(
 						"SELECT BinnedTime, AIS.PeakLocation AS MZLocation, "
 							+ options.getGroupMethodStr() + "(PeakArea) AS PeakArea\n"
 						+ "FROM TEMPTimeBins TB\n"
@@ -3770,9 +3730,10 @@ public class SQLServerDatabase implements InfoWarehouse
 						System.err.println("Trouble creating " + tempFilename);
 						e.printStackTrace();
 					}
-					if (charges.next()) {
+					int mzIndex = 0;
+					int mzBin = mzValues[mzIndex];
+					if (mzIndex < mzValues.length) {
 						boolean quit = false;
-						int mzBin = charges.getInt(1);
 						while (!quit && peaks.next()) {
 							String dateTime = peaks.getString(1);
 							double peakLocation = peaks.getDouble(2);
@@ -3781,24 +3742,26 @@ public class SQLServerDatabase implements InfoWarehouse
 							//If the current peak is past the MZ number, skip ahead
 							if(Math.abs(error) > options.peakTolerance){
 								if(error < 0){
-									while(error < 0 && Math.abs(error) > options.peakTolerance) {
-										for(String key : aggregate.keySet()){
-											try{
-												bulkFile.println(""+ nextID + "," + 
-														formatter.format(parser.parse(key)) + "," + mzBin + "," + aggregate.get(key));
-												nextID++;
-											}catch(ParseException e){
-												System.err.println("Problem Inserting atoms");
-												System.exit(1);
-											}
+									for(String key : aggregate.keySet()){
+										try{
+											bulkFile.println(""+ nextID + "," + 
+													formatter.format(parser.parse(key)) + "," + mzBin + "," + aggregate.get(key));
+											nextID++;
+										}catch(ParseException e){
+											System.err.println("Problem Inserting atoms");
+											System.exit(1);
 										}
-										aggregate = new HashMap<String,Double>();
+									}
+									aggregate = new HashMap<String,Double>();
+									
+									while(error < 0 && Math.abs(error) > options.peakTolerance) {
 										
-										if(!charges.next()){
+										mzIndex++;
+										if(mzIndex >= mzValues.length){
 											quit = true;
 											break;
 										}
-										mzBin = charges.getInt(1);
+										mzBin = mzValues[mzIndex];
 										error = mzBin - peakLocation;
 									}
 								}
@@ -3829,9 +3792,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					"	 ROWTERMINATOR='\n');\n");
 					}
 				}else{
-					if (charges.next()) {
+					if (mzValues.length>0) {
 						boolean quit = false;
-						double mzBin = charges.getDouble(1);
+						int mzIndex = 0;
+						int mzBin = mzValues[mzIndex];
 						while (!quit && peaks.next()) {
 							String dateTime = peaks.getString(1);
 							double peakLocation = peaks.getDouble(2);
@@ -3840,23 +3804,25 @@ public class SQLServerDatabase implements InfoWarehouse
 							//If the current peak is past the MZ number, skip ahead
 							if(Math.abs(error) > options.peakTolerance){
 								if(error < 0){
-									while(error < 0 && Math.abs(error) > options.peakTolerance) {
-										for(String key : aggregate.keySet()){
-											try{
-												sql.append("INSERT INTO TEMPatoms VALUES("+ key + ",'" + formatter.format(parser.parse(key)) + "'," + mzBin + "," + aggregate.get(key) + ");\n");
-												nextID++;
-											}catch(ParseException e){
-												System.err.println("Problem Inserting atoms");
-												System.exit(1);
-											}
+									for(String key : aggregate.keySet()){
+										try{
+											sql.append("INSERT INTO TEMPatoms VALUES("+ key + ",'" + formatter.format(parser.parse(key)) + "'," + mzBin + "," + aggregate.get(key) + ");\n");
+											nextID++;
+										}catch(ParseException e){
+											System.err.println("Problem Inserting atoms");
+											System.exit(1);
 										}
-										aggregate = new HashMap<String,Double>();
+									}
+									aggregate = new HashMap<String,Double>();
+									
+									while(error < 0 && Math.abs(error) > options.peakTolerance) {
 										
-										if(!charges.next()){
+										mzIndex++;
+										if(mzIndex >= mzValues.length){
 											quit = true;
 											break;
 										}
-										mzBin = charges.getDouble(1);
+										mzBin = mzValues[mzIndex];
 										error = mzBin - peakLocation;
 									}
 								}
@@ -3880,7 +3846,8 @@ public class SQLServerDatabase implements InfoWarehouse
 						}
 					}
 				}
-				}
+				}*/
+				
 				
 				// build 2 child collections - one for particle counts time-series,
 				// one for M/Z values time-series.
@@ -4048,7 +4015,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 //			if we want to get all mz values:
 			if (options.allMZValues) {
-				rs = stmt.executeQuery("select distinct cast(round (PeakLocation,0) as int) as RoundedPeakLocation " +
+				rs = stmt.executeQuery("select distinct PeakLocation as RoundedPeakLocation " +
 						"from "+
 						getDynamicTableName(DynamicTable.AtomInfoSparse, collection.getDatatype())+
 						" AIS, InternalAtomOrder IAO, "+
@@ -4057,7 +4024,6 @@ public class SQLServerDatabase implements InfoWarehouse
 						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 						"AND IAO.AtomID = AIS.AtomID \n" +
 						"AND IAO.AtomID = AID.AtomID \n" +
-						"AND abs(PeakLocation-(round(PeakLocation,0))) < " + options.peakTolerance+"\n"+
 						"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
 						"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
 				"ORDER BY RoundedPeakLocation;\n");
@@ -4105,7 +4071,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						"WHERE IAO.CollectionID = "+collection.getCollectionID()+"\n"+
 						"AND IAO.AtomID = AIS.AtomID \n" +
 						"AND IAO.AtomID = AID.AtomID \n"+
-						"AND abs(PeakLocation - MZ.Value) < " + options.peakTolerance+"\n"+
+						"AND PeakLocation = MZ.Value \n"+
 						"AND AID.Time >= '"+dateFormat.format(startDate)+"'\n"+
 						"AND AID.Time <= '"+dateFormat.format(endDate)+"'\n"+
 				"ORDER BY MZ.Value;\n");
