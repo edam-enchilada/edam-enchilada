@@ -732,7 +732,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.insertParticle(dateString + "," + laserPower + "," + digitRate + ","	
 				+ scatterDelay + ", " + filename, sparseData, db.getCollection(collectionID),datasetID,db.getNextID()+1);
 		System.out.println(db.getCollectionSize(collectionID));
-		assertTrue(db.getCollectionSize(collectionID) == 5);
+		assertTrue(db.getCollectionSize(collectionID) == 6);
 			
 		db.closeConnection();
 	}
@@ -1017,6 +1017,38 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		assertFalse(curs.next());
 		curs.reset();
+	}
+
+	/**
+	 * Tests SQLServerDatabase.join
+	 * @author shaferia
+	 */
+	public void testJoin()
+	{
+		int[] intsraw = {1, 2, 3, 4, 5};
+		ArrayList<Integer> ints = new ArrayList<Integer>();
+		for (int i : intsraw)
+			ints.add(i);
+		ArrayList<String> strings = new ArrayList<String>();
+		for (int i : intsraw)
+			strings.add(i + "");
+		
+		ArrayList<Object> mixed = new ArrayList<Object>();
+		mixed.add(new Integer(2));
+		mixed.add("hey");
+		mixed.add(new Float(2.0));
+		
+		assertEquals(SQLServerDatabase.join(ints, ","), "1,2,3,4,5");
+		assertEquals(SQLServerDatabase.join(ints, ""), "12345");
+		assertEquals(SQLServerDatabase.join(new ArrayList<String>(), ","), "");
+		assertEquals(SQLServerDatabase.join(ints, "-"), SQLServerDatabase.join(strings, "-"));
+		assertEquals(SQLServerDatabase.join(strings, ",,"), "1,,2,,3,,4,,5");
+		assertEquals(SQLServerDatabase.join(mixed, "."), "2.hey.2.0");
+		
+		ArrayList<Integer> oneint = new ArrayList<Integer>();
+		oneint.add(new Integer(2));
+		
+		assertEquals(SQLServerDatabase.join(oneint, ","), "2");
 	}
 
 }

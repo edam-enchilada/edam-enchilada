@@ -1427,7 +1427,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		boolean firstElement = true;
 		for (Object o : collection) {
 			if (!firstElement)
-				sb.append(",");
+				sb.append(delimiter);
 			sb.append(o);
 			firstElement = false;
 		}
