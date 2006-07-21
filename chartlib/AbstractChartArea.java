@@ -37,6 +37,8 @@ public abstract class AbstractChartArea extends JComponent {
 	public AbstractChartArea() {
 		super();
 		createAxes();
+		xAxis.setRange(0, 1);
+		yAxis.setRange(0, 1);
 		this.setMinimumSize(new Dimension(10, 10));
 	}
 
@@ -308,11 +310,5 @@ public abstract class AbstractChartArea extends JComponent {
 	 */
 	public String getTitleY() {
 		return yAxisTitle.getTitle();
-	}
-	
-	
-	@Override
-	public void repaint() {
-		super.repaint();
 	}
 }

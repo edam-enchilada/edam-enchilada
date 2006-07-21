@@ -58,16 +58,13 @@ import java.util.ArrayList;
  */
 public class Chart extends JPanel implements Zoomable
 {
-	//collection of datasets
-	protected Dataset[] datasets; 
 	protected String title;
-	protected int numCharts;
 	
 	//graphical elements
 	protected ChartTitle titleLabel;
 	protected JPanel bottomHalf;
 	protected ChartKey key;
-	protected ArrayList<ChartArea> chartAreas;
+	protected ArrayList<ChartArea> chartAreas = new ArrayList<ChartArea>();
 	protected JPanel chartPanel;
 	protected JPanel ckPanel;
 	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
@@ -86,9 +83,7 @@ public class Chart extends JPanel implements Zoomable
 	 */
 	public Chart()
 	{
-		datasets = new Dataset[1];
 		title = "New Chart";
-		numCharts = 0;
 		hasKey = false;
 		
 		setupLayout();
@@ -99,13 +94,10 @@ public class Chart extends JPanel implements Zoomable
 	{
 		
 		//at this point, we limit to one dataset
-		datasets = new Dataset[1];
-		
-		datasets[0] = ds;
-		
 		title = titleString;
-		numCharts = 1;
 		hasKey = true;
+		
+		chartAreas.add(new ChartArea(ds));
 		
 		setupLayout();
 
@@ -249,15 +241,6 @@ public class Chart extends JPanel implements Zoomable
 	}
 	
 	/**
-	 * Returns the number of chart areas in this chart.
-	 * @return the number of chart areas in this chart.
-	 */
-	public int getNumCharts()
-	{
-		return numCharts;
-	}
-	
-	/**
 	 * Returns the lower limit on the x axis of the chart.
 	 * @param index Which chart to check.
 	 * @return the lower limit on the x axis of the chart.
@@ -296,34 +279,6 @@ public class Chart extends JPanel implements Zoomable
 	{
 		return chartAreas.get(index).yAxis.getMax();
 	}
-	
-	/**
-	 * Sets a dataset for all chart areas.
-	 * @param ds The dataset to add.
-	 *
-	 */
-	public void setDataset(Dataset ds )
-	{
-		for(int count=0; count < chartAreas.size(); count++)
-			setDataset(count, ds);
-		this.packData();
-	}
-	
-	/**
-	 * Sets a dataset for a chart value.
-	 * @param ds The dataset to add.
-	 * @param index The chart value to which to add the dataset, indexed at 0,
-	 * starting from the top.
-	 */
-	public void setDataset(int index, Dataset ds )
-	{
-		datasets[index] = ds;
-		
-		chartAreas.get(index).setDataset(ds);
-		this.packData();
-		repaint();
-	}
-	
 	
 	
 	/**
@@ -573,6 +528,8 @@ public class Chart extends JPanel implements Zoomable
 	 */
 	protected void setupLayout()
 	{
+		removeAll();
+		
 		//Border layout is good for having spacing on the sides
 		//and a dynamically resizing center value (the ChartArea)
 		setLayout(new BorderLayout());
@@ -594,7 +551,7 @@ public class Chart extends JPanel implements Zoomable
 		//sets up key
 		if(hasKey)
 		{
-			key = new ChartKey(numCharts);
+			key = new ChartKey(chartAreas.size());
 			ckPanel.add(key);
 		}
 		
@@ -614,17 +571,10 @@ public class Chart extends JPanel implements Zoomable
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
 		
-		chartAreas = new ArrayList<ChartArea>();
-		for (int count = 0; count < numCharts; count++) {
-
-			if (datasets[count] != null) {
-				chartAreas.add(new ChartArea(datasets[count]));
-			} else {
-				chartAreas.add(new ChartArea());
+		if (chartAreas != null) {
+			for (ChartArea ca : chartAreas) {
+				chartPanel.add(ca);
 			}
-
-			// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-			chartPanel.add(chartAreas.get(count));
 		}
 		return chartPanel;
 	}

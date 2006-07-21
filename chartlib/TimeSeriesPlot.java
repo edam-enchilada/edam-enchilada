@@ -13,8 +13,11 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
 public class TimeSeriesPlot extends Chart {
+	private int numCharts;
+	private Dataset[] datasets;
+
+
 	public TimeSeriesPlot(Dataset[] datasets) {
-//		numCharts = 2;
 		numCharts = datasets.length;
 		title = "New Chart";
 		hasKey = true;
@@ -37,6 +40,9 @@ public class TimeSeriesPlot extends Chart {
 	
 	
 	protected JPanel createChartPanel(){
+		if (datasets == null) {
+			datasets = new Dataset[0];
+		}
 		
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
@@ -111,7 +117,7 @@ public class TimeSeriesPlot extends Chart {
 				if (xmin > chartArea.xAxis.getMin())
 					xmin = chartArea.xAxis.getMin();
 				if (xmax < chartArea.xAxis.getMax())
-					xmin = chartArea.xAxis.getMax();
+					xmax = chartArea.xAxis.getMax();
 			}
 		}
 
@@ -128,6 +134,9 @@ public class TimeSeriesPlot extends Chart {
 			if (packX) {
 				newXmin = xmin - ((xmax - xmin) / 10);
 				newXmax = xmax + ((xmax - xmin) / 10);
+			} else {
+				newXmin = xmin;
+				newXmax = xmax;
 			}
 			newYmin = ymin - ((ymax - ymin) / 10);
 			newYmax = ymax + ((ymax - ymin) / 10);
@@ -137,10 +146,7 @@ public class TimeSeriesPlot extends Chart {
 		*/
 		for (int i = 0; i < datasets.length; i++) {
 			ChartArea chartArea = chartAreas.get(i);
-			chartArea.setXMin(newXmin);
-			chartArea.setXMax(newXmax);
-			chartArea.setYMin(newYmin);
-			chartArea.setYMax(newYmax);
+			chartArea.setAxisBounds(newXmin, newXmax, newYmin, newYmax);
 			chartArea.createAxes();
 			chartArea.repaint();
 		}

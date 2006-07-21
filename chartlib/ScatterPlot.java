@@ -20,8 +20,9 @@ import javax.swing.border.EmptyBorder;
  */
 public class ScatterPlot extends Chart {
 
+	private Dataset[] datasets;
+
 	public ScatterPlot(Dataset ds1, Dataset ds2) {
-		numCharts = 1;
 		title = "New Chart";
 		hasKey = true;
 		this.datasets = new Dataset[3];
@@ -43,6 +44,8 @@ public class ScatterPlot extends Chart {
 		
 		datasets[2] = correlationData;
 		
+		chartAreas.add(makeChartArea());
+		
 		setupLayout();
 		packData();
 		//this should not all be here!
@@ -57,22 +60,13 @@ public class ScatterPlot extends Chart {
 		*/
 	}
 	
-	protected JPanel createChartPanel(){
-		JPanel chartPanel = new JPanel();
-		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
-		
-		chartAreas = new ArrayList<ChartArea>();
+	protected ChartArea makeChartArea(){
 		ChartArea nextChart = new CorrelationChartArea(datasets[0]);
 		// nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 		nextChart.setAxisBounds(0, 1, 0, 1);
 
 		nextChart.setForegroundColor(DATA_COLORS[0]);
-		chartAreas.add(nextChart);
-
-		// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-		chartPanel.add(chartAreas.get(0));
-
-		return chartPanel;
+		return nextChart;
 	}
 	
 	public void setTitle(String title) {

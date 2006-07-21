@@ -9,6 +9,8 @@ import javax.swing.JPanel;
 
 public class SpectrumPlot extends Chart {
 	private int datatype;
+	private Dataset[] datasets;
+	private static final int numCharts = 2;
 	public static final int UNDEFINED = -1;
 	public static final int PEAK_DATA = 1;
 	public static final int SPECTRUM_DATA = 2;
@@ -16,13 +18,15 @@ public class SpectrumPlot extends Chart {
 	
 	public SpectrumPlot() {
 		//numCharts = 2;
-		numCharts = 2;
 		title = "New Chart";
 		hasKey = true;
 		datasets = new Dataset[2];
 		datatype = SpectrumPlot.UNDEFINED;
-		setupLayout();
 		
+		makeChartAreas();
+		
+		setupLayout();
+		// in the middle of refactoring createChartPanel, etc
 		
 		//this should not all be here!
 		//It should go in createPanel
@@ -48,51 +52,36 @@ public class SpectrumPlot extends Chart {
 		packData(false, true); //updates the Y axis scale.
 	}
 	
-	protected JPanel createChartPanel(){
-		JPanel chartPanel = new JPanel();
-		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
-		
+	protected void makeChartAreas(){
 		chartAreas = new ArrayList<ChartArea>();
 		switch(datatype){
 		case SpectrumPlot.UNDEFINED:
 			for (int count = 0; count < numCharts; count++) {
-				//ChartArea nextChart = new BarChartArea(datasets[count]);
 				ChartArea nextChart = new BarChartArea(new Dataset());
 				nextChart.setForegroundColor(DATA_COLORS[count]);
 				chartAreas.add(nextChart);
-				
-				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-				chartPanel.add(chartAreas.get(count));
 			}
 			break;
 		case SpectrumPlot.PEAK_DATA:
 			for (int count = 0; count < numCharts; count++) {
-				//ChartArea nextChart = new BarChartArea(datasets[count]);
 				ChartArea nextChart = new BarChartArea(datasets[count]);
+				nextChart.setXAxisBounds(0, 400);
 				nextChart.setForegroundColor(DATA_COLORS[count]);
 				chartAreas.add(nextChart);
-				
-				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-				chartPanel.add(chartAreas.get(count));
 			}
 			break;
 		case SpectrumPlot.SPECTRUM_DATA:
 			for (int count = 0; count < numCharts; count++) {
 				System.out.println("building spectrum chart");
 				ChartArea nextChart = new LineChartArea(datasets[count]);
+				nextChart.setXAxisBounds(0, 400);
 				nextChart.setForegroundColor(DATA_COLORS[count]);
 				chartAreas.add(nextChart);
-				
-				// chartAreas.get(count].setPreferredSize(new Dimension(500,500));
-				chartPanel.add(chartAreas.get(count));
 			}
 			break;
 		
 
 		}
-		
-		
-		return chartPanel;
 	}
 	
 	public void displaySpectra(Dataset pos, Dataset neg) {
@@ -102,13 +91,15 @@ public class SpectrumPlot extends Chart {
 		datasets[0] = pos;
 		datasets[1] = neg;
 		datatype = SpectrumPlot.SPECTRUM_DATA;
+		makeChartAreas();
+		setupLayout();
 		
-		this.ckPanel.remove(this.chartPanel);
-		this.ckPanel.remove(this.key);
-		chartPanel = this.createChartPanel();
-		this.ckPanel.add(chartPanel);
-		this.ckPanel.add(key);
-		this.ckPanel.repaint();
+//		this.ckPanel.remove(this.chartPanel);
+//		this.ckPanel.remove(this.key);
+//		chartPanel = this.createChartPanel();
+//		this.ckPanel.add(chartPanel);
+//		this.ckPanel.add(key);
+//		this.ckPanel.repaint();
 		packData(false, true); //updates the Y axis scale.
 	}
 	
@@ -121,12 +112,15 @@ public class SpectrumPlot extends Chart {
 		datasets[1] = neg;
 		datatype = SpectrumPlot.PEAK_DATA;
 		
-		this.ckPanel.remove(this.chartPanel);
-		this.ckPanel.remove(this.key);
-		chartPanel = this.createChartPanel();
-		this.ckPanel.add(chartPanel);
-		this.ckPanel.add(key);
-		this.ckPanel.repaint();
+		makeChartAreas();
+		setupLayout();
+		
+//		this.ckPanel.remove(this.chartPanel);
+//		this.ckPanel.remove(this.key);
+//		chartPanel = this.createChartPanel();
+//		this.ckPanel.add(chartPanel);
+//		this.ckPanel.add(key);
+//		this.ckPanel.repaint();
 		packData(false, true); //updates the Y axis scale.
 	}
 }

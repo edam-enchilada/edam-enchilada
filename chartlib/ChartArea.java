@@ -11,8 +11,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * @author olsonja
@@ -403,17 +402,19 @@ public class ChartArea extends AbstractMetricChartArea {
 		
 		int size = 0;
 		
-		java.util.Iterator iterator = dataset.iterator();
+		SortedSet<DataPoint> visible 
+			= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
+					         new DataPoint(xAxis.getMax(), 0));
+		
+		java.util.Iterator iterator = visible.iterator();
 		
 		while(iterator.hasNext())
 		{
 			dp = (DataPoint)(iterator.next());
-			if(dp.x > this.xAxis.getMin() && dp.x < this.xAxis.getMax())
-			{
-				if(dp.y < ymin) ymin = dp.y;
-				if(dp.y > ymax) ymax = dp.y;
-				size++;
-			}
+		
+			if(dp.y < ymin) ymin = dp.y;
+			if(dp.y > ymax) ymax = dp.y;
+			size++;
 		}
 		if (size == 0) return null;
 		

@@ -185,17 +185,38 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	{
 		if(e.getButton() == MouseEvent.BUTTON1 )
 		{
-			if(chart.isInDataArea(e.getPoint()))
-				
-			{
+//			if (chart instanceof JComponent) {
+//				Point p = e.getPoint();
+//				// Find the component that the click happened on.
+//				Component c = ((JComponent) chart).findComponentAt(e.getPoint());
+//				
+//				if (c instanceof Zoomable) {
+//					// put the point into the coordinates of the
+//					// destination component.
+//					Point startRef = this.getLocationOnScreen(), 
+//						endRef = c.getLocationOnScreen(); 
+//					p.translate(endRef.x - startRef.x, endRef.y - startRef.y);
+//					
+//					if (((Zoomable) c).isInDataArea(p)) {
+//						glassPane.start = e.getPoint();
+//						return;
+//					} else {
+//						// click is not in data area
+//						glassPane.start = null;
+//					}
+//				} else {
+//					// click is not on a graph at all.
+//					glassPane.start = null;
+//				}
+//			} else 
+			if (chart.isInDataArea(e.getPoint())) {
 				glassPane.start = e.getPoint();
 				//glassPane.setOpaque(true);
-			}
-			else glassPane.start = null;
-		}
-		else glassPane.start = null;
+			} else glassPane.start = null;
+		} else glassPane.start = null;
 	}
 	
+
 	/** 
 	 * If the drag is within one of the charts, (if the start point is non-null)
 	 * draws a pattern following the x coordinate of the drag.
@@ -352,7 +373,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 				S_SCROLL_MIN, S_SCROLL_MAX);
 		scrollBar.setValues(scrollMin, scrollMax - scrollMin,
 				S_SCROLL_MIN, S_SCROLL_MAX);
-		// why twice?  to force the scrollBar to realise that something has
+		// XXX: why twice?  to force the scrollBar to realise that something has
 		// changed.  true, that's a dumb way to do it, but i'm not smart. -tom
 		
 		scrollBar.setBlockIncrement(scrollMax - scrollMin);
