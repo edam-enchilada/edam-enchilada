@@ -1051,4 +1051,76 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertEquals(SQLServerDatabase.join(oneint, ","), "2");
 	}
 
+	/**
+	 * Use java.util.Foramtter to create a formatted string
+	 * @param format the format specification
+	 * @param args variables to format
+	 * @return the formatted string
+	 * @author shaferia
+	 */
+	private String sprintf(String format, Object... args) {
+		return (new java.util.Formatter().format(format, args)).toString();
+	}
+	
+	/**
+	 * Print a justified text table of a database table
+	 * @param name the database table to output
+	 * @author shaferia
+	 */
+	private void printDBSection(String name) {
+		printDBSection(name, Integer.MAX_VALUE);
+	}
+	
+	/**
+	 * Print a justified text table of a database table. Requires an open connection to db.
+	 * @param name the database table to output
+	 * @param rows a single argument giving the maximum number of rows to output
+	 * @author shaferia
+	 */
+	private void printDBSection(String name, int rows) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		Connection con = db.getCon();
+		try	{
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"USE TestDB;\n" +
+					"SELECT * FROM " + name);
+			java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+			
+			ArrayList<String[]> data = new ArrayList<String[]>();
+			int colcount = rsmd.getColumnCount();
+			int[] cwidth = new int[colcount];
+			
+			data.add(new String[colcount]);
+			for (int i = 0; i < colcount; ++i) {
+				data.get(0)[i] = rsmd.getColumnName(i + 1);
+				cwidth[i] = data.get(0)[i].length();
+			}
+			
+			for (int i = 1; rs.next() && (i < rows); ++i){
+				data.add(new String[colcount]);
+				for (int j = 0; j < colcount; ++j) {
+					data.get(i)[j] = rs.getObject(j + 1).toString();
+					cwidth[j] = Math.max(cwidth[j], data.get(i)[j].length());
+				}
+			}
+
+			for (int i = 0; i < data.size(); ++i) {
+				for (int j = 0; j < data.get(i).length; ++j) {
+					System.out.printf(
+									"%-" + cwidth[j] + "." + cwidth[j] + "s | ", data.get(i)[j]);
+				}
+				System.out.println();
+			}
+
+			stmt.close();
+			rs.close();
+		}
+		catch (SQLException ex) {
+			System.err.println("Couldn't print database section.");
+			ex.printStackTrace();
+		}
+	}
 }
