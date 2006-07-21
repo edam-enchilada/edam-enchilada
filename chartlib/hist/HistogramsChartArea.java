@@ -28,21 +28,35 @@ import database.SQLServerDatabase;
  *
  */
 public class HistogramsChartArea 
-	extends UndecoratedXChartArea implements chartlib.Zoomable 
+	extends AbstractMetricChartArea implements chartlib.Zoomable 
 {
 	private final List<HistogramDataset> collectionHistograms 
 			= new LinkedList<HistogramDataset>();
 
 	
+	
+	@Override
+	protected void createAxes() {
+		super.createAxes();
+		xAxis.setLabeller(new chartlib.GraphAxis.AxisLabeller() {
+			public String[] label(double value) {
+				return new String[] {""};
+			}
+		});
+	}
+	
 	public HistogramsChartArea() {
 		super();
+		H_AXIS_PADDING = 5;
+		H_TITLE_PADDING = 0;
+		
+		setTitleX("");
 		this.setPreferredSize(new Dimension(300, 300));
 	}
 	
 	public HistogramsChartArea(HistogramDataset d) {
-		super();
+		this();
 		collectionHistograms.add(d);
-		this.setPreferredSize(new Dimension(300, 300));
 	}
 	
 
@@ -125,6 +139,13 @@ public class HistogramsChartArea
 		}
 	}
 
+	public int getCountAt(int mz, float relArea) {
+		if (collectionHistograms != null && collectionHistograms.size() > 0)
+			if (collectionHistograms.get(0).hists[mz] != null)
+				return collectionHistograms.get(0).hists[mz].getCountAt(relArea);
+		return 0;
+	}
+	
 	public double[] getXRange() {
 		return new double[] { getXMin(), getXMax() };
 	}

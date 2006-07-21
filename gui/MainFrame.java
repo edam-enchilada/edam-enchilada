@@ -208,6 +208,7 @@ public class MainFrame extends JFrame implements ActionListener
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				db.closeConnection();
+				
 			}
 		});
 	}

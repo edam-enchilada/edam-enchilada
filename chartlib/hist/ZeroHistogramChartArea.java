@@ -1,14 +1,16 @@
 package chartlib.hist;
 
 import java.awt.Color;
+import chartlib.AbstractMetricChartArea;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
-public class ZeroHistogramChartArea extends UnpaddedTopChartArea {
+public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 	HistogramDataset dataset;
 
 	public ZeroHistogramChartArea(HistogramDataset dataset) {
+		TOP_PADDING = 5; // down from 15
 		this.dataset = dataset;
 		this.setPreferredSize(new Dimension(400, 100));
 		

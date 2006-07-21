@@ -145,22 +145,7 @@ public class HistogramsPlot extends JPanel implements ActionListener, Zoomable {
 
 	
 
-	public static void main(String[] args) throws SQLException {
-		JFrame grr = new JFrame("woopdy doo");
-		grr.setLayout(new BorderLayout());
-		
-//		PeakHistogramChartArea p = new PeakHistogramChartArea(4);
-//		HistogramsChartArea p = new HistogramsChartArea();
-		HistogramsPlot p = new HistogramsPlot(24);
-//		ZoomableChart z = new ZoomableChart(p);
-		
-		grr.getContentPane().add(p,BorderLayout.CENTER);
-		grr.validate();
-		grr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//		grr.setPreferredSize(new Dimension(400, 400));
-		grr.pack();
-		grr.setVisible(true);
-	}
+	
 
 
 }

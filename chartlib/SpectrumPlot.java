@@ -19,7 +19,7 @@ public class SpectrumPlot extends Chart {
 	public SpectrumPlot() {
 		//numCharts = 2;
 		title = "New Chart";
-		hasKey = true;
+		hasKey = false;
 		datasets = new Dataset[2];
 		datatype = SpectrumPlot.UNDEFINED;
 		
