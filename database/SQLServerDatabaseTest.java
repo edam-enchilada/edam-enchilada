@@ -1417,4 +1417,52 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetDatabaseVersion() {
+		db.openConnection();
+		
+		try {
+			//an empty database has version "none" by default
+			assertEquals(db.getDatabaseVersion(), "none");
+		}
+		catch (SQLException ex) {
+			fail();
+			ex.printStackTrace();
+		}
+		
+		try {
+			db.getCon().createStatement().executeUpdate(
+					"UPDATE DBInfo SET Value = 'New!' WHERE Name = 'Version'");
+			
+			assertEquals(db.getDatabaseVersion(), "New!");
+		}
+		catch (SQLException ex) {
+			fail();
+			ex.printStackTrace();
+		}
+		
+		try {
+			db.getCon().createStatement().executeUpdate(
+					"DELETE FROM DBInfo WHERE Name = 'Version'");
+		}
+		catch (SQLException ex) {
+			System.err.println("Error deleting version while testing");
+			ex.printStackTrace();
+		}
+		
+		try {
+			db.getDatabaseVersion();
+			
+			//shouldn't get this far.
+			fail();
+		}
+		catch (Exception ex) {
+			System.out.println("This should be an error: \"" + ex.getMessage() + "\"");
+		}
+		
+		db.closeConnection();
+	}
 }
