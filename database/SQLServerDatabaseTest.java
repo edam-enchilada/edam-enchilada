@@ -1289,4 +1289,45 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testExportImportDatabase() {
+		db.openConnection();
+		
+		System.out.printf("Current working directory is %s\n", System.getProperty("user.dir"));
+		
+		try {
+			db.exportDatabase("test1.out", 1);
+			java.io.File f = new java.io.File("test1.out");
+			assertTrue(f.exists());
+			
+			//TODO: Determine status of [(export)(import)]Database
+			/*
+			tearDown();
+			db = new SQLServerDatabase();
+	        try {
+				SQLServerDatabase.rebuildDatabase("TestDB");
+			} catch (SQLException e2) {
+				e2.printStackTrace();
+				JOptionPane.showMessageDialog(null,
+						"Could not rebuild the database." +
+						"  Close any other programs that may be accessing the database and try again.");
+			}
+			db.openConnection();
+			db.importDatabase("test1.out", 1);
+			db.exportDatabase("test2.out", 1);
+			*/
+			
+			f.delete();
+		}
+		catch (Exception ex) {
+			System.out.println("Exception handling file.");
+			ex.printStackTrace();
+			fail();
+		}
+		
+		db.closeConnection();
+	}
 }
