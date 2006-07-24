@@ -1529,4 +1529,89 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetMaxMinDateInCollections() {
+		db.openConnection();
+		
+		//test with default data
+		collection.Collection[] colls = new collection.Collection[1];
+		colls[0] = db.getCollection(2);
+		
+		java.util.Calendar min = java.util.Calendar.getInstance();
+		java.util.Calendar max = java.util.Calendar.getInstance();		
+		
+		db.getMaxMinDateInCollections(colls, min, max);
+		assertTrue(min != null);
+		assertTrue(max != null);
+		assertEquals(min.getTime().toString(), max.getTime().toString());
+
+		//put in some more diverse dates
+		try {
+			String pre = "UPDATE ATOFMSAtomInfoDense SET TIME = '%s' WHERE AtomID = %s";
+			Statement stmt = db.getCon().createStatement();
+
+			//CollectionID = 2
+			stmt.addBatch(sprintf(pre, "9/1/2003 4:30:38 PM", 1));
+			stmt.addBatch(sprintf(pre, "9/12/2003 3:30:38 PM", 2));
+			stmt.addBatch(sprintf(pre, "8/4/2003 2:30:38 PM", 3));
+			stmt.addBatch(sprintf(pre, "7/4/2003 8:30:38 PM", 5));
+
+			//CollectionID = 3
+			stmt.addBatch(sprintf(pre, "10/1/2003 4:30:38 PM", 6));
+			stmt.addBatch(sprintf(pre, "8/1/2003 5:30:38 PM", 7));
+			stmt.addBatch(sprintf(pre, "11/6/2003 2:30:38 PM", 10));
+			
+			stmt.executeBatch();
+
+			stmt.close();
+		}
+		catch (SQLException ex) {
+			System.err.println("Couldn't update time values in database");
+			ex.printStackTrace();
+		}
+		
+		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("M/d/yyyy hh:mm:ss aa");
+		
+		db.getMaxMinDateInCollections(colls, min, max);
+		assertEquals(formatter.format(min.getTime()), "7/4/2003 08:30:38 PM");
+		assertEquals(formatter.format(max.getTime()), "9/12/2003 03:30:38 PM");
+		
+		//try on multiple collections
+		colls = new collection.Collection[2];
+		colls[0] = db.getCollection(3);
+		colls[1] = db.getCollection(2);
+		
+		db.getMaxMinDateInCollections(colls, min, max);
+		
+		assertEquals(formatter.format(min.getTime()), "7/4/2003 08:30:38 PM");
+		assertEquals(formatter.format(max.getTime()), "11/6/2003 02:30:38 PM");
+		
+		//try with nulls
+		min.setTime(new Date(0));
+		max.setTime(new Date(0));
+
+		try {
+			String pre = "UPDATE ATOFMSAtomInfoDense SET TIME = NULL WHERE AtomID = ";
+			Statement stmt = db.getCon().createStatement();
+			for (int i = 1; i <= 11; ++i) {
+				stmt.addBatch(pre + i);
+			}
+			stmt.executeBatch();
+			stmt.close();
+		}
+		catch (SQLException ex) {
+			System.err.println("Couldn't update time values in database");
+			ex.printStackTrace();
+		}
+		
+		db.getMaxMinDateInCollections(colls, min, max);
+		
+		assertEquals(min.getTimeInMillis(), 0);
+		assertEquals(max.getTimeInMillis(), 0);
+		
+		db.closeConnection();
+	}
 }
