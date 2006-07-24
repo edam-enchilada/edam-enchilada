@@ -1650,4 +1650,20 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetRepresentedCluster() {
+		db.openConnection();
+		db.addCenterAtom(2, 2);
+		db.addCenterAtom(6, 3);
+	
+		assertEquals(db.getRepresentedCluster(2), 2);
+		assertEquals(db.getRepresentedCluster(6), 3);
+		assertEquals(db.getRepresentedCluster(4), -1);
+		assertEquals(db.getRepresentedCluster(3), -1);
+		
+		db.closeConnection();
+	}
 }
