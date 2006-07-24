@@ -4723,7 +4723,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			ResultSet rs = stmt.executeQuery("SELECT Datatype FROM MetaData");
 			String currentType = "";
 			while (rs.next()){
-				if (! rs.getString(1).equals(currentType)){
+				if (! rs.getString(1).equalsIgnoreCase(currentType)){
 					currentType = rs.getString(1);
 					knownTypes.add(currentType);
 				}

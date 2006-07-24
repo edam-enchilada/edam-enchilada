@@ -1497,4 +1497,36 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetKnownDatatypes() {
+		db.openConnection();
+		
+		ArrayList<String> types = db.getKnownDatatypes();
+		assertTrue(types.contains("AMS"));
+		assertTrue(types.contains("ATOFMS"));
+		assertTrue(types.contains("TimeSeries"));
+		assertFalse(types.contains("timeseries"));
+		assertFalse(types.contains("NO EXISTENTE!"));
+	
+		//getKnownDatatypes uses Java for creating distinctness of datatypes:
+		//	see if that's the same result as using SQL SELECT DISTINCT
+		try {
+			ResultSet rs = db.getCon().createStatement().executeQuery(
+					"SELECT DISTINCT Datatype FROM MetaData");
+			
+			for (int i = 0; rs.next(); ++i){
+				assertEquals(types.get(i), rs.getString(1));
+			}
+			
+			rs.close();
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		
+		db.closeConnection();
+	}
 }
