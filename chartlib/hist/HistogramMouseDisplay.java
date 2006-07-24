@@ -16,8 +16,9 @@ import java.awt.*;
  *
  */
 
-public class HistogramMouseDisplay extends JPanel implements
-		MouseMotionListener {
+public class HistogramMouseDisplay extends JPanel
+	implements MouseMotionListener 
+{
 	private HistogramsPlot chart;
 	private JLabel xLabel, xValue, yLabel, yValue, zLabel, zValue;
 
@@ -26,7 +27,7 @@ public class HistogramMouseDisplay extends JPanel implements
 		this.chart = chart;
 		chart.addMouseMotionListener(this);
 		
-		this.setLayout(new GridLayout(2,2));
+		this.setLayout(new GridLayout(3,1));
 		
 		xLabel = new JLabel("m/z:");
 		xValue = new JLabel("        ");
@@ -72,13 +73,20 @@ public class HistogramMouseDisplay extends JPanel implements
 		Component source = chart.findComponentAt(p);
 		if (! (source instanceof HistogramsChartArea)) 
 			return;
-		
 		HistogramsChartArea ca = (HistogramsChartArea) source;
 		
+		/*
+		 *  We are a mouselistener on the HistogramPlot, which has a different
+		 *  coordinate system than the charts.  So for the calculation of the
+		 *  data value to be correct, the point must get translated to the
+		 *  right coordinates.
+		 */
+		Point destCoords = source.getLocationOnScreen();
+		Point sourceCoords = chart.getLocationOnScreen();
+		p.translate(sourceCoords.x - destCoords.x, sourceCoords.y - destCoords.y);
+		
 		if (ca.isInDataArea(p)) {
-			
 			Point2D.Double dataPoint = ca.getDataValueForPoint(p);
-			
 			
 			xValue.setText("" + format(dataPoint.getX()));
 			yValue.setText("" + format(dataPoint.getY()));

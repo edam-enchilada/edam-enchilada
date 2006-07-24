@@ -6,9 +6,26 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
 
+import chartlib.*;
+
+/**
+ * A window which will (but does not yet) contain positive and negative
+ * spectrum histograms, along with buttons to control the display.
+ * 
+ * 
+ * @author smitht
+ *
+ */
+
 public class HistogramsWindow extends JFrame implements ActionListener {
 	private HistogramsPlot plot;
+	ZoomableChart zPlot;
+	
+	// default minimum and maximum of the zoom window
+	private int defMin = 0, defMax = 300;
+	
 	private JPanel plotPanel, buttonPanel;
+	
 	
 	
 	public HistogramsWindow(int collID) {
@@ -17,14 +34,35 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		setLayout(new BorderLayout());
 		plotPanel = new JPanel();
 		buttonPanel = new JPanel();
-		
 		this.add(plotPanel, BorderLayout.CENTER);
 		this.add(buttonPanel, BorderLayout.EAST);
+
 		try {
 			plot = new HistogramsPlot(collID);
-			plotPanel.add(plot);
+			zPlot = new ZoomableChart(plot);
 
+			zPlot.setCScrollMin(defMin);
+			zPlot.setCScrollMax(defMax);
+			
+			plotPanel.add(zPlot);
+			
 			buttonPanel.add(new HistogramMouseDisplay(plot));
+			JButton zdef, zout;
+			zdef = new JButton("Zoom Default");
+			zdef.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					zPlot.zoom(defMin, defMax);
+				}
+			});
+			buttonPanel.add(zdef);
+			
+			zout = new JButton("Zoom out");
+			zout.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					zPlot.zoomOutHalf();
+				}
+			});
+			buttonPanel.add(zout);
 		} catch (SQLException e) {
 			plotPanel.add(new JTextArea(e.toString()));
 		}

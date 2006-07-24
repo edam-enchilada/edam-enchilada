@@ -109,6 +109,7 @@ public class HistogramsChartArea
 //				g2d.setColor(new Color(R, G, B, opacity));
 //				g2d.fillRect(2 * mz, graphHeight + 2, 2, 10);
 				
+				if (mz >= dataset.hists.length) break;
 				if (dataset.hists[mz] == null) continue;
 				float binWidth = dataset.hists[mz].getBinWidth();
 				
@@ -141,8 +142,9 @@ public class HistogramsChartArea
 
 	public int getCountAt(int mz, float relArea) {
 		if (collectionHistograms != null && collectionHistograms.size() > 0)
-			if (collectionHistograms.get(0).hists[mz] != null)
-				return collectionHistograms.get(0).hists[mz].getCountAt(relArea);
+			if (collectionHistograms.get(0).hists.length > mz)
+				if (collectionHistograms.get(0).hists[mz] != null)
+					return collectionHistograms.get(0).hists[mz].getCountAt(relArea);
 		return 0;
 	}
 	
