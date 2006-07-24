@@ -47,10 +47,10 @@ package database;
 import gui.ProgressBarWrapper;
 import gui.LabelingIon;
 import java.sql.*;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.TreeMap;
@@ -320,4 +320,5 @@ public interface InfoWarehouse {
 	public ArrayList<String> getPrimaryKey(String datatype, DynamicTable atomInfoSparse);
 	public String getCollectionDatatype(int subCollectionNum);
 	public boolean addCenterAtom(int centerAtomID, int centerCollID);
+	public HashMap<Integer,ArrayList<Integer>> getSubCollectionsHierarchy(Collection collection);
 }

@@ -97,10 +97,63 @@ public class Collection {
 		parentCollectionInitialized = false;
 	}
 	
+	/**
+	 * @guru Jamie Olson
+	 * @return the list of CollectionIDs for all child collections
+	 */
 	public ArrayList<Integer> getSubCollectionIDs()
 	{
-		if (cachedSubCollectionIDs == null)
-			cachedSubCollectionIDs = db.getImmediateSubCollections(this);
+		if (cachedSubCollectionIDs == null){
+			//cachedSubCollectionIDs = db.getImmediateSubCollections(this);
+			HashMap<Integer,ArrayList<Integer>> hierarchy = db.getSubCollectionsHierarchy(this);
+			ArrayList<Integer> allSubChildren = new ArrayList<Integer>();
+			HashMap<Integer,Collection> collections = new HashMap<Integer,Collection>();
+			allSubChildren.add(collectionID);
+			collections.put(collectionID,this);
+			//while there are more collection to go through
+			while (!allSubChildren.isEmpty()) {
+				//this is the parent
+				int nextParent = allSubChildren.get(0);
+				//if it has children, setup the children
+//				get the collection object for the current collection
+				Collection collection = collections.get(nextParent);
+				if (hierarchy.containsKey(nextParent)) {
+					//add the children to the list of collections to be setup
+					allSubChildren.addAll(hierarchy
+							.get(new Integer(nextParent)));
+					//set it's collectionID cache
+					collection.cachedSubCollectionIDs = null;
+					collection.cachedSubCollectionIDs = hierarchy.get(nextParent);
+					//set it's collection cache
+					collection.cachedSubCollections = new Collection[collection.cachedSubCollectionIDs
+							.size()];
+					//populate it's collection cache
+					for (int index = 0; index < collection.cachedSubCollectionIDs
+							.size(); index++) {
+						Collection childCollection;
+						int childID = collection.cachedSubCollectionIDs.get(index);
+						//create the collection
+						if (collection.datatype.contains("root")){
+							childCollection = db.getCollection(childID);
+						}else{
+							childCollection = new Collection(collection.datatype,
+									childID, db);
+						}
+						//set its parent
+						childCollection.setParentCollection(collection);
+						collection.cachedSubCollections[index] = childCollection;
+						//add it to the map of collections
+						collections.put(collection.cachedSubCollectionIDs
+											.get(index), childCollection);
+					}
+					
+				}else{
+					collection.cachedSubCollectionIDs = new ArrayList<Integer>();
+				}
+				allSubChildren.remove(0);
+			}
+			
+		}
 		return cachedSubCollectionIDs;
 	}
 	
@@ -133,6 +186,9 @@ public class Collection {
 		
 		return cachedSubCollections[index];
 	}
+	 private void setChildren(ArrayList<Collection> children){
+		 ;
+	 }
 	
 	
 	/**
@@ -179,10 +235,9 @@ public class Collection {
 		return cachedCollectionIDSubTree;
 	}
 	
-	public String getName() {
+	public String getName(){
 		if (cachedName == null)
 			cachedName = db.getCollectionName(collectionID);
-		
 		return cachedName;
 	}
 	

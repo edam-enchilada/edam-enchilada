@@ -859,7 +859,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	/**
 	 * Deletes a collection and unlike orphanAndAdopt() also recursively
 	 * deletes all direct descendents.
-	 * This method merely selects the collections to be deleted and stores them in #deleteTemp
+	 * This method merely selects the collections to be deleted and stores them in TEMPdeleteTemp
 	 * 
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
@@ -872,16 +872,17 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#deleteCollections')\n"+
-					"BEGIN\n"+
-					"DROP TABLE #deleteCollections\n"+
-					"END;\n");
-					sql.append("CREATE TABLE #deleteCollections (CollectionID int);\n");
+			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPdeleteCollections')\n"+
+					"BEGIN\n" +
+					"DROP TABLE [dbo].[TEMPdeleteCollections];\n"+
+					"END\n");
+			sql.append("CREATE TABLE TEMPdeleteCollections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
 			// Update the InternalAtomOrder table:  Assumes that subcollections
 			// are already updated for the parentCollection.
 			// clear InternalAtomOrder table of the deleted collection and all subcollections.
-			Set<Integer> descendents =  getAllDescendantCollections(collection.getCollectionID(), false);
-			Iterator allsubcollections = descendents.iterator();
+			HashMap<Integer,ArrayList<Integer>> hierarchy =  getSubCollectionsHierarchy(collection);
+			
+			Iterator<Integer> allsubcollections = hierarchy.keySet().iterator();
 			if (url.equals("localhost")) {
 				String tempFilename = tempdir + File.separator + "bulkfile.txt";
 				PrintWriter bulkFile = null;
@@ -893,51 +894,99 @@ public class SQLServerDatabase implements InfoWarehouse
 				}
 				bulkFile.println(collection.getCollectionID());
 				while(allsubcollections.hasNext()){
-					Integer next = (Integer)allsubcollections.next();
-					assert(this.getCollection(next).getDatatype().equals(datatype));
-					bulkFile.println(next);
+					Integer nextParent = allsubcollections.next();
+					for(Integer childID : hierarchy.get(nextParent)){
+						assert(this.getCollection(childID).getDatatype().equals(datatype));
+						bulkFile.println(childID);
+					}
 				}
 				bulkFile.close();
-				sql.append("BULK INSERT #deleteCollections\n" +
+				sql.append("BULK INSERT TEMPdeleteCollections\n" +
 						"FROM '" + tempFilename + "'\n" +
 				"WITH (FIELDTERMINATOR=',');\n");
 				
 				
 			} else {
+				sql.append("INSERT INTO TEMPdeleteCollections VALUES("+collection.getCollectionID()+");\n");
 				while(allsubcollections.hasNext()){
-					Integer next = (Integer)allsubcollections.next();
-					assert(this.getCollection(next).getDatatype().equals(datatype));
-					sql.append("INSERT INTO #deleteCollections VALUES("+next+");\n");
+					Integer nextParent = allsubcollections.next();
+					for(Integer childID : hierarchy.get(nextParent)){
+						assert(this.getCollection(childID).getDatatype().equals(datatype));
+						sql.append("INSERT INTO TEMPdeleteCollections VALUES("+childID+");\n");
+					}
 				}
 			}
 			
-			sql.append("DELETE FROM InternalAtomOrder\n"
-					+ "WHERE CollectionID IN (SELECT * FROM #deleteCollections);\n");
-			sql.append("DELETE FROM CollectionRelationships\n"
-					+ "WHERE ParentID IN (SELECT * FROM #deleteCollections)\n"
-					+ "OR ChildID IN (SELECT * FROM #deleteCollections);\n");
+			sql.append("DELETE InternalAtomOrder\nFROM InternalAtomOrder\n"
+					+ "INNER JOIN TEMPdeleteCollections\n ON " +
+							"(TEMPdeleteCollections.CollectionID = InternalAtomOrder.CollectionID);\n");
+			sql.append("DELETE AtomMembership\nFROM AtomMembership\n"
+					+ "INNER JOIN TEMPdeleteCollections\n ON " +
+							"(TEMPdeleteCollections.CollectionID = AtomMembership.CollectionID);\n");
+			sql.append("DELETE CollectionRelationships\nFROM CollectionRelationships\n"
+					+ "INNER JOIN TEMPdeleteCollections\n ON " +
+							"(TEMPdeleteCollections.CollectionID = CollectionRelationships.ParentID " +
+							"OR TEMPdeleteCollections.CollectionID = CollectionRelationships.ChildID);\n");
+			sql.append("DELETE Collections\nFROM Collections\n"
+					+ "INNER JOIN TEMPdeleteCollections\n ON " +
+							"(TEMPdeleteCollections.CollectionID = Collections.CollectionID);\n");
+			
+			/*sql.append("DELETE FROM InternalAtomOrder\n"
+					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
 			sql.append("DELETE FROM AtomMembership\n"
-					+ "WHERE CollectionID IN (SELECT * FROM #deleteCollections);\n");
+					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
+			sql.append("DELETE FROM CollectionRelationships\n"
+					+ "WHERE ParentID IN (SELECT * FROM TEMPdeleteCollections)\n"
+					+ "OR ChildID IN (SELECT * FROM TEMPdeleteCollections);\n");
 			sql.append("DELETE FROM Collections\n"
-					+ "WHERE CollectionID IN (SELECT * FROM #deleteCollections);\n");
-
+					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
+*/
 			
 			String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
 			String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
 			
 			
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#deleteAtoms')\n"+
-					"BEGIN\n"+
-					"DROP TABLE #deleteAtoms\n"+
-					"END;\n");
-			sql.append("CREATE TABLE #deleteAtoms (AtomID int);\n");
-			sql.append("insert #deleteAtoms (AtomID) \n" +
+			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPdeleteAtoms')\n"+
+					"BEGIN\n" +
+					"DROP TABLE  [dbo].[TEMPdeleteAtoms];\n"+
+					"END\n");
+			sql.append("CREATE TABLE TEMPdeleteAtoms (AtomID int, \n PRIMARY KEY([AtomID]));\n");
+			sql.append("insert TEMPdeleteAtoms (AtomID) \n" +
 					"	SELECT AtomID\n" +
 					"	FROM "+denseTableName+"\n" +
 					"	WHERE AtomID NOT IN " +
 					"		(SELECT AtomID\n" +
 					"		FROM AtomMembership\n" +
 					"		);\n");
+			
+			
+			/*//Also: We could delete all the particles from the particles
+			// table IF we want to by now going through the particles 
+			// table and choosing every one that does not exist in the 
+			// Atom membership table and deleting it.  However, this would
+			// remove particles that were referenced in the DataSetMembers 
+			// table.  If we don't want this to happen, comment out the 
+			// following code, which also removes all references in the 
+			// DataSetMembers table:
+			//System.out.println(1);
+			sql.append("DELETE FROM DataSetMembers\n" +
+			"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
+	
+			// it is ok to call atominfo tables here because datatype is
+			// set from recursiveDelete() above.
+			// note: Sparse table may not necessarily exist. So check first.
+			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
+					"DELETE FROM " + sparseTableName + "\n" +
+					"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
+			if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[AtomMembership]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+			drop table [dbo].[AtomMembership]
+			GO
+			
+			sql.append("DELETE FROM " + denseTableName + "\n" +
+					"	WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
+			*/
+			
+			
 			
 			// Also: We could delete all the particles from the particles
 			// table IF we want to by now going through the particles 
@@ -949,20 +998,20 @@ public class SQLServerDatabase implements InfoWarehouse
 			// DataSetMembers table:
 			//System.out.println(1);
 			sql.append("DELETE FROM DataSetMembers\n" +
-			"WHERE AtomID IN (SELECT * FROM #deleteAtoms);\n");
+			"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
 	
 			// it is ok to call atominfo tables here because datatype is
 			// set from recursiveDelete() above.
 			// note: Sparse table may not necessarily exist. So check first.
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
-					"DELETE FROM " + sparseTableName + "\n" +
-					"WHERE AtomID IN (SELECT * FROM #deleteAtoms);\n");
+					"DELETE "+sparseTableName+" FROM " + sparseTableName + "\n" +
+					"INNER JOIN TEMPdeleteAtoms ON (TEMPdeleteAtoms.AtomID = "+sparseTableName+".AtomID);\n");
 			
-			sql.append("DELETE FROM " + denseTableName + "\n" +
-					"	WHERE AtomID IN (SELECT * FROM #deleteAtoms);\n");
+			sql.append("DELETE "+denseTableName+" FROM " + denseTableName + "\n" +
+					"INNER JOIN TEMPdeleteAtoms ON (TEMPdeleteAtoms.AtomID = "+denseTableName+".AtomID);\n");
 			
-			sql.append("DROP TABLE #deleteAtoms;\n");
-			sql.append("DROP TABLE #deleteCollections;\n");
+			//sql.append("DROP TABLE TEMPdeleteAtoms;\n");
+			//sql.append("DROP TABLE TEMPdeleteCollections;\n");
 			System.out.println("Statement: "+sql.toString());
 			stmt.execute(sql.toString());
 			stmt.close();
@@ -991,7 +1040,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			ResultSet rs = stmt.executeQuery("SELECT ChildID\n" +
 					"FROM CollectionRelationships\n" +
 					"WHERE ParentID = " +
-					Integer.toString(collection.getCollectionID()));
+					Integer.toString(collection.getCollectionID())+" ORDER BY ChildID");
 			while(rs.next())
 			{
 				subChildren.add(new Integer(rs.getInt("ChildID")));
@@ -1003,6 +1052,58 @@ public class SQLServerDatabase implements InfoWarehouse
 			System.err.println(e);
 		}
 		return subChildren;
+	}
+	
+	/**
+	 * Returns a hashmap representing the hierarchy of subcollections.
+	 * Each key is a parentID which hashes to an ArrayList<Integer> of it's ChildIDs ordered by ChildID 
+	 * @param collection
+	 * @return the subcollection hierarchy represented as a HashMap
+	 * @author Jamie Olson
+	 */
+	public HashMap<Integer,ArrayList<Integer>> getSubCollectionsHierarchy(Collection collection)
+	{
+		HashMap<Integer,ArrayList<Integer>> subHierarchy = new HashMap<Integer,ArrayList<Integer>>();
+		HashMap<Integer,ArrayList<Integer>> completeHierarchy = new HashMap<Integer,ArrayList<Integer>>();
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT *\n" +
+					"FROM CollectionRelationships\n" +
+					"ORDER BY ParentID, ChildID");
+			int parent = -1;
+			ArrayList<Integer> subChildren = new ArrayList<Integer>();
+			while(rs.next())
+			{
+				if(rs.getInt("ParentID")==parent){
+					subChildren.add(new Integer(rs.getInt("ChildID")));
+				}else{
+					completeHierarchy.put(parent, subChildren);
+					subChildren = new ArrayList<Integer>();
+					parent = rs.getInt("ParentID");
+					subChildren.add(new Integer(rs.getInt("ChildID")));
+				}
+				
+			}
+			completeHierarchy.put(parent, subChildren);
+			
+			ArrayList<Integer> allSubChildren = new ArrayList<Integer>();
+			allSubChildren.add(collection.getCollectionID());
+			while(!allSubChildren.isEmpty()){
+				int nextParent = allSubChildren.get(0);
+				if(completeHierarchy.containsKey(nextParent)){
+				subHierarchy.put(nextParent, completeHierarchy.get(new Integer(nextParent)));
+				allSubChildren.addAll(completeHierarchy.get(new Integer(nextParent)));
+				}
+				allSubChildren.remove(0);
+			}
+			
+			stmt.close();
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception grabbing subchildren in GetImmediateSubCollections.");
+			System.err.println("Exception grabbing subchildren:");
+			System.err.println(e);
+		}
+		return subHierarchy;
 	}
 	
 	/**
@@ -1267,7 +1368,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		Statement stmt;
 		try {
 			stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT CollectionID FROM Collections");
+			ResultSet rs = stmt.executeQuery("SELECT CollectionID \nFROM Collections \nWHERE CollectionID = "+collectionID);
 			while (rs.next()) {
 				if (rs.getInt(1) == collectionID) {
 					isPresent = true;
@@ -1525,6 +1626,36 @@ public class SQLServerDatabase implements InfoWarehouse
 		return descCollections;
 	}
 	
+	public Set<Integer> getAllDescendantCollectionsNew(int collectionID, boolean includeTopLevel) {
+		
+		// Construct a set of all collections that descend from this one,
+		// including this one.
+		ArrayList<Integer> lookUpNext = new ArrayList<Integer>();
+		boolean status = lookUpNext.add(new Integer(collectionID));
+		assert status : "lookUpNext queue full";
+		
+		Set<Integer> descCollections = new HashSet<Integer>();
+		if (includeTopLevel)
+			descCollections.add(new Integer(collectionID));
+		
+		// As long as there is at least one collection to lookup, find
+		// all subchildren for all of these collections. Add them to the
+		// set of all collections we have visited and plan to visit
+		// then next time (if we haven't). (This is essentially a breadth
+		// first search on the graph of collection relationships).
+		while (!lookUpNext.isEmpty()) {
+			ArrayList<Integer> subChildren =
+				getImmediateSubCollections(lookUpNext);
+			lookUpNext.clear();
+			for (Integer col : subChildren)
+				if (!descCollections.contains(col)) {
+					descCollections.add(col);
+					lookUpNext.add(col);
+				}
+		}
+		
+		return descCollections;
+	}
 	/**
 	 * This method has CHANGED as of 11/15/05.
 	 * It used to recurse through all the collection's subcollections
@@ -4150,6 +4281,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		return retData;
 	}
 	
+	/* @guru Jamie Olson
+	 * @see database.InfoWarehouse#getConditionalTSCollectionData(collection.Collection, java.util.ArrayList, java.util.ArrayList)
+	 */
 	public Hashtable<java.util.Date, Double> getConditionalTSCollectionData(Collection seq,
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs) {
 		
@@ -4186,15 +4320,23 @@ public class SQLServerDatabase implements InfoWarehouse
 				"JOIN ("+timesStr+") T on (S.Time = T.Time)\n" +
 				"WHERE S.CollectionID = "+seq.getCollectionID()+";";
 		
-		sqlStr = selectStr + ", T.Value AS TsValue \n" + tableJoinStr + collCondStr;
+		
+		//Change the query if there aren't any conditions, making it go much faster
+		if(conditionalSeqs.isEmpty()&&conditionStrs.isEmpty()){
+			sqlStr = "SELECT T.Time as Time, T.Value AS TsValue \n" 
+				+ "FROM " +	getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " T \n" +
+				"JOIN (	SELECT M.AtomID as AtomID \n" +
+				"		FROM AtomMembership M\n" +
+				"		WHERE M.CollectionID = " + seq.getCollectionID()+") A " +
+				"ON (T.AtomID = A.AtomID)" + " \n";
+		}
 		Hashtable<java.util.Date, Double> retData = new Hashtable<java.util.Date, Double>();
 		
 		try{
 			Statement stmt = con.createStatement();
 			ResultSet rs;
 			
-			//System.out.println(sqlStr);
-			System.out.println("ATOMS:\n"+sqlStr);
+			//System.out.println("ATOMS:\n"+sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
