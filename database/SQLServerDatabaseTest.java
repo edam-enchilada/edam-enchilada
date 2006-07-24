@@ -1374,4 +1374,19 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetCollectionDatatype() {
+		db.openConnection();
+		
+		String[] expectedDatatypes = {"ATOFMS", "ATOFMS", "Datatype2", "Datatype2", "Datatype2"};
+		for (int i = 0; i < expectedDatatypes.length; ++i)
+			assertEquals(db.getCollectionDatatype(i + 2), expectedDatatypes[i]);
+		
+		assertEquals(db.getCollectionDatatype(8), "");
+		
+		db.closeConnection();
+	}
 }
