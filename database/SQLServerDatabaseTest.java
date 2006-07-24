@@ -1330,4 +1330,48 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetAdjacentAtomInCollection() {
+		db.openConnection();
+		
+		int[] adj = db.getAdjacentAtomInCollection(2, 3, 1);
+		assertEquals(adj[0], 4);
+		assertEquals(adj[1], 4);
+		
+		adj = db.getAdjacentAtomInCollection(3, 7, -1);
+		assertEquals(adj[0], 6);
+		assertEquals(adj[1], 1);
+		
+		adj = db.getAdjacentAtomInCollection(4, 12, 2);
+		assertEquals(adj[0], 14);
+		assertEquals(adj[1], 4);
+		
+		adj = db.getAdjacentAtomInCollection(2, 1, -1);
+		assertTrue((adj[0] < 0) && (adj[0] < 0));
+		
+		adj = db.getAdjacentAtomInCollection(2, 5, 1);
+		assertTrue((adj[0] < 0) && (adj[0] < 0));
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetATOFMSFileName() {
+		db.openConnection();
+		
+		assertEquals(db.getATOFMSFileName(1), "One");
+		assertEquals(db.getATOFMSFileName(11), "Eleven");
+		
+		//for non-ATOFMS data
+		assertEquals(db.getATOFMSFileName(12), "");
+		assertEquals(db.getATOFMSFileName(15), "");
+		assertEquals(db.getATOFMSFileName(22), "");
+		
+		db.closeConnection();
+	}
 }
