@@ -358,9 +358,8 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == clusterItem) {new ClusterDialog(this, 
 				collectionPane, db);}
 		else if (source == visualizeItem) {
-			new chartlib.hist.Histogrammer()
-				.drawCollection(getSelectedCollection().getCollectionID(),
-						Color.BLACK);
+			(new chartlib.hist.HistogramsWindow(
+				getSelectedCollection().getCollectionID())).setVisible(true);
 		}
 		else if (source == detectPlumesItem){
 			new DetectPlumesDialog(this,synchronizedPane, db);
