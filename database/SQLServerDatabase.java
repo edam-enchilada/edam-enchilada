@@ -4988,22 +4988,30 @@ public class SQLServerDatabase implements InfoWarehouse
 		return version;
 	}
 
+	/**
+	 * Find the sum of values from a given column given a list of AtomIDs specifying which rows to use
+	 * @param table Whether the table is static or dynamic
+	 * @param string The name of the column to sum data from
+	 * @param curIDs The IDs of the atoms from the column to be summed
+	 * @param oldDatatype The type of data being accessed (ATOFMS, etc)
+	 * @return A String representation of the sum.
+	 */
 	public String aggregateColumn(DynamicTable table, String string, ArrayList<Integer> curIDs, String oldDatatype) {
-		double sum=0;
+		double sum = 0;
 		try {
 			Statement stmt = con.createStatement();
-		String query = "SELECT SUM("+string+") FROM "+
-			getDynamicTableName(table,oldDatatype)+" WHERE AtomID IN (";
-		for (int i = 0; i < curIDs.size(); i++) {
-			query+=curIDs.get(i);
-			if (i!=curIDs.size()-1)
-				query+=",";
-		}
-		query+=");";
-		//System.out.println(query);
-		ResultSet rs = stmt.executeQuery(query);
-		assert(rs.next());
-		sum=rs.getDouble(1);
+			StringBuilder query = new StringBuilder("SELECT SUM("+string+") FROM "+
+				getDynamicTableName(table,oldDatatype)+" WHERE AtomID IN (");
+			for (int i = 0; i < curIDs.size(); i++) {
+				query.append(curIDs.get(i));
+				if (i!=curIDs.size()-1)
+					query.append(",");
+			}
+			query.append(");");
+			
+			ResultSet rs = stmt.executeQuery(query.toString());
+			assert(rs.next());
+			sum=rs.getDouble(1);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

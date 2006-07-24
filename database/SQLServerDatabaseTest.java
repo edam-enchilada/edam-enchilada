@@ -1225,4 +1225,37 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();	
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testAggregateColumn() {
+		db.openConnection();
+		
+		int[] intsraw = {1,2,3,4,5};
+		ArrayList<Integer> ints = new ArrayList<Integer>();
+		for (int i : intsraw)
+			ints.add(i);
+		
+		assertEquals(db.aggregateColumn(
+				DynamicTable.AtomInfoDense, 
+				"AtomID", 
+				ints, 
+				"ATOFMS"), "15.0");
+		
+		assertEquals(db.aggregateColumn(
+				DynamicTable.AtomInfoDense, 
+				"Size", 
+				ints, 
+				"ATOFMS").substring(0, 7), "1.50000");
+		
+		ints.remove(0);
+		assertEquals(db.aggregateColumn(
+				DynamicTable.AtomInfoSparse, 
+				"PeakHeight", 
+				ints, 
+				"ATOFMS"), 12*(2+3+4+5) + ".0");	
+		
+		db.closeConnection();
+	}
 }
