@@ -1113,7 +1113,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param toParentID
 	 */	
 	public void addSingleInternalAtomToTable(int atomID, int toParentID) {
-//		update InternalAtomOrder; have to iterate through all
+		//update InternalAtomOrder; have to iterate through all
 		// atoms sequentially in order to insert it. 
 		Statement stmt;
 		try {
@@ -1125,18 +1125,29 @@ public class SQLServerDatabase implements InfoWarehouse
 			if (!rs.next())
 				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+",1)");
 			else {
-				while (atomID < rs.getInt(1) && rs.next()) {
+				while (atomID > rs.getInt(1) && rs.next()) {
 					order++;
 					// jump to spot in db where atomID fits.
 				}
-				if (atomID != rs.getInt(1)) {
-					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+","+order+")");
-					while(rs.next()) {
+
+				if (rs.getRow() == 0)
+					//if we're at the end of the collection,
+					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
+							+atomID+","+toParentID+","+(order + 1)+")");
+				else if (atomID != rs.getInt(1)) {
+					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
+							+atomID+","+toParentID+","+order+")");
+					
+					do {
 						order++;
-						stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + order + " WHERE AtomID = "+rs.getInt(1));
+						stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + order + 
+								" WHERE AtomID = "+rs.getInt(1) + 
+								" AND CollectionID = " +toParentID);
 					}
+					while (rs.next());
 				}
 			}
+
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e) {

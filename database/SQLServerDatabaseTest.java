@@ -1123,4 +1123,106 @@ public class SQLServerDatabaseTest extends TestCase {
 			ex.printStackTrace();
 		}
 	}
+
+	/**
+	 * @author shaferia
+	 */
+	public void testAddCenterAtom() {	
+		db.openConnection();
+		
+		//Note: making an Atom the center of a Collection it does not belong to: is this sensible?
+		assertTrue(db.addCenterAtom(2, 3));
+		
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM CenterAtoms WHERE AtomID = 2");
+			
+			rs.next();
+			assertEquals(rs.getInt("AtomID"), 2);
+			assertEquals(rs.getInt("CollectionID"), 3);
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		
+		assertTrue(db.addCenterAtom(2, 4));
+		
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM CenterAtoms WHERE AtomID = 2 ORDER BY CollectionID");
+			
+			rs.next();
+			assertEquals(rs.getInt("AtomID"), 2);
+			assertEquals(rs.getInt("CollectionID"), 3);
+			
+			rs.next();
+			assertEquals(rs.getInt("AtomID"), 2);
+			assertEquals(rs.getInt("CollectionID"), 4);
+			
+			assertFalse(rs.next());
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		
+		db.closeConnection();
+	}
+
+	/**
+	 * @author shaferia
+	 */
+	public void testAddSingleInternalAtomToTable() {
+		db.openConnection();
+		
+		//test adding to end
+		db.addSingleInternalAtomToTable(6, 2);
+
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT * FROM InternalAtomOrder WHERE AtomID = 6 ORDER BY CollectionID");
+			
+			rs.next();
+			assertEquals(rs.getInt(3), 6);
+			rs.next();
+			assertEquals(rs.getInt(3), 1);
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}	
+		
+		
+		db.atomBatchInit();
+		db.deleteAtomsBatch("'1','2','3','4','5'", db.getCollection(2));
+		db.atomBatchExecute();
+		db.updateInternalAtomOrder(db.getCollection(2));
+
+		//addSingleInternalAtomToTable should order things correctly - make sure that happens
+		db.addSingleInternalAtomToTable(4, 2);
+		db.addSingleInternalAtomToTable(3, 2);
+		db.addSingleInternalAtomToTable(1, 2);
+		db.addSingleInternalAtomToTable(5, 3);
+		db.addSingleInternalAtomToTable(2, 2);
+
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT * FROM InternalAtomOrder WHERE CollectionID = 2");
+			
+			for (int i = 0; rs.next(); ++i) {
+				assertEquals(rs.getInt(1), rs.getInt(3));
+				assertEquals(rs.getInt(1), i + 1);
+			}
+			assertFalse(rs.next());
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		
+		db.closeConnection();	
+	}
 }
