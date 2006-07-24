@@ -1389,4 +1389,32 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetCollectionIDsWithAtoms() {
+		db.openConnection();
+
+		ArrayList<Integer> colls = new ArrayList<Integer>();
+		for (int i = 0; i < 20; ++i)
+			colls.add(i);
+		
+		ArrayList<Integer> ids = db.getCollectionIDsWithAtoms(colls);
+		
+		assertTrue(ids.size() == 5);
+		assertEquals((int) ids.get(0), 2);
+		assertEquals((int) ids.get(1), 3);
+		assertEquals((int) ids.get(2), 4);
+		assertEquals((int) ids.get(3), 5);
+		assertEquals((int) ids.get(4), 6);
+		
+		colls = new ArrayList<Integer>();
+		assertTrue(db.getCollectionIDsWithAtoms(colls).size() == 0);
+		
+		colls.add(-1);
+		assertTrue(db.getCollectionIDsWithAtoms(colls).size() == 0);
+		
+		db.closeConnection();
+	}
 }
