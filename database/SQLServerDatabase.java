@@ -4903,7 +4903,8 @@ public class SQLServerDatabase implements InfoWarehouse
 					"WHERE PrimaryKey = 1 AND Datatype = '" + datatype + 
 					"' AND TableID = " + table.ordinal());
 			while (rs.next()) {
-				if (!rs.getString(1).equals("[AtomID]") && !rs.getString(1).equals("[DatasetID]")) 
+				if (!rs.getString(1).equalsIgnoreCase("[AtomID]") 
+						&& !rs.getString(1).equalsIgnoreCase("[DatasetID]")) 
 					strings.add(rs.getString(1));
 			}
 			stmt.close();

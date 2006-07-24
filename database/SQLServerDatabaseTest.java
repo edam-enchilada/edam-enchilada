@@ -1614,4 +1614,40 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetPrimaryKey() {
+		db.openConnection();
+		
+		ArrayList<String> ret = db.getPrimaryKey("ATOFMS", DynamicTable.DataSetInfo);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 0);
+		
+		ret = db.getPrimaryKey("ATOFMS", DynamicTable.AtomInfoDense);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 0);
+		
+		ret = db.getPrimaryKey("ATOFMS", DynamicTable.AtomInfoSparse);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 1);
+		assertTrue(ret.get(0).equalsIgnoreCase("[PeakLocation]"));
+		
+		ret = db.getPrimaryKey("AMS", DynamicTable.DataSetInfo);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 0);
+		
+		ret = db.getPrimaryKey("AMS", DynamicTable.AtomInfoSparse);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 1);
+		assertTrue(ret.get(0).equalsIgnoreCase("[PeakLocation]"));		
+		
+		ret = db.getPrimaryKey("Datatype2", DynamicTable.AtomInfoSparse);
+		assertTrue(ret != null);
+		assertEquals(ret.size(), 1);
+		assertTrue(ret.get(0).equalsIgnoreCase("[Delay]"));		
+		
+		db.closeConnection();
+	}
 }
