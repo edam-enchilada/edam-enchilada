@@ -822,6 +822,9 @@ public class MainFrame extends JFrame implements ActionListener
 		topLeftButtonPanel.add(aggregateButton = new JButton("Aggregate Selected"));
 		bottomLeftButtonPanel.add(mapValuesButton = new JButton("Map Values"));
 		
+		//TODO: Remove when Map Values becomes usable
+		mapValuesButton.setVisible(false);
+		
 		topLeftPanel.add(collectionPane, BorderLayout.CENTER);
 		topLeftPanel.add(topLeftButtonPanel, BorderLayout.SOUTH);
 		bottomLeftPanel.add(synchronizedPane, BorderLayout.CENTER);
