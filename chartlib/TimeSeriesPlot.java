@@ -55,7 +55,7 @@ public class TimeSeriesPlot extends Chart {
 		//MUST SET SIZE or it won't work!
 		layeredPane.setPreferredSize(new Dimension(height,width));
 		
-		chartAreas = new ArrayList<ChartArea>();
+		chartAreas = new ArrayList<AbstractMetricChartArea>();
 		for (int count = 0; count < datasets.length; count++) {
 			//anonymous class, just like normal except doesn't draw a background
 			//this makes it transparent
@@ -88,7 +88,9 @@ public class TimeSeriesPlot extends Chart {
 		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
 
 		for (int i = 0; i < datasets.length; i++) {
-			ChartArea chartArea = chartAreas.get(i);
+			// we assume that all chart areas in this chart are controlled by this code,
+			// so that we can cast them to ChartArea.
+			ChartArea chartArea = (ChartArea) chartAreas.get(i);
 			Dataset dataset = datasets[i];
 
 			// empty dataset: do nothing
@@ -145,7 +147,7 @@ public class TimeSeriesPlot extends Chart {
 				+ newYmin + "-" + newYmax);
 		*/
 		for (int i = 0; i < datasets.length; i++) {
-			ChartArea chartArea = chartAreas.get(i);
+			ChartArea chartArea = (ChartArea) chartAreas.get(i);
 			chartArea.setAxisBounds(newXmin, newXmax, newYmin, newYmax);
 			chartArea.createAxes();
 			chartArea.repaint();

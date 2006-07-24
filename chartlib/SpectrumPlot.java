@@ -53,7 +53,7 @@ public class SpectrumPlot extends Chart {
 	}
 	
 	protected void makeChartAreas(){
-		chartAreas = new ArrayList<ChartArea>();
+		chartAreas = new ArrayList<AbstractMetricChartArea>();
 		switch(datatype){
 		case SpectrumPlot.UNDEFINED:
 			for (int count = 0; count < numCharts; count++) {

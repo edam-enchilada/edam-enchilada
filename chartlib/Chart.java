@@ -64,7 +64,8 @@ public class Chart extends JPanel implements Zoomable
 	protected ChartTitle titleLabel;
 	protected JPanel bottomHalf;
 	protected ChartKey key;
-	protected ArrayList<ChartArea> chartAreas = new ArrayList<ChartArea>();
+	protected ArrayList<AbstractMetricChartArea> chartAreas 
+		= new ArrayList<AbstractMetricChartArea>();
 	protected JPanel chartPanel;
 	protected JPanel ckPanel;
 	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
@@ -150,7 +151,7 @@ public class Chart extends JPanel implements Zoomable
 			q.x = p.x - q.x;
 			q.y = p.y - q.y;
 			//System.out.println(q.x + ", "+ q.y);
-			if(!((ChartArea)(cp)).isInDataArea(q))
+			if(!((AbstractChartArea) cp).isInDataArea(q))
 				return -1;
 		}
 		
@@ -177,7 +178,13 @@ public class Chart extends JPanel implements Zoomable
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
 		q.y = p.y - q.y;
-		return chartAreas.get(index).getDataValueForPoint(q);
+		
+		AbstractChartArea area = chartAreas.get(index);
+		if (area instanceof AbstractMetricChartArea) {
+			return ((AbstractMetricChartArea) area).getDataValueForPoint(q);
+		} else {
+			return null;
+		}
 //		}
 	}
 	
@@ -231,13 +238,16 @@ public class Chart extends JPanel implements Zoomable
 //	}
 	
 	/**
-	 * Returns a chart's dataset.
+	 * Returns a chart's dataset, or null if it is not a ChartArea but some other
+	 * kind of AbstractMetricChartArea.
+	 * 
 	 * @param index The chart.
 	 * @return The specified chart's dataset.
 	 */
 	public Dataset getDataset(int index)
 	{
-		return chartAreas.get(index).getDataset(0);
+		if (! (chartAreas.get(index) instanceof ChartArea)) return null;
+		return ((ChartArea) chartAreas.get(index)).getDataset(0);
 	}
 	
 	/**
@@ -432,13 +442,16 @@ public class Chart extends JPanel implements Zoomable
 	}
 	
 	/**
-	 * Sets a new width for the bars in the given chart.
+	 * Sets a new width for the bars in the given chart, if it inherits from
+	 * ChartArea.
+	 * 
 	 * @param index The chart to change, starting at 0 at the top.
 	 * @param width The new width for the bars, in pixels.
 	 */
 	public void setBarWidth(int index, int width)
 	{
-		chartAreas.get(index).setBarWidth(width);
+		if (! (chartAreas.get(index) instanceof ChartArea)) return;
+		((ChartArea) chartAreas.get(index)).setBarWidth(width);
 	}
 	
 	/**
@@ -461,7 +474,8 @@ public class Chart extends JPanel implements Zoomable
 	 */
 	public void setColor(int index, Color c)
 	{
-		chartAreas.get(index).setForegroundColor(c);
+		if (! (chartAreas.get(index) instanceof ChartArea)) return;
+		((ChartArea) chartAreas.get(index)).setForegroundColor(c);
 
 		key.setColor(index, c);
 	}
@@ -495,7 +509,9 @@ public class Chart extends JPanel implements Zoomable
 	
 	public void packData(int index, boolean packX, boolean packY)
 	{
-		chartAreas.get(index).packData(packX, packY);
+		AbstractMetricChartArea area = chartAreas.get(index);
+		if (area instanceof ChartArea) 
+			((ChartArea) area).packData(packX, packY);
 	}
 	
 	/**
@@ -572,7 +588,7 @@ public class Chart extends JPanel implements Zoomable
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
 		
 		if (chartAreas != null) {
-			for (ChartArea ca : chartAreas) {
+			for (AbstractMetricChartArea ca : chartAreas) {
 				chartPanel.add(ca);
 			}
 		}
@@ -602,10 +618,19 @@ public class Chart extends JPanel implements Zoomable
 	public double[] getXRange() {
 		double[][] bounds;
 		double xmin = Double.MAX_VALUE, xmax = Double.MIN_VALUE;
-		for (ChartArea c : chartAreas) {
-			bounds = c.findAllMinsMaxes(c.getDataset(0));
-			if (bounds[0][0] < xmin) xmin = bounds[0][0];
-			if (bounds[0][1] > xmax) xmax = bounds[0][1];
+		for (AbstractMetricChartArea c : chartAreas) {
+			if (c instanceof ChartArea) {
+				bounds = ((ChartArea) c).findAllMinsMaxes(
+						((ChartArea) c).getDataset(0));
+				if (bounds[0][0] < xmin) xmin = bounds[0][0];
+				if (bounds[0][1] > xmax) xmax = bounds[0][1];
+			} else {
+				double max, min;
+				max = c.getXMax();
+				min = c.getXMin();
+				if (max > xmax) xmax = max;
+				if (min < xmin) xmin = min;
+			}
 		}
 		return new double[] {xmin, xmax};
 	}
@@ -617,4 +642,17 @@ public class Chart extends JPanel implements Zoomable
 	public void setXAxisBounds(double xmin, double xmax) throws IllegalArgumentException {
 		this.setAxisBounds(xmin, xmax, CURRENT_VALUE, CURRENT_VALUE);
 	}
+
+	@Override
+	protected void addImpl(Component comp, Object constraints, int index) {
+		if (comp instanceof AbstractMetricChartArea) {
+			chartAreas.add((AbstractMetricChartArea) comp);
+			chartPanel.add(comp);
+		} else {
+			super.addImpl(comp, constraints, index);
+		}
+	}
+	
+
+	
 }

@@ -125,7 +125,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		JPanel bottomPanel = new JPanel(new BorderLayout());
 		
 		if (chart instanceof Component) {
-			bottomPanel.add((Component) chart,BorderLayout.CENTER);
+			Component c = (Component) chart;
+			bottomPanel.add(c, BorderLayout.CENTER);
+			c.addMouseMotionListener(this);
+			c.addMouseListener(this);
 		} else {
 			// I can't figure out how to re-jigger inheritance so that Zoomable
 			// can force things to be Components.  Nor do I know if I should. -tom
@@ -134,9 +137,13 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
 		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
+		
+		setFocusable(true);
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addKeyListener(this);
+		
+		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 	}
 	
 	/**
