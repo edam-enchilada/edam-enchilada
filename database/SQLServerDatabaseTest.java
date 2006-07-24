@@ -1258,4 +1258,35 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testCreateIndex() {
+		db.openConnection();
+		
+		assertTrue(db.createIndex("ATOFMS", "Size, LaserPower"));
+		assertTrue(db.createIndex("ATOFMS", "Size, Time"));
+		assertFalse(db.createIndex("ATOFMS", "Size, LaserPower"));
+		assertFalse(db.createIndex("ATOFMS", "size, time"));
+		
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT * FROM ATOFMSAtomInfoDense WHERE Size = 0.2");
+			
+			assertTrue(rs.next());
+			assertTrue(rs.getFloat("LaserPower") < 2.0001 && rs.getFloat("LaserPower") > 1.9999);
+			assertFalse(rs.next());
+			
+			rs.close();
+			stmt.close();
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		
+		db.closeConnection();
+	}
 }
