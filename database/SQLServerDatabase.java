@@ -4795,16 +4795,23 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/** 
-	 * Gets first atom for top-leve particles in collection.
+	 * Gets first atom for top-level particles in collection.
 	 */
 	public int getFirstAtomInCollection(Collection collection) {
 		int atom = -1;
 		try{
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
-			
 			if (rs.next())
 				atom = rs.getInt(1);
+			
+			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
+			if (atom == 0) {
+				rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
+				if (!rs.next())
+					atom = -1;
+			}
+			
 			stmt.close();
 		}
 		catch (SQLException e){

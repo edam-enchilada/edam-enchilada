@@ -1465,4 +1465,36 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetFirstAtomInCollection() {
+		db.openConnection();
+		
+		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), 1);
+		assertEquals(db.getFirstAtomInCollection(db.getCollection(3)), 6);
+		
+		try {
+			db.getCon().createStatement().executeUpdate(
+					"DELETE FROM AtomMembership WHERE CollectionID = 2");
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}	
+		
+		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), -1);
+		
+		try {
+			//rebuild the bit deleted above
+			Statement stmt = db.getCon().createStatement();
+			for (int i = 1; i < 6; ++i)
+				stmt.addBatch("INSERT INTO AtomMembership VALUES (2, " + i + ")");
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}		
+		
+		db.closeConnection();
+	}
 }
