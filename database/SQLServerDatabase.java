@@ -4746,6 +4746,10 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @return	True if the datatype is in the database, false otherwise.
 	 */
 	public boolean containsDatatype(String type){
+		if (!removeReservedCharacters(type).equals(type))
+			throw new IllegalArgumentException("Invalid database reserved characters in " +
+					"querying name while checking for existence of datatype " + type);
+		
 		try{
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT Datatype FROM MetaData"
