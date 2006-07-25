@@ -1349,11 +1349,13 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertEquals(adj[0], 14);
 		assertEquals(adj[1], 4);
 		
+		//The following two assertions should print SQLExceptions.
+		
 		adj = db.getAdjacentAtomInCollection(2, 1, -1);
-		assertTrue((adj[0] < 0) && (adj[0] < 0));
+		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
 		adj = db.getAdjacentAtomInCollection(2, 5, 1);
-		assertTrue((adj[0] < 0) && (adj[0] < 0));
+		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
 		db.closeConnection();
 	}
@@ -1367,7 +1369,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertEquals(db.getATOFMSFileName(1), "One");
 		assertEquals(db.getATOFMSFileName(11), "Eleven");
 		
-		//for non-ATOFMS data
+		//for non-ATOFMS data - these assertions should print SQLExceptions.
 		assertEquals(db.getATOFMSFileName(12), "");
 		assertEquals(db.getATOFMSFileName(15), "");
 		assertEquals(db.getATOFMSFileName(22), "");
@@ -1385,6 +1387,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		for (int i = 0; i < expectedDatatypes.length; ++i)
 			assertEquals(db.getCollectionDatatype(i + 2), expectedDatatypes[i]);
 		
+		//Should print an SQLException
 		assertEquals(db.getCollectionDatatype(8), "");
 		
 		db.closeConnection();
