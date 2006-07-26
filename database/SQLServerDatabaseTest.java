@@ -1424,6 +1424,94 @@ public class SQLServerDatabaseTest extends TestCase {
 	/**
 	 * @author shaferia
 	 */
+	public void testGetColNames() {
+		db.openConnection();
+		
+		//Test Metadata given by database (from ResultSetMetaData) 
+		//	against hardcoded MetaData in database
+		for (String type : db.getKnownDatatypes()) {
+			for (DynamicTable dynt : DynamicTable.values()) {
+				ArrayList<String> names = db.getColNames(type, dynt);
+				
+				try	{
+					Connection con = db.getCon();
+					Statement stmt = con.createStatement();
+					ResultSet rs = stmt.executeQuery(
+							"USE TestDB;\n" +
+							"SELECT * FROM " + db.getDynamicTableName(dynt, type));
+					java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+					
+					for (int i = 1; i < rsmd.getColumnCount() + 1; ++i) {
+						assertTrue(names.get(i - 1).equalsIgnoreCase(
+								"[" + rsmd.getColumnName(i) + "]"));
+					}
+				}
+				catch (SQLException ex) {
+					//this isn't an error.
+					System.out.printf("Couldn't test database MetaData for Table %s %s" +
+							" - table doesn't exist.\n", type, dynt);
+				}
+			}
+		}
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetColNamesAndTypes() {
+		db.openConnection();
+
+		//ugh... java.sql.Type isn't an enum.
+		//Manually map the int types in the fake enum to String type values
+		java.util.HashMap<Integer, String> typeConv = new java.util.HashMap<Integer, String>();
+		typeConv.put(-7, "BIT");
+		typeConv.put(4, "INT");
+		typeConv.put(7, "REAL");
+		typeConv.put(12, "VARCHAR(8000)");
+		typeConv.put(93, "DATETIME");
+		
+		//Test Metadata given by database (from ResultSetMetaData) 
+		//	against hardcoded MetaData in database, as in testGetColNames
+		for (String type : db.getKnownDatatypes()) {
+			for (DynamicTable dynt : DynamicTable.values()) {
+				ArrayList<ArrayList<String>> names = db.getColNamesAndTypes(type, dynt);
+				
+				//System.out.printf("*** %s%s *** \n", type, dynt);
+				
+				try	{
+					Connection con = db.getCon();
+					Statement stmt = con.createStatement();
+					ResultSet rs = stmt.executeQuery(
+							"USE TestDB;\n" +
+							"SELECT * FROM " + db.getDynamicTableName(dynt, type));
+					java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+
+					for (int i = 1; i < rsmd.getColumnCount() + 1; ++i) {
+						//System.out.printf("Name: %-20.20s - %-20.20s Type: %-20.20s - %-20.20s\n",
+						//		names.get(i - 1).get(0), rsmd.getColumnName(i),
+						//		names.get(i - 1).get(1), rsmd.getColumnTypeName(i));
+						assertTrue(names.get(i - 1).get(0).equalsIgnoreCase(
+								rsmd.getColumnName(i)));
+						assertTrue(names.get(i - 1).get(1).equals(
+								typeConv.get(rsmd.getColumnType(i))));
+					}
+				}
+				catch (SQLException ex) {
+					//this isn't an error.
+					System.out.printf("Couldn't test database MetaData for Table %s %s" +
+							" - table doesn't exist.\n", type, dynt);
+				}
+			}
+		}
+		
+		db.closeConnection();		
+	}
+	
+	/**
+	 * @author shaferia
+	 */
 	public void testGetDatabaseVersion() {
 		db.openConnection();
 		
@@ -1666,6 +1754,64 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertEquals(db.getRepresentedCluster(6), 3);
 		assertEquals(db.getRepresentedCluster(4), -1);
 		assertEquals(db.getRepresentedCluster(3), -1);
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * Casts an array of objects to an array of uncasted Integers
+	 * @param o the array to cast
+	 * @return an equally-sized array of ints
+	 * @author shaferia
+	 */
+	private int[] castint(Object[] objs) {
+		int[] ret = new int[objs.length];
+		
+		for (int i = 0; i < ret.length; ++i)
+			ret[i] = ((Integer)objs[i]).intValue();
+		
+		return ret;
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetAllDescendantCollections() {
+		db.openConnection();
+		
+		java.util.Set<Integer> subcolls = db.getAllDescendantCollections(2, true);		
+		assertEquals(subcolls.size(), 1);
+		assertTrue(((Integer)(subcolls.toArray()[0])).equals(new Integer(2)));
+		
+		subcolls = db.getAllDescendantCollections(2, false);		
+		assertEquals(subcolls.size(), 0);	
+		
+		db.createEmptyCollection("ATOFMS", 2, "Emptycoll", "Hi!", "");
+		
+		int[] subids = castint(db.getAllDescendantCollections(2, true).toArray(new Integer[0]));
+		assertEquals(subids.length, 2);
+		assertEquals(subids[0], 2);
+		assertEquals(subids[1], 7);
+		
+		db.createEmptyCollection("ATOFMS", 7, "Emptycoll2", "", "");
+		subcolls = db.getAllDescendantCollections(2, true);
+		java.util.Set<Integer> comparer = new java.util.TreeSet<Integer>();
+		comparer.add(2);
+		comparer.add(7);
+		comparer.add(8);
+		assertTrue(subcolls.equals(comparer));
+		
+		db.createEmptyCollection("AMS", 7, "stuff", "", "");
+		db.createEmptyCollection("AMS", 8, "two", "", "");
+
+		subcolls = db.getAllDescendantCollections(2, true);
+		comparer = new java.util.TreeSet<Integer>();
+		comparer.add(2);
+		comparer.add(7);
+		comparer.add(8);
+		comparer.add(9);
+		comparer.add(10);
+		assertTrue(subcolls.equals(comparer));	
 		
 		db.closeConnection();
 	}
