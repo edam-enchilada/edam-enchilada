@@ -266,7 +266,7 @@ public class CreateTestDatabase {
 					"Use TestDB " + 
 			"INSERT INTO MetaData VALUES ('SimpleParticle','[DataSetID]','INT',1,0,0)\n");
 			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[DataSet]','VARCHAR(8000)',0,0,1)\n");
-			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[Number]','INT',0,0,1)\n");
+			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[Number]','INT',0,0,2)\n");
 			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[AtomID]','INT',1,1,0)\n" );
 			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[Size]','REAL',0,1,1)\n" );
 			stmt.executeUpdate("INSERT INTO MetaData VALUES ('SimpleParticle','[Magnitude]','REAL',0,1,2)\n" );
