@@ -60,6 +60,8 @@ check the next & prev buttons for
 		__correct next & prev particles
 		__enabling/disabling of buttons appropriately
 		__displaying a particle with a higher row number than exists in showing collection
+		__spectrum view works
+		__zoom in spectrum view works
 		
 **Try importing two collections into a single parent collection, and verify
 that it works.		
