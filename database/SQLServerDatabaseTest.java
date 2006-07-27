@@ -1815,4 +1815,50 @@ public class SQLServerDatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
+
+	/**
+	 * @author shaferia
+	 */
+	public void testContainsDatatype() {
+		db.openConnection();
+
+		assertTrue(db.containsDatatype("AMS"));
+		
+		//shouldn't be case sensitive
+		assertTrue(db.containsDatatype("ams"));
+		
+		assertTrue(db.containsDatatype("ATOFMS"));
+		assertTrue(db.containsDatatype("atofMS"));
+		
+		assertTrue(db.containsDatatype("Datatype2"));
+		assertTrue(db.containsDatatype("SimpleParticle"));
+		assertTrue(db.containsDatatype("TimeSeries"));
+
+		try {
+			//won't happen in reality, but quotes ought to be stripped in general
+			db.containsDatatype("'ATOFMS'");
+			fail();
+		}
+		catch (RuntimeException ex) {
+			System.out.println("This should be an error: " + ex.getMessage());
+		}
+		
+		try {
+			db.containsDatatype("' OR Datatype = 'AMS");
+			fail();
+		}
+		catch (RuntimeException ex) {
+			System.out.println("This should be an error: " + ex.getMessage());
+		}
+
+		try {
+			db.containsDatatype("''AMS''");
+			fail();
+		}
+		catch (RuntimeException ex) {
+			System.out.println("This should be an error: " + ex.getMessage());
+		}
+		
+		db.closeConnection();
+	}
 }
