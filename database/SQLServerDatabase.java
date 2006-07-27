@@ -4936,6 +4936,8 @@ public class SQLServerDatabase implements InfoWarehouse
 			if (rs.next()){
 				collectionID = rs.getInt("CollectionID");
 			}
+			
+			assert !rs.next() : "Atom " + atomID + " should not be the center of multiple clusters.";			
 			stmt.close();
 		} catch (SQLException e){
 			//TODO: figure out the error-logging procedures
