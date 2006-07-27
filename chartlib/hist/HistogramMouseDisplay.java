@@ -1,6 +1,5 @@
 package chartlib.hist;
 
-import chartlib.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
@@ -88,13 +87,9 @@ public class HistogramMouseDisplay extends JPanel
 		if (ca.isInDataArea(p)) {
 			Point2D.Double dataPoint = ca.getDataValueForPoint(p);
 			
-			xValue.setText("" + format(dataPoint.getX()));
-			yValue.setText("" + format(dataPoint.getY()));
+			xValue.setText(ca.xLabel(dataPoint.getX()));
+			yValue.setText(ca.yLabel(dataPoint.getY()));
 			zValue.setText("" + ca.getCountAt((int) dataPoint.getX(), (float) dataPoint.getY()));
 		}
-	}
-	
-	private String format(double num) {
-		return "" + ((Math.floor (num * 100.0)) / 100.0);
 	}
 }

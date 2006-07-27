@@ -273,4 +273,22 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		repaint();
 	}
 	
+	public String yLabel(double value) {
+		String ret = "";
+		for (String part : yAxis.getLabelFor(value)) {
+			ret += part + "\n";
+		}
+		return ret;
+	}
+	
+	public String xLabel(double value) {
+		String ret = "";
+		for (String part : xAxis.getLabelFor(value)) {
+			ret += part + "\n";
+		}
+		return ret;
+	}
+	
+	
+	
 }

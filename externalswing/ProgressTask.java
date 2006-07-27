@@ -6,10 +6,10 @@ import javax.swing.*;
 /**
  * ProgressTask - a useful thingie like a SwingWorker, but without facilities
  * to return a value, and with a status text and progress bar in a JDialog box.
- * 
+ * <p>
  * Use this if you want something to execute in its own thread with a cute
  * status monitor.
- * 
+ * <p>
  * You use this class by creating a subclass with an overridden run() method,
  * then calling .start() on an instance of it.
  * 
@@ -114,13 +114,13 @@ public abstract class ProgressTask extends JDialog {
 	
 	/**
 	 * Override this method to code the task you'll have executed.
-	 * 
+	 * <p>
 	 * To update the user on what's happening, use the object variables
 	 * progressBar and statusText.
-	 * 
+	 * <p>
 	 * You will need to set the bounds and, obviously, the current value of 
 	 * the progressBar.
-	 * 
+	 * <p>
 	 * See the dispose() method for important information about premature
 	 * termination of the task.
 	 *

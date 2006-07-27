@@ -291,19 +291,8 @@ public class GraphAxis {
 				drawTick(g2d,tickValue, true);
 			count++;
 		}
-		
-		// draw tick labels
-		String[][] bigTicksLabels = getBigTicksLabels();
-		for(int i=0;i<bigTicksLabels.length;i++){
-		Map<Coord, GlyphVector> drawableLabels 
-				= getLabelsForDrawing(bigTicks, bigTicksLabels[i], g2d);
-		for (Map.Entry<Coord, GlyphVector> label 
-				: drawableLabels.entrySet()) 
-		{
-			Coord p = label.getKey();
-			g2d.drawGlyphVector(label.getValue(), (float) p.getX(), (float) p.getY()+10*i);
-		}
-		}
+
+
 		
 		// x axis small ticks
 		double[] smallTicks = getSmallTicks();
@@ -317,6 +306,25 @@ public class GraphAxis {
 				drawTick(g2d,tickValue, false);
 			count++;
 			
+		}
+	}
+	
+	public void drawTickLabels(Graphics2D g2d) {
+		// gets big ticks as proportions of the axis length
+		double[] bigTicks = getBigTicksRel();
+		
+		// draw tick labels
+		String[][] bigTicksLabels = getBigTicksLabels();
+		
+		for(int i=0;i<bigTicksLabels.length;i++){
+			Map<Coord, GlyphVector> drawableLabels 
+				= getLabelsForDrawing(bigTicks, bigTicksLabels[i], g2d);
+			
+			for (Map.Entry<Coord, GlyphVector> label : drawableLabels.entrySet()) 
+			{
+				Coord p = label.getKey();
+				g2d.drawGlyphVector(label.getValue(), (float) p.getX(), (float) p.getY()+10*i);
+			}
 		}
 	}
 

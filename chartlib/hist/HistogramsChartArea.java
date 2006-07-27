@@ -19,6 +19,9 @@ import static java.lang.Math.min;
 import java.lang.Math;
 
 import javax.swing.JFrame;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import database.CollectionCursor;
 import database.SQLServerDatabase;
@@ -28,21 +31,19 @@ import database.SQLServerDatabase;
  *
  */
 public class HistogramsChartArea 
-	extends AbstractMetricChartArea implements chartlib.Zoomable 
+	extends AbstractMetricChartArea implements chartlib.Zoomable, ChangeListener 
 {
 	private final List<HistogramDataset> collectionHistograms 
 			= new LinkedList<HistogramDataset>();
+	
+	private float brightness = 60;
 
 	
-	
 	@Override
-	protected void createAxes() {
-		super.createAxes();
-		xAxis.setLabeller(new chartlib.GraphAxis.AxisLabeller() {
-			public String[] label(double value) {
-				return new String[] {""};
-			}
-		});
+	protected void drawTickLabels(Graphics2D g2d) {
+		yAxis.drawTickLabels(g2d);
+		// don't draw x axis labels, since there's another graph just a few
+		// pixels away.
 	}
 	
 	public HistogramsChartArea() {
@@ -51,7 +52,7 @@ public class HistogramsChartArea
 		H_TITLE_PADDING = 0;
 		
 		setTitleX("");
-		this.setPreferredSize(new Dimension(300, 300));
+		this.setPreferredSize(new Dimension(300, 200));
 	}
 	
 	public HistogramsChartArea(HistogramDataset d) {
@@ -89,7 +90,7 @@ public class HistogramsChartArea
 			      G = dataset.color.getGreen() / 255f,
 			      B = dataset.color.getBlue() / 255f;
 			
-			float factor = 60f / (float) dataset.count;
+			float factor = brightness / (float) dataset.count;
 			
 			/*
 			 * We define the y axis to be in integer-valued chunks.
@@ -184,7 +185,20 @@ public class HistogramsChartArea
 	public boolean removeDataset(HistogramDataset dset) {
 		return collectionHistograms.remove(dset);
 	}
-	
 
+	public float getBrightness() {
+		return brightness;
+	}
+
+	public void setBrightness(float brightness) {
+		this.brightness = brightness;
+		repaint();
+	}
+
+	public void stateChanged(ChangeEvent e) {
+		JSlider source = (JSlider) e.getSource();
+//		this.setBrightness(1f / (source.getValue() / 200f));
+		this.setBrightness(source.getValue() * source.getValue());
+	}
 }
 

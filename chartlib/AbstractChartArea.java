@@ -139,10 +139,13 @@ public abstract class AbstractChartArea extends JComponent {
 	 * you should probably just override one of:
 	 * drawBackground(Graphics2D), drawAxes(Graphics2D), drawAxisTitles(Graphics2d),
 	 * or drawData(Graphics2D).  updateAxes() is also called.
-	 * 
+	 * <p>
 	 * For instance, say you want to make a chart with a transparent background.
 	 * Then just override drawBackground to do nothing, and make sure you do
 	 * .setOpaque(false).
+	 * <p>
+	 * All the methods are given new copies of a Graphics2D object, so you can
+	 * do whatever you want with them.
 	 */
 	public void paintComponent(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g.create();
@@ -153,6 +156,7 @@ public abstract class AbstractChartArea extends JComponent {
 		updateAxes();
 		drawAxes((Graphics2D) g2d.create());
 		drawAxisTitles((Graphics2D) g2d.create());
+		drawTickLabels((Graphics2D) g2d.create());
 		
 		Graphics2D dataG = (Graphics2D) g2d.create();
 		dataG.clip(getDataAreaBounds());
@@ -197,6 +201,14 @@ public abstract class AbstractChartArea extends JComponent {
 		yAxis.draw(g2d);
 	}
 	
+	/**
+	 * If you don't want to draw the tick labels, override this.
+	 * @param g2d
+	 */
+	protected void drawTickLabels(Graphics2D g2d) {
+		xAxis.drawTickLabels(g2d);
+		yAxis.drawTickLabels(g2d);
+	}
 	
 	/**
 	 * drawMorePointsIndicator - draw symbols indicating more points exist.

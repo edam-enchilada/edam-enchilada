@@ -2,6 +2,8 @@ package chartlib.hist;
 
 import java.awt.*;
 import javax.swing.*;
+import java.util.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -9,7 +11,7 @@ import java.sql.SQLException;
 import chartlib.*;
 
 /**
- * A window which will (but does not yet) contain positive and negative
+ * A window which contains positive and negative
  * spectrum histograms, along with buttons to control the display.
  * 
  * 
@@ -20,6 +22,7 @@ import chartlib.*;
 public class HistogramsWindow extends JFrame implements ActionListener {
 	private HistogramsPlot plot;
 	ZoomableChart zPlot;
+	private JSlider brightnessSlider;
 	
 	// default minimum and maximum of the zoom window
 	private int defMin = 0, defMax = 300;
@@ -34,6 +37,7 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		setLayout(new BorderLayout());
 		plotPanel = new JPanel();
 		buttonPanel = new JPanel();
+		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 		this.add(plotPanel, BorderLayout.CENTER);
 		this.add(buttonPanel, BorderLayout.EAST);
 
@@ -63,17 +67,53 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 				}
 			});
 			buttonPanel.add(zout);
+			
+			brightnessSlider = new JSlider(0, 50);
+			brightnessSlider.setName("brightness");
+			brightnessSlider.setMajorTickSpacing(25);
+			Hashtable labels = new Hashtable();
+			labels.put(new Integer(0), new JLabel("Light"));
+			labels.put(new Integer(50), new JLabel("Dark"));
+			brightnessSlider.setLabelTable(labels);
+			brightnessSlider.setPaintLabels(true);
+			brightnessSlider.setPaintTicks(true);
+			addActionListeners(plot, brightnessSlider);
+			brightnessSlider.setValue(25);
+			buttonPanel.add(brightnessSlider);
 		} catch (SQLException e) {
 			plotPanel.add(new JTextArea(e.toString()));
 		}
 		
-		buttonPanel.setPreferredSize(new Dimension(150, 500));
-		plotPanel.setPreferredSize(new Dimension(500, 500));
+		buttonPanel.add(Box.createHorizontalStrut(150));
+//		plotPanel.setPreferredSize(new Dimension(500, 500));
 		
 		validate();
 		pack();
 	}
 	
+	/**
+	 * Traverses the tree of components under the HistogramsPlot, adding any
+	 * HistogramsChartAreas to the list of ChangeListeners for the brightness
+	 * slider.
+	 */
+	private void addActionListeners(HistogramsPlot comp, JSlider slider) {
+		Queue<Component> components = new LinkedList<Component>();
+		components.addAll(Arrays.asList(comp.getComponents()));
+		Component curr;
+		
+		// breadth-first search
+		while (components.peek() != null) {
+			curr = components.poll();
+			
+			if (curr instanceof HistogramsChartArea)
+				slider.addChangeListener((HistogramsChartArea) curr);
+			
+			if (curr instanceof Container)
+				components.addAll(Arrays.asList(
+						((Container) curr).getComponents()));
+		}
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 

@@ -8,6 +8,7 @@ import javax.swing.*;
 import chartlib.*;
 
 import database.SQLServerDatabase;
+import externalswing.ProgressTask;
 
 /**
  * Need to figure out how to do positive and negative spectra.  Maybe
@@ -22,15 +23,37 @@ import database.SQLServerDatabase;
  */
 
 public class HistogramsPlot extends Chart {
-	private HistogramsChartArea histArea;
-	private ZeroHistogramChartArea zerosArea;
+	private HistogramsChartArea posHistArea, negHistArea;
+	private ZeroHistogramChartArea posZerosArea, negZerosArea;
 	
-	public HistogramsPlot(int collID) throws SQLException {
-		addDataset(new HistogramDataset(collID, Color.BLACK));
+	public HistogramsPlot(final int collID) throws SQLException {
+		ProgressTask task = new ProgressTask(null, "Analysing collection", true) {
+			public void run() {
+				pSetInd(true);
+				setStatus("Creating histogram for collection.");
+				try {
+					final HistogramDataset[] datasets;
+					
+					datasets = HistogramDataset.analyseCollection(collID, Color.BLACK);
+					
+					if (terminate)
+						return;
+					
+					// EDT for gui work
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							addDatasets(datasets);
+						}
+					});
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		task.start();
+		// task.start() does not return until the task is complete, since we
+		// told the dialog to be modal.
 		
-		
-		this.add(histArea);
-		this.add(zerosArea);
 		this.validate();
 	}
 	
@@ -45,18 +68,36 @@ public class HistogramsPlot extends Chart {
 		}
 	}
 
-	private void addDataset(HistogramDataset dataset) {
-		// TODO Auto-generated method stub
-		if (histArea == null) {
-			histArea = new HistogramsChartArea(dataset);
-			histArea.setAxisBounds(0, 400, 0, 1);
+	private void addDatasets(HistogramDataset[] datasets) {
+		if (posHistArea == null) {
+			posHistArea = new HistogramsChartArea(datasets[0]);
+			posHistArea.setAxisBounds(0, 300, 0, 1);
+			this.add(posHistArea);
 		} else {
-			histArea.addDataset(dataset);
+			posHistArea.addDataset(datasets[0]);
+		}
+		if (posZerosArea == null) {
+			posZerosArea = new ZeroHistogramChartArea(datasets[0]);
+			posZerosArea.setXAxisBounds(0, 300);
+			this.add(posZerosArea);
+		} else {
+			//zerosArea.addDataset(dataset);  // not implemented yet.
+			System.err.println(
+			"HistogramsPlot: zerosArea doesn't know about multiple datasets yet.");
 		}
 		
-		if (zerosArea == null) {
-			zerosArea = new ZeroHistogramChartArea(dataset);
-			zerosArea.setXAxisBounds(0, 400);
+		
+		if (negHistArea == null) {
+			negHistArea = new HistogramsChartArea(datasets[1]);
+			negHistArea.setAxisBounds(0, 300, 0, 1);
+			this.add(negHistArea);
+		} else {
+			negHistArea.addDataset(datasets[0]);
+		}
+		if (negZerosArea == null) {
+			negZerosArea = new ZeroHistogramChartArea(datasets[1]);
+			negZerosArea.setXAxisBounds(0, 300);
+			this.add(negZerosArea);
 		} else {
 			//zerosArea.addDataset(dataset);  // not implemented yet.
 			System.err.println(

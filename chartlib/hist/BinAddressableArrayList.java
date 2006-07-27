@@ -30,6 +30,8 @@ package chartlib.hist;
 
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 
 /*
  * Basically, a HistList is an ArrayList that can be accessed by peak height
@@ -87,7 +89,7 @@ public class BinAddressableArrayList<T> {
 	/**
 	 * Get the contents of the bin that *height* would fall into.
 	 */
-	public T get(float height) throws IndexOutOfBoundsException {
+	public T get(float height) {
 		int index = heightToIndex(height);
 		if (list.size() <= index) {
 			return null;
@@ -139,4 +141,43 @@ public class BinAddressableArrayList<T> {
 			binsToAdd--;
 		}
 	}
+	
+	public boolean equals(Object thatObject) {
+		System.out.println("...");
+		if (thatObject == null || !(thatObject.getClass().equals(this.getClass())))
+			return false;
+		BinAddressableArrayList that = (BinAddressableArrayList) thatObject;
+		
+		// need to use set equality.
+		
+		if (that.binWidth != this.binWidth) return false;
+		
+		System.out.println(" set now ");
+		
+		for (int i = 0; i < list.size(); i++) {
+			HashSet<T> thisSet, thatSet;
+			
+			if (list.get(i) == null) {
+				thisSet = new HashSet<T>();
+			} else {
+				thisSet = new HashSet<T>((Collection) list.get(i));
+			}
+			
+			if (i >= that.list.size() || that.list.get(i) == null) {
+				thatSet = new HashSet<T>();
+			} else {	
+				thatSet = new HashSet<T>((Collection) that.list.get(i));
+			}
+			
+			if (! thisSet.equals(thatSet)) {
+				System.out.println("Set inequality on m/z " + i);
+				return false;
+			}
+		}
+		
+		System.out.println("yay");
+		
+		return true;
+	}
+		
 }

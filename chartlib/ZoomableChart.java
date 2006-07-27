@@ -156,7 +156,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	/**
 	 * Set the maximum value, in chart coordinates, that will be accessible
 	 * with the scroll bar all the way to the right.
-	 * 
+	 * <p>
 	 * When the user does something like zoomOutHalf, more of the chart will
 	 * be visible.  But when you go to another atom, or something like that,
 	 * the maximum value will get set back to this.

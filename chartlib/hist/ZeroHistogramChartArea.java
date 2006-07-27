@@ -12,7 +12,7 @@ public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 	public ZeroHistogramChartArea(HistogramDataset dataset) {
 		TOP_PADDING = 5; // down from 15
 		this.dataset = dataset;
-		this.setPreferredSize(new Dimension(400, 100));
+		this.setPreferredSize(new Dimension(400, 75));
 		
 		yAxis.setRange(0, dataset.count);
 		yAxis.setTicks(1, 1);

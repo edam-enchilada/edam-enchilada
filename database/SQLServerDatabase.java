@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -2640,7 +2641,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @author smitht
 	 *
 	 */
-	public class BPLOnlyCursor {
+	public class BPLOnlyCursor implements Iterator<Tuple<Integer, BinnedPeakList>> {
 		private ResultSet rs;
 		private Statement stmt;
 		private int currID; // the current atomID.
@@ -2669,26 +2670,34 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		}
 
-		public Tuple<Integer, BinnedPeakList> next() throws SQLException {
-			int retAtom = currID;
-			BinnedPeakList bpl = new BinnedPeakList();
-			while (rs.getInt(1) == retAtom) {
-				bpl.add(rs.getInt(2), rs.getInt(3));
-
-				if (! rs.next()) {
-					break;
+		public Tuple<Integer, BinnedPeakList> next() throws NoSuchElementException {
+			try {
+				int retAtom = currID;
+				BinnedPeakList bpl = new BinnedPeakList();
+				while (rs.getInt(1) == retAtom) {
+					bpl.add(rs.getInt(2), rs.getInt(3));
+	
+					if (! rs.next()) {
+						break;
+					}
 				}
+	
+				if (! rs.isAfterLast())
+					currID = rs.getInt(1);
+	
+				return new Tuple<Integer, BinnedPeakList>(retAtom, bpl);
+			} catch (SQLException e) {
+				throw new NoSuchElementException(e.toString());
 			}
-
-			if (! rs.isAfterLast())
-				currID = rs.getInt(1);
-
-			return new Tuple<Integer, BinnedPeakList>(retAtom, bpl);
 		}
 		
 		public void close() throws SQLException {
 			rs.close();
 			stmt.close();
+		}
+
+		public void remove() {
+			throw new java.lang.UnsupportedOperationException();
 		}
 		
 	}

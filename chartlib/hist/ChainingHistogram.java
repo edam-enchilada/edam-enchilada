@@ -12,7 +12,7 @@ import analysis.BinnedPeakList;
  * hash table, except that the hash function is meaningful.
  */
 public class ChainingHistogram 
-	extends BinAddressableArrayList<ArrayList<BinnedPeakList>>
+	extends BinAddressableArrayList<ArrayList<Integer>>
 {	
 	private int hitCount;
 	
@@ -20,17 +20,17 @@ public class ChainingHistogram
 		super(binWidth);
 	}
 
-	public void addPeak(float peakHeight, BinnedPeakList bpl) {
+	public void addPeak(float peakHeight, Integer atomID) {
 		if (peakHeight > 1) {throw new IllegalArgumentException();} 
-		ArrayList<BinnedPeakList> target;
+		ArrayList<Integer> target;
 		
 		target = get(peakHeight);
 		if (target == null) { // if the list is not this long, or if it is but nothing has been added to this bin yet.
-			target = new ArrayList<BinnedPeakList>();
+			target = new ArrayList<Integer>();
 			expandAndSet(peakHeight, target);
 		}
 		
-		target.add(bpl);
+		target.add(atomID);
 		hitCount++;
 	}
 	
@@ -50,5 +50,27 @@ public class ChainingHistogram
 	public int getHitCount() {
 		// TODO: assert that the hitcount here is equal to the sum of the hits in each arraylist.  how?
 		return hitCount;
+	}
+	
+	void setListAt(ArrayList<Integer> newList, float peakHeight) {
+		int subtract, add;
+		subtract = getCountAt(peakHeight);
+		add = newList.size();
+		expandAndSet(peakHeight, newList);
+		hitCount = hitCount - subtract + add; 
+	}
+	
+	public boolean equals(Object thatObject) {
+		if (thatObject == null || !(thatObject instanceof ChainingHistogram))
+			return false;
+	
+		ChainingHistogram that = (ChainingHistogram) thatObject;	
+		if (this.hitCount != that.hitCount) {
+			// might never be right so far.  grrr.  
+			System.out.println("Bad hit count");
+			return false;
+		}
+		System.out.println("Successful as far as CH is concerned");
+		return super.equals(that);
 	}
 }
