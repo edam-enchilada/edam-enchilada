@@ -20,6 +20,7 @@ import externalswing.ProgressTask;
 
 /**
  * TSImport.java - Import a list of CSV files to the database.
+ * @author smitht
  */
 
 /*

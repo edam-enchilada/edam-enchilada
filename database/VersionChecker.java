@@ -2,15 +2,15 @@ package database;
 
 /**
  * VersionChecker - see whether the program's expectations about database structure are well-founded.
- * 
- * MainFrame line 845.
- * 
+ * <p>
  * Rather than relying on version strings, as this does, you might want to
  * put more rows into the DBInfo table.  Then, you can see whether the DB
  * has a specific feature, and if not, add it, if it's something addable.
  * This seems like a more reasonable test for upgradeability than one based
  * just on numbers.  Methods that test for the existence of features should
  * get added to this class.
+ * 
+ * @author smitht
  */
 
 

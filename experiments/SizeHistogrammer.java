@@ -3,6 +3,12 @@ import database.*;
 import java.sql.*;
 
 import chartlib.hist.HistList;
+/**
+ * Something to make a histogram of particle size.
+ * 
+ * @author smitht
+ *
+ */
 
 public class SizeHistogrammer {
 //	private static final int collID = 24; // a 50,000 particle atofms collection

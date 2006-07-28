@@ -6,6 +6,14 @@ import database.CollectionCursor;
 import database.SQLServerDatabase;
 import java.sql.*;
 
+/**
+ * Benchmark demonstrating that BPLOnlyCursor is many times faster (15?) than
+ * older types.
+ * 
+ * @author smitht
+ *
+ */
+
 public class PeakListCursorExperiment {
 	public static void main(String[] args) throws SQLException {
 		int count = 0;

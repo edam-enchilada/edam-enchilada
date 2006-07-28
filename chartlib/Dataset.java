@@ -45,9 +45,11 @@ import java.util.*;
 //import java.awt.Color;
 
 /**
- * @author sulmanj
  * Manages a collection of data for the graph.  Also can provide some display hints.
  * Contains a set of x, y coordinate pairs ordered by x coordinate.
+ * 
+ * @author sulmanj
+ * @author smitht
  */
 public class Dataset extends TreeSet<DataPoint>
 {

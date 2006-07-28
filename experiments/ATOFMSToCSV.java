@@ -6,6 +6,12 @@ import database.*;
 
 import analysis.*;
 
+/**
+ * Prints out a CSV representation of the peaks at the first 100 m/z values for each particle.
+ * @author smitht
+ *
+ */
+
 public class ATOFMSToCSV {
 
 	public ATOFMSToCSV() {

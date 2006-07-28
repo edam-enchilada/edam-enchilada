@@ -6,9 +6,11 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 
-/*
+/**
  * Note that I'm not clever enough to check if the particles we put in
- * actually get there intact.  Oops.
+ * actually get there intact.  Oops.  Sounds like something for DbUnit.
+ * 
+ * @author smitht
  */
 
 public class TSBulkInserterTest extends TestCase {

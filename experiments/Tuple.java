@@ -1,5 +1,11 @@
 package experiments;
 
+/**
+ * Just a cute thing for representing any pair of bits of data.
+ * 
+ * @author smitht
+ */
+
 public class Tuple<K,V> {
 	private K key;
 	private V value;

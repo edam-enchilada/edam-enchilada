@@ -3478,6 +3478,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * at an SQL reference.  If it's just one field, just put the name of the
 	 * column there.
 	 * 
+	 * @author smitht
 	 * @return true if the index was successfully created, false otherwise.
 	 */
 	public boolean createIndex(String dataType, String fieldSpec) {
@@ -3500,6 +3501,8 @@ public class SQLServerDatabase implements InfoWarehouse
 	
 	/**
 	 * Returns a list of indexed columns in an AtomInfoDense table.
+	 * 
+	 * @author smitht
 	 */
 	public Set<String> getIndexedColumns(String dataType) throws SQLException {
 		Set<String> indexed = new HashSet<String>();

@@ -12,6 +12,12 @@ import java.util.Date;
 
 import javax.swing.*;
 
+/**
+ * A prototype? for translating flat files to enchilada data?  I don't really know.
+ * @author smitht
+ *
+ */
+
 /*
  * OK, ideas.
  * 
