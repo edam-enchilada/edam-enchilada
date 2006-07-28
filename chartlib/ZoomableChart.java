@@ -394,7 +394,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 *
 	 */
 	public void zoomOutHalf() {
-		double[] range = chart.getXRange();
+		double[] range = chart.getVisibleXRange();
+		if (range == null) return;
 		double xmin = range[0], xmax = range[1];
 		double diff = (xmax - xmin) / 2.0;
 		xmin -= diff; xmax += diff;

@@ -54,6 +54,6 @@ public interface Zoomable {
 	 */
 	public abstract void packData(boolean packX, boolean packY);
 
-	public abstract double[] getXRange();
+	public abstract double[] getVisibleXRange();
 
 }

@@ -130,32 +130,24 @@ public class HistogramDataset {
 	
 	@Override
 	public boolean equals(Object thatObject) {
-		boolean ret = true;
-		
 		if (thatObject == null || !(thatObject instanceof HistogramDataset)) 
 			return false;
 		HistogramDataset that = (HistogramDataset) thatObject;
 		
-		if (this.count != that.count) {
-			System.out.println("bad counts");
-			return false;
-		}
+		if (this.count != that.count) return false;
 		
 		for (int i = 0; i < hists.length; i++) {
-			if (hists[i] != null) System.out.println(hists[i].getHitCount());
-			
 			if (hists[i] == null || hists[i].getHitCount() == 0)
 				if (that.hists[i] == null || that.hists[i].getHitCount() == 0) {
 					continue;
 				} else {
-					System.out.println("Nonmatching emptiness");
-					ret = false;
+					return false;
 				}
 			
-			if (!(hists[i].equals(that.hists[i]))) ret = false;
+			if (!(hists[i].equals(that.hists[i]))) return false;
 		}
 		
-		return ret;
+		return true;
 	}
 	
 }

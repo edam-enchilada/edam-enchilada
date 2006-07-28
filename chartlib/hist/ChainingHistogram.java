@@ -65,12 +65,9 @@ public class ChainingHistogram
 			return false;
 	
 		ChainingHistogram that = (ChainingHistogram) thatObject;	
-		if (this.hitCount != that.hitCount) {
-			// might never be right so far.  grrr.  
-			System.out.println("Bad hit count");
+		if (this.hitCount != that.hitCount)  
 			return false;
-		}
-		System.out.println("Successful as far as CH is concerned");
+		
 		return super.equals(that);
 	}
 }

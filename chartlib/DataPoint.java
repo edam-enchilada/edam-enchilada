@@ -83,4 +83,8 @@ public class DataPoint implements Comparable {
 		else return 0;
 	}
 	
+	
+	public String toString() {
+		return "DataPoint[x="+x+"; y="+y+"]";
+	}
 }

@@ -290,6 +290,20 @@ public class Chart extends JPanel implements Zoomable
 		return chartAreas.get(index).yAxis.getMax();
 	}
 	
+	public double[] getVisibleXRange() {
+		double[] range = new double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+		
+		for (int i = 0; i < chartAreas.size(); i++) {
+			if (getXmin(i) < range[0])
+				range[0] = getXmin(i);
+			if (getXmax(i) > range[1])
+				range[1] = getXmax(i);
+		}
+		
+		if (range[0] == Double.MAX_VALUE || range[1] == Double.MIN_VALUE)
+			return null;
+		return range;
+	}
 	
 	/**
 	 * Sets new boundaries for the axes and displayed data of a chart.

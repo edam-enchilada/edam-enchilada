@@ -161,7 +161,7 @@ public class ChartArea extends AbstractMetricChartArea {
 		{
 			DataPoint curPoint = iterator.next();
 			
-			double x = curPoint.y, y = curPoint.y;
+			double x = curPoint.x, y = curPoint.y;
 			//System.out.println("X: "+x+"\tY:: "+y);
 			/*if (x >= 0 && x <= 1) {
 */

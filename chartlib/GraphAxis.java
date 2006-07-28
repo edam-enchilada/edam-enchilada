@@ -662,5 +662,9 @@ public class GraphAxis {
 		makeTicks();
 	}
 	
+	public String toString() {
+		return "GraphAxis["+orientation+"; "+min+" to "+max+"]";
+	}
+	
 
 }

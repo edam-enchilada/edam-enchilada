@@ -149,7 +149,7 @@ public class HistogramsChartArea
 		return 0;
 	}
 	
-	public double[] getXRange() {
+	public double[] getVisibleXRange() {
 		return new double[] { getXMin(), getXMax() };
 	}
 
