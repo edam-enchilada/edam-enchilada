@@ -49,9 +49,6 @@ public class ChartArea extends AbstractMetricChartArea {
 	protected void drawDataLines(Graphics2D g2d,Dataset dataset){
 		if(dataset == null) return;
 		Rectangle dataArea = getDataAreaBounds();
-		// these booleans show whether we've drawn indicators that 
-		// more data exist in each direction
-		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		Shape oldClip = g2d.getClip();
 		Stroke oldStroke = g2d.getStroke();
@@ -65,7 +62,9 @@ public class ChartArea extends AbstractMetricChartArea {
 		int lastX = 0;
 		double lastY = -999.0;
 		int numPoints = 0;
-		Iterator<DataPoint> iterator = dataset.iterator();
+		Iterator<DataPoint> iterator 
+			= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
+							new DataPoint(xAxis.getMax(), 0)).iterator();
 		while(iterator.hasNext())
 		{
 			DataPoint curPoint = iterator.next();
@@ -75,31 +74,30 @@ public class ChartArea extends AbstractMetricChartArea {
 			/*if (x >= 0 && x <= 1) {
 */
 			double pointPos = xAxis.relativePosition(x);
-			if (pointPos < 0 && !drawnMoreLeft) {
-				drawnMoreLeft = true;
-				drawMorePointsIndicator(0, g2d);
-			}
-			else if (pointPos > 1 && !drawnMoreRight) {
-				drawnMoreRight = true;
-				drawMorePointsIndicator(1, g2d);
-			}
-			else {
-				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
-						* dataArea.width);
-				double yCoord = (dataArea.y + dataArea.height 
-						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
-			
-				if(numPoints==0){
+
+			int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
+					* dataArea.width);
+			double yCoord = (dataArea.y + dataArea.height 
+					- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+		
+			if(numPoints==0){
 				g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
 					- (yAxis.relativePosition(0) * dataArea.height)), (double) xCoord, yCoord));
-				}else{
-					g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
-				}
-				numPoints++;
-				lastX = xCoord;
-				lastY = yCoord;
+			}else{
+				g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
 			}
+			numPoints++;
+			lastX = xCoord;
+			lastY = yCoord; // maybe get rid of
 		}
+		
+		if (dataset.first().x < xAxis.getMin()) {
+			drawMorePointsIndicator(0, g2d);
+		}
+		if (dataset.last().x > xAxis.getMax()) {
+			drawMorePointsIndicator(1, g2d);
+		}
+		
 		/*
 		// Then draws them:
 		int lastX = 0;
@@ -127,10 +125,11 @@ public class ChartArea extends AbstractMetricChartArea {
 		}
 		
 		*/
-		if(lastX<=dataArea.x+dataArea.width-1){
-			g2d.draw(new Line2D.Double((double) lastX, lastY, (double) dataArea.x+dataArea.width-1,(dataArea.y + dataArea.height 
-				- (yAxis.relativePosition(0) * dataArea.height))));
-		}
+		// icky line at the end.  I don't like it.  -thomas
+//		if(lastX<=dataArea.x+dataArea.width-1){
+//			g2d.draw(new Line2D.Double((double) lastX, lastY, (double) dataArea.x+dataArea.width-1,(dataArea.y + dataArea.height 
+//				- (yAxis.relativePosition(0) * dataArea.height))));
+//		}
 		//cleanup
 		g2d.setClip(oldClip);
 		g2d.setStroke(oldStroke);
@@ -265,7 +264,7 @@ public class ChartArea extends AbstractMetricChartArea {
 	 * @param packX Whether to change the x axis.
 	 * @param packY Whether to change the y axis.
 	 */
-	public void packData(boolean packX, boolean packY){
+	public void packData(boolean packX, boolean packY, boolean forceY){
 		
 			Dataset dataset = datasets.get(0);
 			
@@ -303,17 +302,15 @@ public class ChartArea extends AbstractMetricChartArea {
 //				adds some extra space on the edges
 				newXmin = xmin - ((xmax - xmin) / 10);
 				newXmax = xmax + ((xmax - xmin) / 10);
-				newYmin = ymin - ((ymax - ymin) / 10);
+				newYmin = forceY ? 0 : (ymin - ((ymax - ymin) / 10));
 				newYmax = ymax + ((ymax - ymin) / 10);
 			}
 			
 			if (packX) {
-				this.setXMin(newXmin);
-				this.setXMax(newXmax);
+				xAxis.setRange(newXmin, newXmax);
 			}
 			if (packY) {
-				this.setYMin(newYmin);
-				this.setYMax(newYmax);
+				yAxis.setRange(newYmin, newYmax);
 			}
 				
 			createAxes();

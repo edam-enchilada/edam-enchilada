@@ -442,8 +442,13 @@ public class GraphAxis {
 			 * once, using setRange, rather than with setMax and setMin.
 			 * -Thomas
 			 */
-			System.err.println("chartlib: Bad range or tick factor values." +
+			System.err.println("range: " + range + "; bigTicksFactor: " 
+					+ bigTicksFactor);
+			Throwable notreally = new Exception("chartlib: Bad range or tick " +
+					"factor values." +
 					"  Ticks not initialized.");
+			notreally.printStackTrace();
+			notreally = null;
 			return;
 		}
 		

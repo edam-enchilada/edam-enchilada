@@ -101,6 +101,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	// a rather arbitrary limit on the distance that you can zoom in.
 	private final int MIN_ZOOM = 5;
 	
+	private boolean forceY = false;
+	
 	/**
 	 * Constructs a new ZoomableChart.
 	 * @param chart The chart the zoomable chart will display.
@@ -296,7 +298,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		try
 		{
 			chart.setXAxisBounds(xmin, xmax);
-			chart.packData(false, true);
+			chart.packData(false, true, forceY);
 		}
 		catch (IllegalArgumentException ex){}
 	}
@@ -369,8 +371,6 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void zoom(double newXmin, double newXmax)
 	{
-		chart.packData(false, true);
-		
 		if (newXmax > cScrollMax) {
 			cScrollMax = newXmax;
 			scrollBar.setEnabled(false);
@@ -497,6 +497,20 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 
 	public void keyTyped(KeyEvent e) {
 		
+	}
+
+	/**
+	 * Returns whether or not to force the bottom fo the Y axis to be at 0.
+	 */
+	public boolean isForceY() {
+		return forceY;
+	}
+
+	/**
+	 * Set whether or not to force the bottom of the Y axis to be at 0.
+	 */
+	public void setForceY(boolean forceY) {
+		this.forceY = forceY;
 	}
 
 

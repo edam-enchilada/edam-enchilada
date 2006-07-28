@@ -42,14 +42,14 @@ public class SpectrumPlot extends Chart {
 		this.setColor(0,Color.red);
 		*///this.setColor(1,Color.blue);
 		
-		packData(false, true); //updates the Y axis scale.
+		packData(false, true, true); //updates the Y axis scale.
 	}
 	
 	public SpectrumPlot(Dataset pos, Dataset neg){
 		this();
 		datasets[0] = pos;
 		datasets[1] = neg;
-		packData(false, true); //updates the Y axis scale.
+		packData(false, true, true); //updates the Y axis scale.
 	}
 	
 	protected void makeChartAreas(){
@@ -102,7 +102,8 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(chartPanel);
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
-		packData(false, true); //updates the Y axis scale.
+//		packData(false, true, true); //updates the Y axis scale.
+		// split packData into separate methods.  allow boolean for forcing y min to be >= 0.
 	}
 	
 	public void displayPeaks(Dataset pos, Dataset neg) {
@@ -123,6 +124,6 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(chartPanel);
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
-		packData(false, true); //updates the Y axis scale.
+		packData(false, true, true); //updates the Y axis scale.
 	}
 }

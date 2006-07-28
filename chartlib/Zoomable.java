@@ -51,8 +51,9 @@ public interface Zoomable {
 	 * 
 	 * @param packX Whether to pack the x axis.
 	 * @param packY Whether to pack the y axis.
+	 * @param forceY Whether to force the Y axis to end at 0.
 	 */
-	public abstract void packData(boolean packX, boolean packY);
+	public abstract void packData(boolean packX, boolean packY, boolean forceY);
 
 	public abstract double[] getVisibleXRange();
 

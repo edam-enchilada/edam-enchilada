@@ -500,7 +500,7 @@ public class Chart extends JPanel implements Zoomable
 	 */
 	public void packData()
 	{
-		packData(true,true);
+		packData(true,true, false);
 	}
 	
 	/**
@@ -515,17 +515,17 @@ public class Chart extends JPanel implements Zoomable
 	/* (non-Javadoc)
 	 * @see chartlib.Zoomable#packData(boolean, boolean)
 	 */
-	public void packData(boolean packX, boolean packY)
+	public void packData(boolean packX, boolean packY, boolean forceY)
 	{
 		for(int count = 0; count < chartAreas.size(); count++)
-			packData(count, packX, packY);
+			packData(count, packX, packY, forceY);
 	}
 	
-	public void packData(int index, boolean packX, boolean packY)
+	public void packData(int index, boolean packX, boolean packY, boolean forceY)
 	{
 		AbstractMetricChartArea area = chartAreas.get(index);
 		if (area instanceof ChartArea) 
-			((ChartArea) area).packData(packX, packY);
+			((ChartArea) area).packData(packX, packY, forceY);
 	}
 	
 	/**
