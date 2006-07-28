@@ -5175,7 +5175,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			query.append(");");
 			
 			ResultSet rs = stmt.executeQuery(query.toString());
-			assert(rs.next());
+			rs.next();
 			sum=rs.getDouble(1);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block

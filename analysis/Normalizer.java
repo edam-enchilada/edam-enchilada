@@ -8,29 +8,27 @@ public class Normalizer extends Normalizable {
 
 	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
 		
-		//first normalize negative peaks
-		float magnitude = peakList.getPartialMag(dMetric, true);
+		//set up stuff
 		BinnedPeak bp;
-		Iterator<BinnedPeak> iter = peakList.posNegIterator(true);
-		while (iter.hasNext()){
-			bp = iter.next();
-			bp.value = bp.value/magnitude;
-		}
-		
-		//next normalize the positive peaks (and zero)
-		magnitude = peakList.getPartialMag(dMetric, false);
-		iter = peakList.posNegIterator(false);
-		while (iter.hasNext()){
-			bp = iter.next();
-			bp.value = bp.value/magnitude;
-		}
-		
-		
+		float magnitude, negMag, posMag;
+		Map.Entry<Integer,Float> entry;
+		Iterator<Entry<Integer, Float>> iterator;
+
+		//first normalize postive and negative peaks
+		negMag = peakList.getPartialMag(dMetric, true);	
+		posMag = peakList.getPartialMag(dMetric, false);
+		iterator = peakList.peaks.entrySet().iterator();
+		while (iterator.hasNext()) {
+			entry = iterator.next();
+			if(entry.getKey() < 0)
+				entry.setValue(entry.getValue() / negMag);
+			else 
+				entry.setValue(entry.getValue() / posMag);
+		}	
+	
 		//normalize altogether
 		magnitude = peakList.getMagnitude(dMetric);	
-		Map.Entry<Integer,Float> entry;
-		Iterator<Entry<Integer, Float>> iterator = peakList.peaks.entrySet().iterator();
-		
+		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {
 			entry = iterator.next();
 			entry.setValue(entry.getValue() / magnitude);

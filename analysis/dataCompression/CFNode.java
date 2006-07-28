@@ -75,17 +75,15 @@ public class CFNode {
 		boolean same = true;
 		int i = 0;
 		for (i = 0; i < cfs.size(); i++) {
-	//		System.out.ln("nodeToCompare");
-	//		nodeToCompare.getCFs().get(i).printCF("");
-	//		System.out.println("node");
-	//		cfs.get(i).printCF("");
 			if(!nodeToCompare.getCFs().get(i).isEqual((cfs.get(i)))) {
 				same = false;
 				break;
 			}
 		}
 		if(i > nodeToCompare.getCFs().size())
+		{
 			same = false;
+		}
 		return same;
 	}
 	/**
@@ -209,8 +207,13 @@ public class CFNode {
 		parentCF = parent;
 		if (parent == null)
 			parentNode = null;
-		else
+		else {
 			parentNode = parent.curNode;
+			//okay, this might be a problem if the parentCF is also one of the childCFs,
+			//that shouldn't really be happening though
+			assert(!cfs.contains(parentCF));
+			parentCF.child = this;
+		}
 		if (!isLeaf()) {
 			for (int i = 0; i < cfs.size(); i++) {
 				cfs.get(i).updatePointers(cfs.get(i).child, this);

@@ -41,7 +41,10 @@
 package analysis.dataCompression;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.Map.Entry;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
@@ -141,13 +144,16 @@ public class ClusterFeature {
 		count = 0;
 		sums = new BinnedPeakList(new Normalizer());
 		squareSums = 0;
-		BinnedPeakList temp;
+		HashMap<Integer, Float> tempSums = new HashMap<Integer, Float>(1000);
 		for (int i = 0; i < cfs.size(); i++) {
-			temp = new BinnedPeakList();
-			sums.addWeightedParticle(cfs.get(i).getSums(), cfs.get(i).count);
+			tempSums = cfs.get(i).getSums().addWeightedToHash(tempSums, cfs.get(i).count);
 			count += cfs.get(i).count;
 			squareSums += cfs.get(i).squareSums;
 			atomIDs.addAll(cfs.get(i).getAtomIDs());
+		}
+		Set<Entry<Integer, Float>> keys = tempSums.entrySet();
+		for(Entry<Integer, Float> x: keys) {
+			sums.addNoChecks(x.getKey(), x.getValue());
 		}
 		sums.normalize(dMetric);
 		memory= 8*sums.length()+4*atomIDs.size();
@@ -174,10 +180,14 @@ public class ClusterFeature {
 	 */
 	public boolean isEqual(ClusterFeature cf) {
 		if (cf.getCount() != count || cf.getSums().length() != sums.length())
+		{
 			return false;
+		}
 		
 		if (squareSums != cf.squareSums)
+		{
 			return false;
+		}
 		
 		Iterator<BinnedPeak> sumsA = sums.iterator();
 		Iterator<BinnedPeak> sumsB = cf.getSums().iterator();
@@ -243,7 +253,16 @@ public class ClusterFeature {
 	public BinnedPeakList getSums() {
 		return sums;
 	}
-	
+	public void setSums(BinnedPeakList s) {
+		sums = s;
+		Iterator<BinnedPeak> iterator = s.iterator();
+		BinnedPeak peak;
+		squareSums = 0;
+		while (iterator.hasNext()) {
+			peak = iterator.next();
+			squareSums += peak.value*peak.value;
+		}
+	}
 	/**
 	 * sets the sum of squares
 	 * @param s - new sum of squares

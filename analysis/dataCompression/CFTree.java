@@ -501,7 +501,7 @@ public class CFTree {
 	 * two CFs for the most crowded leaf.
 	 * @return new threshold.
 	 */
-	public float nextThreshold() {
+	/*public float nextThreshold() {
 		float dMin = nextThresholdRecurse(root);
 		assert (dMin > threshold) : 
 			"min distance bewteen two entries is smaller than T!";
@@ -511,8 +511,27 @@ public class CFTree {
 		//	dMin = 2.0f;
 		//}
 		return dMin;
-	}
+	}*/
 	
+	public float nextThreshold() {
+		float dMin = 2;
+		CFNode node = firstLeaf;
+		while(node!=null) {
+			if(node.getSize()>1) {
+				ClusterFeature[] m = node.getTwoClosest();
+				if( m[0].getSums().getDistance(m[1].getSums(), dMetric)<dMin)
+				{
+					dMin = m[0].getSums().getDistance(m[1].getSums(), dMetric);
+				}
+			}
+			node = node.nextLeaf;
+		}
+
+		if (node == null && dMin == 2)
+			return threshold + 0.1f;
+		return dMin;
+	}
+	/*
 	private float nextThresholdRecurse(CFNode node) {
 		//System.out.println("\texploring node " + node);
 		float dMin = 0;
@@ -546,6 +565,7 @@ public class CFTree {
 		}
 		return dMin;
 	}
+	*/
 	
 	
 	/**

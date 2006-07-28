@@ -420,7 +420,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	/** 
 	 * Adds a particle of a certain weight.
 	 * @param  other the binnedPeakList that you are adding
-	 * @param factor the weight of the binnedPeakList you wish to add
+	 * @param  factor the weight of the binnedPeakList you wish to add
 	 */
 	public void addWeightedParticle(BinnedPeakList other, int factor) {
 		Iterator<Map.Entry<Integer, Float>> iter = other.peaks.entrySet().iterator();
@@ -434,8 +434,149 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			else
 				peaks.put(temp.getKey(), temp.getValue() * factor);
 		}
+	}	
+	public HashMap<Integer, Float> addWeightedToHash(HashMap<Integer, Float> hash, int factor) {
+		Iterator<Map.Entry<Integer, Float>> iter = peaks.entrySet().iterator();
+		Map.Entry<Integer,Float> temp;
+		while (iter.hasNext()) {
+			temp = iter.next();
+			Float value = hash.get(temp.getKey());
+			if(value!= null) {
+				hash.put(temp.getKey(), value+temp.getValue()*factor);
+			}
+			else {
+				hash.put(temp.getKey(), temp.getValue()*factor);
+			}
+		}	
+		return hash;
 	}
-	
+	public void addWeightedParticle2 (BinnedPeakList other, int factor) {	
+		BinnedPeakList reduced = new BinnedPeakList(normalizable);
+
+		Map.Entry<Integer, Float> i = null, j = null;
+		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
+			thatIter = other.peaks.entrySet().iterator();
+		
+		float distance = 0;
+		
+		// if one of the peak lists is empty, do something about it.
+		if (thisIter.hasNext()) {
+			i = thisIter.next();
+		}
+		if (thatIter.hasNext()) {
+			j = thatIter.next();
+		}
+		// both lists have some particles, so 
+		while (i != null && j != null) {
+			//if both have peaks at the next key, add the values together
+			if (i.getKey().equals(j.getKey()))
+			{
+				i.setValue(i.getValue() + j.getValue() * factor);
+				if (thisIter.hasNext())
+					i = thisIter.next();
+				else i = null;
+				
+				if (thatIter.hasNext())
+					j = thatIter.next();
+				else j = null;
+			}
+			//if only i has a value at the next key, move on
+			else if (i.getKey() < j.getKey())
+			{
+				if (thisIter.hasNext())
+				{
+					i = thisIter.next();
+			//		System.out.println(i);
+				}
+				else i = null;
+			}
+			//if only j has a value at the next key, add it to i
+			else
+			{
+				reduced.addNoChecks(j.getKey(), j.getValue() * factor);
+				if (thatIter.hasNext())
+					j = thatIter.next();
+				else j = null;
+			}
+		}
+		this.peaks.putAll(reduced.peaks);
+		//if there are more j's
+		while (j != null) {
+			this.addNoChecks(j.getKey(),j.getValue() * factor);
+			if(thatIter.hasNext())
+				j = thatIter.next();
+			else j = null;
+		}
+		
+	}
+	public class Node{
+		private Integer key;
+		private Float value;
+		public Node(int k, Float v){
+			key = k;
+			value = v;
+		}
+		public Integer getKey(){
+			return key;
+		}
+		public Float getValue() {
+			return value;
+		}
+	}
+	public void addWeightedParticle3 (BinnedPeakList other, int factor) {	
+		
+		SortedMap<Integer, Float> newPeaks = new TreeMap<Integer, Float>();
+		
+		Map.Entry<Integer, Float> i = null, j = null;
+		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
+			thatIter = other.peaks.entrySet().iterator();
+		
+		
+		//build the two arrays
+		Node[] thisArray = new Node[this.peaks.size()];
+		Node[] thatArray = new Node[other.peaks.size()];
+		int index = 0;
+		while (thisIter.hasNext()) {
+			i = thisIter.next();
+			thisArray[index] = new Node(i.getKey(), i.getValue());
+			index++;
+		}
+		index = 0;
+		while (thatIter.hasNext()) {
+			j = thatIter.next();
+			thatArray[index] = new Node(j.getKey(), j.getValue());
+			index++;
+		}
+		
+		//go across the arrays and merge them
+		int cur = 0;
+		int k = 0;
+		while (k < thisArray.length && cur<thatArray.length)
+		{
+			if(thisArray[k].getKey().equals(thatArray[cur].getKey())){
+				newPeaks.put(thisArray[k].getKey(), thisArray[k].getValue() + thatArray[cur].getValue() * factor);
+				k++;
+				cur++;
+			}
+			else if(thisArray[k].getKey() < thatArray[cur].getKey()) {
+				newPeaks.put(thisArray[k].getKey(), thisArray[k].getValue());
+				k++;
+			}
+			else {
+				newPeaks.put(thatArray[cur].getKey(), thatArray[cur].getValue() * factor);
+				cur++;
+			}
+		}
+		while(k<thisArray.length) {
+			newPeaks.put(thisArray[k].getKey(), thisArray[k].getValue());
+			k++;
+		}
+		while(cur < thatArray.length) {
+			newPeaks.put(thatArray[cur].getKey(), thatArray[cur].getValue() *factor);
+			cur++;
+		}
+		this.peaks = newPeaks;
+	}
 	/**
 	 * A method to normalize this BinnedPeakList.  Depending 
 	 * on which distance metric is

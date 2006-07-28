@@ -17,30 +17,56 @@ public class BinnedPeakListTest extends TestCase {
 	}
 	public void testAdd() {
 		BinnedPeakList bp1 = new BinnedPeakList(new Normalizer());
-		bp1.add(-250, (float) 0.0014387778);
-		bp1.add(-200, (float) 0.059778336);
-		bp1.add(-95, (float) 0.08888895);
-		bp1.add(-25, (float) 0.066068016);
-		bp1.add(30, (float) 0.0012005854);
-		bp1.add(100, (float) 0.0033571478);
-		bp1.add(125, (float) 0.06318322);
+		bp1.add(-250, (float) 1);
+		bp1.add(-200, (float) 1);
+		bp1.add(-95, (float) 1);
+		bp1.add(-25, (float) 1);
+		bp1.add(30, (float) 1);
+		bp1.add(100, (float) 1);
+		bp1.add(125, (float) 1);
 		//null peaks should never appear in the code, if they appear, an assert should fire
 	//	bp1.peaks.put(180, null);
 		
-		bp1.add(-95, (float) 0.08888895);
-		bp1.add(-25, (float) 0.066068016);
-		bp1.add(30, (float) 0.0012005854);
-		bp1.add(100, (float) 0.0033571478);
-		bp1.add(180, (float) 0.15);
+		bp1.add(-95, (float) 1);
+		bp1.add(-25, (float) 1);
+		bp1.add(30, (float) 1);
+		bp1.add(100, (float) 1);
+		bp1.add(180, (float) 1);
 
-		assertEquals(bp1.peaks.get(-250), (float) 0.0014387778);
-		assertEquals(bp1.peaks.get(-200), (float) 0.059778336);
-		assertEquals(bp1.peaks.get(-95), (float) 0.08888895 + (float) 0.08888895);
-		assertEquals(bp1.peaks.get(-25), (float) 0.066068016 + (float) 0.066068016);
-		assertEquals(bp1.peaks.get(30), (float) 0.0012005854 + (float) 0.0012005854);
-		assertEquals(bp1.peaks.get(100), (float) 0.0033571478 + (float) 0.0033571478);
-		assertEquals(bp1.peaks.get(125), (float) 0.06318322);
-		System.out.println(bp1.peaks.get(180));
+		assertEquals(bp1.peaks.get(-250), (float) 1);
+		assertEquals(bp1.peaks.get(-200), (float) 1);
+		assertEquals(bp1.peaks.get(-95), (float) 1 + (float) 1);
+		assertEquals(bp1.peaks.get(-25), (float) 1 + (float) 1);
+		assertEquals(bp1.peaks.get(30), (float) 1 + (float) 1);
+		assertEquals(bp1.peaks.get(100), (float) 1 + (float) 1);
+		assertEquals(bp1.peaks.get(125), (float) 1);
+	}
+	public void testAddWeightedParticle() {
+		BinnedPeakList bp1 = new BinnedPeakList(new Normalizer());
+		bp1.add(-250, (float) 25);
+		bp1.add(-200, (float) 20);
+		bp1.add(-150, (float) 15);
+		bp1.add(-100, (float) 10);
+		bp1.add(-50, (float) 5);
+		bp1.add(0, (float) 1);
+		bp1.add(50, (float) 5);
+		bp1.add(100, (float) 10);
+		bp1.add(150, (float) 15);
+		bp1.add(200, (float) 20);
+		bp1.add(250, (float) 25);
+		bp1.printPeakList();
+		BinnedPeakList bp2 = new BinnedPeakList(new Normalizer());
+		bp2.add(-170, (float) 17);
+		bp2.add(-70, (float) 7);
+		bp2.add(-50, (float) 5);
+		bp2.add(0, (float) 1);
+		bp2.add(50, (float) 5);
+		bp2.add(70, (float) 7);
+		bp2.add(170, (float) 17);
+		
+		bp1.addWeightedParticle3(bp2, 2);
+		
+		bp1.printPeakList();
 	}
 	public void testEmptyList() {
 		BinnedPeakList bpl = new BinnedPeakList(new Normalizer());
