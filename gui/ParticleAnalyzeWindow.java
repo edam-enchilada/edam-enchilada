@@ -225,6 +225,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		zchart.setFocusable(true);
 		zchart.setCScrollMin(DEFAULT_XMIN);
 		zchart.setCScrollMax(DEFAULT_XMAX);
+		zchart.setForceY(true);
 		
 		setupCenterPanel();
 		
@@ -543,7 +544,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		//chart.setDataDisplayType(true, false);
 		
-		chart.packData(false, true); //updates the Y axis scale.
+		chart.packData(false, true, true); //updates the Y axis scale.
 		chart.setTitle("Particle from " + filename);
 		double xMax = chart.getXRange()[1];
 		zchart.setCScrollMax(DEFAULT_XMAX > xMax ? DEFAULT_XMAX : xMax);
