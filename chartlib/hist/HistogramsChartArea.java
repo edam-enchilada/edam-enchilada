@@ -153,7 +153,7 @@ public class HistogramsChartArea
 		return new double[] { getXMin(), getXMax() };
 	}
 
-	public void packData(boolean packX, boolean packY) {
+	public void packData(boolean packX, boolean packY, boolean forceY) {
 		if (packX) {
 			int xmin = 0; // assuming this about the data.  ooo, bad.
 			int xmax = Integer.MIN_VALUE;
