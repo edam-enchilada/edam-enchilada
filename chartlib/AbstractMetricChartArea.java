@@ -288,7 +288,7 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		}
 		return ret;
 	}
-	
+
 	
 	
 }

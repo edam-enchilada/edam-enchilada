@@ -33,6 +33,7 @@ public abstract class AbstractChartArea extends JComponent {
 	protected int V_TITLE_PADDING = 20;
 	protected int RIGHT_PADDING = 15;
 	protected int TOP_PADDING = 15;
+	private String title;
 	
 	public AbstractChartArea() {
 		super();
@@ -151,7 +152,8 @@ public abstract class AbstractChartArea extends JComponent {
 		Graphics2D g2d = (Graphics2D)g.create();
 
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+		
+		// remember not to put any drawing before drawing the Background.
 		drawBackground((Graphics2D) g2d.create());
 		updateAxes();
 		drawAxes((Graphics2D) g2d.create());
@@ -161,11 +163,22 @@ public abstract class AbstractChartArea extends JComponent {
 		Graphics2D dataG = (Graphics2D) g2d.create();
 		dataG.clip(getDataAreaBounds());
 		drawData(dataG);
-
+		drawTitle((Graphics2D) g2d.create());
+		
 		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
 	}
 	
+	protected void drawTitle(Graphics2D g2d) {
+		if (title != null) {
+			g2d.setColor(Color.BLACK);
+			Rectangle da = getDataAreaBounds();
+			g2d.drawString(title, da.x, da.y - 5);
+		}
+	}
+
+
+
 	protected void drawAxisTitles(Graphics2D g2d) {
 		xAxisTitle.draw(g2d);
 		yAxisTitle.draw(g2d);
@@ -323,4 +336,11 @@ public abstract class AbstractChartArea extends JComponent {
 	public String getTitleY() {
 		return yAxisTitle.getTitle();
 	}
+	
+
+	public void setTitle(String string) {
+		title = string;
+		repaint();
+	}
+	
 }

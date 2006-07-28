@@ -41,5 +41,10 @@ public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 	public void setDataset(HistogramDataset dataset) {
 		this.dataset = dataset;
 	}
-
+	
+	@Override
+	protected void drawTitle(Graphics2D g2d) {
+		// do nothing, since there's no room for a title (we're right against
+		// the x-axis of the graph above.)
+	}
 }

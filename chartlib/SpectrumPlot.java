@@ -65,23 +65,25 @@ public class SpectrumPlot extends Chart {
 		case SpectrumPlot.PEAK_DATA:
 			for (int count = 0; count < numCharts; count++) {
 				ChartArea nextChart = new BarChartArea(datasets[count]);
-				nextChart.setXAxisBounds(0, 400);
 				nextChart.setForegroundColor(DATA_COLORS[count]);
+				nextChart.setTitleX("m/z");
+				nextChart.setTitleY("Peak Area");
 				chartAreas.add(nextChart);
 			}
 			break;
 		case SpectrumPlot.SPECTRUM_DATA:
 			for (int count = 0; count < numCharts; count++) {
-				System.out.println("building spectrum chart");
 				ChartArea nextChart = new LineChartArea(datasets[count]);
-				nextChart.setXAxisBounds(0, 400);
 				nextChart.setForegroundColor(DATA_COLORS[count]);
+				nextChart.setTitleX("m/z");
+				nextChart.setTitleY("Intensity");
 				chartAreas.add(nextChart);
 			}
 			break;
-		
-
 		}
+		
+		chartAreas.get(0).setTitle("Positive Spectrum");
+		chartAreas.get(1).setTitle("Negative Spectrum");
 	}
 	
 	public void displaySpectra(Dataset pos, Dataset neg) {

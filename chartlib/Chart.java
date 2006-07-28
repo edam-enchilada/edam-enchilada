@@ -68,7 +68,7 @@ public class Chart extends JPanel implements Zoomable
 		= new ArrayList<AbstractMetricChartArea>();
 	protected JPanel chartPanel;
 	protected JPanel ckPanel;
-	public static final Color[] DATA_COLORS = {Color.ORANGE, Color.BLUE, Color.RED, Color.GREEN};
+	public static final Color[] DATA_COLORS = {Color.RED, Color.BLUE, Color.ORANGE, Color.GREEN};
 	
 	//graphics settings
 	protected boolean hasKey; //does the chart have a key to the data colors

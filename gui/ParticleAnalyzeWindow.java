@@ -131,7 +131,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
 	private static final int DEFAULT_XMIN = 0;
-	private static final int DEFAULT_XMAX = 400;
+	private static final int DEFAULT_XMAX = 300;
 	
 	private static double labelingThreshold = .5;
 	private static String labelingDir = "labeling";
