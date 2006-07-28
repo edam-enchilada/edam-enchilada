@@ -9,11 +9,11 @@
 ;;; available from http://nsis.sourceforge.net/
 
 ; To build a copy of the installer with MSDE, uncomment this line:
-!define WITH_MSDE
+;!define WITH_MSDE
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line:
-!define RELEASE
+;!define RELEASE
 
 
 ;--------------------------------
@@ -153,7 +153,16 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 SectionEnd
 !endif
 
-
+Section "-Check for Java 1.5"
+    ExecWait "java -version:1.5.0 -version" $0
+    IntCmp $0 0 rightjava
+        DetailPrint "Insufficient Java version."
+        MessageBox MB_OK|MB_ICONEXCLAMATION "A newer version of Java is needed to run Enchilada.  Please go to http://java.com/ and download Java 1.5 or newer."
+        Abort "Please go to java.com and install java 1.5"
+        
+    rightjava:
+    DetailPrint "Found current version of Java"
+SectionEnd
 
 Section "-Check DB and user existence"
   ; See if the SQL Server that theoretically exists, actually does.

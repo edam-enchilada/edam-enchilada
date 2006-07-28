@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Tue Apr 25 13:47:47 CDT 2006
+#Fri Jul 28 13:40:54 CDT 2006
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
@@ -10,5 +10,5 @@ manifest.mainclass=gui.MainFrame
 manifest.file=<createnew>
 jarname.isextern=false
 onejar.expand=
-excludes=<po|edam-enchilada>~.settings/;<po|edam-enchilada>~CVS/;<po|edam-enchilada>~importation files/;<po|edam-enchilada>~MSDERelA/;<po|edam-enchilada>~Particles for Clustering/;<po|edam-enchilada>~testing/;<po|edam-enchilada>~testRow/;<po|edam-enchilada>~.classpath;<po|edam-enchilada>~.cvsignore;<po|edam-enchilada>~.fatjar;<po|edam-enchilada>~.project;<po|edam-enchilada>~config.ini;<po|edam-enchilada>~EDAM-Enchilada-install.exe;<po|edam-enchilada>~edam-enchilada.jar;<po|edam-enchilada>~Enchilada.bat;<po|edam-enchilada>~enchilada.nsi;<po|edam-enchilada>~gpl.txt;<po|edam-enchilada>~icon.ico;<po|edam-enchilada>~library.txt;<po|edam-enchilada>~MPL-1.1.txt;<po|edam-enchilada>~MSDE-EULA.txt;<po|edam-enchilada>~README-MSSQL.txt;<po|edam-enchilada>~sapassword.ini;<po|edam-enchilada>~server2005.patch;<po|edam-enchilada>~settings.fatjar;<po|edam-enchilada>~SQLServerRebuildDatabase.txt;<po|edam-enchilada>~temp.xml;<po|edam-enchilada>~testing script.txt
+excludes=<po|edam-enchilada>~.settings/;<po|edam-enchilada>~CVS/;<po|edam-enchilada>~importation files/;<po|edam-enchilada>~Particles for Clustering/;<po|edam-enchilada>~testing/;<po|edam-enchilada>~testRow/;<po|edam-enchilada>~.classpath;<po|edam-enchilada>~.cvsignore;<po|edam-enchilada>~.fatjar;<po|edam-enchilada>~.project;<po|edam-enchilada>~config.ini;<po|edam-enchilada>~Enchilada.bat;<po|edam-enchilada>~enchilada.nsi;<po|edam-enchilada>~gpl.txt;<po|edam-enchilada>~icon.ico;<po|edam-enchilada>~library.txt;<po|edam-enchilada>~MPL-1.1.txt;<po|edam-enchilada>~MSDE-EULA.txt;<po|edam-enchilada>~README-MSSQL.txt;<po|edam-enchilada>~sapassword.ini;<po|edam-enchilada>~server2005.patch;<po|edam-enchilada>~settings.fatjar;<po|edam-enchilada>~SQLServerRebuildDatabase.txt;<po|edam-enchilada>~testing script.txt
 includes=
