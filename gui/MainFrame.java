@@ -334,11 +334,17 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == pasteItem)
 		{
+			//if no collection selected, paste into root
+			//@author steinbel
+
+			
 			if (copyID != 
 				getSelectedCollection().getCollectionID() || copyID>-1)
 			{
-				//check if the datatypes are the same
-				if(db.getCollection(copyID).getDatatype().equals
+
+					//check if the datatypes are the same
+				if(getSelectedCollection().getCollectionID() == 0
+						|| db.getCollection(copyID).getDatatype().equals
 											(getSelectedCollection().getDatatype())){
 						
 					if (cutBool == false)
@@ -357,8 +363,7 @@ public class MainFrame extends JFrame implements ActionListener
 				else
 					JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
 							" be of the same data type");
-			}
-			else
+			} else
 				System.err.println("Cannot copy/paste to the same " +
 				"destination as the source");
 		}
@@ -530,8 +535,13 @@ public class MainFrame extends JFrame implements ActionListener
 		Collection c = collectionPane.getSelectedCollection();
 		if (c != null)
 			return c;
-		else
-			return synchronizedPane.getSelectedCollection();
+		else{
+			c = synchronizedPane.getSelectedCollection();
+			if (c == null)	//if no collection is selected, return the root
+				c = db.getCollection(0);
+		}
+		return c;
+			
 	}
 	
 	private Collection[] getSelectedCollections() {

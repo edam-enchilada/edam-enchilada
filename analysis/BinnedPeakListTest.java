@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import junit.framework.TestCase;
 import static analysis.DistanceMetric.*;
 
-
+/**
+ * 
+ * @author smitht
+ *
+ */
 public class BinnedPeakListTest extends TestCase {
 	OldBinnedPeakList old1, old2;
 	BinnedPeakList new1, new2;
@@ -15,6 +19,29 @@ public class BinnedPeakListTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 	}
+	
+	/*
+	 *@author steinbel
+	 *Temporary tester method until unit test is rewritten.
+	 */
+	public void testMultiply(){
+		BinnedPeakList bpl = new BinnedPeakList();
+		bpl.add(-1, (float)-1.0);
+		bpl.add(1, (float)1.0);
+		bpl.add(2, (float)2.0);
+		bpl.add(3, (float)3.0);
+		
+		bpl.multiply((float)20000);
+		
+		assert(bpl.getAreaAt(-1) == -20000): "failed at location -1, value: " + bpl.getAreaAt(-1);
+		assert(bpl.getAreaAt(1) == 20000): "failed at location 1, value: " + bpl.getAreaAt(1);
+		assert(bpl.getAreaAt(2) == 40000): "failed at location 2, value: " + bpl.getAreaAt(2);
+		assert(bpl.getAreaAt(3) == 60000): "failed at location 3, value: " + bpl.getAreaAt(3);
+		
+		
+		
+	}
+	
 	public void testAdd() {
 		BinnedPeakList bp1 = new BinnedPeakList(new Normalizer());
 		bp1.add(-250, (float) 1);

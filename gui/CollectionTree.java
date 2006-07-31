@@ -196,6 +196,7 @@ public class CollectionTree extends JPanel
     		return null;
     }
     
+    
     public Collection getSelectedCollection(){
     	TreePath tp = tree.getSelectionPath();
     	

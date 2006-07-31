@@ -1898,6 +1898,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		return datatype;
 	}
 	
+	
 	/* Set functions for collections */
 	
 	/**
