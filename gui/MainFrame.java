@@ -136,7 +136,10 @@ public class MainFrame extends JFrame implements ActionListener
 	private JScrollPane particleTablePane;
 	private JScrollPane collInfoPane;
 	private JMenuItem visualizeItem;
+	private JMenuItem outputItem;
 	private JMenuItem aboutItem;
+	
+	private OutputWindow outputFrame;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -227,6 +230,13 @@ public class MainFrame extends JFrame implements ActionListener
 //					"Janara Christensen, David Musicant, Jon Sulman\n" +
 //					"Madison Contributors:\n"
 					);
+		}
+		
+		else if (source == outputItem) {
+			if (outputFrame == null)
+				(outputFrame = new OutputWindow(this)).setVisible(true);
+			else
+				outputFrame.setVisible(true);
 		}
 		
 		if (source == importEnchiladaDataButton ||
@@ -706,12 +716,14 @@ public class MainFrame extends JFrame implements ActionListener
 		JMenu helpMenu = new JMenu("Help");
 		helpMenu.setMnemonic(KeyEvent.VK_H);
 		menuBar.add(helpMenu);
-		
+		//helpMenu.add(helpItem);
+		outputItem = new JMenuItem("Show Output Window", KeyEvent.VK_S);
+		outputItem.addActionListener(this);
+		helpMenu.add(outputItem);
+		helpMenu.addSeparator();
 		aboutItem = new JMenuItem("About Enchilada", 
 						KeyEvent.VK_A);
 		aboutItem.addActionListener(this);
-		//		helpMenu.add(helpItem);
-//		helpMenu.addSeparator();
 		helpMenu.add(aboutItem);
 		
 		setJMenuBar(menuBar);  //Add menu bar to the frame
@@ -1082,16 +1094,63 @@ public class MainFrame extends JFrame implements ActionListener
 			e.printStackTrace();
 		}
 		
-		
 		//Schedule a job for the event-dispatching thread:
 		//creating and showing this application's GUI.
-		javax.swing.SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				new MainFrame();
-			}
-		});
+		javax.swing.SwingUtilities.invokeLater(new MainFrameRun(args));
 	}
 	
+	/**
+	 * Offers simple functionality for parsing command-line arguments while maintaining
+	 * earlier deferred construction of MainFrame
+	 * @author shaferia
+	 */
+	private static class MainFrameRun implements Runnable {
+		String[] args;
+		private MainFrame mf;
+		public MainFrameRun(String[] args) {
+			this.args = args;
+		}
+		
+		public void run() {
+			mf = new MainFrame();
+			
+			//Check command-line arguments
+			for (String s : args) {
+				if (s.startsWith("-"))
+					s = s.substring(1);
+				else
+					continue;
+				
+				try {
+					java.lang.reflect.Method m = getClass().getMethod(s, (Class[]) null);
+					m.invoke(this, new Object[0]);
+				}
+				catch (Exception ex) {
+					System.out.print("Invalid argument: " + s + " - ");
+					System.out.println(ex.getMessage());
+				}
+			}
+		}
+
+		/**
+		 * Redirect standard output to a separate JFrame
+		 */
+		public void redirectOutput() {
+			try {
+				OutputWindow w = mf.outputFrame = new OutputWindow(mf);
+				w.setSize(mf.getSize().width / 2, mf.getSize().height / 2);
+				
+				//the window will flash in front briefly, but reversing the order of these calls
+				//	doesn't properly send the window to the back.
+				w.setVisible(true);
+				w.toBack();
+			}
+			catch (Exception ex) {
+				System.out.println("Couldn't reassign program output to window");
+			}
+		}
+	}
+		
 	/**
 	 * @return Returns the data.
 	 */
