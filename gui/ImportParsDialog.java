@@ -97,7 +97,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		// dialog modal.  
 		super(owner, "Import MS-Analyze *.pars as Collections", true);
 		parent = owner;
-		setSize(900,500);
+		setSize(890,500);
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
@@ -127,9 +127,11 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		
 		listPane = getListPane();
 		
-		JPanel panel = new JPanel();
-		panel.add(label);
-		panel.add(listPane);
+		JPanel panel = new JPanel(new BorderLayout());
+		label.setHorizontalAlignment(JLabel.CENTER);
+		label.setHorizontalTextPosition(JLabel.CENTER);
+		panel.add(label, BorderLayout.NORTH);
+		panel.add(listPane, BorderLayout.CENTER);
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		
 		JPanel buttonPane = new JPanel();
@@ -145,7 +147,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		buttonPane.add(Box.createRigidArea(new Dimension(5,0)));
 		buttonPane.add(cancelButton);
 		
-		add(panel, BorderLayout.NORTH);
+		add(panel, BorderLayout.CENTER);
 		add(buttonPane, BorderLayout.SOUTH);
 		
 		setVisible(true);	
@@ -173,43 +175,46 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			tableColumns[i] = pTable.getColumnModel().getColumn(i+1);
 		tableColumns[0].setCellEditor(
 				new FileDialogPickerEditor("par","Import",this));
-		tableColumns[0].setPreferredWidth(250);
+		tableColumns[0].setPreferredWidth(200);
 		tableColumns[1].setCellEditor(
 				new FileDialogPickerEditor("cal","Mass Cal file",this));
-		tableColumns[1].setPreferredWidth(250);
+		tableColumns[1].setPreferredWidth(200);
 		tableColumns[2].setCellEditor(
 				new FileDialogPickerEditor("noz","Size Cal file",this));
-		tableColumns[2].setPreferredWidth(250);
+		tableColumns[2].setPreferredWidth(200);
 
 		TableColumn numColumn = pTable.getColumnModel().getColumn(0);
 		numColumn.setPreferredWidth(10);
-
+		
+		for (int i = 3; i < numColumns; ++i)
+			tableColumns[i].setPreferredWidth(60);
+		
+		pTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		
 		return pTable;
 	}
 	
 	private JPanel getListPane(){
-		JPanel simple = new JPanel();
+		JPanel simple = new JPanel(new BorderLayout());
 		JTable parTable;
 		parTable = getParTable(false);
 		basicTableModel = (ParTableModel)parTable.getModel();
 		JScrollPane scrollPane = new JScrollPane(parTable);
-		scrollPane.setPreferredSize(new Dimension(795,200));
+		//scrollPane.setPreferredSize(new Dimension(795,200));
 		//simple.add(Box.createRigidArea(new Dimension(0, 4)));
-		simple.add(scrollPane);
+		simple.add(scrollPane, BorderLayout.CENTER);
+
 		
-		
-		JPanel complex = new JPanel();
+		JPanel complex = new JPanel(new BorderLayout());
 		parTable = getParTable(true);
 		advancedTableModel = (ParTableModel)parTable.getModel();
 		scrollPane = new JScrollPane(parTable);
-		scrollPane.setPreferredSize(new Dimension(850,200));
+		//scrollPane.setPreferredSize(new Dimension(850,200));
 		//complex.add(Box.createRigidArea(new Dimension(0, 4)));
-		complex.add(scrollPane);
+		complex.add(scrollPane, BorderLayout.CENTER);
 		
-		
-		
-		JPanel panel = new JPanel();
-		panel = new JPanel(new CardLayout());
+
+		JPanel panel = new JPanel(new CardLayout());
 		panel.add(simple, "Simple");
 		panel.add(complex, "Advanced");
 		
