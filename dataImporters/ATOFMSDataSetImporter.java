@@ -301,35 +301,34 @@ public class ATOFMSDataSetImporter {
 	 */
 	public void readSpectraAndCreateParticle() 
 	throws IOException, NumberFormatException {
-		synchronized (dbLock) {
-			//Read spectra & create particle.
-			File canonical = parFile.getAbsoluteFile();
-			File parent = canonical.getParentFile();
-			File grandParent = parent.getParentFile();
-			//System.out.println("Data set: " + parent.toString());
+		//Read spectra & create particle.
+		File canonical = parFile.getAbsoluteFile();
+		File parent = canonical.getParentFile();
+		File grandParent = parent.getParentFile();
+		//System.out.println("Data set: " + parent.toString());
+		
+		String name = parent.getName();
+		name = parent.toString()+ File.separator + name + ".set";
+		if (new File(name).isFile()) {
+			BufferedReader countSet = new BufferedReader(
+					new FileReader(name));
 			
-			String name = parent.getName();
-			name = parent.toString()+ File.separator + name + ".set";
-			if (new File(name).isFile()) {
-				BufferedReader countSet = new BufferedReader(
-						new FileReader(name));
-				
-				int tParticles = 0;
-				
-				while(countSet.ready())
-				{
-					countSet.readLine();
-					tParticles++;
-				}
-				countSet.close();
-				
-				totalParticles = tParticles;
-				
-				final ProgressBarWrapper progressBar = 
-					new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
-				
-				final SwingWorker worker = new SwingWorker() {
-					public Object construct() {
+			int tParticles = 0;
+			
+			while(countSet.ready())
+			{
+				countSet.readLine();
+				tParticles++;
+			}
+			countSet.close();
+			
+			totalParticles = tParticles;
+			
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
+			
+			final SwingWorker worker = new SwingWorker() {
+				public Object construct() {
 						
 						//Read spectra & create particle.  
 						File parent = parFile.getAbsoluteFile().getParentFile();
@@ -343,64 +342,73 @@ public class ATOFMSDataSetImporter {
 						ATOFMSParticle currentParticle;
 						try {
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
-							StringTokenizer token;
-							String particleFileName;
-							particleNum = 0;
-							//int doDisplay = 4;
-							int nextID = db.getNextID();
-							Collection curCollection = db.getCollection(id[0]);
-							while (readSet.ready()) { // repeat until end of file.
-								token = new StringTokenizer(readSet.readLine(), ",");
+							
+							synchronized (dbLock) {
 								
-								// .set files are sometimes made with really strange line delims,
-								// so we ignore empty lines.
-								if (! token.hasMoreTokens()) {
-									continue;
+								SwingUtilities.invokeLater(new Runnable() {
+									public void run() {progressBar.constructThis();}
+								});
+								
+								
+								StringTokenizer token;
+								String particleFileName;
+								particleNum = 0;
+								//int doDisplay = 4;
+								int nextID = db.getNextID();
+								Collection curCollection = db.getCollection(id[0]);
+								while (readSet.ready()) { // repeat until end of file.
+									token = new StringTokenizer(readSet.readLine(), ",");
+									
+									// .set files are sometimes made with really strange line delims,
+									// so we ignore empty lines.
+									if (! token.hasMoreTokens()) {
+										continue;
+									}
+									
+									token.nextToken();
+									particleName = token.nextToken().replace('\\', File.separatorChar);
+									particleFileName = grandParent.toString() + File.separator + particleName;
+									try {
+									read = new ReadSpec(particleFileName);
+									
+									currentParticle = read.getParticle();
+									db.insertParticle(
+											
+											currentParticle.particleInfoDenseString(),
+											currentParticle.particleInfoSparseString(),
+											destination,id[1],nextID, true);
+									}
+									catch (Exception e) {
+										ErrorLogger.writeExceptionToLog("Importing","Error reading or inserting particle " + 
+												particleFileName+":\n\tMessage: "+e.getMessage());
+									}
+									nextID++;
+									particleNum++;
+									//doDisplay++;
+									if(particleNum % 10 == 0 && particleNum >= 10)
+										progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
+									
 								}
-								
-								token.nextToken();
-								particleName = token.nextToken().replace('\\', File.separatorChar);
-								particleFileName = grandParent.toString() + File.separator + particleName;
-								try {
-								read = new ReadSpec(particleFileName);
-								
-								currentParticle = read.getParticle();
-								db.insertParticle(
-										
-										currentParticle.particleInfoDenseString(),
-										currentParticle.particleInfoSparseString(),
-										destination,id[1],nextID, true);
-								}
-								catch (Exception e) {
-									ErrorLogger.writeExceptionToLog("Importing","Error reading particle " + 
-											particleFileName+":\n\tMessage: "+e.getMessage());
-								}
-								nextID++;
-								particleNum++;
-								//doDisplay++;
-								if(particleNum % 10 == 0 && particleNum >= 10)
-									progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
-								
+								db.updateAncestors(curCollection);
 							}
-							db.updateAncestors(curCollection);
 							readSet.close();
 						} catch (IOException e) {
 							ErrorLogger.writeExceptionToLog("Importing","Error reading dataset for collection "+
 									destination.getName()+"\n\tMessage: "+e.toString()+","+e.getMessage());
+						}		
+					final String exceptionFile = particleName;
+					progressBar.disposeThis();
+					return null;	
+				}
 							
-						}
-						final String exceptionFile = particleName;
-						progressBar.disposeThis();
-						return null;	
-					}
-				};
-				worker.start();
-				progressBar.constructThis();				
-			} else {
-				ErrorLogger.displayException(parentContainer, 
-						"Dataset has no hits because "+name+" does not exist.");
-			}
+			};
+			worker.start();
+			
+		} else {
+			ErrorLogger.displayException(parentContainer, 
+					"Dataset has no hits because "+name+" does not exist.");
 		}
+	
 	}
 	
 	// tests for .par version (.ams,.amz)
