@@ -88,7 +88,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JTextPane labelText;
 	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
-	private IntegerPeakCheckBox intPeaks;
 	private MainFrame mf;
 	private JPanel centerPanel;
 	private JPanel peaksPanel;
@@ -316,7 +315,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			bottomPanel.add(peakButtonPanel);
 		}
 		
-		peakButtonPanel.add(intPeaks = new IntegerPeakCheckBox());
 		peakButtonPanel.add(labelPeaks = new JCheckBox("Label Peaks", true));
 		labelPeaks.addItemListener(new ItemListener() {
 			int lastDividerLocation = 0;
@@ -1177,23 +1175,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			case 2: return "Area";
 			case 3: return "Relative Area";
 			default: return "";
-			}
-		}
-	}
-		
-	public class IntegerPeakCheckBox 
-		extends JCheckBox implements ChangeListener
-	{
-		public IntegerPeakCheckBox() {
-			super("Integer peaks");
-			this.setSelected(integralPeaks);
-			this.addChangeListener(this);
-		}
-
-		public void stateChanged(ChangeEvent e) {
-			if (integralPeaks != this.isSelected()) {
-				integralPeaks = this.isSelected();
-				showGraph();
 			}
 		}
 	}
