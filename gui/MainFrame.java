@@ -772,13 +772,9 @@ public class MainFrame extends JFrame implements ActionListener
 		recursiveDeleteItem = 
 			new JMenuItem("Delete Selected and All Children");
 		recursiveDeleteItem.addActionListener(this);
-		JMenuItem accessSelected = new JMenuItem("View Selected", 
-				KeyEvent.VK_V);
 		
 		collectionMenu.add(deleteAdoptItem);
 		collectionMenu.add(recursiveDeleteItem);
-		collectionMenu.addSeparator();
-		collectionMenu.add(accessSelected);		
 		
 		// add a datatype menu to the menu bar.
 		JMenu datatypeMenu = new JMenu("Datatype");
