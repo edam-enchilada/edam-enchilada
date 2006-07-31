@@ -216,6 +216,43 @@ public class MainFrame extends JFrame implements ActionListener
 		});
 	}
 	
+	/**
+	 * Provides additional UI-specific builtin functionality to SwingWorker.
+	 * The only additional necessary thing to do with this class is explicity call super.finished()
+	 * 	when using finished()
+	 * @author shaferia
+	 */
+	private abstract class UIWorker extends SwingWorker {
+		protected Component[] disable;
+		
+		@Override
+		public void start() {
+			start(new Component[0]);
+		}
+		
+		/**
+		 * Starts the UIWorker, disabling the given components.
+		 * The components will be enabled again when the UIWorker finishes.
+		 * @param disable
+		 */
+		public void start(Component[] disable) {
+			this.disable = disable;
+			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			for (Component c : disable)
+				c.setEnabled(false);
+			
+			super.start();
+		}
+		
+		@Override
+		public void finished() {
+			super.finished();
+			for (Component c : disable)
+				c.setEnabled(true);
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+	
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
@@ -233,8 +270,11 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		else if (source == outputItem) {
-			if (outputFrame == null)
-				(outputFrame = new OutputWindow(this)).setVisible(true);
+			if (outputFrame == null) {
+				outputFrame = new OutputWindow(this);
+				outputFrame.setSize(getSize().width / 2, getSize().height / 2);
+				outputFrame.setVisible(true);		
+			}
 			else
 				outputFrame.setVisible(true);
 		}
@@ -287,35 +327,56 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == deleteAdoptItem)
 		{
-			Collection[] c = getSelectedCollections();
+			final Collection[] c = getSelectedCollections();
 			if(c == null)
 				return;
-			for (int i = 0; i<c.length; i++){
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				if(db.orphanAndAdopt(c[i]))
-				{
-					selectedCollectionTree.updateTree();
-					clearTable();
+			
+			UIWorker worker = new UIWorker() {
+				public Object construct() {
+					boolean updateRequired = false;
+					for (int i = 0; i < c.length; ++i)
+						updateRequired |= db.orphanAndAdopt(c[i]);
+
+					return new Boolean(updateRequired);					
 				}
-			}
-			validate();
-			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				public void finished() {
+					super.finished();
+					if (get() != null && (Boolean)get()) {
+						selectedCollectionTree.updateTree();
+						clearTable();
+						validate();
+					}
+				}
+			};
+			worker.start(new Component[]{selectedCollectionTree});
+			
 		}
 		
 		else if (source == recursiveDeleteItem)
 		{
-			Collection[] c = getSelectedCollections();
+			final Collection[] c = getSelectedCollections();
+			final CollectionTree collTree = selectedCollectionTree;
 			if(c == null)
 				return;
-			for (int i = 0; i<c.length; i++){
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				if(db.recursiveDelete(c[i])){
-					selectedCollectionTree.updateTree();
-					clearTable();
+			
+			UIWorker worker = new UIWorker() {
+				public Object construct() {
+					boolean updateRequired = false;
+					for (int i = 0; i < c.length; ++i)
+						updateRequired |= db.recursiveDelete(c[i]);
+
+					return new Boolean(updateRequired);					
 				}
-			}
-			validate();
-			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				public void finished() {
+					super.finished();
+					if (get() != null && (Boolean)get()) {
+						selectedCollectionTree.updateTree();
+						clearTable();
+						validate();
+					}
+				}
+			};
+			worker.start(new Component[]{selectedCollectionTree});
 		}
 		
 		else if (source == copyItem)
@@ -337,28 +398,34 @@ public class MainFrame extends JFrame implements ActionListener
 			//if no collection selected, paste into root
 			//@author steinbel
 
-			
 			if (copyID != 
 				getSelectedCollection().getCollectionID() || copyID>-1)
 			{
-
-					//check if the datatypes are the same
+				//check if the datatypes are the same
 				if(getSelectedCollection().getCollectionID() == 0
 						|| db.getCollection(copyID).getDatatype().equals
 											(getSelectedCollection().getDatatype())){
-						
-					if (cutBool == false)
-					{
-					db.copyCollection(db.getCollection(copyID), 
-							getSelectedCollection());
-					}
-					else
-					{
-						db.moveCollection(db.getCollection(copyID), 
-							getSelectedCollection());
-					}
-					collectionPane.updateTree();
-					validate();
+					UIWorker worker = new UIWorker() {
+						public Object construct() {
+							if (cutBool == false)
+							{
+								db.copyCollection(db.getCollection(copyID), 
+									getSelectedCollection());
+							}
+							else
+							{
+								db.moveCollection(db.getCollection(copyID), 
+									getSelectedCollection());
+							}
+							return null;
+						}
+						public void finished() {
+							super.finished();
+							collectionPane.updateTree();
+							validate();
+						}
+					};
+					worker.start(new Component[]{collectionPane});
 				}
 				else
 					JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
