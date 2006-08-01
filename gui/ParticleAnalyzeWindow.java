@@ -470,38 +470,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		//loads peaks
 		Map<Integer, Peak> map = new LinkedHashMap<Integer, Peak>();
 		
-
-		for (Peak p : peaks) {
-			// see BinnedPeakList.java for source of this routine
-			int mzInt; double mz = p.massToCharge;
-			
-			if (mz >= 0.0)
-				mzInt = (int) (mz + 0.5);
-			else
-				mzInt = (int) (mz - 0.5);
-			
-			//new Peak(int height, int area, double masstocharge)
-			if (map.containsKey(mzInt))
-			{
-				Peak soFar = map.get(mzInt);
-				map.put(mzInt, 
-						new Peak(soFar.height + p.height,
-								soFar.area + p.area,
-								soFar.relArea + p.relArea,
-								mzInt));
-			} else {
-				map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
-			}
-		}
-		
-		peaks = new ArrayList<Peak>();
-		for (int p : map.keySet())
-		{
-			peaks.add(map.get(p));
-			// max value because i want it to be obvious if that messes things up.
-			// but nothing should use height, right?  only area.
-		}
-
 		for (Peak p : peaks)
 		{
 			if(p.massToCharge > 0){

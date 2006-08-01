@@ -42,6 +42,8 @@
 
 package chartlib;
 
+import gui.ParticleAnalyzeWindow;
+
 import javax.swing.event.MouseInputListener;
 import javax.swing.*;
 import java.awt.event.*;
@@ -146,8 +148,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		
 		setFocusable(true);
-		addMouseListener(this);
-		addMouseMotionListener(this);
+		glassPane.addMouseListener(this);
+		glassPane.addMouseMotionListener(this);
 		addKeyListener(this);
 		
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
@@ -519,9 +521,12 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * 
 	 * @author smitht
 	 */
-	@Override
 	public void addMouseMotionListener(MouseMotionListener l) {
 		glassPane.addMouseMotionListener(l);
+	}
+
+	public void addMouseListener(MouseListener l) {
+		glassPane.addMouseListener(l);
 	}
 	
 }
