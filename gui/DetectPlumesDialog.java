@@ -113,7 +113,7 @@ public class DetectPlumesDialog  extends JDialog implements ActionListener, Item
 			//fileChooser.setFile(fileFilter);
 			fileChooser.setVisible(true);
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
-			
+			if(fileChooser.getFile()==null) return;
 			Collection curCollection = cTree.getSelectedCollection();
 			metricDropdown.getSelectedIndex();
 			

@@ -277,11 +277,30 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		else if (source == advancedOptionsButton){
 			showAdvancedOptions = !showAdvancedOptions;
 			CardLayout card = (CardLayout)(listPane.getLayout());
+			//Copy values from the current TableModel into the new TableModel
+			// and display the new TableModel
 			if(showAdvancedOptions){
 				advancedOptionsButton.setText("<<<Simple");
+				for(int i=0;i<basicTableModel.getRowCount();i++){
+					for(int j=0;j<basicTableModel.getColumnCount()-1; j++){
+						Object value = basicTableModel.getValueAt(i, j);
+						advancedTableModel.setValueAt(value, i, j);
+					}
+					//advancedTableModel.setValueAt(new Float(.50), i,basicTableModel.getColumnCount()-1);
+					advancedTableModel.setValueAt(basicTableModel.getValueAt(i, basicTableModel.getColumnCount()-1),
+							i,advancedTableModel.getColumnCount()-1);
+				}
 				card.show(listPane, "Advanced");
 			}else{
 				advancedOptionsButton.setText("Advanced>>>");
+				for(int i=0;i<advancedTableModel.getRowCount();i++){
+					for(int j=0;j<basicTableModel.getColumnCount()-1; j++){
+						Object value = advancedTableModel.getValueAt(i, j);
+						basicTableModel.setValueAt(value, i, j);
+					}
+					basicTableModel.setValueAt(advancedTableModel.getValueAt(i, advancedTableModel.getColumnCount()-1),
+							i,basicTableModel.getColumnCount()-1);
+				}
 				card.show(listPane, "Simple");
 			}
 		}

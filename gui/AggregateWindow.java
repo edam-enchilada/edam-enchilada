@@ -152,30 +152,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	
 	private JPanel getATOFMSPanel(Collection collection) {
 		final AggregationOptions options = collection.getAggregationOptions();
-		final JTextField peakTolerance = new JTextField(4);
-		peakTolerance.setText(String.valueOf(options.peakTolerance));
-		peakTolerance.setEditable(false);
-		peakTolerance.setHorizontalAlignment(JTextField.CENTER);
-		
-		JSlider slider = new JSlider(0, 50, (int) (options.peakTolerance * 100));
-		slider.setPaintLabels(true);
-		Hashtable<Integer, JComponent> labels = new Hashtable<Integer, JComponent>();
-		labels.put(new Integer(0), new JLabel("0"));
-		labels.put(new Integer(50), new JLabel(".5"));
-		slider.setLabelTable(labels);
-		slider.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-			    JSlider source = (JSlider)e.getSource();
-			    double value = source.getValue() / 100.0;
-			    options.peakTolerance = value;
-
-			    peakTolerance.setText(String.valueOf(value));
-			}
-		});
-
-		JPanel tolerancePanel = new JPanel(new BorderLayout(10, 0));
-		tolerancePanel.add(slider, BorderLayout.WEST);
-		tolerancePanel.add(peakTolerance, BorderLayout.CENTER);
 		
 	    JCheckBox partCount = new JCheckBox();
 	    partCount.addItemListener(new ItemListener() {
@@ -240,8 +216,6 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		JPanel bottomHalf = addComponent(new JPanel(), mainPanel);
 		bottomHalf = addComponent(new JLabel("Collection Options for " + collection.getName() + ":"), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
-		bottomHalf = addComponent(new JLabel("Peak Tolerance:  "), bottomHalf);
-		bottomHalf = addComponent(tolerancePanel, bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JPanel(), bottomHalf);
 		bottomHalf = addComponent(new JLabel("Combining Method:"), bottomHalf);
