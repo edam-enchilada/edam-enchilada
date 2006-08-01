@@ -42,6 +42,84 @@ public class BinnedPeakListTest extends TestCase {
 		
 	}
 	
+	/**
+	 * @author shaferia
+	 */
+	public void testMultiply2() {
+		BinnedPeakList bp1 = new BinnedPeakList(null);
+		
+		for (int x = -50; x < 50; x += 5)
+			bp1.add(x, (float) Math.random());
+		
+		bp1.multiply(Float.MAX_VALUE);
+
+		for (BinnedPeak bp : bp1) {
+			assertTrue(bp.value != Float.POSITIVE_INFINITY && bp.value != Float.NEGATIVE_INFINITY);
+		}
+		
+		float[] comp = new float[50];
+		for (int x = 0; x < comp.length; ++x)
+			comp[x] = ((float) Math.random()) * (x - 25);
+		
+		bp1 = new BinnedPeakList(null);
+		BinnedPeakList bp2 = new BinnedPeakList(null);
+		
+		for (int x = -25; x < 25; ++x) {
+			bp1.add(x, comp[x + 25]);
+			bp2.add(new BinnedPeak(x, comp[x + 25]));
+		}
+		
+		//multiply to infinity with float multipliers
+		for (int x = 0; x < 500; ++x) {
+			float multiplier = ((x << (Integer.SIZE - 1)) >>> (Integer.SIZE - 2) == 0) ?
+					((float) Math.random()) * 5 :
+					(float) (Math.random() * 5);
+			for (int i = 0; i < comp.length; ++i)
+				comp[i] *= multiplier;
+			bp1.multiply(multiplier);
+			bp2.multiply(multiplier);
+			
+			int i = 0;
+			for (BinnedPeak bp : bp1) {
+				assertEquals(bp.key, i - 25);
+				assertEquals(bp.value, comp[i]);
+				i += 1;
+			}
+			
+			i = 0;
+			for (BinnedPeak bp : bp2) {
+				assertEquals(bp.key, i - 25);
+				assertEquals(bp.value, comp[i]);
+				i += 1;
+			}
+		}
+		
+		//multiply to infinity with int multipliers
+		for (int x = 0; x < 500; ++x) {
+			float multiplier = ((x << (Integer.SIZE - 1)) >>> (Integer.SIZE - 2) == 0) ?
+					((int) Math.random()) * 10 :
+					(int) (Math.random() * 10);
+			for (int i = 0; i < comp.length; ++i)
+				comp[i] *= multiplier;
+			bp1.multiply(multiplier);
+			bp2.multiply(multiplier);
+			
+			int i = 0;
+			for (BinnedPeak bp : bp1) {
+				assertEquals(bp.key, i - 25);
+				assertEquals(bp.value, comp[i]);
+				i += 1;
+			}
+			
+			i = 0;
+			for (BinnedPeak bp : bp2) {
+				assertEquals(bp.key, i - 25);
+				assertEquals(bp.value, comp[i]);
+				i += 1;
+			}
+		}
+	}
+	
 	public void testAdd() {
 		BinnedPeakList bp1 = new BinnedPeakList(new Normalizer());
 		bp1.add(-250, (float) 1);
