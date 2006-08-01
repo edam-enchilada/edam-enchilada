@@ -1,11 +1,16 @@
 package chartlib;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.Line2D;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 
 import javax.swing.JFrame;
 
@@ -36,7 +41,8 @@ public class LinePointsChartArea extends ChartArea {
 		drawDataPoints(g2d,datasets.get(0));
 	}
 	
-	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
+	
+		protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
 		drawPointX(g2d,xCoord,yCoord);
 	}
 	

@@ -41,100 +41,66 @@ public class ChartArea extends AbstractMetricChartArea {
 	}
 
 	/**
-	 * Draws the data in a continuous line by drawing only one
-	 * data point per horizontal pixel.
+	 * Draws the data, drawing one line for each DataPoint in the Dataset
 	 * 
 	 * @param g2d
 	 */
 	protected void drawDataLines(Graphics2D g2d,Dataset dataset){
-		if(dataset == null) return;
-		Rectangle dataArea = getDataAreaBounds();
-		
-		Shape oldClip = g2d.getClip();
-		Stroke oldStroke = g2d.getStroke();
-		g2d.setColor(foregroundColor);
-		g2d.clip(dataArea);	//constrains drawing to the data value
-		g2d.setStroke(new BasicStroke(1.5f));
-		
-		//double[] coords = new double[dataArea.width];
-		
-		//	loops through all data points building array of points to draw
-		int lastX = 0;
-		double lastY = -999.0;
-		int numPoints = 0;
-		Iterator<DataPoint> iterator 
-			= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
-							new DataPoint(xAxis.getMax(), 0)).iterator();
-		while(iterator.hasNext())
-		{
-			DataPoint curPoint = iterator.next();
+			if(dataset == null) return;
+			Rectangle dataArea = getDataAreaBounds();
 			
-			double x = curPoint.y, y = curPoint.y;
-			//System.out.println("X: "+x+"\tY:: "+y);
-			/*if (x >= 0 && x <= 1) {
-*/
-			double pointPos = xAxis.relativePosition(x);
+			Shape oldClip = g2d.getClip();
+			Stroke oldStroke = g2d.getStroke();
+			g2d.setColor(foregroundColor);
+			g2d.clip(dataArea);	//constrains drawing to the data value
+			g2d.setStroke(new BasicStroke(1.5f));
+			
+			//	loops through all data points building array of points to draw
+			int lastX = 0;
+			double lastY = -999.0;
+			int numPoints = 0;
+			Iterator<DataPoint> iterator 
+				= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
+								new DataPoint(xAxis.getMax(), 0)).iterator();
+			while(iterator.hasNext())
+			{
+				DataPoint curPoint = iterator.next();
+				
+				double x = curPoint.y, y = curPoint.y;
+				//System.out.println("X: "+x+"\tY:: "+y);
+				/*if (x >= 0 && x <= 1) {
+	*/
+				double pointPos = xAxis.relativePosition(x);
 
-			int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
-					* dataArea.width);
-			double yCoord = (dataArea.y + dataArea.height 
-					- (yAxis.relativePosition(curPoint.y) * dataArea.height));
-		
-			if(numPoints==0){
-				g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
-					- (yAxis.relativePosition(0) * dataArea.height)), (double) xCoord, yCoord));
-			}else{
-				g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
-			}
-			numPoints++;
-			lastX = xCoord;
-			lastY = yCoord; // maybe get rid of
-		}
-		
-		if (dataset.first().x < xAxis.getMin()) {
-			drawMorePointsIndicator(0, g2d);
-		}
-		if (dataset.last().x > xAxis.getMax()) {
-			drawMorePointsIndicator(1, g2d);
-		}
-		
-		/*
-		// Then draws them:
-		int lastX = 0;
-		double lastY = -999.0;
-		int numPoints = 0;
-		//boolean firstPoint = true;
-		for (int i = 0; i < coords.length; i++) {
-			if (coords[i] == 0)
-				continue;
-
-			int xPos = i;
-			if (coords[i] != -999.0 && lastY != -999.0){
-				g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xPos, coords[i]));
+				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
+						* dataArea.width);
+				double yCoord = (dataArea.y + dataArea.height 
+						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+			
+				if(numPoints==0){
+					g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
+						- (yAxis.relativePosition(0) * dataArea.height)), (double) xCoord, yCoord));
+				}else{
+					g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
+				}
 				numPoints++;
-			}
-			else if (coords[i] != -999.0) {
-				// Point is valid, but last point wasn't... so just draw a large point:
-				g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
-						- (yAxis.relativePosition(0) * dataArea.height)), (double) xPos, coords[i]));
-				numPoints++;
+				lastX = xCoord;
+				lastY = yCoord; // maybe get rid of
 			}
 			
-			lastX = xPos;
-			lastY = coords[i];
+			if (dataset.first().x < xAxis.getMin()) {
+				drawMorePointsIndicator(0, g2d);
+			}
+			if (dataset.last().x > xAxis.getMax()) {
+				drawMorePointsIndicator(1, g2d);
+			}
+			
+			
+			//cleanup
+			g2d.setClip(oldClip);
+			g2d.setStroke(oldStroke);
+			
 		}
-		
-		*/
-		// icky line at the end.  I don't like it.  -thomas
-//		if(lastX<=dataArea.x+dataArea.width-1){
-//			g2d.draw(new Line2D.Double((double) lastX, lastY, (double) dataArea.x+dataArea.width-1,(dataArea.y + dataArea.height 
-//				- (yAxis.relativePosition(0) * dataArea.height))));
-//		}
-		//cleanup
-		g2d.setClip(oldClip);
-		g2d.setStroke(oldStroke);
-		
-	}
 
 	/**
 	 * Draws the a (small) X for each data point per horizontal pixel.
