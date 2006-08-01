@@ -9,6 +9,8 @@ with the non-MSDE installer:
 **Try installing with no SQL Server on the computer.
 __An error message should pop up saying it couldn't find an SQL Server on 
 the computer.  Installation should abort.
+__Verify that error diagnostics appear in the "Output" window (should be
+hiding behind the main Enchilada window).
 
 **Try installing with SQL Server installed but the SpASMS login not present.
 __Should make the login, SpASMS/finally, with sysadmin.  Installation should
