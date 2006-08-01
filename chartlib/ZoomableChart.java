@@ -512,7 +512,16 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void setForceY(boolean forceY) {
 		this.forceY = forceY;
 	}
-
-
+	
+	/**
+	 * I don't know why adding a mousemotionlistener to the ZoomableChart
+	 * doesn't work, but this does, so oh well.
+	 * 
+	 * @author smitht
+	 */
+	@Override
+	public void addMouseMotionListener(MouseMotionListener l) {
+		glassPane.addMouseMotionListener(l);
+	}
 	
 }
