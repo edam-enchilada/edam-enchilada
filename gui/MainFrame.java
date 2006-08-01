@@ -1180,10 +1180,17 @@ public class MainFrame extends JFrame implements ActionListener
 	private static class MainFrameRun implements Runnable {
 		String[] args;
 		private MainFrame mf;
+		
+		/**
+		 * Creates MainFrameRun with command-line arguments
+		 * @param args
+		 * 	-redirectOutput: take output from standard output and redirect to a window.
+		 *		If started with this option, will continue to redirect to window even when it is closed.
+		 */
 		public MainFrameRun(String[] args) {
 			this.args = args;
 		}
-		
+	
 		public void run() {
 			mf = new MainFrame();
 			
@@ -1210,9 +1217,13 @@ public class MainFrame extends JFrame implements ActionListener
 		 */
 		public void redirectOutput() {
 			try {
+				//This option will be invoked by those not running from inside an IDE -
+				//	output will continue to be redirected to a window throughout the session.
+				OutputWindow.setReturnOutputOnClose(true);
+				
 				OutputWindow w = mf.outputFrame = new OutputWindow(mf);
 				w.setSize(mf.getSize().width / 2, mf.getSize().height / 2);
-				
+			
 				//the window will flash in front briefly, but reversing the order of these calls
 				//	doesn't properly send the window to the back.
 				w.setVisible(true);

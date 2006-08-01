@@ -1,9 +1,10 @@
 package gui;
 
+import java.awt.Adjustable;
 import java.awt.Container;
+import java.awt.Component;
 import java.awt.BorderLayout;
 import java.awt.FileDialog;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.*;
 
@@ -17,11 +18,72 @@ import java.io.*;
  */
 public class OutputWindow extends JFrame {
 	private JTextArea output;
+	private JScrollPane outputScroll;
 	private OutputWindow thisref;
 	
-	private static final boolean RETURN_OUTPUT_ON_CLOSE = false;
+	private int prevAdjust;
+	private int newAdjust;
+	private boolean allowAdjust;
+	private boolean allowPermAdjust;
+
+	private static boolean RETURN_OUTPUT_ON_CLOSE = true;
 	
-	public OutputWindow(JFrame mf) {
+	/**
+	 * Responsible for keeping scrollbar in place when scroll lock is on
+	 */
+	private AdjustmentListener locker = new AdjustmentListener() {
+		public void adjustmentValueChanged(AdjustmentEvent event) {
+			Adjustable a = event.getAdjustable();
+			newAdjust = a.getValue();
+			if (!event.getValueIsAdjusting() && !allowAdjust && !allowPermAdjust) {
+				a.setValue(prevAdjust);
+			}
+			allowAdjust = false;
+			prevAdjust = a.getValue();
+		}
+	};
+	
+	/**
+	 * Allow user input to scrollbar to change its position
+	 */
+	private MouseAdapter clicker = new MouseAdapter() {
+		public void mousePressed(MouseEvent event) {
+			allowPermAdjust = true;
+		}
+		public void mouseReleased(MouseEvent event) {
+			allowPermAdjust = false;
+		}
+		public void mouseClicked(MouseEvent event) {
+			allowAdjust = true;
+			outputScroll.getVerticalScrollBar().setValue(newAdjust);
+		}
+	};
+	
+	private void setScrollLock(boolean state) {
+		JScrollBar vscroll = outputScroll.getVerticalScrollBar();
+		if (state) {
+			vscroll.addAdjustmentListener(locker);
+			for (Component c : vscroll.getComponents())
+				c.addMouseListener(clicker);
+			prevAdjust = vscroll.getValue();
+		}
+		else {
+			for (Component c : vscroll.getComponents())
+				c.removeMouseListener(clicker);
+			vscroll.removeAdjustmentListener(locker);
+		}
+	}
+	
+	/**
+	 * Determines whether 
+	 * @param behavior true: return output to standard output when this window is closed
+	 * 	false: keep output in window
+	 */
+	public static void setReturnOutputOnClose(boolean behavior) {
+		RETURN_OUTPUT_ON_CLOSE = behavior;
+	}
+	
+	public OutputWindow(final JFrame mf) {
 		super("Output");
 		thisref = this;
 		Container cp = getContentPane();
@@ -31,12 +93,27 @@ public class OutputWindow extends JFrame {
 		output.setBorder(BorderFactory.createLoweredBevelBorder());
 		output.setEditable(false);
 		output.setFont(new Font("Monospaced", Font.PLAIN, 12));
-		JScrollPane outputScroll = new JScrollPane(output);
+		outputScroll = new JScrollPane(output);
 		outputScroll.setWheelScrollingEnabled(true);
 		cp.add(outputScroll, BorderLayout.CENTER);
 
+		int margin = 3;
 		//Add a button offering to save the text of standard output to a file.
-		JPanel buttonsPane = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		JPanel buttonsPane = new JPanel();
+		buttonsPane.setBorder(BorderFactory.createEmptyBorder(margin, margin, margin, margin));
+		buttonsPane.setLayout(new BoxLayout(buttonsPane, BoxLayout.X_AXIS));
+		
+		final JCheckBox scrollBottom = new JCheckBox("Scroll lock");
+		scrollBottom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				setScrollLock(scrollBottom.isSelected());
+			}
+		});
+		scrollBottom.setSelected(true);
+		setScrollLock(true);
+		buttonsPane.add(scrollBottom);
+		buttonsPane.add(Box.createHorizontalGlue());
+		
 		JButton saveButton = new JButton("Save...");
 		saveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -74,6 +151,7 @@ public class OutputWindow extends JFrame {
 			}
 		});
 		buttonsPane.add(saveButton);
+		buttonsPane.add(Box.createHorizontalStrut(margin));
 		
 		//Clears the output window
 		JButton clearButton = new JButton("Clear");
@@ -83,6 +161,7 @@ public class OutputWindow extends JFrame {
 			}
 		});
 		buttonsPane.add(clearButton);
+		buttonsPane.add(Box.createHorizontalStrut(margin));
 		
 		JButton closeButton = new JButton("Close");
 		closeButton.addActionListener(new ActionListener() {
@@ -94,6 +173,8 @@ public class OutputWindow extends JFrame {
 		
 		cp.add(buttonsPane, BorderLayout.SOUTH);
 		
+		final PrintStream oldErr = System.err;
+		final PrintStream oldOut = System.out;
 		System.setErr(new PrintStream(new UserOutputter()));
 		System.setOut(new PrintStream(new UserOutputter()));
 		
@@ -101,8 +182,8 @@ public class OutputWindow extends JFrame {
 		if (RETURN_OUTPUT_ON_CLOSE)
 			addWindowListener(new WindowAdapter() {
 				public void windowClosing(WindowEvent evt) {
-					System.setErr(System.err);
-					System.setOut(System.out);
+					System.setErr(oldErr);
+					System.setOut(oldOut);
 				}
 			});
 		
@@ -113,9 +194,39 @@ public class OutputWindow extends JFrame {
 	 * Performs redirection of output to output TextArea
 	 */
 	public class UserOutputter extends OutputStream {
+		private StringBuffer buf = new StringBuffer();
+		
+		/**
+		 * Create a regularly-flushing buffer for standard output.
+		 */
+		public UserOutputter() {
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					while (true) {
+						try {
+							if (buf.length() > 0) {
+								final String toAppend = buf.toString();
+								SwingUtilities.invokeLater(new Runnable() {
+									public void run() {
+										output.append(toAppend);
+									}
+								});
+								buf = new StringBuffer();
+							}
+							Thread.sleep(100);
+						}
+						catch (InterruptedException ex) {
+							break;
+						}
+					}
+				}
+			});
+			t.start();
+		}
+		
 		@Override
 		public void write(int b) throws IOException {
-			output.append((char) b + "");
+			buf.append((char) b);
 		}
 	}
 	
