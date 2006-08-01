@@ -20,8 +20,6 @@ public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 
 	@Override
 	protected void drawData(Graphics2D g2d) {
-
-		System.out.println(getDataAreaBounds());
 		int max = dataset.count;
 		for (int i = 0; i < dataset.hists.length; i++) {
 			if (dataset.hists[i] == null) continue;

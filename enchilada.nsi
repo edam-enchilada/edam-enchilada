@@ -199,13 +199,13 @@ Section "Start Menu Shortcuts"
 
   CreateDirectory "$SMPROGRAMS\EDAM Enchilada"
   CreateShortCut "$SMPROGRAMS\EDAM Enchilada\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\icon.ico" 0
+  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\icon.ico" 0
   
 SectionEnd
 
 Section "Desktop Shortcut"
 
-    CreateShortCut "$DESKTOP\Enchilada.lnk" "$INSTDIR\Enchilada.bat" "" "$INSTDIR\icon.ico" 0
+    CreateShortCut "$DESKTOP\Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\icon.ico" 0
 
 SectionEnd
 

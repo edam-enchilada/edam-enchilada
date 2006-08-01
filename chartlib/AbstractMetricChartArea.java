@@ -25,6 +25,8 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		super();
 	}
 	
+
+	
 	/**
 	 * Translates a point in screen space to chart coordinates.
 	 * <p>
