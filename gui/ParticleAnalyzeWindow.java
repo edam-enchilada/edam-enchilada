@@ -124,8 +124,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	// Make sure that queued threads don't waste work 
 	// (since only last-queued thread in each window will matter)
 	private int numRunningThreads = 0;
-	
-	private boolean integralPeaks = true;
 	private JButton zoomOutButton;
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
@@ -470,41 +468,40 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		negPeaks = new ArrayList<Peak>();
 		
 		//loads peaks
-		if (integralPeaks) {
-			Map<Integer, Peak> map = new LinkedHashMap<Integer, Peak>();
-			
+		Map<Integer, Peak> map = new LinkedHashMap<Integer, Peak>();
+		
 
-			for (Peak p : peaks) {
-				// see BinnedPeakList.java for source of this routine
-				int mzInt; double mz = p.massToCharge;
-				
-				if (mz >= 0.0)
-					mzInt = (int) (mz + 0.5);
-				else
-					mzInt = (int) (mz - 0.5);
-				
-				//new Peak(int height, int area, double masstocharge)
-				if (map.containsKey(mzInt))
-				{
-					Peak soFar = map.get(mzInt);
-					map.put(mzInt, 
-							new Peak(soFar.height + p.height,
-									soFar.area + p.area,
-									soFar.relArea + p.relArea,
-									mzInt));
-				} else {
-					map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
-				}
-			}
+		for (Peak p : peaks) {
+			// see BinnedPeakList.java for source of this routine
+			int mzInt; double mz = p.massToCharge;
 			
-			peaks = new ArrayList<Peak>();
-			for (int p : map.keySet())
+			if (mz >= 0.0)
+				mzInt = (int) (mz + 0.5);
+			else
+				mzInt = (int) (mz - 0.5);
+			
+			//new Peak(int height, int area, double masstocharge)
+			if (map.containsKey(mzInt))
 			{
-				peaks.add(map.get(p));
-				// max value because i want it to be obvious if that messes things up.
-				// but nothing should use height, right?  only area.
+				Peak soFar = map.get(mzInt);
+				map.put(mzInt, 
+						new Peak(soFar.height + p.height,
+								soFar.area + p.area,
+								soFar.relArea + p.relArea,
+								mzInt));
+			} else {
+				map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
 			}
-		} 
+		}
+		
+		peaks = new ArrayList<Peak>();
+		for (int p : map.keySet())
+		{
+			peaks.add(map.get(p));
+			// max value because i want it to be obvious if that messes things up.
+			// but nothing should use height, right?  only area.
+		}
+
 		for (Peak p : peaks)
 		{
 			if(p.massToCharge > 0){
@@ -1156,9 +1153,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			// Putting these in wrapper classes, hope this
 			// helps 
 			// -Ben
-			case 0: 
-				if (integralPeaks) return new Integer((int)peak.massToCharge);
-				else return new Double(peak.massToCharge);
+			case 0: return new Integer((int)peak.massToCharge);
 			case 1: return new Integer(peak.height);
 			case 2: return new Integer(peak.area);
 			case 3: return new Float(peak.relArea);
