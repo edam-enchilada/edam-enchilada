@@ -58,13 +58,16 @@ public class LineChartArea extends ChartArea {
 		g2d.clip(dataArea);	//constrains drawing to the data value
 		g2d.setStroke(new BasicStroke(1.5f));
 		
-		//double[] coords = new double[dataArea.width];
-		
-		//	loops through all data points building array of points to draw
 		int numPoints = 0;
 		Iterator<DataPoint> iterator 
 			= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
 							new DataPoint(xAxis.getMax(), 0)).iterator();
+		
+		//by making an array the size of the display area and filling that
+		// you ensure that no vertical lines will be drawn 
+		// (you ignore points that are closer than the distance represented by a pixel)
+		// This is done for the sake of efficiency and is not always a good idea.
+		// If vertical lines should be considered acceptable, instead use the drawDataLines method in ChartArea
 		
 		double[] coords = new double[dataArea.width];
 //		loops through all data points building array of points to draw

@@ -42,6 +42,9 @@ public class ChartArea extends AbstractMetricChartArea {
 
 	/**
 	 * Draws the data, drawing one line for each DataPoint in the Dataset
+	 * This has the potential to be slow if there are many lines shorter than a pixel.  But 
+	 * this ensures the lines will be drawn in a way that is consistent with the way points are drawn.
+	 * If a chart with only lines is wanted, and efficiency is a concern, a LineChartArea should be used.
 	 * 
 	 * @param g2d
 	 */
@@ -67,11 +70,7 @@ public class ChartArea extends AbstractMetricChartArea {
 				DataPoint curPoint = iterator.next();
 				
 				double x = curPoint.y, y = curPoint.y;
-				//System.out.println("X: "+x+"\tY:: "+y);
-				/*if (x >= 0 && x <= 1) {
-	*/
-				double pointPos = xAxis.relativePosition(x);
-
+				
 				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
 						* dataArea.width);
 				double yCoord = (dataArea.y + dataArea.height 
@@ -110,11 +109,6 @@ public class ChartArea extends AbstractMetricChartArea {
 	protected void drawDataPoints(Graphics2D g2d, Dataset dataset) {
 		Rectangle dataArea = getDataAreaBounds();
 		
-		/*Shape oldClip = g2d.getClip();
-		Stroke oldStroke = g2d.getStroke();
-		g2d.setColor(Color.BLACK);
-		g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		*/
 		boolean drawnMoreLeft = false, drawnMoreRight = false;
 		
 		int maxX = 0;
@@ -127,9 +121,6 @@ public class ChartArea extends AbstractMetricChartArea {
 			DataPoint curPoint = iterator.next();
 			
 			double x = curPoint.x, y = curPoint.y;
-			//System.out.println("X: "+x+"\tY:: "+y);
-			/*if (x >= 0 && x <= 1) {
-*/
 			double pointPos = xAxis.relativePosition(x);
 			if (pointPos < 0 && !drawnMoreLeft) {
 				drawnMoreLeft = true;
@@ -157,15 +148,9 @@ public class ChartArea extends AbstractMetricChartArea {
 			}*/
 		}
 		
-		
-		//cleanup
-		/*g2d.setClip(oldClip);
-		g2d.setStroke(oldStroke);
-		*/
 	}
 	
 	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
-		//drawPointBar(g2d,xCoord,yCoord);
 		drawPointX(g2d,xCoord,yCoord);
 	}
 	
@@ -217,7 +202,6 @@ public class ChartArea extends AbstractMetricChartArea {
 	 */
 	@Override
 	protected void drawData(Graphics2D g2d) {
-		// TODO Auto-generated method stub
 		drawDataPoints(g2d,datasets.get(0));
 	}
 	
