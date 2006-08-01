@@ -20,6 +20,13 @@ __Should make the login, SpASMS/finally, with sysadmin.  Installation should
 __should work.
 		__1. make the database
 		__2. aggregate particles
+		
+**Install old version of Enchilada, create new database.
+  Install new version of Enchilada.
+__Should pop up a window warning of database incompatibility and let the user
+		__1. rebuild database to create new version
+		__2. quit without touching current database (so old version of Enchilada
+		can run with the db)
 
 ***** Uninstall test:
 

@@ -11,28 +11,42 @@ import java.util.Scanner;
 
 /**
  * @author steinbel
- * NOTE: Still working with Perl script for postprocessing.  Also, currently
- * hardcoded for BC. 7.31.06
+ * NOTE: currently hardcoded for BC. 7.31.06
  */
 public class Collector {
 
 	//take in file of ec/bc/whatever data in arff format
 	public static void main(String[] args){
-		PredictionAggregator grab = new PredictionAggregator();
+		PredictionAggregator pa = new PredictionAggregator();
 		String line;
 		String result = "";
 		try {
-			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/small.csv"));
-			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/BC_plus.csv"));
-			grab.open();
+			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/BC.csv"));
+			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/BC.arff"));
+			// write out the .arff header 
+			
+			/*name the attributes - we need 603 to allow for time, mass, and EC/BC
+			 *along with 300 negative and 300 positive mz values
+			 */
+			out.write("@relation BC \n");
+			out.write("@attribute time date \"MM/d/yyyy hh:mm:ss a\" \n");
+			out.write("@attribute mass numeric \n");
+			out.write("@attribute bc numeric \n");
+			
+			for(int i=1; i<601; i++)
+				out.write("@attribute mz" + i + " numeric \n");
+			
+			out.write("@data \n");
+			
+			pa.open();
 			while (scan.hasNextLine()){
 
 				line = scan.nextLine();
-				out.write(grab.grab(line));
+				out.write(pa.grab(line));
 				//out.append(result);
 				//System.out.println(result);//debugging
 			}
-			grab.close();
+			pa.close();
 			out.close();
 			scan.close();
 			
@@ -45,14 +59,4 @@ public class Collector {
 		}
 		
 	}
-	
-	//for all data rows
-		//extract the next time
-	
-		//pass to grabber
-	
-		//returned: row w/avg. ATOFMS for that hour tacked onto the whatever data
-	
-		//write out all this to some file
-	
 }

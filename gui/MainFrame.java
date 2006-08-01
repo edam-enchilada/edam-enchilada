@@ -1157,10 +1157,31 @@ public class MainFrame extends JFrame implements ActionListener
 		db.openConnection();
 		
 
+		//@author steinbel
 		VersionChecker vc = new VersionChecker(db);
 		try {
 			if (! vc.isDatabaseCurrent()) {
-				System.out.println("If we cared yet about database versions, this one would not be current!");
+				//new error window, but it should have button options, so the
+				//existing error framework isn't any good.
+				//soooo want new JOptionPane
+
+				Object[] options = {"Rebuild database", "Quit"};
+				int action = JOptionPane.showOptionDialog(null, 
+						"Your database is an old version and " +
+						"incompatible with this version of Enchilada.\n Please" +
+						" either rebuild the database (permanently deletes " +
+						"your current database\n and all data within it) or " +
+						"quit and use an older version of Enchilada.",
+						"Warning: Incompatible database",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
+						null, options, options[1]);
+				if (action == 0){
+					db.closeConnection();
+					SQLServerDatabase.rebuildDatabase("SpASMSdb");
+					db.openConnection();
+				} else
+					System.exit(0);
+				
 			}
 		} catch (Exception e) {
 			System.out.println("SQL Exception retrieving version!");
