@@ -546,18 +546,35 @@ public class MainFrame extends JFrame implements ActionListener
 			"Are you sure? This will destroy all data in your database.") ==
 				JOptionPane.YES_OPTION) {
 				//db.rebuildDatabase();
-				db.closeConnection();
-				try{
-					SQLServerDatabase.rebuildDatabase("SpASMSdb");
-					JOptionPane.showMessageDialog(this,
-							"The program will now shut down to reset itself. " +
-					"Start it up again to continue.");
-					dispose();
-				}catch(SQLException s){
-					JOptionPane.showMessageDialog(this,
-							"Could not rebuild the database." +
-							"  Close any other programs that may be accessing the database and try again.");
-				}
+				final JFrame thisref = this;
+				UIWorker worker = new UIWorker() {
+					public Object construct() {
+						db.closeConnection();
+						try {
+							SQLServerDatabase.rebuildDatabase("SpASMSdb");
+							return true;
+						}
+						catch (SQLException ex) {
+							return false;
+						}
+					}
+					public void finished() {
+						super.finished();
+						if ((Boolean) get()) {
+							JOptionPane.showMessageDialog(thisref,
+								"The program will now shut down to reset itself. " +
+								"Start it up again to continue.");
+							dispose();						
+						}
+						else {
+							JOptionPane.showMessageDialog(thisref,
+								"Could not rebuild the database." +
+								"  Close any other programs that may be accessing the database and try again.");
+							
+						}
+					}
+				};
+				worker.start();
 			}			
 		}
 		
@@ -1332,16 +1349,28 @@ public class MainFrame extends JFrame implements ActionListener
 			Scanner scan = new Scanner(text);
 			scan.next();
 			scan.next();
-			int low = scan.nextInt();
+			final int low = scan.nextInt();
 			scan.next();
-			int high = scan.nextInt();
+			final int high = scan.nextInt();
 			
 			//clear data in table and repopulate it with appropriate 
 			// data.
-			data.clear();
-			db.updateParticleTable(getSelectedCollection(),data,low,high);
-			particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
-			particlesTable.doLayout();
+			UIWorker worker = new UIWorker() {
+				public Object construct() {
+					data.clear();
+					db.updateParticleTable(getSelectedCollection(),data,low,high);
+					
+					return data;
+				}
+				public void finished() {
+					super.finished();
+					if (get() != null) {
+						particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+						particlesTable.doLayout();							
+					}
+				}
+			};
+			worker.start(new Component[]{particlesTable});
 		}
 	}
 	
