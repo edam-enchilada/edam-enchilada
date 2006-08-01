@@ -1312,18 +1312,24 @@ public class MainFrame extends JFrame implements ActionListener
 		analyzeParticleButton.setEnabled(row != -1);
 	}	
 	
-	/** This clears the particle table, both at initialization and
-	 * at when a collection is deleted.  
-	 *
+	/** 
+	 * This clears the particle table when a collection is deleted.  
 	 */
 	public void clearTable() {
+		//data.clear();
 		data = new Vector<Vector<Object>>(1000);
-		Vector<Object> row = new Vector<Object>(1);
-		row.add("");
+		Vector<Object> row = new Vector<Object>(6);
+		for (int x = 0; x < 6; ++x)
+			row.add("");
 		data.add(row);
-	
-		particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+		Vector<Object> columns = new Vector<Object>(1);
+		columns.add("");
+		
+		particlesTable = new JTable(data, columns);
 		particlesTable.doLayout();
+		particleTablePane.setViewportView(particlesTable);
+		collectionViewPanel.setComponentAt(0, particlePanel);
+		collectionViewPanel.repaint();
 		
 		chooseParticleSet.removeAllItems();
 		chooseParticleSet.addItem("Click on a collection to see information.");
