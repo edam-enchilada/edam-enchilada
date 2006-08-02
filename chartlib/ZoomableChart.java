@@ -148,8 +148,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		
 		setFocusable(true);
-		glassPane.addMouseListener(this);
-		glassPane.addMouseMotionListener(this);
+		// adding mouse listeners to the glass pane 
+		// makes the scroll bar inaccessible to the mouse.
+		addMouseListener(this);
+		addMouseMotionListener(this);
 		addKeyListener(this);
 		
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
@@ -502,7 +504,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	}
 
 	/**
-	 * Returns whether or not to force the bottom fo the Y axis to be at 0.
+	 * Returns whether or not to force the bottom of the Y axis to be at 0.
+	 * @author smitht
 	 */
 	public boolean isForceY() {
 		return forceY;
@@ -515,18 +518,18 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		this.forceY = forceY;
 	}
 	
-	/**
-	 * I don't know why adding a mousemotionlistener to the ZoomableChart
-	 * doesn't work, but this does, so oh well.
-	 * 
-	 * @author smitht
-	 */
-	public void addMouseMotionListener(MouseMotionListener l) {
-		glassPane.addMouseMotionListener(l);
-	}
-
-	public void addMouseListener(MouseListener l) {
-		glassPane.addMouseListener(l);
-	}
-	
+//	/**
+//	 * I don't know why adding a mousemotionlistener to the ZoomableChart
+//	 * doesn't work, but this does, so oh well.
+//	 * 
+//	 * @author smitht
+//	 */
+//	public void addMouseMotionListener(MouseMotionListener l) {
+//		glassPane.addMouseMotionListener(l);
+//	}
+//
+//	public void addMouseListener(MouseListener l) {
+//		glassPane.addMouseListener(l);
+//	}
+//	
 }
