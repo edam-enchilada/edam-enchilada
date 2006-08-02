@@ -49,6 +49,12 @@ public class LotsOfDataTest extends TestCase {
 //		System.out.println(new Date());
 	}
 	
+	/*
+	 * Probably don't want to run this very often.  If you do, uncomment this, 
+	 * and also a way of getting lots of data, above.
+	 */
+	
+	/*
 	public void testClustering() {
 		ArrayList<String> valuecol = new ArrayList<String>();
 		valuecol.add("ATOFMSAtomInfoSparse.PeakArea");
@@ -69,7 +75,7 @@ public class LotsOfDataTest extends TestCase {
 
 		System.out.print("*********Finished clustering data at ");
 		System.out.println(new Date());
-	}
+	}*/
 
 	protected void tearDown() throws Exception {
 		db.closeConnection();
