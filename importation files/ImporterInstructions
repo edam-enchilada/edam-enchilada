@@ -5,7 +5,7 @@ Contents:
 	2. DTDs
 	3. How to Import
 
-1) Introdcution
+1) Introduction
 
 Two types of XML files needed to import data:
 	- Metadata file (*.md) contains information about the form of the datatype. 

@@ -1,5 +1,6 @@
 package database;
 
+import errorframework.ErrorLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +11,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,6 +44,8 @@ public class DynamicTableGenerator extends DefaultHandler {
 	private Connection con;
 	private ResultSet rs;
 	private Statement stmt;
+	//names of fields in the dynamic tables which should not be duplicated
+	private String[] reservedNames = {"AtomID", "Dataset", "DatasetID"};
 	
 	@Override
 	public InputSource resolveEntity(String publicId, String systemId)
@@ -128,6 +130,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 	}
 		
 	/**
+	 * @author steinbel
 	 * Use CDATA as column names in the MetaData table.
 	 */
 	public void characters(char[] buf, int offset, int len)
@@ -143,6 +146,16 @@ public class DynamicTableGenerator extends DefaultHandler {
 			table = DynamicTable.AtomInfoSparse.ordinal();
 		}
 		String s = new String(buf, offset, len);
+		
+		//don't allow the use of reserved field names or their case variants
+		for (int i=0; i<reservedNames.length; i++){
+			if (s.equalsIgnoreCase(reservedNames[i])){
+				ErrorLogger.writeExceptionToLog("Importing",
+						"Use of '" + s + "' as a field name conflicts with "
+						+ "reserved field name '" + reservedNames[i] + "'.");
+			}
+		}
+		
 		String statement = "INSERT INTO MetaData VALUES ('" + datatype +
 			"','[" + s + "]','" + fieldType + "'," + primaryKey + ","
 			+ table +"," + columnCounter + ")";

@@ -11,6 +11,9 @@ import database.SQLServerDatabase;
 import errorframework.WriteException;
 import junit.framework.TestCase;
 
+/**
+ * @author steinbel
+ */
 public class EnchiladaDataSetImporterTest extends TestCase{
 	
 	private EnchiladaDataSetImporter edsi;
@@ -119,12 +122,15 @@ public class EnchiladaDataSetImporterTest extends TestCase{
 	
 	public void testIntersperse(){
 		
-		assertTrue(edsi.intersperse("22.4", "").equals("22.4"));
-		assertTrue(edsi.intersperse("multiple words", "").equals("'multiple words'"));
-		assertTrue(edsi.intersperse("13.1", "22.4").equals("22.4, 13.1"));
-		assertTrue(edsi.intersperse("more words", "'words'").
+		assertTrue(EnchiladaDataSetImporter.intersperse("22.4", "").
+				equals("22.4"));
+		assertTrue(EnchiladaDataSetImporter.intersperse("multiple words", "").
+				equals("'multiple words'"));
+		assertTrue(EnchiladaDataSetImporter.intersperse("13.1", "22.4").
+				equals("22.4, 13.1"));
+		assertTrue(EnchiladaDataSetImporter.intersperse("more words", "'words'").
 				equals("'words', 'more words'"));
-		assertTrue(edsi.intersperse("mixed numbers and words", "77.7, 'string'").
+		assertTrue(EnchiladaDataSetImporter.intersperse("mixed numbers and words", "77.7, 'string'").
 				equals("77.7, 'string', 'mixed numbers and words'"));
 	}
 }

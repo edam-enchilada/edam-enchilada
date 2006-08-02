@@ -302,7 +302,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 								new DynamicTableGenerator(con);
 							
 							typeName = newType.createTables(fileName);
-							//TODO: check for format, SQL errors in creation for GUI?
+							ErrorLogger.flushLog(this);
 							typelist.append(typeName + "\n");
 						}
 						

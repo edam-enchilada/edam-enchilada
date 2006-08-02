@@ -1,7 +1,3 @@
-/**
- *  Experiment to see if I can grab the data I need from the database and
- *  process it into the format I need.
- */
 package prediction;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -22,6 +18,13 @@ import database.SQLServerDatabase;
 
 /**
  * @author steinbel
+ * Aggregates spectra to hourly time bins, adjusting for particle capture rates.
+ * NOTE: Currently there are no checks for the source of the particles.  The 
+ * entire database is queried, so it is the user's repsonsibility to ensure that
+ * only source-compatible data are stored.  (Since our datasets don't overlap
+ * time-wise this shouldn't be a problem, but there are no checks to prevent two
+ * ATOFMS particles gathered in two separate locations in the same hour from both
+ * figuring into the BC or EC prediction for only one of those locations.)
  *
  */
 public class PredictionAggregator {
@@ -42,11 +45,10 @@ public class PredictionAggregator {
 		db.closeConnection();
 	}
 	
-	//receive ec/bc/whatever from calling class - this has time on it
 	/**
 	 * @author steinbel
 	 * Given a time (and EC or BC level), aggregates corresponding ATOFMS data,
-	 * returns it all in CSV format.  Aggregates on one-hour basis.
+	 * returns it all in .arff format.  Aggregates on one-hour basis.
 	 * 
 	 * @param input -	date(M/d/yyyy hh:mm:ss a format), EC/BC level
 	 * @return String -	input, with aggregated mass and ATOFMS spectra appended
@@ -73,7 +75,7 @@ public class PredictionAggregator {
 			System.out.print("Orig " + time + " prev time "); //debugging
 			System.out.println(before); //debugging
 			
-			/*retrieve dense info from db*/
+			//retrieve dense info from db
 			Statement stmt = con.createStatement();
 			String query = "SELECT * FROM ATOFMSAtomInfoDense WHERE Time > " + "'" +
 					before + "' AND Time <= '" + time + "'";
@@ -184,7 +186,7 @@ public class PredictionAggregator {
 		//from Deborah: DetectionEfficiency_Gromit.pdf
 		percent = Math.pow(nanos, m)*Math.exp(b);
 		
-		//particle/DE = appropriately scaled particle
+		//particle/DE = appropriately scaled particle factor
 		percent = 1/percent;
 		
 		return percent;
