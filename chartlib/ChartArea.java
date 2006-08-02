@@ -77,8 +77,7 @@ public class ChartArea extends AbstractMetricChartArea {
 						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
 			
 				if(numPoints==0){
-					g2d.draw(new Line2D.Double((double) dataArea.x+0,(dataArea.y + dataArea.height 
-						- (yAxis.relativePosition(0) * dataArea.height)), (double) xCoord, yCoord));
+					;
 				}else{
 					g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
 				}
