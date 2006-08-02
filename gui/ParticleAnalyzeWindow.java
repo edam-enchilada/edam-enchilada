@@ -217,7 +217,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		chart = new SpectrumPlot();
 		
 		zchart = new ZoomableChart(chart);
-		zchart.addMouseMotionListener(this);
+		chart.addMouseMotionListener(this);
 		zchart.addMouseListener(this);
 		zchart.setFocusable(true);
 		zchart.setCScrollMin(DEFAULT_XMIN);
