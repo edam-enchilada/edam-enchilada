@@ -183,15 +183,6 @@ public class ATOFMSDataSetImporter {
 							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage());
 				} 
 		}
-		
-		synchronized(this) {
-			try {
-				wait();
-			}
-			catch (InterruptedException ex) {
-				ex.printStackTrace();
-			}			
-		}
 	}
 	
 	/**
