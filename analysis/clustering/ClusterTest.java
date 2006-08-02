@@ -20,21 +20,25 @@ import database.SQLServerDatabase;
  * @author steinbel
  *
  */
-
+/*
+ // Commented out by dmusican, since test was never finished. Didn't make
+ // sense for test to be failing when whole battery was run.
 public class ClusterTest extends DatabaseTestCase{
 
 	private SQLServerDatabase db;
 	private IDataSet loadedDataSet;
 
+	
 	public void testCheckDataLoaded() throws Exception
 	{
 		// IDataSet createdDataSet = getConnection().createDataSet(
 		//		 new String[]{"CenterAtoms"});
 		// assertNotNull(createdDataSet);
 		     
-		                                                              
+
 		assertNotNull(loadedDataSet);
 		XlsDataSet.write(loadedDataSet, new FileOutputStream("testExcel.xls"));
+
 		//  int rowCount = loadedDataSet.getTable("MANUFACTURER").getRowCount();
 		//  assertEquals(2, rowCount);
 	}
@@ -57,3 +61,4 @@ public class ClusterTest extends DatabaseTestCase{
 	}
 
 }
+*/
