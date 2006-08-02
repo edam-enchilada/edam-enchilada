@@ -775,17 +775,26 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 */
 	public void displayPeaks()
 	{
-		Dataset negDS = new Dataset(), posDS = new Dataset();
+		chart.displayPeaks(getPosDS(), getNegDS());
+		unZoom();
+	}
+	
+	private Dataset getPosDS() {
+		Dataset posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
 			posDS.add(new DataPoint(p.massToCharge, p.area));
 		}
+		return posDS;
+	}
+	
+	private Dataset getNegDS() {
+		Dataset negDS = new Dataset();
 		for(Peak p : negPeaks)
 		{
 			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
-		chart.displayPeaks(posDS, negDS);
-		unZoom();
+		return negDS;
 	}
 	
 	public void displaySpectrum()
@@ -803,7 +812,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				//peakButton.setSelected(true);
 			}
 		}
-		chart.displaySpectra(posSpecDS, negSpecDS);
+		chart.displaySpectra(posSpecDS, negSpecDS, getPosDS(), getNegDS());
 		unZoom();
 	}
 	

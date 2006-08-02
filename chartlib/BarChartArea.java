@@ -6,7 +6,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Iterator;
 
-public class BarChartArea extends ChartArea{
+public class BarChartArea extends ChartArea implements LocatablePeaks {
 	public BarChartArea(){
 		super();
 	}
@@ -32,39 +32,15 @@ public class BarChartArea extends ChartArea{
 		drawDataPoints(g2d,datasets.get(0));
 	}
 	
-	/**
-	 * If a bar drawn at point p, returns the corresponding data point.
-	 * @param p A point in screen coordinates.
-	 * @param buf A point within buf pixels of the bar will count as part of the bar.
-	 * @return The X coordinate in data space the found bar represents.
+	/* (non-Javadoc)
+	 * @see chartlib.LocatablePeaks#getBarAt(java.awt.Point, int)
 	 */
 	public Double getBarAt(Point p, int buf)
 	{
-		Rectangle testbar;
-		Rectangle dataArea = getDataAreaBounds();
-		Iterator<DataPoint> iterator = datasets.get(0).iterator();
-		while (iterator.hasNext()) {
-			DataPoint curPoint = iterator.next();
-
-			double x = curPoint.x, y = curPoint.y;
-
-			int xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x)
-					* dataArea.width);
-			double yCoord = (dataArea.y + dataArea.height - (yAxis
-					.relativePosition(curPoint.y) * dataArea.height));
-			
-			testbar = new Rectangle(
-					(int)( xCoord - barWidth / 2), //centers the bar on the value
-					(int)( yCoord),
-					(int)(barWidth),
-					(int)(-1*yCoord)+ (dataArea.y + dataArea.height) );
-			if (testbar.contains(p)){
-				return new Double(x);
-			}
-
-		}
-		return null;
+		return selectBar(p, buf, datasets.get(0));		
 	}
+	
+
 	
 	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
 		drawPointBar(g2d,xCoord,yCoord);

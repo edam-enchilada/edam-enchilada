@@ -73,7 +73,7 @@ public class SpectrumPlot extends Chart {
 			break;
 		case SpectrumPlot.SPECTRUM_DATA:
 			for (int count = 0; count < numCharts; count++) {
-				ChartArea nextChart = new LineChartArea(datasets[count]);
+				ChartArea nextChart = new SpectrumLineChartArea(datasets[count], datasets[count + 2]);
 				nextChart.setForegroundColor(DATA_COLORS[count]);
 				nextChart.setTitleX("m/z");
 				nextChart.setTitleY("Intensity");
@@ -86,12 +86,11 @@ public class SpectrumPlot extends Chart {
 		chartAreas.get(1).setTitle("Negative Spectrum");
 	}
 	
-	public void displaySpectra(Dataset pos, Dataset neg) {
+	public void displaySpectra(Dataset pos, Dataset neg, 
+			Dataset posPeaks, Dataset negPeaks) {
 		setTitleY(0, "Intensity");
 		setTitleY(1, "Intensity");
-		datasets = new Dataset[2];
-		datasets[0] = pos;
-		datasets[1] = neg;
+		datasets = new Dataset[] { pos, neg, posPeaks, negPeaks };
 		datatype = SpectrumPlot.SPECTRUM_DATA;
 		makeChartAreas();
 		setupLayout();
@@ -103,7 +102,6 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
 //		packData(false, true, true); //updates the Y axis scale.
-		// split packData into separate methods.  allow boolean for forcing y min to be >= 0.
 	}
 	
 	public void displayPeaks(Dataset pos, Dataset neg) {

@@ -214,7 +214,7 @@ public class Chart extends JPanel implements Zoomable
 		Point q = getChartLocation(index);
 		q.x = p.x - q.x;
 		q.y = p.y - q.y;
-		return ((BarChartArea)chartAreas.get(index)).getBarAt(q, 3);
+		return ((LocatablePeaks)chartAreas.get(index)).getBarAt(q, 3);
 	}
 	
 	public Double getBarForPoint(Point p)

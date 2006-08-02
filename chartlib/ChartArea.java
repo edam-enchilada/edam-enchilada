@@ -6,6 +6,7 @@ package chartlib;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
@@ -412,5 +413,33 @@ public class ChartArea extends AbstractMetricChartArea {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	
+	public Double selectBar(Point p, int buf, Dataset peaks) {
+		Rectangle testbar;
+		Rectangle dataArea = getDataAreaBounds();
+		Iterator<DataPoint> iterator = peaks.iterator();
+		while (iterator.hasNext()) {
+			DataPoint curPoint = iterator.next();
+
+			double x = curPoint.x, y = curPoint.y;
+
+			int xCoord = (int) (dataArea.x + xAxis.relativePosition(curPoint.x)
+					* dataArea.width);
+			double yCoord = (dataArea.y + dataArea.height - (yAxis
+					.relativePosition(curPoint.y) * dataArea.height));
+			
+			testbar = new Rectangle(
+					(int)( xCoord - barWidth / 2), //centers the bar on the value
+					(int)( yCoord),
+					(int)(barWidth),
+					(int)(-1*yCoord)+ (dataArea.y + dataArea.height) );
+			if (testbar.contains(p)){
+				return new Double(x);
+			}
+
+		}
+		return null;
 	}
 }
