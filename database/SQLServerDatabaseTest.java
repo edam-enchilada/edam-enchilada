@@ -1539,8 +1539,8 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.openConnection();
 		
 		try {
-			//an empty database has version "none" by default
-			assertEquals(db.getDatabaseVersion(), "none");
+			//an empty database has version "Aug2006.1" currently
+			assertEquals(db.getDatabaseVersion(), "Aug2006.1");
 		}
 		catch (SQLException ex) {
 			fail();
