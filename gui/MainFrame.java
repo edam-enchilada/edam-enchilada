@@ -1383,22 +1383,10 @@ public class MainFrame extends JFrame implements ActionListener
 			
 			//clear data in table and repopulate it with appropriate 
 			// data.
-			UIWorker worker = new UIWorker() {
-				public Object construct() {
-					data.clear();
-					db.updateParticleTable(getSelectedCollection(),data,low,high);
-					
-					return data;
-				}
-				public void finished() {
-					super.finished();
-					if (get() != null) {
-						particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
-						particlesTable.doLayout();							
-					}
-				}
-			};
-			worker.start(new Component[]{particlesTable});
+			data.clear();
+			db.updateParticleTable(getSelectedCollection(),data,low,high);
+			particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
+			particlesTable.doLayout();
 		}
 	}
 	
