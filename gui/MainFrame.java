@@ -163,6 +163,13 @@ public class MainFrame extends JFrame implements ActionListener
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		//HACK!!
+		//Responsibility lies with:
+		//@author shaferia
+		//@see http://java.sun.com/j2se/1.4.2/docs/api/javax/swing/UIManager.html
+		Font f = new Font("Dialog", Font.PLAIN, 11);
+		fixFonts(f);
 		
 		setSize(800, 600);
 		
@@ -214,6 +221,21 @@ public class MainFrame extends JFrame implements ActionListener
 				
 			}
 		});
+		
+
+	}
+	
+	private void fixFonts(Font f) {
+		UIDefaults defaults = UIManager.getDefaults();
+		Object key = null;
+        for (java.util.Enumeration keys = UIManager.getDefaults().keys(); 
+        	keys.hasMoreElements();
+        	key = keys.nextElement())
+        {
+        	if (key != null && key.toString().endsWith(".font")) {
+           		defaults.put(key, f);      		
+        	}
+        }
 	}
 	
 	/**
