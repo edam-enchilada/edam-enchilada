@@ -2,13 +2,17 @@ package chartlib.hist;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+
 import java.util.*;
+import java.util.List;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
 
 import chartlib.*;
+import externalswing.Useful;
 
 /**
  * A window which contains positive and negative
@@ -97,22 +101,11 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 	 * slider.
 	 */
 	private void addActionListeners(HistogramsPlot comp, JSlider slider) {
-		Queue<Component> components = new LinkedList<Component>();
-		components.addAll(Arrays.asList(comp.getComponents()));
-		Component curr;
-		
-		// breadth-first search
-		while (components.peek() != null) {
-			curr = components.poll();
-			
-			if (curr instanceof HistogramsChartArea)
-				slider.addChangeListener((HistogramsChartArea) curr);
-			
-			if (curr instanceof Container)
-				components.addAll(Arrays.asList(
-						((Container) curr).getComponents()));
+		for (Component c : Useful.findAll(HistogramsChartArea.class, comp)) {
+			slider.addChangeListener((ChangeListener) c);
 		}
 	}
+
 
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
