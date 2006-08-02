@@ -99,6 +99,21 @@ public class SQLServerDatabaseTest extends TestCase {
 		}
 	}
 
+	/**
+	 * Assert that the Runnable passed throws an exception
+	 * @param r the Runnable to invoke run() on. Note: not invoked in a separate thread.
+	 * @author shaferia
+	 */
+	public static void assertException(Runnable r) {
+		try {
+			r.run();
+			fail("Test should have thrown exception.");
+		}
+		catch (Exception ex) {
+			//test passed.
+		}
+	}
+	
 	public void testOpenandCloseConnection() {
 		assertTrue(db.openConnection());
 		assertTrue(db.closeConnection());
@@ -1130,7 +1145,6 @@ public class SQLServerDatabaseTest extends TestCase {
 	public void testAddCenterAtom() {	
 		db.openConnection();
 		
-		//Note: making an Atom the center of a Collection it does not belong to: is this sensible?
 		assertTrue(db.addCenterAtom(2, 3));
 		
 		try {
@@ -1138,7 +1152,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("SELECT * FROM CenterAtoms WHERE AtomID = 2");
 			
-			rs.next();
+			assertTrue(rs.next());
 			assertEquals(rs.getInt("AtomID"), 2);
 			assertEquals(rs.getInt("CollectionID"), 3);
 		}
@@ -1146,19 +1160,19 @@ public class SQLServerDatabaseTest extends TestCase {
 			ex.printStackTrace();
 		}
 		
-		assertTrue(db.addCenterAtom(2, 4));
+		assertTrue(db.addCenterAtom(3, 4));
 		
 		try {
 			Connection con = db.getCon();
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM CenterAtoms WHERE AtomID = 2 ORDER BY CollectionID");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM CenterAtoms ORDER BY CollectionID");
 			
-			rs.next();
+			assertTrue(rs.next());
 			assertEquals(rs.getInt("AtomID"), 2);
 			assertEquals(rs.getInt("CollectionID"), 3);
 			
-			rs.next();
-			assertEquals(rs.getInt("AtomID"), 2);
+			assertTrue(rs.next());
+			assertEquals(rs.getInt("AtomID"), 3);
 			assertEquals(rs.getInt("CollectionID"), 4);
 			
 			assertFalse(rs.next());
@@ -1166,6 +1180,15 @@ public class SQLServerDatabaseTest extends TestCase {
 		catch (SQLException ex) {
 			ex.printStackTrace();
 		}
+		
+		//this should print an exception message
+		assertFalse(db.addCenterAtom(3, 4));
+		
+		//this should print an exception message
+		assertFalse(db.addCenterAtom(2, 5));
+		
+		//this should print an exception message
+		assertFalse(db.addCenterAtom(5, 4));
 		
 		db.closeConnection();
 	}
