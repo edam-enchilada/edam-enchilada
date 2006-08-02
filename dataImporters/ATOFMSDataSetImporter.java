@@ -182,7 +182,15 @@ public class ATOFMSDataSetImporter {
 					ErrorLogger.writeExceptionToLog("Importing","File "+name+
 							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage());
 				} 
-
+		}
+		
+		synchronized(this) {
+			try {
+				wait();
+			}
+			catch (InterruptedException ex) {
+				ex.printStackTrace();
+			}			
 		}
 	}
 	
@@ -306,6 +314,7 @@ public class ATOFMSDataSetImporter {
 		File parent = canonical.getParentFile();
 		File grandParent = parent.getParentFile();
 		//System.out.println("Data set: " + parent.toString());
+		final ATOFMSDataSetImporter thisref = this;
 		
 		String name = parent.getName();
 		name = parent.toString()+ File.separator + name + ".set";
@@ -344,7 +353,6 @@ public class ATOFMSDataSetImporter {
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
 							
 							synchronized (dbLock) {
-								
 								SwingUtilities.invokeLater(new Runnable() {
 									public void run() {progressBar.constructThis();}
 								});
@@ -400,7 +408,11 @@ public class ATOFMSDataSetImporter {
 					progressBar.disposeThis();
 					return null;	
 				}
-							
+				public void finished() {
+					synchronized (thisref) {
+						thisref.notifyAll();						
+					}
+				}
 			};
 			worker.start();
 			
