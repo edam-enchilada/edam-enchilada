@@ -101,12 +101,13 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		// create table with one entry.
 		table = new ParTableModel(true);
 		// TODO: insert dummy row.
-		table.setValueAt("testRow\\b\\b.par", 0, 1);
-		table.setValueAt("testRow\\b\\cal.cal", 0, 2);
-		table.setValueAt(10, 0, 4);
-		table.setValueAt(20, 0, 5);
-		table.setValueAt(new Float(0.1), 0, 6);
-		table.setValueAt(true, 0, 7);
+		table.setValueAt("testRow\\b\\b.par", 0, 1);   // dataset
+		table.setValueAt("testRow\\b\\cal.cal", 0, 2); // mass cal file
+		table.setValueAt(10, 0, 4);    // Min height
+		table.setValueAt(20, 0, 5);	   // Min area
+		table.setValueAt(new Float(0.1), 0, 6);  // Min relative area
+		table.setValueAt(new Float(0.5), 0, 7);  // Max peak error
+		table.setValueAt(true, 0, 8);  // autocal
 		
 		table.tableChanged(new TableModelEvent(table, 0));
 		
