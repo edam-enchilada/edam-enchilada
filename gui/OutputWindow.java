@@ -1,8 +1,6 @@
 package gui;
 
-import java.awt.Adjustable;
 import java.awt.Container;
-import java.awt.Component;
 import java.awt.BorderLayout;
 import java.awt.FileDialog;
 import java.awt.Font;
@@ -20,59 +18,9 @@ public class OutputWindow extends JFrame {
 	private JTextArea output;
 	private JScrollPane outputScroll;
 	private OutputWindow thisref;
-	
-	private int prevAdjust;
-	private int newAdjust;
-	private boolean allowAdjust;
-	private boolean allowPermAdjust;
+	private JCheckBox scrollBottom;
 
 	private static boolean RETURN_OUTPUT_ON_CLOSE = true;
-	
-	/**
-	 * Responsible for keeping scrollbar in place when scroll lock is on
-	 */
-	private AdjustmentListener locker = new AdjustmentListener() {
-		public void adjustmentValueChanged(AdjustmentEvent event) {
-			Adjustable a = event.getAdjustable();
-			newAdjust = a.getValue();
-			if (!event.getValueIsAdjusting() && !allowAdjust && !allowPermAdjust) {
-				a.setValue(prevAdjust);
-			}
-			allowAdjust = false;
-			prevAdjust = a.getValue();
-		}
-	};
-	
-	/**
-	 * Allow user input to scrollbar to change its position
-	 */
-	private MouseAdapter clicker = new MouseAdapter() {
-		public void mousePressed(MouseEvent event) {
-			allowPermAdjust = true;
-		}
-		public void mouseReleased(MouseEvent event) {
-			allowPermAdjust = false;
-		}
-		public void mouseClicked(MouseEvent event) {
-			allowAdjust = true;
-			outputScroll.getVerticalScrollBar().setValue(newAdjust);
-		}
-	};
-	
-	private void setScrollLock(boolean state) {
-		JScrollBar vscroll = outputScroll.getVerticalScrollBar();
-		if (state) {
-			vscroll.addAdjustmentListener(locker);
-			for (Component c : vscroll.getComponents())
-				c.addMouseListener(clicker);
-			prevAdjust = vscroll.getValue();
-		}
-		else {
-			for (Component c : vscroll.getComponents())
-				c.removeMouseListener(clicker);
-			vscroll.removeAdjustmentListener(locker);
-		}
-	}
 	
 	/**
 	 * Determines whether 
@@ -103,14 +51,7 @@ public class OutputWindow extends JFrame {
 		buttonsPane.setBorder(BorderFactory.createEmptyBorder(margin, margin, margin, margin));
 		buttonsPane.setLayout(new BoxLayout(buttonsPane, BoxLayout.X_AXIS));
 		
-		final JCheckBox scrollBottom = new JCheckBox("Scroll lock");
-		scrollBottom.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				setScrollLock(scrollBottom.isSelected());
-			}
-		});
-		scrollBottom.setSelected(true);
-		setScrollLock(true);
+		scrollBottom = new JCheckBox("Scroll lock");
 		buttonsPane.add(scrollBottom);
 		buttonsPane.add(Box.createHorizontalGlue());
 		
@@ -208,7 +149,18 @@ public class OutputWindow extends JFrame {
 								final String toAppend = buf.toString();
 								SwingUtilities.invokeLater(new Runnable() {
 									public void run() {
+										boolean scrollLock = scrollBottom.isSelected();
+										int prevScroll = 0;
+										if (scrollLock) {
+											prevScroll = output.getCaretPosition();
+										}
+										
 										output.append(toAppend);
+										
+										if (scrollLock)
+											output.setCaretPosition(prevScroll);
+										else
+											output.setCaretPosition(output.getDocument().getLength());
 									}
 								});
 								buf = new StringBuffer();
