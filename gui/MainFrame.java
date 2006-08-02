@@ -62,6 +62,7 @@ import java.awt.event.*;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -109,6 +110,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem detectPlumesItem;
 	private JMenuItem rebuildItem;
 	private JMenuItem exitItem;
+	private JMenuItem compactDBItem;
 	private JMenuItem cutItem;
 	private JMenuItem copyItem;
 	private JMenuItem pasteItem;
@@ -217,7 +219,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				db.closeConnection();
+				exit();
 				
 			}
 		});
@@ -477,6 +479,8 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.updateTree();
 		}
 		
+		/*
+		 * These capabilities work, but only with trivially small databases
 		else if (source == exportXmlDatabaseItem||source==exportXlsDatabaseItem||source==exportCsvDatabaseItem) {
 			int temp = -1;
 			String fileFilter = "";
@@ -500,13 +504,16 @@ public class MainFrame extends JFrame implements ActionListener
 			fileChooser.setVisible(true);
 			final String filename = fileChooser.getDirectory()+fileChooser.getFile();
 			System.out.println("File: "+filename);
-			ProgressBarWrapper progressBar = 
+			
+			final ProgressBarWrapper progressBar = 
 				new ProgressBarWrapper(this, "Exporting Database",100);
 			progressBar.setIndeterminate(true);
 			SwingWorker worker = new SwingWorker(){
 				public Object construct(){
 					try {
+						System.out.println("exporting database");
 						db.exportDatabase(filename,fileType);
+						System.out.println("exported database");
 					} catch (FileNotFoundException e1) {
 						SwingUtilities.invokeLater(new Runnable(){
 							public void run(){
@@ -517,8 +524,13 @@ public class MainFrame extends JFrame implements ActionListener
 					}
 					return null;
 				}
+				public void finished() {
+					progressBar.disposeThis();
+					//setVisible(false);
+					//dispose();		
+				}
 			};
-			
+			worker.start();
 			progressBar.constructThis();
 			
 		}
@@ -549,20 +561,20 @@ public class MainFrame extends JFrame implements ActionListener
 			"Are you sure? " +
 			"This will destroy all data in your database and restore it from the file:\n"+filename) ==
 				JOptionPane.YES_OPTION) {
-	/*			try {
-			//		db.importDatabase(filename,fileType);
+				try {
+					db.importDatabase(filename,fileType);
 				
-				/*JOptionPane.showMessageDialog(this,
+				JOptionPane.showMessageDialog(this,
 						"The program will now shut down to reset itself. " +
-				"Start it up again to continue.");*/
-	/*			} catch (FileNotFoundException e1) {
+				"Start it up again to continue.");
+				} catch (FileNotFoundException e1) {
 					JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be found.");
 				}
-	*/			collectionPane.updateTree();
+				collectionPane.updateTree();
 				
 			}			
 		}
-		
+		*/
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
 			"Are you sure? This will destroy all data in your database.") ==
@@ -599,10 +611,19 @@ public class MainFrame extends JFrame implements ActionListener
 				worker.start();
 			}			
 		}
+		else if (source == compactDBItem){
+			UIWorker worker = new UIWorker() {
+				public Object construct() {
+					db.compactDatabase();
+					return null;
+				}
+				
+			};
+			worker.start(new Component[]{collectionPane});
+		}
 		
 		else if (source == exitItem) {
-			db.closeConnection();
-			dispose();
+			exit();
 		}
 		else if(source == analyzeParticleButton) 
 		{
@@ -635,6 +656,17 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		ErrorLogger.flushLog(this);
+	}
+	
+	public void exit(){
+		if (db.isDirty() && JOptionPane.showConfirmDialog(null,
+				"One or more Collections has been deleted but its Atoms have not been removed." +
+				"\nWould you like to compact the database and remove these Atoms?(This could take several minutes)") ==
+					JOptionPane.YES_OPTION) {
+			db.compactDatabase();
+		}
+		db.closeConnection();
+		dispose();
 	}
 	
 	public Collection getSelectedCollection() {
@@ -713,6 +745,8 @@ public class MainFrame extends JFrame implements ActionListener
 		exportCollectionMenu.setMnemonic(KeyEvent.VK_E);
 		exportCollectionMenu.add(MSAexportItem);
 		
+		/*
+		 * These capabilities work, but only with trivially small databases
 		JMenu importDatabaseMenu = new JMenu("Restore Database. . . ");
 		importXmlDatabaseItem = new JMenuItem("from XML. . .");
 		importXmlDatabaseItem.addActionListener(this);
@@ -734,7 +768,9 @@ public class MainFrame extends JFrame implements ActionListener
 		exportDatabaseMenu.add(exportXmlDatabaseItem);
 		exportDatabaseMenu.add(exportXlsDatabaseItem);
 		exportDatabaseMenu.add(exportCsvDatabaseItem);
-		
+		*/
+		compactDBItem = new JMenuItem("Compact Database", KeyEvent.VK_R);
+		compactDBItem.addActionListener(this);
 		
 		rebuildItem = new JMenuItem("Rebuild Database", KeyEvent.VK_R);
 		rebuildItem.addActionListener(this);
@@ -747,8 +783,12 @@ public class MainFrame extends JFrame implements ActionListener
 		fileMenu.add(importCollectionMenu);
 		fileMenu.add(exportCollectionMenu);
 		fileMenu.addSeparator();
+		/*
+		 * These capabilities work, but only with trivially small databases
 		fileMenu.add(importDatabaseMenu);
 		fileMenu.add(exportDatabaseMenu);
+		*/
+		fileMenu.add(compactDBItem);
 		fileMenu.add(rebuildItem);
 		fileMenu.addSeparator();
 		fileMenu.add(exitItem);

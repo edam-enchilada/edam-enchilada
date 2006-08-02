@@ -115,6 +115,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	// for batch stuff
 	private Statement batchStatement;
 	private ArrayList<Integer> alteredCollections;
+	private boolean isDirty = false;
 	
 	public SQLServerDatabase()
 	{
@@ -195,6 +196,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		return true;
 	}
 	
+	public boolean isDirty(){
+		return isDirty;
+	}
 	/**
 	 * Closes existing connection
 	 * @return true on success.
@@ -860,7 +864,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	/**
 	 * Deletes a collection and unlike orphanAndAdopt() also recursively
 	 * deletes all direct descendents.
-	 * This method merely selects the collections to be deleted and stores them in TEMPdeleteTemp
+	 * This method merely selects the collections to be deleted and stores them in #deleteTemp
 	 * 
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
@@ -873,11 +877,11 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPdeleteCollections')\n"+
+			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#collections')\n"+
 					"BEGIN\n" +
-					"DROP TABLE [dbo].[TEMPdeleteCollections];\n"+
+					"DROP TABLE [dbo].[#collections];\n"+
 					"END\n");
-			sql.append("CREATE TABLE TEMPdeleteCollections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
+			sql.append("CREATE TABLE #collections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
 			// Update the InternalAtomOrder table:  Assumes that subcollections
 			// are already updated for the parentCollection.
 			// clear InternalAtomOrder table of the deleted collection and all subcollections.
@@ -902,121 +906,38 @@ public class SQLServerDatabase implements InfoWarehouse
 					}
 				}
 				bulkFile.close();
-				sql.append("BULK INSERT TEMPdeleteCollections\n" +
+				sql.append("BULK INSERT #collections\n" +
 						"FROM '" + tempFilename + "'\n" +
 				"WITH (FIELDTERMINATOR=',');\n");
 				
 				
 			} else {
-				sql.append("INSERT INTO TEMPdeleteCollections VALUES("+collection.getCollectionID()+");\n");
+				sql.append("INSERT INTO #collections VALUES("+collection.getCollectionID()+");\n");
 				while(allsubcollections.hasNext()){
 					Integer nextParent = allsubcollections.next();
 					for(Integer childID : hierarchy.get(nextParent)){
 						assert(this.getCollection(childID).getDatatype().equals(datatype));
-						sql.append("INSERT INTO TEMPdeleteCollections VALUES("+childID+");\n");
+						sql.append("INSERT INTO #collections VALUES("+childID+");\n");
 					}
 				}
 			}
 			
-			sql.append("DELETE InternalAtomOrder\nFROM InternalAtomOrder\n"
-					+ "INNER JOIN TEMPdeleteCollections\n ON " +
-							"(TEMPdeleteCollections.CollectionID = InternalAtomOrder.CollectionID);\n");
-			sql.append("DELETE AtomMembership\nFROM AtomMembership\n"
-					+ "INNER JOIN TEMPdeleteCollections\n ON " +
-							"(TEMPdeleteCollections.CollectionID = AtomMembership.CollectionID);\n");
-			sql.append("DELETE CollectionRelationships\nFROM CollectionRelationships\n"
-					+ "INNER JOIN TEMPdeleteCollections\n ON " +
-							"(TEMPdeleteCollections.CollectionID = CollectionRelationships.ParentID " +
-							"OR TEMPdeleteCollections.CollectionID = CollectionRelationships.ChildID);\n");
-			sql.append("DELETE Collections\nFROM Collections\n"
-					+ "INNER JOIN TEMPdeleteCollections\n ON " +
-							"(TEMPdeleteCollections.CollectionID = Collections.CollectionID);\n");
-			
-			/*sql.append("DELETE FROM InternalAtomOrder\n"
-					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
-			sql.append("DELETE FROM AtomMembership\n"
-					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
+			sql.append("DELETE FROM InternalAtomOrder\n"
+					+ "WHERE CollectionID IN (SELECT * FROM #collections);\n");
 			sql.append("DELETE FROM CollectionRelationships\n"
-					+ "WHERE ParentID IN (SELECT * FROM TEMPdeleteCollections)\n"
-					+ "OR ChildID IN (SELECT * FROM TEMPdeleteCollections);\n");
+					+ "WHERE ParentID IN (SELECT * FROM #collections)\n"
+					+ "OR ChildID IN (SELECT * FROM #collections);\n");
+			sql.append("DELETE FROM CenterAtoms\n"
+					+ "WHERE CollectionID IN (SELECT * FROM #collections);\n");
 			sql.append("DELETE FROM Collections\n"
-					+ "WHERE CollectionID IN (SELECT * FROM TEMPdeleteCollections);\n");
-*/
+					+ "WHERE CollectionID IN (SELECT * FROM #collections);\n");
 			
-			String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
-			String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
-			
-			
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPdeleteAtoms')\n"+
-					"BEGIN\n" +
-					"DROP TABLE  [dbo].[TEMPdeleteAtoms];\n"+
-					"END\n");
-			sql.append("CREATE TABLE TEMPdeleteAtoms (AtomID int, \n PRIMARY KEY([AtomID]));\n");
-			sql.append("insert TEMPdeleteAtoms (AtomID) \n" +
-					"	SELECT AtomID\n" +
-					"	FROM "+denseTableName+"\n" +
-					"	WHERE AtomID NOT IN " +
-					"		(SELECT AtomID\n" +
-					"		FROM AtomMembership\n" +
-					"		);\n");
-			
-			
-			/*//Also: We could delete all the particles from the particles
-			// table IF we want to by now going through the particles 
-			// table and choosing every one that does not exist in the 
-			// Atom membership table and deleting it.  However, this would
-			// remove particles that were referenced in the DataSetMembers 
-			// table.  If we don't want this to happen, comment out the 
-			// following code, which also removes all references in the 
-			// DataSetMembers table:
-			//System.out.println(1);
-			sql.append("DELETE FROM DataSetMembers\n" +
-			"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
-	
-			// it is ok to call atominfo tables here because datatype is
-			// set from recursiveDelete() above.
-			// note: Sparse table may not necessarily exist. So check first.
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
-					"DELETE FROM " + sparseTableName + "\n" +
-					"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
-			if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[AtomMembership]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-			drop table [dbo].[AtomMembership]
-			GO
-			
-			sql.append("DELETE FROM " + denseTableName + "\n" +
-					"	WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
-			*/
-			
-			
-			
-			// Also: We could delete all the particles from the particles
-			// table IF we want to by now going through the particles 
-			// table and choosing every one that does not exist in the 
-			// Atom membership table and deleting it.  However, this would
-			// remove particles that were referenced in the DataSetMembers 
-			// table.  If we don't want this to happen, comment out the 
-			// following code, which also removes all references in the 
-			// DataSetMembers table:
-			//System.out.println(1);
-			sql.append("DELETE FROM DataSetMembers\n" +
-			"WHERE AtomID IN (SELECT * FROM TEMPdeleteAtoms);\n");
-	
-			// it is ok to call atominfo tables here because datatype is
-			// set from recursiveDelete() above.
-			// note: Sparse table may not necessarily exist. So check first.
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
-					"DELETE "+sparseTableName+" FROM " + sparseTableName + "\n" +
-					"INNER JOIN TEMPdeleteAtoms ON (TEMPdeleteAtoms.AtomID = "+sparseTableName+".AtomID);\n");
-			
-			sql.append("DELETE "+denseTableName+" FROM " + denseTableName + "\n" +
-					"INNER JOIN TEMPdeleteAtoms ON (TEMPdeleteAtoms.AtomID = "+denseTableName+".AtomID);\n");
-			
-			//sql.append("DROP TABLE TEMPdeleteAtoms;\n");
-			//sql.append("DROP TABLE TEMPdeleteCollections;\n");
+			sql.append("DROP TABLE #collections;\n");
 			System.out.println("Statement: "+sql.toString());
 			stmt.execute(sql.toString());
+			isDirty = true;
 			stmt.close();
-			updateAncestors(parent);
+			updateAncestorsAfterDelete(parent);
 		} catch (Exception e){
 			ErrorLogger.writeExceptionToLog("SQLServer","Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
@@ -1026,6 +947,111 @@ public class SQLServerDatabase implements InfoWarehouse
 		return true;
 	}
 
+	/**
+	 * Deletes a collection and unlike orphanAndAdopt() also recursively
+	 * deletes all direct descendents.
+	 * This method merely selects the collections to be deleted and stores them in #deleteTemp
+	 * 
+	 * @param collectionID The id of the collection to delete
+	 * @return true on success. 
+	 */
+	public boolean compactDatabase()
+	{
+		System.out.println("Compacting database and removing unaccessible atoms..");
+		try {
+			Statement stmt = con.createStatement();
+			Statement typesStmt = con.createStatement();
+			StringBuilder sql = new StringBuilder();
+			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#collections')\n"+
+					"BEGIN\n" +
+					"DROP TABLE #collections;\n"+
+					"END\n");
+			sql.append("CREATE TABLE #collections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
+			// Update the InternalAtomOrder table:  Assumes that subcollections
+			// are already updated for the parentCollection.
+			// clear InternalAtomOrder table of the deleted collection and all subcollections.
+			
+			sql.append("insert #collections (CollectionID) \n" +
+					"	SELECT DISTINCT CollectionID\n" +
+					"	FROM AtomMembership\n" +
+					"	WHERE AtomMembership.CollectionID NOT IN " +
+					"		(SELECT CollectionID\n" +
+					"		FROM Collections\n" +
+					"		);\n");
+			
+			
+			sql.append("DELETE AtomMembership\nFROM AtomMembership\n"
+					+ "INNER JOIN #collections\n ON " +
+							"(#collections.CollectionID = AtomMembership.CollectionID);\n");
+			sql.append("DELETE FROM InternalAtomOrder\n"
+					+ "WHERE CollectionID IN (SELECT * FROM #collections);\n");
+			
+			ResultSet types = typesStmt.executeQuery("SELECT DISTINCT Datatype FROM MetaData");
+			
+			while(types.next()){
+				String datatype = types.getString(1);
+				String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
+				String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
+				
+				
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+						"BEGIN\n" +
+						"DROP TABLE  #atoms;\n"+
+						"END\n");
+
+				sql.append("CREATE TABLE #atoms (AtomID int, \n PRIMARY KEY([AtomID]));\n");
+				sql.append("insert #atoms (AtomID) \n" +
+						"	SELECT AtomID\n" +
+						"	FROM "+denseTableName+"\n" +
+						"	WHERE AtomID NOT IN " +
+						"		(SELECT AtomID\n" +
+						"		FROM AtomMembership\n" +
+						"		);\n");
+				
+				// Also: We could delete all the particles from the particles
+				// table IF we want to by now going through the particles 
+				// table and choosing every one that does not exist in the 
+				// Atom membership table and deleting it.  However, this would
+				// remove particles that were referenced in the DataSetMembers 
+				// table.  If we don't want this to happen, comment out the 
+				// following code, which also removes all references in the 
+				// DataSetMembers table:
+				//System.out.println(1);
+				sql.append("DELETE FROM DataSetMembers\n" +
+				"WHERE AtomID IN (SELECT * FROM #atoms);\n");
+				// it is ok to call atominfo tables here because datatype is
+				// set from recursiveDelete() above.
+				// note: Sparse table may not necessarily exist. So check first.
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
+						"DELETE "+sparseTableName+" FROM " + sparseTableName + "\n" +
+						"INNER JOIN #atoms ON (#atoms.AtomID = "+sparseTableName+".AtomID);\n");
+				sql.append("DELETE "+denseTableName+" FROM " + denseTableName + "\n" +
+						"INNER JOIN #atoms ON (#atoms.AtomID = "+denseTableName+".AtomID);\n");
+				
+				sql.append("DROP TABLE #atoms;\n");
+				//This separation is necessary!!
+				// SQL Server parser is stupid and if you create, delete, and recreate a temporary table
+				// the parser thinks you're doing something wrong and will die.
+				System.out.println(sql.toString());
+				stmt.execute(sql.toString());
+				sql = new StringBuilder();
+				
+			}
+			
+			sql.append("DROP TABLE #collections;\n");
+			System.out.println(sql.toString());
+			stmt.execute(sql.toString());
+			isDirty = false;
+			stmt.close();
+			//updateAncestors(0);
+		} catch (Exception e){
+			ErrorLogger.writeExceptionToLog("SQLServer","Exception deleting collection.");
+			System.err.println("Exception deleting collection: ");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
 	
 	
 	/**
@@ -3540,13 +3566,13 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
-			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPTimeBins')\n"+
-					"DROP TABLE TEMPTimeBins;\n");
-			tempTable.append("CREATE TABLE TEMPTimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
+			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#TimeBins')\n"+
+					"DROP TABLE #TimeBins;\n");
+			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			// if aggregation is based on this collection, copy table
 			if (c.getCollectionID() == basis.getCollectionID()) {	
 				System.out.println("copying table...");
-				tempTable.append("INSERT TEMPTimeBins (AtomID, BinnedTime)\n"+
+				tempTable.append("INSERT #TimeBins (AtomID, BinnedTime)\n"+
 						"SELECT AID.AtomID, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense, c.getDatatype())+" AID,\n"+
 						"InternalAtomOrder IAO \n"+
 						"WHERE IAO.AtomID = AID.AtomID\n" +
@@ -3620,7 +3646,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						currentBin = nextBin;
 					}
 					bulkFile.close();
-					tempTable.append("BULK INSERT TEMPTimeBins\n" +
+					tempTable.append("BULK INSERT #TimeBins\n" +
 							"FROM '" + tempFilename + "'\n" +
 					"WITH (FIELDTERMINATOR=',');\n");
 				} else {
@@ -3629,7 +3655,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						nextBin = basisRS.getTimestamp(1);
 						// while collectionTime is within bin, insert it in table.
 						while (collectionTime.compareTo(nextBin) < 0) {
-							tempTable.append("INSERT INTO TEMPTimeBins VALUES ("+atomID+",'"+currentBin+"');\n");
+							tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+currentBin+"');\n");
 							counter++;
 							next = collectionRS.next();
 							if (!next)
@@ -3660,9 +3686,9 @@ public class SQLServerDatabase implements InfoWarehouse
 	}
 	
 	/**
-	 * Assign each Atom in c to a 'bin' and  store this information into the TEMPTimeBins table
+	 * Assign each Atom in c to a 'bin' and  store this information into the #TimeBins table
 	 * This method uses the start, end and interval parameters and 
-	 * builds the SQL statement and then creates the TEMPTimeBins Table;
+	 * builds the SQL statement and then creates the #TimeBins Table;
 	 * 
 	 * NOTE:  ALSO HAS A LIST OF ALL ATOM IDS IN COLLECTION!
 	 */
@@ -3675,9 +3701,9 @@ public class SQLServerDatabase implements InfoWarehouse
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
 			Statement stmt1 = con.createStatement();
-			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPTimeBins')\n"+
-			"DROP TABLE TEMPTimeBins;\n");
-			tempTable.append("CREATE TABLE TEMPTimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
+			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#TimeBins')\n"+
+			"DROP TABLE #TimeBins;\n");
+			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			counter++;
 			// get all times from collection to bin.
 			ResultSet collectionRS = stmt1.executeQuery("SELECT AID.AtomID, [Time] \n" +
@@ -3735,7 +3761,7 @@ public class SQLServerDatabase implements InfoWarehouse
 						basisTime = nextTime;
 				}	
 				bulkFile.close();
-				tempTable.append("BULK INSERT TEMPTimeBins\n" +
+				tempTable.append("BULK INSERT #TimeBins\n" +
 						"FROM '" + tempFilename + "'\n" +
 				"WITH (FIELDTERMINATOR=',');\n");
 			} else {
@@ -3745,7 +3771,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					increment.add(Calendar.SECOND, interval.get(Calendar.SECOND));
 					nextTime = increment.getTime();
 					while (next && nextTime.compareTo((Date)collectionTime)> 0) {
-							tempTable.append("INSERT INTO TEMPTimeBins VALUES ("+atomID+",'"+dateFormat.format(basisTime)+"');\n");
+							tempTable.append("INSERT INTO #TimeBins VALUES ("+atomID+",'"+dateFormat.format(basisTime)+"');\n");
 							counter++;
 							next = collectionRS.next();
 						if (!next)
@@ -3783,7 +3809,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	public void deleteTempAggregateBasis() {
 		try {
 			Statement stmt = con.createStatement();
-			//stmt.execute("DROP TABLE TEMPTimeBins;\n");
+			stmt.execute("DROP TABLE #TimeBins;\n");
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception deleting aggregate basis temp table");
@@ -3809,7 +3835,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 		Statement stmt = con.createStatement();
 		StringBuilder sql = new StringBuilder();
-		// Create and Populate TEMPatoms table with appropriate information.
+		// Create and Populate #atoms table with appropriate information.
 		/* IF DATATYPE IS ATOFMS */
 		if (curColl.getDatatype().equals("ATOFMS")) {	
 			if (mzValues == null) {
@@ -3828,176 +3854,27 @@ public class SQLServerDatabase implements InfoWarehouse
 			} else {
 				
 				
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPatoms')\n"+
-				"DROP TABLE TEMPatoms;\n");
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
 				
-//				create TEMPatoms table
-				sql.append("CREATE TABLE TEMPatoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+//				create #atoms table
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 				" Time DateTime, \n MZLocation int, \n Value real, \n PRIMARY KEY ([MZLocation],[Time]));\n");
 				
 				
 				//This code does all of the joins in SQL.  
 				
-				// went back to Greg's JOIN methodology, but retained TEMPmz table, which speeds it up.
+				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
 				// collects the sum of the Height/Area over all atoms at a given Time and for a specific m/z 
 				
-				sql.append("insert TEMPatoms (Time, MZLocation, Value) \n" +
+				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
 						"SELECT BinnedTime, AIS.PeakLocation AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
-						"FROM TEMPTimeBins TB\n" +
+						"FROM #TimeBins TB\n" +
 						"JOIN ATOFMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
 						"GROUP BY BinnedTime,AIS.PeakLocation\n"+
 						"ORDER BY Location, BinnedTime;\n");
 				
-			/*sql.append("CREATE TABLE TEMPatoms (" +
-					"NewAtomID int, \n" +
-					" Time DateTime, \n" +
-					" MZLocation int, \n " +
-					" Value real, \n" +
-			" PRIMARY KEY(NewAtomID) );\n");
 			
-			Statement peaksStmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
-						ResultSet.CONCUR_READ_ONLY);
-			ResultSet peaks = peaksStmt.executeQuery(
-						"SELECT BinnedTime, AIS.PeakLocation AS MZLocation, "
-							+ options.getGroupMethodStr() + "(PeakArea) AS PeakArea\n"
-						+ "FROM TEMPTimeBins TB\n"
-						+ "JOIN ATOFMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"
-						+ "GROUP BY BinnedTime,AIS.PeakLocation\n"
-						+ "ORDER BY AIS.PeakLocation, BinnedTime;\n");
-				
-				
-				//The following is effectively
-				//JOIN TEMPmz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")
-				// using special information about the data
-				int nextID = getNextID();
-				HashMap<String,Double> aggregate = new HashMap<String,Double>();
-				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "Atomsbulkfile.txt";
-					PrintWriter bulkFile = null;
-					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
-					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
-						e.printStackTrace();
-					}
-					int mzIndex = 0;
-					int mzBin = mzValues[mzIndex];
-					if (mzIndex < mzValues.length) {
-						boolean quit = false;
-						while (!quit && peaks.next()) {
-							String dateTime = peaks.getString(1);
-							double peakLocation = peaks.getDouble(2);
-							double value = peaks.getDouble(3);
-							double error = mzBin - peakLocation;
-							//If the current peak is past the MZ number, skip ahead
-							if(Math.abs(error) > options.peakTolerance){
-								if(error < 0){
-									for(String key : aggregate.keySet()){
-										try{
-											bulkFile.println(""+ nextID + "," + 
-													formatter.format(parser.parse(key)) + "," + mzBin + "," + aggregate.get(key));
-											nextID++;
-										}catch(ParseException e){
-											System.err.println("Problem Inserting atoms");
-											System.exit(1);
-										}
-									}
-									aggregate = new HashMap<String,Double>();
-									
-									while(error < 0 && Math.abs(error) > options.peakTolerance) {
-										
-										mzIndex++;
-										if(mzIndex >= mzValues.length){
-											quit = true;
-											break;
-										}
-										mzBin = mzValues[mzIndex];
-										error = mzBin - peakLocation;
-									}
-								}
-							}
-							//otherwise, add the element it's good
-							if (Math.abs(error) <= options.peakTolerance) {
-								Double sum = aggregate.get(dateTime);
-								if(sum == null)sum = 0.0;
-								aggregate.put(dateTime,sum + value);
-								
-							}
-						}
-						for(String key : aggregate.keySet()){
-							try{
-								bulkFile.println(""+ nextID + "," + 
-										formatter.format(parser.parse(key)) + "," + mzBin + "," + aggregate.get(key));
-								nextID++;
-							}catch(ParseException e){
-								System.err.println("Problem Inserting atoms");
-								System.exit(1);
-							}
-						}
-					bulkFile.close();
-					sql.append("BULK INSERT TEMPatoms\n" +
-							"FROM '" + tempFilename + "'\n" +
-					"WITH " +
-					"	(FIELDTERMINATOR=','," +
-					"	 ROWTERMINATOR='\n');\n");
-					}
-				}else{
-					if (mzValues.length>0) {
-						boolean quit = false;
-						int mzIndex = 0;
-						int mzBin = mzValues[mzIndex];
-						while (!quit && peaks.next()) {
-							String dateTime = peaks.getString(1);
-							double peakLocation = peaks.getDouble(2);
-							double value = peaks.getDouble(3);
-							double error = mzBin - peakLocation;
-							//If the current peak is past the MZ number, skip ahead
-							if(Math.abs(error) > options.peakTolerance){
-								if(error < 0){
-									for(String key : aggregate.keySet()){
-										try{
-											sql.append("INSERT INTO TEMPatoms VALUES("+ key + ",'" + formatter.format(parser.parse(key)) + "'," + mzBin + "," + aggregate.get(key) + ");\n");
-											nextID++;
-										}catch(ParseException e){
-											System.err.println("Problem Inserting atoms");
-											System.exit(1);
-										}
-									}
-									aggregate = new HashMap<String,Double>();
-									
-									while(error < 0 && Math.abs(error) > options.peakTolerance) {
-										
-										mzIndex++;
-										if(mzIndex >= mzValues.length){
-											quit = true;
-											break;
-										}
-										mzBin = mzValues[mzIndex];
-										error = mzBin - peakLocation;
-									}
-								}
-							}
-							//otherwise, add the element it's good
-							if (Math.abs(error) <= options.peakTolerance) {
-								Double sum = aggregate.get(dateTime);
-								if(sum == null)sum = 0.0;
-								aggregate.put(dateTime,sum + value);
-								
-							}
-						}
-						for(String key : aggregate.keySet()){
-							try{
-								sql.append("INSERT INTO TEMPatoms VALUES("+ nextID + ",'" + formatter.format(parser.parse(key)) + "'," + mzBin + "," + aggregate.get(key) + ");\n");
-								nextID++;
-							}catch(ParseException e){
-								System.err.println("Problem Inserting atoms");
-								System.exit(1);
-							}
-						}
-					}
-				}
-				}*/
-				
 				
 				// build 2 child collections - one for particle counts time-series,
 				// one for M/Z values time-series.
@@ -4009,14 +3886,13 @@ public class SQLServerDatabase implements InfoWarehouse
 					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
 					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
 					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-							"select " + mzCollectionID + ", NewAtomID from TEMPatoms WHERE MZLocation = "+mzPeakLoc+"\n" +
+							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
 							"ORDER BY NewAtomID;\n");
 					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from TEMPatoms WHERE MZLocation = "+mzPeakLoc+
+							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
 					"ORDER BY NewAtomID;\n");
 				}
-				//sql.append("DROP TABLE TEMPmz;\n");
-				//sql.append("DROP TABLE TEMPatoms;\n");
+				sql.append("DROP TABLE #atoms;\n");
 				progressBar.increment("  Executing M/Z Queries...");
 					// if the particle count is selected, produce that time series as well.
 					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
@@ -4028,20 +3904,20 @@ public class SQLServerDatabase implements InfoWarehouse
 			sql = new StringBuilder();
 			if (options.produceParticleCountTS) {
 				int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPatomCount')\n"+
-				"DROP TABLE TEMPatomCount;\n");
-				sql.append("CREATE TABLE TEMPatomCount (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 						" Time DateTime, \n MZLocation int, \n Value real)\n" +
-						"insert TEMPatomCount (Time, Value) \n" +
-						"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM TEMPTimeBins TB\n"+
+						"insert #atoms (Time, Value) \n" +
+						"SELECT BinnedTime, COUNT(AtomID) AS IDCount FROM #TimeBins TB\n"+
 						"GROUP BY BinnedTime\n"+
 				"ORDER BY BinnedTime;\n");
 				
 				sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-						"select " + combinedCollectionID + ", NewAtomID from TEMPatomCount;\n");
+						"select " + combinedCollectionID + ", NewAtomID from #atoms;\n");
 				sql.append("insert " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " (AtomID, Time, Value) \n" +
-				"select NewAtomID, Time, Value from TEMPatomCount;\n");
-				//sql.append("DROP TABLE TEMPatomCount;");
+				"select NewAtomID, Time, Value from #atoms;\n");
+				sql.append("DROP TABLE #atoms;");
 				
 				progressBar.increment("  " + collectionName + ", Particle Counts");
 				//System.out.println("Statement: "+sql.toString());
@@ -4050,22 +3926,22 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			/* IF DATATYPE IS TIME SERIES */
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
-			sql.append("CREATE TABLE TEMPatoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+			sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 			" Time DateTime, \n Value real);\n");
-			sql.append("insert TEMPatoms (Time, Value) \n" +
+			sql.append("insert #atoms (Time, Value) \n" +
 					"select BinnedTime, " + options.getGroupMethodStr() + "(AID.Value) AS Value \n" +
-					"from TEMPTimeBins TB \n" +
+					"from #TimeBins TB \n" +
 					"join TimeSeriesAtomInfoDense AID on (TB.AtomID = AID.AtomID) \n"+
 					"group by BinnedTime \n" +
 			"order by BinnedTime;\n");
 			
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 			sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-					"select " + newCollectionID + ", NewAtomID from TEMPatoms;\n");
+					"select " + newCollectionID + ", NewAtomID from #atoms;\n");
 			
 			sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-			"select NewAtomID, Time, Value from TEMPatoms;\n");
-			sql.append("DROP TABLE TEMPatoms;\n");
+			"select NewAtomID, Time, Value from #atoms;\n");
+			sql.append("DROP TABLE #atoms;\n");
 			progressBar.increment("  " + collectionName);
 			stmt.execute(sql.toString());
 		}
@@ -4081,10 +3957,10 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
-				//create and insert MZ Values into temporary TEMPmz table.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPmz')\n"+
-				"DROP TABLE TEMPmz;\n");
-				sql.append("CREATE TABLE TEMPmz (Value INT);\n");
+				//create and insert MZ Values into temporary #mz table.
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
+				"DROP TABLE #mz;\n");
+				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
 					String tempFilename = tempdir + File.separator + "bulkfile.txt";
@@ -4099,25 +3975,25 @@ public class SQLServerDatabase implements InfoWarehouse
 						bulkFile.println(mzValues[i]);
 					}
 					bulkFile.close();
-					sql.append("BULK INSERT TEMPmz\n" +
+					sql.append("BULK INSERT #mz\n" +
 							"FROM '" + tempFilename + "'\n" +
 					"WITH (FIELDTERMINATOR=',');\n");
 				} else {
 					for (int i = 0; i < mzValues.length; i++){
-						sql.append("INSERT INTO TEMPmz VALUES("+mzValues[i]+");\n");
+						sql.append("INSERT INTO #mz VALUES("+mzValues[i]+");\n");
 					}
 				}	
-				//	create TEMPatoms table
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'TEMPatoms')\n"+
-				"DROP TABLE TEMPatoms;\n");
-				sql.append("CREATE TABLE TEMPatoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
+				//	create #atoms table
+				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				"DROP TABLE #atoms;\n");
+				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 				" Time DateTime, \n MZLocation int, \n Value real);\n");
-				// went back to Greg's JOIN methodology, but retained TEMPmz table, which speeds it up.
-				sql.append("insert TEMPatoms (Time, MZLocation, Value) \n" +
+				// went back to Greg's JOIN methodology, but retained #mz table, which speeds it up.
+				sql.append("insert #atoms (Time, MZLocation, Value) \n" +
 						"SELECT BinnedTime, MZ.Value AS Location,"+options.getGroupMethodStr()+"(PeakHeight) AS PeakHeight \n"+
-						"FROM TEMPTimeBins TB\n" +
+						"FROM #TimeBins TB\n" +
 						"JOIN AMSAtomInfoSparse AIS on (TB.AtomID = AIS.AtomID)\n"+
-						"JOIN TEMPmz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
+						"JOIN #mz MZ on (abs(AIS.PeakLocation - MZ.Value) < "+options.peakTolerance+")\n"+
 						"GROUP BY BinnedTime,MZ.Value\n"+
 						"ORDER BY Location, BinnedTime;\n");
 
@@ -4131,14 +4007,14 @@ public class SQLServerDatabase implements InfoWarehouse
 					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
 					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
 					sql.append("insert AtomMembership (CollectionID, AtomID) \n" +
-							"select " + mzCollectionID + ", NewAtomID from TEMPatoms WHERE MZLocation = "+mzPeakLoc+"\n" +
+							"select " + mzCollectionID + ", NewAtomID from #atoms WHERE MZLocation = "+mzPeakLoc+"\n" +
 							"ORDER BY NewAtomID;\n");
 					sql.append("insert TimeSeriesAtomInfoDense (AtomID, Time, Value) \n" +
-							"select NewAtomID, Time, Value from TEMPatoms WHERE MZLocation = "+mzPeakLoc+
+							"select NewAtomID, Time, Value from #atoms WHERE MZLocation = "+mzPeakLoc+
 					"ORDER BY NewAtomID;\n");
 				}
-				sql.append("DROP TABLE TEMPmz;\n");
-				sql.append("DROP TABLE TEMPatoms;\n");
+				sql.append("DROP TABLE #mz;\n");
+				sql.append("DROP TABLE #atoms;\n");
 				progressBar.increment("  Executing M/Z Queries...");	
 				stmt.execute(sql.toString());
 			}
@@ -4299,7 +4175,9 @@ public class SQLServerDatabase implements InfoWarehouse
 	 */
 	public Hashtable<java.util.Date, Double> getConditionalTSCollectionData(Collection seq,
 			ArrayList<Collection> conditionalSeqs, ArrayList<String> conditionStrs) {
-		
+		/*String s = null;
+		s.charAt(5);
+		*/
 		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		ArrayList<String> columnsToReturn = new ArrayList<String>();
 		columnsToReturn.add("Ts1Value");
@@ -4349,7 +4227,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			Statement stmt = con.createStatement();
 			ResultSet rs;
 			
-			//System.out.println("ATOMS:\n"+sqlStr);
+			System.out.println("Query:\n"+sqlStr);
 			rs = stmt.executeQuery(sqlStr);
 			
 			while (rs.next()) {
@@ -4994,6 +4872,36 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 	}
 	
+	public void updateAllInternalAtomOrder(){
+
+		// TopSort(G)
+		ArrayList<Integer> sorted = new ArrayList<Integer>();
+		HashSet<Integer> visited = new HashSet<Integer>();
+		int place = 0;
+		place = topologicalSort(0,place,sorted, visited);
+		
+		
+		sorted = new ArrayList<Integer>();
+		visited = new HashSet<Integer>();
+		place = 0;
+		place = topologicalSort(1,place,sorted, visited);
+		
+		
+		
+	}
+
+	private int topologicalSort( int vertex, int place, ArrayList<Integer> sorted, HashSet<Integer> visited)
+	{
+		visited.add(vertex);
+		ArrayList<Integer> children = getImmediateSubCollections(getCollection(vertex));
+		for(Integer child : children)
+			if (!visited.contains(child)) place = topologicalSort(child,place,sorted,visited);
+		sorted.add(place,vertex);
+		place++;
+		return place;
+	}
+	
+	
 	/**
 	 * internalAtomOrder updated by updating the collection itself,
 	 * recursing through subcollections.  This ONLY updates the specified
@@ -5082,6 +4990,68 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * 
 	 * @param collection
 	 */
+	public void updateAncestorsAfterDelete(Collection collection) {
+		// if you try to update a null collection or one of the root collections,
+		// return.
+		if (collection == null || 
+				collection.getCollectionID() == 0 || 
+				collection.getCollectionID() == 1) 
+			return;
+		int cID = collection.getCollectionID();
+		//System.out.println("updating InternalAtomOrder Table for: " + cID);
+		try {
+			Statement stmt = con.createStatement();
+			
+			// Repopulate InternalAtomOrder table.
+			//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
+			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
+			
+			/*Query:
+				SELECT T.Time as Time, T.Value AS TsValue 
+				FROM TimeSeriesAtomInfoDense T 
+				JOIN (	SELECT M.AtomID as AtomID 
+						FROM AtomMembership M
+						WHERE M.CollectionID = 6) A ON (T.AtomID = A.AtomID) 
+						
+				Query: 
+				SELECT DISTINCT I.AtomID as AtomID
+ 				FROM InternalAtomOrder I
+ 				JOIN ( SELECT R.ChildID as ChildID
+					FROM CollectionRelationships R
+					WHERE R.ParentID = 89) C 
+				ON (C.ChildID = InternalAtomOrder.CollectionID)
+				ORDER BY InternalAtomOrder.AtomID
+			*/
+			String query = "SELECT DISTINCT IAO.AtomID as AtomID\n " +
+					"FROM InternalAtomOrder IAO\n " +
+				"JOIN ( SELECT R.ChildID as ChildID\n" +
+				"\tFROM CollectionRelationships R\n" +
+				"\tWHERE R.ParentID = "+cID+") C \n\t" +
+						"ON (C.ChildID = IAO.CollectionID)\n" +
+						"ORDER BY IAO.AtomID";
+			System.out.println("Query: "+query);
+			ResultSet rs = stmt.executeQuery(query);
+			int order = 1;
+			Statement st2 = con.createStatement();
+			
+			while (rs.next()) {
+				//System.out.println("inserting..."+rs.getInt(1) + ","+cID+","+order);
+				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
+						rs.getInt(1) + ","+cID+","+order+")");
+				order++;
+				if (order % 1000 == 0) st2.executeBatch();
+			}
+			st2.executeBatch();
+			st2.close();
+			stmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// maybe make this conditional?  how?  temp table and replace it?
+		updateAncestors(collection.getParentCollection());
+	}
+	
 	public void updateAncestors(Collection collection) {
 		// if you try to update a null collection or one of the root collections,
 		// return.
@@ -5128,7 +5098,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		// maybe make this conditional?  how?  temp table and replace it?
 		updateAncestors(collection.getParentCollection());
 	}
-	
 	
 	/**
 	 * This method, used by VersionChecker, returns the version string that the

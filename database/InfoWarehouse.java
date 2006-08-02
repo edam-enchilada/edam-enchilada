@@ -312,6 +312,7 @@ public interface InfoWarehouse {
 	public int getNextID();
 	public int[] createEmptyCollectionAndDataset(String datatype, int parent, String datasetName, String comment, String params);
 	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection,int datasetID, int nextID);
+	public boolean isDirty();
 	public int insertParticle(String dense, ArrayList<String> sparse,Collection collection, int nextID);
 	public int getParentCollectionID(int collectionID);
 	public void updateAncestors(Collection collection);
