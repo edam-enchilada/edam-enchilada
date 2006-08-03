@@ -20,6 +20,31 @@ public class BinnedPeakListTest extends TestCase {
 		super.setUp();
 	}
 	
+	/**
+	 * @author steinbel
+	 * Includes creation of bpl for testing - when this unit test is rewritten
+	 * that can be removed to setUp().
+	 */
+	public void testGetPartialMag(){
+		Normalizable norm = new Normalizer(); //testing with only real normalizer
+											  //as dummy doesn't do anything
+		BinnedPeakList bpl = new BinnedPeakList(norm);
+		bpl.add(-200, 3);
+		bpl.add(-100, 4);
+		bpl.add(0, 3);
+		bpl.add(100, 4);
+		
+		assert (bpl.getPartialMag(DistanceMetric.CITY_BLOCK, true) == 7):
+			"incorrect negative magnitude for city-block, should be 7";
+		assert (bpl.getPartialMag(DistanceMetric.CITY_BLOCK, false) == 7):
+			"incorrect positive magnitude for city-block, should be 7";
+		
+		assert (bpl.getPartialMag(DistanceMetric.DOT_PRODUCT, true) == 5):
+			"incorrect negative magnitude for other, should be 5";
+		assert (bpl.getPartialMag(DistanceMetric.EUCLIDEAN_SQUARED, false) == 5):
+			"incorrect positive magnitude for other, should be 5";
+	}
+	
 	/*
 	 *@author steinbel
 	 *Temporary tester method until unit test is rewritten.

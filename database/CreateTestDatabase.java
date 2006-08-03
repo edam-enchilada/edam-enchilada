@@ -162,9 +162,9 @@ public class CreateTestDatabase {
 			stmt.executeUpdate(
 					"USE TestDB\n" +
 					"INSERT INTO ATOFMSDataSetInfo VALUES(1,'One','aFile','anotherFile',12,20,0.005,1)");
-					stmt.executeUpdate(
-							"USE TestDB\n" +
-							"INSERT INTO Datatype2DataSetInfo VALUES(1,'9/2/2003 5:30:38 PM',100)");	
+			stmt.executeUpdate(
+					"USE TestDB\n" +
+					"INSERT INTO Datatype2DataSetInfo VALUES(1,'9/2/2003 5:30:38 PM',100)");	
 
 			stmt.executeUpdate(
 					"USE TestDB\n" +
@@ -245,6 +245,11 @@ public class CreateTestDatabase {
 		tempDB.closeConnection();
 	}
 	
+	/**
+	 * Directly inserts values for Datatype2 and SimpleParticle into MetaData
+	 * table and creates appropriate dynamic tables for both datatypes.
+	 *
+	 */
 	public void generateDynamicTables() {
 		try {
 			Statement stmt = con.createStatement();
