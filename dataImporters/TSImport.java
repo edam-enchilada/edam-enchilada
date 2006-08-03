@@ -32,7 +32,12 @@ import externalswing.ProgressTask;
  */
 
 public class TSImport{
-	private boolean failed = false;
+	// variables to keep track of the state of the importing
+	public static final int NORMAL = 0;
+	public static final int INTERRUPTED = 1;
+	public static final int FAILED = 2;
+	public static final int PARSEERROR = 3;
+	private int status = TSImport.NORMAL;
 	
 	private SQLServerDatabase db;
 	
@@ -41,15 +46,16 @@ public class TSImport{
 	private ProgressTask convTask;
 	
 	public static final String dfString = "yyyy-MM-dd HH:mm:ss";
-    public static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
+    private static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
 
     public TSImport(SQLServerDatabase db, Frame parent) {
     	super();
     	this.parent = parent;
     	this.db = db;
 	}
-	
-    public boolean read(String task_file) throws DisplayException, WriteException {
+    
+    public boolean readTaskFile(String task_file) throws DisplayException, WriteException,  
+    UnsupportedFormatException{
     	final String tf = task_file;
     	if (! tf.endsWith("task")) {
     		// They haven't given us a task file!
@@ -84,12 +90,17 @@ public class TSImport{
     					line_no++;
     					setStatus(("CSV "+line_no+": "+line+"                          ")  // 26 spaces
     							.substring(0,25)+"...");
-    					process(line.split("\\s*,\\s*"), tf, line_no, prefix);
+    					String[] args = line.split("\\s*,\\s*");
+    					process(args, tf, line_no, prefix);
     				}
+    			} catch (ParseException e){
+    				//this message needs to get passed back to the gui, but run can't throw an Exception,
+    				// so instead just set the status
+    				status = TSImport.PARSEERROR;
     			} catch (InterruptedException e) {
-    				failed = true;
+    				status = TSImport.INTERRUPTED;
     			} catch (Exception e) {
-    				failed = true;
+    				status = TSImport.FAILED;
     				System.err.println(e.toString());
     				System.err.println("Exception while converting data!");
     				e.printStackTrace();
@@ -101,7 +112,54 @@ public class TSImport{
     	// does not return until the task is completed, but the GUI gets 
     	// redrawn as needed anyway.  
     	convTask.start();
-    	return ! failed;
+    	
+    	// throw an error all the way back to the gui if there was a Date format error
+    	if(status==TSImport.PARSEERROR){
+    		throw new UnsupportedFormatException("Improper Date Format");
+    	}
+    	return status==TSImport.NORMAL;
+    }
+    
+    public boolean readCSVFile(final String csvFile)throws UnsupportedFormatException{
+    	convTask = new ProgressTask(parent, 
+    			"Importing CSV Files", true) {
+    		public void run(){  			
+    			pSetInd(true);
+    			this.pack();
+    			int line_no = 0;
+    			String line;
+    			try {
+    				// Made it so if a "" is encountered, while loop ends 
+    				// (i.e. lines at the end of the 
+    					setStatus(("CSV :                           ")  // 26 spaces
+    							.substring(0,25)+"...");
+    					process(csvFile);
+    				
+    			} catch (ParseException e){
+//    				this message needs to get passed back to the gui, but run can't throw an Exception,
+    				// so instead just set the status
+    				status = TSImport.PARSEERROR;
+    			} catch (InterruptedException e) {
+    				status = TSImport.INTERRUPTED;
+    			}catch (Exception e) {
+    				status = TSImport.FAILED;
+    				System.err.println(e.toString());
+    				System.err.println("Exception while converting data!");
+    				e.printStackTrace();
+    				ErrorLogger.writeExceptionToLog("TSImport","Exception while converting data: " +e.toString());
+    			}
+    		}
+    	};
+    	// Since we called ProgressTask as a modal dialog, this call to .start()
+    	// does not return until the task is completed, but the GUI gets 
+    	// redrawn as needed anyway.  
+    	convTask.start();
+    	
+//    	 throw an error all the way back to the gui if there was a Date format error
+    	if(status==TSImport.PARSEERROR){
+    		throw new UnsupportedFormatException("Improper Date Format");
+    	}
+    	return status==TSImport.NORMAL;
     }
 
     // args[0]: file name
@@ -120,8 +178,10 @@ public class TSImport{
         String line = in.readLine();
         if(line == null || line.trim().equals(""))
             throw new Exception("Error in "+args[0]+" at line 1: The first line should be the list of column names\n");
+        
         String[] column = line.split("\\s*,\\s*");
-        final int[] colIndex = new int[args.length];
+        int[] colIndex = new int[args.length];
+        
         for(int i=1; i<args.length; i++){
             boolean found = false;
             for(int j=0; j<column.length; j++){
@@ -131,12 +191,14 @@ public class TSImport{
             }
             if(!found) throw new Exception("Error in "+args[0]+" at line 1: Cannot find column name "+args[i]+", which is defined in "+task_file+" at line "+line_no+"\n");
         }
-        final ArrayList[] values = new ArrayList[args.length];
+        
+	    final ArrayList[] values = new ArrayList[args.length];
         for(int i=1; i<values.length; i++)
         	values[i] = new ArrayList<String>(1000);
         try {
         	while((line = in.readLine()) != null){
         		if(line.trim().equals("")) continue;
+        		//System.out.println(line.trim());
         		String[] v = line.split("\\s*,\\s*");
         		for(int i=1; i<values.length; i++)
         			values[i].add(v[colIndex[i]]);
@@ -150,8 +212,42 @@ public class TSImport{
         }
     }
 
+    // process a csv file
+    private void process(String file) throws Exception{
+        System.out.println("Processing "+file+" ...");
+		
+		if (convTask.terminate) throw new InterruptedException("Inter");
+		
+        final BufferedReader in = new BufferedReader(
+        		new FileReader(file));
+        String line = in.readLine();
+        if(line == null || line.trim().equals(""))
+            throw new Exception("Error in "+file+" at line 1: The first line should be the list of column names\n");
+        
+        String[] column = line.split("\\s*,\\s*");
+        
+        final ArrayList[] values = new ArrayList[column.length];
+        for(int i=0; i<values.length; i++)
+        	values[i] = new ArrayList<String>(1000);
+        try {
+        	while((line = in.readLine()) != null){
+        		if(line.trim().equals("")) continue;
+        		//System.out.println(line.trim());
+        		String[] v = line.split("\\s*,\\s*");
+        		for(int i=0; i<values.length; i++)
+        			values[i].add(v[i]);
+        	}
+        } catch (IOException i) {
+        	System.out.println(i.getMessage());
+        }
+        for(int i=1; i<values.length; i++){
+        	if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
+            putDataset(column[i],values[0],values[i]);
+        }
+    }
+
     private void putDataset(String name, ArrayList<String> time, ArrayList<String> value)
-    throws SQLException, UnsupportedFormatException, InterruptedException
+    throws SQLException, UnsupportedFormatException, InterruptedException, ParseException
     {
     	System.out.println("Putting a dataset: " +name);
     	TSBulkInserter ins = new TSBulkInserter(db);
@@ -159,16 +255,19 @@ public class TSImport{
     	
     	TreeMap<String, ArrayList<String>> noSparseTables = new TreeMap<String, ArrayList<String>>(); 
     	
-    	try {
-    		for(int i=0; i<time.size(); i++) {
-    			if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
-    			
-    			ins.addPoint(dateformatter.parse(time.get(i)), 
-    					Float.parseFloat(value.get(i)));
-    		}
-    	} catch (ParseException e) {
-    		throw new UnsupportedFormatException(e.toString() + 
-    				"  Expecting " +dfString);
+    	for(int i=0; i<time.size(); i++) {
+    		if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
+    		float nextValue = 0;
+    		try{
+    			if(!value.get(i).equals(""))
+    			nextValue = Float.parseFloat(value.get(i));
+    			Date nextDate = dateformatter.parse(time.get(i));
+    			ins.addPoint(nextDate, nextValue);
+    		}catch(NumberFormatException e){
+    			System.err.println("Invalid Value: "+ value.get(i) +" was skipped at timestamp "+time.get(i));
+    		} 
+    		
+    	
     	}
     	ins.commit();
     }
@@ -198,6 +297,4 @@ public class TSImport{
 			super(message);
 		}
 	}
-
-    
 }

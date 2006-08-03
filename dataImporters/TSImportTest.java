@@ -64,7 +64,7 @@ public class TSImportTest extends TestCase {
 		System.out.println("Inserting " + NUM_PARTICLES + " particles.");
 		System.out.println("Started at " + new Date());
 		try {
-			if (! imp.read(taskFile)) {
+			if (! imp.readTaskFile(taskFile)) {
 				fail();
 			}
 		} catch (Exception e) {

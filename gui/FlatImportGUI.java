@@ -1,8 +1,12 @@
 package gui;
 
 import java.awt.*;
+import java.text.SimpleDateFormat;
+
+import javax.swing.JOptionPane;
 
 import dataImporters.*;
+import dataImporters.TSImport.UnsupportedFormatException;
 import database.SQLServerDatabase;
 
 import errorframework.*;
@@ -18,28 +22,83 @@ public class FlatImportGUI {
 	private FilePicker fp;
 	private TSImport importer;
 	private Frame parent;
+	public static final String dateMessage = "The date is stored in an improper format." +
+	"  The time-stamp must be stored as 'yyyy-mm-dd hh:mm:ss' with the hour being 0-24." +
+	"  You can correct your date format by opening the file in a spreadsheet " +
+	"application and creating a custom format.";	
+
 	
 	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
 		this.parent = parent;
-		fp = new FilePicker("Choose .task file", "task", parent);
-		if (fp.getFileName() == null) {
+		
+		/*FileDialog fileChooser = new FileDialog(this, 
+                "Choose a place to write the plumes:",
+                 FileDialog.LOAD);
+		//fileChooser.setFile(fileFilter);
+		fileChooser.setVisible(true);
+		String filename = fileChooser.getDirectory()+fileChooser.getFile();
+		*/
+		Object[] options = {"bulk .task file",
+                ".csv file",
+                "Cancel"};
+		int n = JOptionPane.showOptionDialog(parent,
+				"What do you want to import?","Select Your Import Format",
+				JOptionPane.YES_NO_CANCEL_OPTION,
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				options,
+				options[0]);
+		if(n==2)return;
+		if(n==0){
+		
+		
+		FileDialog fileChooser = new FileDialog(parent, 
+                "Locate a .task File:",
+                 FileDialog.LOAD);
+		fileChooser.setFile("*.task");
+		fileChooser.setVisible(true);
+		String filename = fileChooser.getDirectory()+fileChooser.getFile();
+		if (fileChooser.getFile() == null) {
 			return;
 			// should this throw an exception instead?  i think this is ok...
 		}
 		importer = new TSImport(db, parent);
 		
 		try {
-			doImport();
+			importer.readTaskFile(filename);
+		} catch(UnsupportedFormatException u){
+			//If the date format was wrong, let the user know, because they can fix it
+			JOptionPane.showMessageDialog(parent, dateMessage);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Exception importing (generally)");
 			ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
 		}
-	}
-
-	
-	
-	private void doImport() throws Exception {
-		importer.read(fp.getFileName());
+		}else if(n==1){
+			FileDialog fileChooser = new FileDialog(parent, 
+	                "Locate a .csv File:",
+	                 FileDialog.LOAD);
+			fileChooser.setFile("*.csv");
+			fileChooser.setVisible(true);
+			if (fileChooser.getFile() == null) {
+				return;
+			}
+			String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			
+			importer = new TSImport(db, parent);
+			
+			try {
+				importer.readCSVFile(filename);
+			
+			} catch(UnsupportedFormatException u){
+				//If the date format was wrong, let the user know, because they can fix it
+				JOptionPane.showMessageDialog(parent, dateMessage);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.err.println("Exception importing (generally)");
+				ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
+			}
+			System.out.println("imported data");
+		}
 	}
 }

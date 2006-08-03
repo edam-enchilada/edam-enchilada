@@ -143,11 +143,11 @@ public class DetectPlumesDialog  extends JDialog implements ActionListener, Item
 				for (int i = 0; i < plumes.size(); i++) {
 					output.write("Plume # "+i+"\n");
 					for(Date date : plumes.get(i).keySet()){
-						output.write(formatter.format(date)+",\t");
+						output.write(formatter.format(date)+", ");
 					}
 					output.write("\n");
 					for(Double value : plumes.get(i).values()){
-						output.write(value+",\t\t\t");
+						output.write(value+", ");
 					}
 					output.write("\n");
 					output.write("\n");

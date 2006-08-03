@@ -97,12 +97,15 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
+	/*
+	 * These capabilities work, but only with trivially small databases
 	private JMenuItem importXmlDatabaseItem;
 	private JMenuItem importXlsDatabaseItem;
 	private JMenuItem importCsvDatabaseItem;
 	private JMenuItem exportXmlDatabaseItem;
 	private JMenuItem exportXlsDatabaseItem;
 	private JMenuItem exportCsvDatabaseItem;
+	*/
 	private JMenuItem emptyCollection;
 	private JMenuItem queryItem;
 	private JMenuItem compressItem;
