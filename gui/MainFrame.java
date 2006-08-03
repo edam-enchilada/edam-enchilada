@@ -663,8 +663,10 @@ public class MainFrame extends JFrame implements ActionListener
 	
 	public void exit(){
 		if (db.isDirty() && JOptionPane.showConfirmDialog(null,
-				"One or more Collections has been deleted but its Atoms have not been removed." +
-				"\nWould you like to compact the database and remove these Atoms?(This could take several minutes)") ==
+				"One or more Collections has been deleted." +
+				"  Would you like to Clean up database? This may take several minutes to"+
+				" perform, but will keep Enchilada running efficiently.","Compact Database?",
+				JOptionPane.YES_NO_OPTION) ==
 					JOptionPane.YES_OPTION) {
 			db.compactDatabase();
 		}
