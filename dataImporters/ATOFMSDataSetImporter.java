@@ -102,6 +102,7 @@ public class ATOFMSDataSetImporter {
 	private String particleName;	
 	
 	// Progress Bar variables
+	protected ProgressBarWrapper progressBar;
 	protected JDialog waitBarDialog = null;
 	protected JProgressBar pBar = null;
 	protected JLabel pLabel = null;
@@ -115,6 +116,7 @@ public class ATOFMSDataSetImporter {
 	/* contains the collectionID and particleID */
 	private int[] id;
 	protected int positionInBatch, totalInBatch;
+	protected int constructsDone;
 	
 	/* Object that reads the spectrum */
 	ReadSpec read;
@@ -151,8 +153,11 @@ public class ATOFMSDataSetImporter {
 	 */
 	public void collectTableInfo() {
 		
+		particleNum = 0;
+		constructsDone = 0;
 		rowCount = table.getRowCount()-1;
 		totalInBatch = rowCount;
+		
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
 				// Table values for this row.
@@ -183,6 +188,10 @@ public class ATOFMSDataSetImporter {
 							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage());
 				} 
 		}
+		
+		progressBar = 
+			new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
+		progressBar.constructThis();
 	}
 	
 	/**
@@ -322,10 +331,7 @@ public class ATOFMSDataSetImporter {
 			}
 			countSet.close();
 			
-			totalParticles = tParticles;
-			
-			final ProgressBarWrapper progressBar = 
-				new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", totalParticles/10);
+			totalParticles += tParticles;
 			
 			final SwingWorker worker = new SwingWorker() {
 				public Object construct() {
@@ -343,15 +349,9 @@ public class ATOFMSDataSetImporter {
 						try {
 							BufferedReader readSet = new BufferedReader(new FileReader(name));
 							
-							synchronized (dbLock) {
-								SwingUtilities.invokeLater(new Runnable() {
-									public void run() {progressBar.constructThis();}
-								});
-								
-								
+							synchronized (dbLock) {				
 								StringTokenizer token;
 								String particleFileName;
-								particleNum = 0;
 								//int doDisplay = 4;
 								int nextID = db.getNextID();
 								Collection curCollection = db.getCollection(id[0]);
@@ -384,7 +384,7 @@ public class ATOFMSDataSetImporter {
 									nextID++;
 									particleNum++;
 									//doDisplay++;
-									if(particleNum % 10 == 0 && particleNum >= 10)
+									if(particleNum % 10 == 0 && particleNum >= 10 && progressBar != null)
 										progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
 									
 								}
@@ -396,10 +396,13 @@ public class ATOFMSDataSetImporter {
 									destination.getName()+"\n\tMessage: "+e.toString()+","+e.getMessage());
 						}		
 					final String exceptionFile = particleName;
-					progressBar.disposeThis();
+					++constructsDone;
 					return null;	
 				}
 				public void finished() {
+					if (constructsDone == totalInBatch)
+						progressBar.disposeThis();
+					
 					synchronized (thisref) {
 						thisref.notifyAll();						
 					}
