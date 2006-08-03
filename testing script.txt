@@ -84,6 +84,8 @@ check the next & prev buttons for
 that it works.		
 	__parent collection created with children collections
 
+**Try zooming in on time-series of only one datapoint
+
 **Try clustering a small collection. Check that
 	__clustering completes without errors
 	__leaves behind subcollections for each cluster
