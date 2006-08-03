@@ -877,9 +877,9 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#collections')\n"+
+			sql.append("IF object_id('tempdb..#collections') IS NOT NULL\n"+
 					"BEGIN\n" +
-					"DROP TABLE [dbo].[#collections];\n"+
+					"DROP TABLE #collections;\n"+
 					"END\n");
 			sql.append("CREATE TABLE #collections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
 			// Update the InternalAtomOrder table:  Assumes that subcollections
@@ -955,14 +955,14 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
 	 */
-	public boolean compactDatabase()
+	public boolean compactDatabase(ProgressBarWrapper progressBar)
 	{
 		System.out.println("Compacting database and removing unaccessible atoms..");
 		try {
 			Statement stmt = con.createStatement();
 			Statement typesStmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
-			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#collections')\n"+
+			sql.append("IF object_id('tempdb..#collections') IS NOT NULL\n"+
 					"BEGIN\n" +
 					"DROP TABLE #collections;\n"+
 					"END\n");
@@ -993,8 +993,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
 				String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
 				
-				
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				sql.append("IF object_id('tempdb..#atoms') IS NOT NULL \n"+
 						"BEGIN\n" +
 						"DROP TABLE  #atoms;\n"+
 						"END\n");
@@ -1032,6 +1031,13 @@ public class SQLServerDatabase implements InfoWarehouse
 				//This separation is necessary!!
 				// SQL Server parser is stupid and if you create, delete, and recreate a temporary table
 				// the parser thinks you're doing something wrong and will die.
+				if(progressBar.wasTerminated()){
+					sql = new StringBuilder();
+					sql.append("DROP TABLE #collections;\n");
+					stmt.execute(sql.toString());
+					stmt.close();
+					return false;
+				}
 				System.out.println(sql.toString());
 				stmt.execute(sql.toString());
 				sql = new StringBuilder();
@@ -3566,7 +3572,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		try {
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
-			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#TimeBins')\n"+
+			tempTable.append("IF object_id('tempdb..#TimeBins') IS NOT NULL\n"+
 					"DROP TABLE #TimeBins;\n");
 			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			// if aggregation is based on this collection, copy table
@@ -3701,7 +3707,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
 			Statement stmt1 = con.createStatement();
-			tempTable.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#TimeBins')\n"+
+			tempTable.append("IF object_id('tempdb..#TimeBins') IS NOT NULL\n"+
 			"DROP TABLE #TimeBins;\n");
 			tempTable.append("CREATE TABLE #TimeBins (AtomID INT, BinnedTime datetime, PRIMARY KEY (AtomID));\n");
 			counter++;
@@ -3854,7 +3860,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			} else {
 				
 				
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				sql.append("IF object_id('tempdb..#atoms') IS NOT NULL\n"+
 				"DROP TABLE #atoms;\n");
 				
 //				create #atoms table
@@ -3893,7 +3899,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					"ORDER BY NewAtomID;\n");
 				}
 				sql.append("DROP TABLE #atoms;\n");
-				progressBar.increment("  Executing M/Z Queries...");
+				if(progressBar.wasTerminated()){
+					return;
+				}
+				progressBar.increment("  Executing Queries...");
 					// if the particle count is selected, produce that time series as well.
 					// NOTE:  QUERY HAS CHANGED DRASTICALLY SINCE GREG'S IMPLEMENTATION!!!
 					// it now tracks number of particles instead of sum of m/z particles.	
@@ -3904,7 +3913,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			sql = new StringBuilder();
 			if (options.produceParticleCountTS) {
 				int combinedCollectionID = createEmptyCollection("TimeSeries", newCollectionID, "Particle Counts", "", "");
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				sql.append("IF object_id('tempdb..#atoms') IS NOT NULL\n"+
 				"DROP TABLE #atoms;\n");
 				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 						" Time DateTime, \n MZLocation int, \n Value real)\n" +
@@ -3958,7 +3967,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
 				//create and insert MZ Values into temporary #mz table.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
+				sql.append("IF object_id('tempdb..#mz') IS NOT NULL\n"+
 				"DROP TABLE #mz;\n");
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
@@ -3984,7 +3993,7 @@ public class SQLServerDatabase implements InfoWarehouse
 					}
 				}	
 				//	create #atoms table
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#atoms')\n"+
+				sql.append("IF object_id('tempdb..#atoms') IS NOT NULL\n"+
 				"DROP TABLE #atoms;\n");
 				sql.append("CREATE TABLE #atoms (NewAtomID int IDENTITY("+getNextID()+", 1), \n" +
 				" Time DateTime, \n MZLocation int, \n Value real);\n");
@@ -4061,7 +4070,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			// if there's a list of mz values:
 			} else if (options.mzValues != null && options.mzValues.size() > 0)
 			{
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#mz')\n"+
+				sql.append("IF object_id('tempdb..#mz') IS NOT NULL\n"+
 						"DROP TABLE #mz;\n");
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...

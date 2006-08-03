@@ -130,7 +130,10 @@ public class Aggregator {
 				numSqlCalls[0]++;
 			}
 		}
-				
+		if(progressBar1.wasTerminated()){
+			progressBar1.disposeThis();
+			return -1;
+		}
 		final ProgressBarWrapper progressBar2 = 
 			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls[0]+1);
 		
@@ -157,13 +160,25 @@ public class Aggregator {
 			else {
 				db.createTempAggregateBasis(collections[i],start,end,interval);
 			}
+			if(progressBar2.wasTerminated()){
+				progressBar2.disposeThis();
+				return -1;
+			}
 			long end = new Date().getTime();
 			System.out.println("createTempAggBasis: "+(end-begin)/1000+" sec.");
 			begin = new Date().getTime();
 			db.createAggregateTimeSeries(progressBar2, rootCollectionID, collections[i], mzValues[i]);
+			if(progressBar2.wasTerminated()){
+				progressBar2.disposeThis();
+				return -1;
+			}
 			end = new Date().getTime();
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 			db.deleteTempAggregateBasis();
+		}
+		if(progressBar2.wasTerminated()){
+			progressBar2.disposeThis();
+			return -1;
 		}
 		mainFrame.updateSynchronizedTree(rootCollectionID);
 		

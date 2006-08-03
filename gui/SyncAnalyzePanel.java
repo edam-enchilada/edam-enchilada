@@ -218,7 +218,7 @@ public class SyncAnalyzePanel extends JPanel {
 				data.add(db.getConditionalTSCollectionData(seq2, condCollections, conditionStrs));
 		}
 
-		if (data.size() > 0 && data.get(0).size() > 0) {
+		if (data!= null && data.size() > 0 && data.get(0).size() > 0) {
 			int numSequences = (seq2 != null ? 2 : 1);
 			
 			datasets = new Dataset[numSequences];

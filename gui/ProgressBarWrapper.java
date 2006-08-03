@@ -1,19 +1,22 @@
 package gui;
 
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
 import javax.swing.*;
 import javax.swing.border.*;
 
-public class ProgressBarWrapper {
-	private JDialog waitBarDialog;
+public class ProgressBarWrapper extends JDialog{
 	private final JProgressBar pBar;
 	private final JLabel pLabel;
-	
+	private volatile boolean wasTerminated;
 	private int curNum = 0;
 	
 	public ProgressBarWrapper(JFrame parentFrame, String title, int numSteps) {
-		waitBarDialog = new JDialog(parentFrame, title, true);
-		waitBarDialog.setLayout(new BorderLayout());
+		super(parentFrame, title, true);
+		wasTerminated = false;
 		pBar = new JProgressBar(0, numSteps);
 		pBar.setValue(0);
 		pBar.setStringPainted(true);
@@ -22,9 +25,17 @@ public class ProgressBarWrapper {
 		pLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		pLabel.setLabelFor(pBar);
 		pBar.setBorder(new EmptyBorder(5, 5, 5, 5));
-		waitBarDialog.add(pBar, BorderLayout.NORTH);
-		waitBarDialog.add(pLabel, BorderLayout.CENTER);
-		waitBarDialog.setPreferredSize(new Dimension(500, 100));
+		setLayout(new BorderLayout());
+		add(pBar, BorderLayout.NORTH);
+		add(pLabel, BorderLayout.CENTER);
+		setPreferredSize(new Dimension(500, 100));
+		setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter(){
+			public void windowClosing(WindowEvent arg0) {
+				wasTerminated = true;
+			}
+		});
+		
 	}
 	
 	public void increment(final String text) {
@@ -32,7 +43,7 @@ public class ProgressBarWrapper {
 			public void run() {
 				pBar.setValue(curNum++);
 				pLabel.setText(text);
-				waitBarDialog.validate();
+				validate();
 			}
 		});
 	}
@@ -40,9 +51,9 @@ public class ProgressBarWrapper {
 	public void constructThis() {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				waitBarDialog.pack();
-				waitBarDialog.validate();
-				waitBarDialog.setVisible(true);
+				pack();
+				validate();
+				setVisible(true);
 			}
 		});
 	}
@@ -50,8 +61,8 @@ public class ProgressBarWrapper {
 	public void disposeThis() {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				waitBarDialog.setVisible(false);
-				waitBarDialog.dispose();
+				setVisible(false);
+				dispose();
 			}
 		});
 	}
@@ -67,6 +78,10 @@ public class ProgressBarWrapper {
 				pBar.setIndeterminate(indeterminate);
 			}
 		});
+	}
+
+	public boolean wasTerminated() {
+		return wasTerminated;
 	}
 
 }

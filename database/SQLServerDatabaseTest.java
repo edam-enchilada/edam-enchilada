@@ -46,6 +46,7 @@
  */
 package database;
 
+import gui.ProgressBarWrapper;
 import junit.framework.TestCase;
 
 import java.sql.Connection;
@@ -54,6 +55,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+
+import javax.swing.JDialog;
 
 
 import ATOFMS.ATOFMSParticle;
@@ -607,6 +610,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ " WHERE NOT (CollectionID = 5 OR CollectionID = 6);\n");
 
 			stmt.execute(sql.toString());
+			
 			assertTrue(db.recursiveDelete(db.getCollection(5)));
 				
 			
@@ -655,8 +659,14 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ "		(SELECT CollectionID FROM Collections);\n");
 			assertFalse(rs.next());
 			
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(null, "Compacting Database",100);
+			progressBar.constructThis();
+			progressBar.setIndeterminate(true);
+			progressBar.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+			progressBar.setVisible(false);
 			
-			assertTrue(db.compactDatabase());
+			assertTrue(db.compactDatabase(progressBar));
 			
 
 			//ATOFMSAtomInfoDense

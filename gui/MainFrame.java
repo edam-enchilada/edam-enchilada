@@ -178,7 +178,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		setSize(800, 600);
 		
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
 		/**
 		 * Create and add a menu bar to the frame.
@@ -615,14 +615,22 @@ public class MainFrame extends JFrame implements ActionListener
 			}			
 		}
 		else if (source == compactDBItem){
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, "Compacting Database",100);
+			progressBar.constructThis();
+			progressBar.setIndeterminate(true);
+			progressBar.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
-					db.compactDatabase();
+					db.compactDatabase(progressBar);
 					return null;
 				}
-				
+				public void finished() {
+					super.finished();
+					progressBar.disposeThis();
+				}
 			};
-			worker.start(new Component[]{collectionPane});
+			worker.start();
 		}
 		
 		else if (source == exitItem) {
@@ -668,10 +676,28 @@ public class MainFrame extends JFrame implements ActionListener
 				" perform, but will keep Enchilada running efficiently.","Compact Database?",
 				JOptionPane.YES_NO_OPTION) ==
 					JOptionPane.YES_OPTION) {
-			db.compactDatabase();
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, "Compacting Database",100);
+			progressBar.constructThis();
+			progressBar.setIndeterminate(true);
+			UIWorker worker = new UIWorker() {
+				public Object construct() {
+					db.compactDatabase(progressBar);
+					db.closeConnection();
+					return null;
+				}
+				public void finished() {
+					super.finished();
+					progressBar.disposeThis();
+					dispose();
+				}
+			};
+			worker.start();
+			
+		}else{
+			db.closeConnection();
+			dispose();
 		}
-		db.closeConnection();
-		dispose();
 	}
 	
 	public Collection getSelectedCollection() {
