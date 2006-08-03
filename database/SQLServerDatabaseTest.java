@@ -1094,8 +1094,8 @@ public class SQLServerDatabaseTest extends TestCase {
 	 * @param name the database table to output
 	 * @author shaferia
 	 */
-	private void printDBSection(String name) {
-		printDBSection(name, Integer.MAX_VALUE);
+	public static void printDBSection(SQLServerDatabase database, String name) {
+		printDBSection(database, name, Integer.MAX_VALUE);
 	}
 	
 	/**
@@ -1104,12 +1104,17 @@ public class SQLServerDatabaseTest extends TestCase {
 	 * @param rows a single argument giving the maximum number of rows to output
 	 * @author shaferia
 	 */
-	private void printDBSection(String name, int rows) {
+	public static void printDBSection(SQLServerDatabase database, String name, int rows) {
 		Statement stmt = null;
 		ResultSet rs = null;
 		
-		Connection con = db.getCon();
+		Connection con = database.getCon();
 		try	{
+			if (con == null) {
+				database.openConnection();
+				con = database.getCon();
+			}
+			
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(
 					"USE TestDB;\n" +
@@ -1148,6 +1153,9 @@ public class SQLServerDatabaseTest extends TestCase {
 		catch (SQLException ex) {
 			System.err.println("Couldn't print database section.");
 			ex.printStackTrace();
+		}
+		finally {
+			database.closeConnection();
 		}
 	}
 
