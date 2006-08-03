@@ -539,6 +539,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			"DROP TABLE #temp0;\n");
 			sql.append("CREATE TABLE #temp0 (AtomID INT);\n");
 			
+			//collect a list of AtomID that should be deleted
 			sql.append("insert #temp0 (AtomID) \n" +
 							"SELECT AtomID\n"
 					+" FROM AtomMembership\n"
@@ -549,7 +550,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ "DROP TABLE #temp1\n"
 					+ "END;\n");
 			sql.append("CREATE TABLE #temp1 (AtomID INT);\n");
-			
+			//ATOFMSAtomInfoDense
 			sql.append("insert #temp1 (AtomID) \n" +
 					"SELECT AtomID FROM ATOFMSAtomInfoDense\n"
 					+ " WHERE NOT AtomID IN\n"
@@ -560,7 +561,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#temp2')\n"+
 			"DROP TABLE #temp2;\n");
 			sql.append("CREATE TABLE #temp2 (AtomID INT, CollectionID INT);\n");
-			
+			//AtomMembership
 			sql.append("insert #temp2 (AtomID, CollectionID) \n" +
 					"SELECT AtomID, CollectionID FROM AtomMembership\n"
 					+ " WHERE NOT AtomID IN\n"
@@ -570,7 +571,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#temp3')\n"+
 			"DROP TABLE #temp3;\n");
 			sql.append("CREATE TABLE #temp3 (AtomID INT, PeakLocation INT);\n");
-			
+			//ATOFMSAtomInfoSparse
 			sql.append("insert #temp3 (AtomID, PeakLocation) \n" +
 					"SELECT AtomID, PeakLocation FROM ATOFMSAtomInfoSparse\n"
 					+ " WHERE NOT AtomID IN\n"
@@ -580,7 +581,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#temp4')\n"+
 			"DROP TABLE #temp4;\n");
 			sql.append("CREATE TABLE #temp4 (AtomID INT, CollectionID INT);\n");
-			
+			//InternalAtomOrder
 			sql.append("insert #temp4 (AtomID, CollectionID) \n" +
 					"SELECT AtomID, CollectionID FROM InternalAtomOrder\n"
 					+ " WHERE NOT AtomID IN\n"
@@ -591,7 +592,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#temp5')\n"+
 			"DROP TABLE #temp5;\n");
 			sql.append("CREATE TABLE #temp5 (ParentID INT, ChildID INT);\n");
-			
+			//CollectionRelationships
 			sql.append("insert #temp5 (ParentID, ChildID) \n" +
 					"SELECT ParentID, ChildID FROM CollectionRelationships\n"
 					+ " WHERE NOT (ChildID = 5"
@@ -600,7 +601,7 @@ public class SQLServerDatabaseTest extends TestCase {
 			sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '#temp6')\n"+
 			"DROP TABLE #temp6;\n");
 			sql.append("CREATE TABLE #temp6 (CollectionID INT);\n");
-			
+			//Collections
 			sql.append("insert #temp6 (CollectionID) \n" +
 					"SELECT CollectionID FROM Collections\n"
 					+ " WHERE NOT (CollectionID = 5 OR CollectionID = 6);\n");
@@ -612,46 +613,8 @@ public class SQLServerDatabaseTest extends TestCase {
 			//Check to make sure that the database is as it should be
 			//Both that information that should be gone is gone 
 			// and that no information was deleted that shouldn't have been
-			
-			rs = stmt.executeQuery(
-					"SELECT AtomID FROM ATOFMSAtomInfoDense\n"
-					+ " WHERE NOT AtomID IN\n"
-					+ " 	(SELECT *\n"
-					+ " 	FROM #temp1)\n;\n");
-			assertFalse(rs.next());
-			rs = stmt.executeQuery(
-					"SELECT * FROM #temp1\n"
-					+ " WHERE NOT AtomID IN\n"
-					+ "(SELECT AtomID FROM ATOFMSAtomInfoDense);\n");
-			assertFalse(rs.next());
-			
-			rs = stmt.executeQuery(
-					"SELECT AtomID, CollectionID FROM AtomMembership X\n"
-					+ " WHERE NOT EXISTS\n"
-					+ " 	(SELECT *\n FROM #temp2 Y\n"
-					+ "		WHERE X.CollectionID = Y.CollectionID AND X.AtomID = Y.AtomID);\n");
-			assertFalse(rs.next());
-			rs = stmt.executeQuery(
-					"SELECT * FROM #temp2 X\n"
-					+ " WHERE NOT EXISTS\n"
-					+ "		(SELECT AtomID, CollectionID FROM AtomMembership Y\n"
-					+ "		WHERE X.CollectionID = Y.CollectionID AND X.AtomID = Y.AtomID);\n");
-			assertFalse(rs.next());
-			
-			rs = stmt.executeQuery(
-					"SELECT AtomID, PeakLocation FROM ATOFMSAtomInfoSparse X\n"
-					+ " WHERE NOT EXISTS\n"
-					+ " 	(SELECT *\n"
-					+ " 	FROM #temp3 Y\n"
-					+ "		WHERE X.PeakLocation = Y.PeakLocation AND X.AtomID = Y.AtomID);\n");
-			assertFalse(rs.next());
-			rs = stmt.executeQuery(
-					"SELECT * FROM #temp3 X\n"
-					+ " WHERE NOT EXISTS\n"
-					+ "		(SELECT * FROM ATOFMSAtomInfoSparse Y\n"
-					+ "		WHERE X.PeakLocation = Y.PeakLocation AND X.AtomID = Y.AtomID);\n");
-			assertFalse(rs.next());
-			
+
+			//InternalAtomOrder
 			rs = stmt.executeQuery(
 					"SELECT AtomID, CollectionID FROM InternalAtomOrder X\n"
 					+ " WHERE NOT EXISTS\n"
@@ -666,6 +629,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ "		WHERE X.CollectionID = Y.CollectionID AND X.AtomID = Y.AtomID);\n");
 			assertFalse(rs.next());
 			
+			//CollectionRelationships
 			rs = stmt.executeQuery(
 					"SELECT ParentID, ChildID FROM CollectionRelationships X\n"
 					+ " WHERE NOT EXISTS (SELECT * FROM #temp5 Y\n"
@@ -678,6 +642,7 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ "						WHERE X.ParentID = Y.ParentID AND X.ChildID = Y.ChildID);\n");
 			assertFalse(rs.next());
 			
+			//Collections
 			rs = stmt.executeQuery(
 					"SELECT * FROM Collections\n"
 					+ " WHERE NOT CollectionID IN\n"
@@ -689,6 +654,53 @@ public class SQLServerDatabaseTest extends TestCase {
 					+ " WHERE NOT X.CollectionID IN\n"
 					+ "		(SELECT CollectionID FROM Collections);\n");
 			assertFalse(rs.next());
+			
+			
+			assertTrue(db.compactDatabase());
+			
+
+			//ATOFMSAtomInfoDense
+			rs = stmt.executeQuery(
+					"SELECT AtomID FROM ATOFMSAtomInfoDense\n"
+					+ " WHERE NOT AtomID IN\n"
+					+ " 	(SELECT *\n"
+					+ " 	FROM #temp1)\n;\n");
+			assertFalse(rs.next());
+			rs = stmt.executeQuery(
+					"SELECT * FROM #temp1\n"
+					+ " WHERE NOT AtomID IN\n"
+					+ "(SELECT AtomID FROM ATOFMSAtomInfoDense);\n");
+			assertFalse(rs.next());
+			
+			//AtomMembership
+			rs = stmt.executeQuery(
+					"SELECT AtomID, CollectionID FROM AtomMembership X\n"
+					+ " WHERE NOT EXISTS\n"
+					+ " 	(SELECT *\n FROM #temp2 Y\n"
+					+ "		WHERE X.CollectionID = Y.CollectionID AND X.AtomID = Y.AtomID);\n");
+			assertFalse(rs.next());
+			rs = stmt.executeQuery(
+					"SELECT * FROM #temp2 X\n"
+					+ " WHERE NOT EXISTS\n"
+					+ "		(SELECT AtomID, CollectionID FROM AtomMembership Y\n"
+					+ "		WHERE X.CollectionID = Y.CollectionID AND X.AtomID = Y.AtomID);\n");
+			assertFalse(rs.next());
+			
+			//ATOFMSAtomInfoSparse
+			rs = stmt.executeQuery(
+					"SELECT AtomID, PeakLocation FROM ATOFMSAtomInfoSparse X\n"
+					+ " WHERE NOT EXISTS\n"
+					+ " 	(SELECT *\n"
+					+ " 	FROM #temp3 Y\n"
+					+ "		WHERE X.PeakLocation = Y.PeakLocation AND X.AtomID = Y.AtomID);\n");
+			assertFalse(rs.next());
+			rs = stmt.executeQuery(
+					"SELECT * FROM #temp3 X\n"
+					+ " WHERE NOT EXISTS\n"
+					+ "		(SELECT * FROM ATOFMSAtomInfoSparse Y\n"
+					+ "		WHERE X.PeakLocation = Y.PeakLocation AND X.AtomID = Y.AtomID);\n");
+			assertFalse(rs.next());
+			
 			
 			stmt.execute("DROP TABLE #temp0;\n");
 			stmt.execute("DROP TABLE #temp1;\n");
