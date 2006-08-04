@@ -115,6 +115,8 @@ public class GraphAxis {
 	private static final int BIG_TICK_LENGTH = 10;
 	private static final int SMALL_TICK_LENGTH = 5;
 	
+	private float thickness = 2;
+	
 	/**
 	 * This is how
 	 * you can control the labels of the tick marks.
@@ -146,6 +148,8 @@ public class GraphAxis {
 			return data;
 		}
 	};
+
+
 	
 	/**
 	 * Create a new graph axis on the line in this position.
@@ -187,7 +191,7 @@ public class GraphAxis {
 	 */
 	public void draw(Graphics2D g2d) {
 		g2d.setPaint(Color.BLACK);
-		g2d.setStroke(new BasicStroke(2));
+		g2d.setStroke(new BasicStroke(thickness ));
 		g2d.draw(position);
 		drawTicks(g2d);
 	}
@@ -669,6 +673,23 @@ public class GraphAxis {
 	
 	public String toString() {
 		return "GraphAxis["+orientation+"; "+min+" to "+max+"]";
+	}
+
+	/**
+	 * Gets the current thickness of the line used to draw the axis.
+	 * @return
+	 */
+	public float getThickness() {
+		return thickness;
+	}
+
+	
+	/**
+	 * Sets the thickness of the line used to draw the axis.
+	 * @param thickness
+	 */
+	public void setThickness(float thickness) {
+		this.thickness = thickness;
 	}
 	
 

@@ -39,13 +39,7 @@ public class HistogramsChartArea
 	private float brightness = 60;
 
 	
-	@Override
-	protected void drawTickLabels(Graphics2D g2d) {
-		yAxis.drawTickLabels(g2d);
-		// don't draw x axis labels, since there's another graph just a few
-		// pixels away.
-	}
-	
+
 	public HistogramsChartArea() {
 		super();
 		H_AXIS_PADDING = 5;
@@ -53,7 +47,18 @@ public class HistogramsChartArea
 		
 		setTitleX("");
 		this.setPreferredSize(new Dimension(300, 200));
+		
+		xAxis.setThickness(0.5f);
+		yAxis.setThickness(0.5f);
 	}
+
+	@Override
+	protected void drawTickLabels(Graphics2D g2d) {
+		yAxis.drawTickLabels(g2d);
+		// don't draw x axis labels, since there's another graph just a few
+		// pixels away.
+	}
+	
 	
 	public HistogramsChartArea(HistogramDataset d) {
 		this();

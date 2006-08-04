@@ -97,7 +97,6 @@ public abstract class ProgressTask extends JDialog {
 		
 		task = new Thread(r);
 		task.start();
-		System.out.println("The worker thread: " + task);
 		
 		// setVisible does not return until the dialog is disposed, if the 
 		// ProgressTask was constructed as a modal dialog.

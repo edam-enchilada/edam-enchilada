@@ -36,7 +36,7 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 	
 	
 	public HistogramsWindow(int collID) {
-		super("I'm watching you!");
+		super("Spectrum Histogram");
 		
 		setLayout(new BorderLayout());
 		plotPanel = new JPanel();

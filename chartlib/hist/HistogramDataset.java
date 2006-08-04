@@ -56,7 +56,7 @@ public class HistogramDataset {
 		while (iter.hasNext()) {
 			Tuple<Integer, BinnedPeakList> t = iter.next();
 			peakList = t.getValue();
-			peakList.normalize(DistanceMetric.CITY_BLOCK);
+			peakList.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 	
 			++partnum;
 			

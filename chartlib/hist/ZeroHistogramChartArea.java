@@ -16,6 +16,8 @@ public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 		
 		yAxis.setRange(0, dataset.count);
 		yAxis.setTicks(1, 1);
+		xAxis.setThickness(0.5f);
+		yAxis.setThickness(0.5f);
 	}
 
 	@Override

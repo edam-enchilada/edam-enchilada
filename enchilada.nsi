@@ -9,10 +9,10 @@
 ;;; available from http://nsis.sourceforge.net/
 
 ; To build a copy of the installer with MSDE, uncomment this line:
-;!define WITH_MSDE
+!define WITH_MSDE
 
 ; To build a copy of the installer that you'd like to post on the Internets,
-; uncomment this line:
+; uncomment this line: (engages slow but effective compression)
 ;!define RELEASE
 
 
