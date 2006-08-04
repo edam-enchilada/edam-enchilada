@@ -6,46 +6,76 @@ import java.util.Map.Entry;
 
 public class Normalizer extends Normalizable {
 
-	/**
-	 * @author steinbel
-	 */
+//	/**
+//	 * @author steinbel
+//	 */
+//	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
+//		
+//		//set up stuff
+//		BinnedPeak bp;
+//		float magnitude, negMag, posMag;
+//		BinnedPeak entry;
+//		Iterator<BinnedPeak> iterator;
+//		//necessary because the iterator can't change peakList
+//		BinnedPeakList firstNorm = new BinnedPeakList();
+//		BinnedPeakList finalNorm = new BinnedPeakList();
+//
+//		//first normalize postive and negative peaks
+//		negMag = peakList.getPartialMag(dMetric, true);	
+//		posMag = peakList.getPartialMag(dMetric, false);
+//		iterator = peakList.posNegIterator(true);
+//		//NOTE: putting any peaks at 0 into the positive spectrum
+//		while (iterator.hasNext()) {
+//			entry = iterator.next();
+//			firstNorm.add(entry.key, (entry.value / negMag));
+//		}	
+//		iterator = peakList.posNegIterator(false);
+//		while (iterator.hasNext()){
+//			entry = iterator.next();
+//			firstNorm.add(entry.key, (entry.value / posMag));
+//		}
+//	
+//		//normalize altogether
+//		magnitude = peakList.getMagnitude(dMetric);	
+//		iterator = firstNorm.iterator();
+//		while (iterator.hasNext()) {
+//			entry = iterator.next();
+//			finalNorm.add(entry.key,(entry.value / magnitude));
+//		}	
+//		
+//		//reassign the original peaklist to the normalized values
+//		peakList = finalNorm;
+//	}
+	
 	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
 		
 		//set up stuff
 		BinnedPeak bp;
 		float magnitude, negMag, posMag;
-		BinnedPeak entry;
-		Iterator<BinnedPeak> iterator;
-		//necessary because the iterator can't change peakList
-		BinnedPeakList firstNorm = new BinnedPeakList();
-		BinnedPeakList finalNorm = new BinnedPeakList();
+		Map.Entry<Integer,Float> entry;
+		Iterator<Entry<Integer, Float>> iterator;
 
 		//first normalize postive and negative peaks
 		negMag = peakList.getPartialMag(dMetric, true);	
 		posMag = peakList.getPartialMag(dMetric, false);
-		iterator = peakList.posNegIterator(true);
-		//NOTE: putting any peaks at 0 into the positive spectrum
+		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {
 			entry = iterator.next();
-			firstNorm.add(entry.key, (entry.value / negMag));
+			if(entry.getKey() < 0)
+				entry.setValue(entry.getValue() / negMag);
+			else 
+				entry.setValue(entry.getValue() / posMag);
 		}	
-		iterator = peakList.posNegIterator(false);
-		while (iterator.hasNext()){
-			entry = iterator.next();
-			firstNorm.add(entry.key, (entry.value / posMag));
-		}
 	
 		//normalize altogether
 		magnitude = peakList.getMagnitude(dMetric);	
-		iterator = firstNorm.iterator();
+		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {
 			entry = iterator.next();
-			finalNorm.add(entry.key,(entry.value / magnitude));
+			entry.setValue(entry.getValue() / magnitude);
 		}	
-		
-		//reassign the original peaklist to the normalized values
-		peakList = finalNorm;
 	}
+
 
 	public float roundDistance(BinnedPeakList peakList, BinnedPeakList toList, DistanceMetric dMetric, float distance) {
 		assert distance < 2.01 : 
