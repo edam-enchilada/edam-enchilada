@@ -13,7 +13,7 @@
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line: (engages slow but effective compression)
-;!define RELEASE
+!define RELEASE
 
 
 ;--------------------------------
