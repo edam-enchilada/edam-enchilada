@@ -690,6 +690,8 @@ public class MainFrame extends JFrame implements ActionListener
 					super.finished();
 					progressBar.disposeThis();
 					dispose();
+					
+					System.exit(0);
 				}
 			};
 			worker.start();
@@ -697,6 +699,8 @@ public class MainFrame extends JFrame implements ActionListener
 		}else{
 			db.closeConnection();
 			dispose();
+			
+			System.exit(0);
 		}
 	}
 	
