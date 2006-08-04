@@ -44,9 +44,11 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 		this.add(plotPanel, BorderLayout.CENTER);
 		this.add(buttonPanel, BorderLayout.EAST);
-
+		
+		
 		try {
 			plot = new HistogramsPlot(collID);
+			plot.setTitle("Spectrum histogram for collection #" + collID);
 			zPlot = new ZoomableChart(plot);
 
 			zPlot.setCScrollMin(defMin);
@@ -89,8 +91,8 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		}
 		
 		buttonPanel.add(Box.createHorizontalStrut(150));
-//		plotPanel.setPreferredSize(new Dimension(500, 500));
 		
+//		setPreferredSize(new Dimension(700, 700));
 		validate();
 		pack();
 	}

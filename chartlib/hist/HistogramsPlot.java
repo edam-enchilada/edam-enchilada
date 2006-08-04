@@ -71,6 +71,7 @@ public class HistogramsPlot extends Chart {
 	private void addDatasets(HistogramDataset[] datasets) {
 		if (posHistArea == null) {
 			posHistArea = new HistogramsChartArea(datasets[0]);
+			posHistArea.setTitle("Positive Spectrum");
 			posHistArea.setAxisBounds(0, 300, 0, 1);
 			this.add(posHistArea);
 		} else {
@@ -89,6 +90,7 @@ public class HistogramsPlot extends Chart {
 		
 		if (negHistArea == null) {
 			negHistArea = new HistogramsChartArea(datasets[1]);
+			negHistArea.setTitle("Negative Spectrum");
 			negHistArea.setAxisBounds(0, 300, 0, 1);
 			this.add(negHistArea);
 		} else {

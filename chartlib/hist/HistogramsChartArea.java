@@ -46,7 +46,8 @@ public class HistogramsChartArea
 		H_TITLE_PADDING = 0;
 		
 		setTitleX("");
-		this.setPreferredSize(new Dimension(300, 200));
+		setMinimumSize(new Dimension(300, 200));
+		setPreferredSize(new Dimension(300, 200));
 		
 		xAxis.setThickness(0.5f);
 		yAxis.setThickness(0.5f);
