@@ -54,4 +54,8 @@ public class BinnedPeak {
 		key = l;
 		value = a;
 	}
+	
+	public String toString() {
+		return "BinnedPeak["+key+","+value+"]";
+	}
 }
