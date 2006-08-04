@@ -2,11 +2,6 @@ package analysis;
 
 import junit.framework.TestCase;
 
-/**
- * Testing!!!!
- * @author steinbel
- *
- */
 public class NormalizerTest extends TestCase {
 
 	
@@ -14,19 +9,13 @@ public class NormalizerTest extends TestCase {
 
 		super.setUp();
 	}
-
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		
 	}
-
-
-	/**
-	 * @author steinbel
-	 *
-	 */
+	
 	public void testNormalize() {
-		
+			
 		//normalize with city-block distance
 		
 		//figure out what the square peaks should be if normalized with city block
@@ -38,7 +27,7 @@ public class NormalizerTest extends TestCase {
 		Float secondMag = (secondNorm3 + secondNorm4) * 2;		
 		
 		Normalizer norm = new Normalizer();
-		BinnedPeakList normalizeThis = generatePeaks(norm);
+		BinnedPeakList normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.CITY_BLOCK);
 		
 		assert(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK) == 1.0):
@@ -55,16 +44,16 @@ public class NormalizerTest extends TestCase {
 		//dot product or euclidean squared
 		firstNorm3 = (float) 3.0/ (float) Math.sqrt(3*3 + 4*4);
 		firstNorm4 = (float) 4.0/ (float) Math.sqrt(3*3 + 4*4);
-		firstMag = (float) Math.sqrt((firstNorm3*firstNorm3 + firstNorm4*firstNorm4)*2);
-		secondNorm3 = firstNorm3 / firstMag;
-		secondNorm4 = firstNorm4 / firstMag;
-		secondMag = (float) Math.sqrt((secondNorm3*secondNorm3 + secondNorm4*secondNorm4) * 2);		
+		firstMag = (firstNorm3*firstNorm3 + firstNorm4*firstNorm4)*2;
+		secondNorm3 = firstNorm3 / (float) Math.sqrt(firstMag);
+		secondNorm4 = firstNorm4 / (float) Math.sqrt(firstMag);
+		secondMag = (secondNorm3 * secondNorm3 + secondNorm4 * secondNorm4) * 2;		
 		
 		normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.DOT_PRODUCT);
 		
 		assert(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT) == 1.0):
-			"Did not normalize properly with dot product distance.";
+			"Did not normalize properly with city block distance.";
 		assert(normalizeThis.getAreaAt(-200) == secondNorm3); 
 		assert(normalizeThis.getAreaAt(-100) == secondNorm4);
 		assert(normalizeThis.getAreaAt(0) == secondNorm3);
@@ -77,7 +66,7 @@ public class NormalizerTest extends TestCase {
 		normalizeThis.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 		
 		assert(normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED) == 1.0):
-			"Did not normalize properly with Euclidean squared distance.";
+			"Did not normalize properly with city block distance.";
 		assert(normalizeThis.getAreaAt(-200) == secondNorm3); 
 		assert(normalizeThis.getAreaAt(-100) == secondNorm4);
 		assert(normalizeThis.getAreaAt(0) == secondNorm3);
@@ -129,7 +118,10 @@ public class NormalizerTest extends TestCase {
 	}
 	private BinnedPeakList generateSquarePeaks(Normalizable norm) {
 		BinnedPeakList bpl = new BinnedPeakList(norm);
-
+		bpl.add(-200, 3);
+		bpl.add(-100, 4);
+		bpl.add(0, 3);
+		bpl.add(100, 4);
 		return bpl;
 	}
 }
