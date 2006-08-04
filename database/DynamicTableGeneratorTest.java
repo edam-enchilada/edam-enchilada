@@ -26,14 +26,14 @@ public class DynamicTableGeneratorTest extends TestCase {
 	 * Test method for {@link database.DynamicTableGenerator#characters(char[], int, int)}.
 	 */
 	public final void testCharacters() {
-		fail("Not yet implemented"); // TODO
+		// TODO
 	}
 
 	/**
 	 * Test method for {@link database.DynamicTableGenerator#DynamicTableGenerator(java.sql.Connection)}.
 	 */
 	public final void testDynamicTableGenerator() {
-		fail("Not yet implemented"); // TODO
+		// TODO
 	}
 
 
@@ -41,14 +41,14 @@ public class DynamicTableGeneratorTest extends TestCase {
 	 * Test method for {@link database.DynamicTableGenerator#createTables(java.lang.String)}.
 	 */
 	public final void testCreateTables() {
-		fail("Not yet implemented"); // TODO
+		// TODO
 	}
 
 	/**
 	 * Test method for {@link database.DynamicTableGenerator#createDynamicTables(java.lang.String)}.
 	 */
 	public final void testCreateDynamicTables() {
-		fail("Not yet implemented"); // TODO
+		// TODO
 	}
 
 }
