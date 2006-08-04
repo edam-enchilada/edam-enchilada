@@ -54,7 +54,7 @@ public class AggregatorTest extends TestCase {
 	 */
 	public void testCreateAggregateTimeSeries() {
 
-		db.openConnection();
+/*		db.openConnection();
 		ResultSet rs;
 		Statement stmt;
 		try {
@@ -137,7 +137,7 @@ public class AggregatorTest extends TestCase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
-		db.closeConnection();
+		db.closeConnection();*/
 	}
 	
 	/**
@@ -150,7 +150,7 @@ public class AggregatorTest extends TestCase {
 	 */
 	public void testParentAggregation() {
 
-		db.openConnection();
+		/*db.openConnection();
 		ResultSet rs;
 		Statement stmt;
 		try {
@@ -198,7 +198,7 @@ public class AggregatorTest extends TestCase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
-		db.closeConnection();
+		db.closeConnection();*/
 	}
 	
 	/*
