@@ -69,6 +69,7 @@ public class TimeSeriesPlot extends Chart {
 			nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 			//MUST SET SIZE or it won't work!
 			nextChart.setSize(new Dimension(height,width));
+			nextChart.setMinimumSize(new Dimension(height,width));
 			nextChart.setAxisBounds( 0, 1, 0, 1);
 			
 			nextChart.setForegroundColor(DATA_COLORS[count]);

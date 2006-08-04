@@ -27,6 +27,7 @@ public class LinePointsChartArea extends ChartArea {
 	public LinePointsChartArea(Dataset dataset, Color color) {
 		this(dataset);
 		this.foregroundColor = color;
+		setPreferredSize(new Dimension(400, 400));
 	}
 	
 	/**

@@ -9,11 +9,12 @@ import java.util.Iterator;
 public class BarChartArea extends ChartArea implements LocatablePeaks {
 	public BarChartArea(){
 		super();
+		setMinimumSize(new Dimension(100, 100));
 	}
 	
 	public BarChartArea(Dataset dataset) {
 		super(dataset);
-		setPreferredSize(new Dimension(400, 400));
+		setMinimumSize(new Dimension(100, 100));
 	}
 
 	@Override

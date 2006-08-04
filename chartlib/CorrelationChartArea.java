@@ -29,7 +29,7 @@ public class CorrelationChartArea extends ChartArea {
 	public CorrelationChartArea(Dataset correlationDataset,String title) {
 		super();
 		datasets.add(correlationDataset);
-		setPreferredSize(new Dimension(400, 400));
+		setMinimumSize(new Dimension(100, 100));
 		at = new AxisTitle(title, AxisTitle.AxisPosition.LEFT, new Point(200, 200));
 		
 		
