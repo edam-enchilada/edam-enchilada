@@ -160,7 +160,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 			"','[" + s + "]','" + fieldType + "'," + primaryKey + ","
 			+ table +"," + columnCounter + ")";
 		columnCounter++;
-		System.out.println(statement);
+		System.out.println(statement);//DEBUGGING
 		try {
 			stmt.addBatch(statement);
 		} catch (SQLException e) {

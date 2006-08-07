@@ -72,8 +72,12 @@ public abstract class Cluster extends CollectionDivider {
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	protected ClusterInformation clusterInfo;
-	protected static double power = 0.5;	//the power to which the peak areas are raised
+	protected static double power = 1.0;	//the power to which the peak areas are raised
 											//during preprocessing.
+	
+///////////////////////////////////////////////////////////////////////////////
+	private static final int BOOST = 1000;		//EVIL HACK CONSTANT!!!!!
+///////////////////////////////////////////////////////////////////////////////
 	
 	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	
@@ -106,6 +110,7 @@ public abstract class Cluster extends CollectionDivider {
 	}
 	
 	/**
+	 * @author steinbel
 	 * Resets the power to which peaks will be raised during preprocessing.
 	 * @param newPower	The new power to which the peaks will be raised.
 	 */
@@ -358,7 +363,24 @@ public abstract class Cluster extends CollectionDivider {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);
 			centroidList.get(i).peaks = sums.get(i);
 		}
+////////////////////////////////////////////////////////////////////////////////
+//		EVIL HACK OF DOOOOOOOOM!										  //
+//	/* @author steinbel													  //
+//	 * Because we store the peak area as ints, in order to keep the peak  //
+//	 * areas for normalized centroids/centeratoms, we need to scale up.   //
+//	 */																	  //
+////////////////////////////////////////////////////////////////////////////////
+	if (clusterInfo.normalize){
+		//boost the peaklist
 
+		for (Centroid c: centroidList){
+			c.peaks.multiply(BOOST);
+		}
+	}
+	
+////////////////////////////////////////////////////////////////////////////////
+//		End of evil hack.									//					  //
+////////////////////////////////////////////////////////////////////////////////
 		createCenterAtoms(centroidList, subCollectionIDs);
 		
 		printDescriptionToDB(particleCount, centroidList);
@@ -440,6 +462,24 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 
+////////////////////////////////////////////////////////////////////////////////
+//		EVIL HACK OF DOOOOOOOOM!										  //
+//	/* @author steinbel													  //
+//	 * Because we store the peak area as ints, in order to keep the peak  //
+//	 * areas for normalized centroids/centeratoms, we need to scale up.   //
+//	 */																	  //
+////////////////////////////////////////////////////////////////////////////////
+	if (clusterInfo.normalize){
+		//boost the peaklist
+
+		for (Centroid c: centroidList){
+			c.peaks.multiply(BOOST);
+		}
+	}
+	
+////////////////////////////////////////////////////////////////////////////////
+//		End of evil hack.									//					  //
+////////////////////////////////////////////////////////////////////////////////
 		createCenterAtoms(centroidList, subCollectionIDs);
 		totalDistancePerPass.add(new Double(totalDistance));
 		printDescriptionToDB(particleCount, centroidList);
@@ -449,6 +489,7 @@ public abstract class Cluster extends CollectionDivider {
 	}
 	
 	/**
+	 * @author steinbel
 	 * Creates the "center atoms" from a list of centroids, and puts them into
 	 * a new root-level collection.
 	 * 	
@@ -463,6 +504,9 @@ public abstract class Cluster extends CollectionDivider {
 		int centerCollID = createCenterCollection(parameterString, "");
 		int centerAtomID;
 
+		/*
+		 * this is part of the disgusting attempt to make this datatype-flexible
+		 */
 		CollectionCursor densecurs;
 		ParticleInfo info;
 		ArrayList<String> denseValues;
@@ -580,6 +624,10 @@ public abstract class Cluster extends CollectionDivider {
 			}
 			//System.out.println("DENSE " + dense);	//Debugging
 
+			/*
+			 * NOTE: Only the peak locations and areas are recorded right now
+			 * because that's the only info found in a BinnedPeakList.
+			 */
 			ArrayList<String> sparse = new ArrayList<String>();
 			//put the sparse info into appropriate format
 			Iterator<BinnedPeak> i = center.peaks.iterator();
@@ -589,11 +637,15 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<ArrayList<String>> sparseNamesTypes = 
 				db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoSparse);
 			String s = "";
+			Float area;
 			while (i.hasNext()) {
 				p = i.next();
 				//TODO: waaaaaaaaay too type-specific
+				
+				area = p.value;
+				
 				s = EnchiladaDataSetImporter.intersperse(
-							Integer.toString(new Float(p.value).intValue()), Integer.toString(p.key));
+							Integer.toString(area.intValue()), Integer.toString(p.key));
 			
 				for (int j=0; j<2; j++)
 					s = EnchiladaDataSetImporter.intersperse("1", s);
@@ -604,7 +656,8 @@ public abstract class Cluster extends CollectionDivider {
 					db.getNextID());
 			
 			//associate the new center atoms with the collections they represent
-			db.addCenterAtom(centerAtomID, ids.get(center.subCollectionNum - 1));
+			//(the one is because clusters start at 1 and indices start at 0)
+			db.addCenterAtom(centerAtomID, ids.get(center.subCollectionNum -1));
 
 			dense = "";
 			q++;

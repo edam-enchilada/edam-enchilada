@@ -97,8 +97,8 @@ public abstract class CollectionDivider {
 
 	/**
 	 * an array list of the IDs of each sub collection 
-	 * (each collection can be refered to it by its key
-	 * in the array list.
+	 * (each collection can be refered to by its key
+	 * in the array list.)
 	 */
 	protected ArrayList<Integer> subCollectionIDs;
 

@@ -1,5 +1,9 @@
 package database;
 
+import java.io.File;
+import java.sql.Connection;
+import java.util.ArrayList;
+
 import junit.framework.TestCase;
 
 /**
@@ -7,11 +11,21 @@ import junit.framework.TestCase;
  *
  */
 public class DynamicTableGeneratorTest extends TestCase {
+	
+	private CreateTestDatabase2 ctd;
+	private SQLServerDatabase db;
+	private Connection con;
+	private ArrayList<File> metaFiles;
 
 	/* (non-Javadoc)
 	 * @see junit.framework.TestCase#setUp()
 	 */
 	protected void setUp() throws Exception {
+		ctd = new CreateTestDatabase2();
+		metaFiles = ctd.createMetaFiles();
+		db = new SQLServerDatabase("TestDB2");
+		db.openConnection();
+		con = db.getCon();
 		super.setUp();
 	}
 
@@ -19,6 +33,8 @@ public class DynamicTableGeneratorTest extends TestCase {
 	 * @see junit.framework.TestCase#tearDown()
 	 */
 	protected void tearDown() throws Exception {
+		con.close();
+		db.closeConnection();
 		super.tearDown();
 	}
 
@@ -26,16 +42,7 @@ public class DynamicTableGeneratorTest extends TestCase {
 	 * Test method for {@link database.DynamicTableGenerator#characters(char[], int, int)}.
 	 */
 	public final void testCharacters() {
-		// TODO
 	}
-
-	/**
-	 * Test method for {@link database.DynamicTableGenerator#DynamicTableGenerator(java.sql.Connection)}.
-	 */
-	public final void testDynamicTableGenerator() {
-		// TODO
-	}
-
 
 	/**
 	 * Test method for {@link database.DynamicTableGenerator#createTables(java.lang.String)}.

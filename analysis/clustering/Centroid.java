@@ -49,6 +49,7 @@ import analysis.BinnedPeakList;
 
 /**
  * @author andersbe
+ * @author steinbel
  * Holds information about a centroid.  
  */
 public class Centroid {
@@ -62,8 +63,7 @@ public class Centroid {
 	public int numMembers;
 	
 	/**
-	 * The handle to which subcollection is representing this
-	 * centroid.  
+	 * The number of the cluster (within the k clusters) this centroid represents.
 	 */
 	public int subCollectionNum;
 	

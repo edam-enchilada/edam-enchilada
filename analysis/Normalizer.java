@@ -54,7 +54,7 @@ public class Normalizer extends Normalizable {
 		float magnitude, negMag, posMag;
 		Map.Entry<Integer,Float> entry;
 		Iterator<Entry<Integer, Float>> iterator;
-
+/*
 		//first normalize postive and negative peaks
 		negMag = peakList.getPartialMag(dMetric, true);	
 		posMag = peakList.getPartialMag(dMetric, false);
@@ -67,7 +67,7 @@ public class Normalizer extends Normalizable {
 				entry.setValue(entry.getValue() / posMag);
 		}	
 	
-		//normalize altogether
+	*/	//normalize altogether
 		magnitude = peakList.getMagnitude(dMetric);	
 		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {

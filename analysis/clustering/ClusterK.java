@@ -115,7 +115,7 @@ public abstract class ClusterK extends Cluster {
 		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
 		cInfo = c;
-		}
+	}
 	
 	/**
 	 * Divide refines the centroids if needed and calls the clustering method.
@@ -168,6 +168,8 @@ public abstract class ClusterK extends Cluster {
 						allCentroidLists.add(processPart(new ArrayList<Centroid>(),
 						        				partCurs));
 						centroidList.addAll(allCentroidLists.get(i));
+
+					
 						sampleIters += totalDistancePerPass.size();
 					}
 					
@@ -223,7 +225,7 @@ public abstract class ClusterK extends Cluster {
 				returnThis = 
 					assignAtomsToNearestCentroid(centroidList, curs);
 				curs.close();
-				
+
 				
 				try {
 					SwingUtilities.invokeAndWait(new Runnable() {
@@ -507,6 +509,8 @@ public abstract class ClusterK extends Cluster {
 		// since these are duplicates.
 		//totalDistancePerPass.remove(totalDistancePerPass.size()-1);
 		//totalDistancePerPass.remove(totalDistancePerPass.size()-1);
+		
+
 		System.out.println("Zero count = " + curs.getZeroCount());
 		return centroidList;
 	}

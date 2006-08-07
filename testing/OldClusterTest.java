@@ -12,17 +12,23 @@ import analysis.clustering.Cluster;
 import analysis.clustering.ClusterInformation;
 import analysis.clustering.KMeans;
 
+import database.CreateTestDatabase2;
 import database.SQLServerDatabase;
 import junit.framework.TestCase;
 
 public class OldClusterTest extends TestCase {
 	
+
 	private Cluster cluster;
-	private SQLServerDatabase db = new SQLServerDatabase("TestDB2");
+	private SQLServerDatabase db;
 	private Connection con;
 	
 
 	protected void setUp() throws Exception {
+
+		//SQLServerDatabase.rebuildDatabase("TestDB2");
+		new CreateTestDatabase2();
+		db = new SQLServerDatabase("TestDB2");
 		db.openConnection();
 		con = db.getCon();
 		//TODO: make this work with differnt types of clusters
@@ -31,8 +37,11 @@ public class OldClusterTest extends TestCase {
 	}
 
 	protected void tearDown() throws Exception {
+
+		//con.createStatement().executeUpdate("DROP DATABASE TestDB2");
 		con.close();
 		db.closeConnection();
+		
 	}
 
 	/**
@@ -69,7 +78,7 @@ public class OldClusterTest extends TestCase {
 		bpList.add(p);
 		bpList.add(q);
 		bpList.add(r);
-		Centroid addThis = new Centroid(bpList, 3);
+		Centroid addThis = new Centroid(bpList, 3, 1);
 		centroidList.add(addThis);
 		BinnedPeak s = new BinnedPeak(15, -30);
 		BinnedPeak t = new BinnedPeak(15, -20);
@@ -80,11 +89,11 @@ public class OldClusterTest extends TestCase {
 		bpl.add(t);
 		bpl.add(u);
 		bpl.add(v);
-		Centroid addMeToo = new Centroid(bpl, 1);
+		Centroid addMeToo = new Centroid(bpl, 1, 2);
 		centroidList.add(addMeToo);
 		ArrayList<Integer> clusterIDs = new ArrayList<Integer>();
-		clusterIDs.add(6);
 		clusterIDs.add(7);
+		clusterIDs.add(8);
 		
 		cluster.createCenterAtoms(centroidList, clusterIDs);
 		
@@ -112,40 +121,40 @@ public class OldClusterTest extends TestCase {
 		//method we're testing here)
 		Statement stmt = con.createStatement();
 		String update = "INSERT INTO Collections \n"
-			+ " VALUES (6,'Cluster1','cluster','firstcluster','ATOFMS')";
+			+ " VALUES (7,'Cluster1','cluster','firstcluster','ATOFMS')";
 		stmt.addBatch(update);
 		update = "INSERT INTO Collections \n"
-			+ " VALUES (7,'Cluster2','another cluster','secondcluster','ATOFMS')";
+			+ " VALUES (8,'Cluster2','another cluster','secondcluster','ATOFMS')";
 		stmt.addBatch(update);
 		update = "INSERT INTO AtomMembership \n"
-			+ " VALUES (6,1)";
+			+ " VALUES (7,1)";
 		stmt.addBatch(update);
 		update = "INSERT INTO AtomMembership \n"
-			+ " VALUES (6,2)";
+			+ " VALUES (7,2)";
 		stmt.addBatch(update);
 		update = "INSERT INTO AtomMembership \n"
-			+ " VALUES (6,3)";
+			+ " VALUES (7,3)";
 		stmt.addBatch(update);
 		update = "INSERT INTO AtomMembership \n"
-			+ " VALUES (7,4)";
+			+ " VALUES (8,4)";
 		stmt.addBatch(update);
 		update = "INSERT INTO CollectionRelationships \n"
-			+ " VALUES (1,6)";
+			+ " VALUES (1,7)";
 		stmt.addBatch(update);
 		update = "INSERT INTO CollectionRelationships \n"
-			+ " VALUES (1,6)";
+			+ " VALUES (1,8)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (1,6,1)";
+			+ " VALUES (1,7,1)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (2,6,2)";
+			+ " VALUES (2,7,2)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (3,6,3)";
+			+ " VALUES (3,7,3)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (4,7,1)";
+			+ " VALUES (4,8,1)";
 		stmt.addBatch(update);
 		stmt.executeBatch();
 		stmt.close();
