@@ -114,7 +114,7 @@ public class ATOFMSDataSetImporter {
 	protected File parFile;
 	
 	/* contains the collectionID and particleID */
-	private int[] id;
+	protected int[] id;
 	protected int positionInBatch, totalInBatch;
 	protected int constructsDone;
 	

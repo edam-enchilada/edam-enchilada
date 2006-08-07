@@ -44,7 +44,7 @@
 package dataImporters;
 
 import java.awt.Window;
-import java.io.File;
+import java.io.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.zip.DataFormatException;
@@ -65,6 +65,7 @@ import junit.framework.TestCase;
 
 import gui.ImportParsDialog;
 import gui.ParTableModel;
+import gui.ProgressBarWrapper;
 
 /**
  * @author ritza
@@ -284,6 +285,9 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		}
 	}
 	
+	/**
+	 * @author shaferia
+	 */
 	public void testReadParFileAndCreateEmptyCollection() {
 		try {
 			importer.parFile = new File((String)table.getValueAt(0,1));
@@ -291,7 +295,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			ATOFMS.ATOFMSParticle.currPeakParams = new ATOFMS.PeakParams(10, 20, .1f, .5f);			
 		}
 		catch (java.io.IOException ex) {
-			fail("Couldn't open necessary files to create empty collection");
+			fail("Couldn't set necessary files to create empty collection");
 		}
 		
 		try {
@@ -309,17 +313,207 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			
 			ResultSet rs = con.createStatement().executeQuery(
 					"SELECT * FROM Collections WHERE CollectionID = 2");
-
+			
 			assertTrue(rs.next());
 			assertEquals(rs.getString("Comment"), "ambient");
 			assertEquals(rs.getString("Description"), "b: ambient");
 			assertEquals(rs.getString("Datatype"), "ATOFMS");
 			
 			assertFalse(rs.next());
+			rs.close();
+			
+			rs = con.createStatement().executeQuery(
+					"SELECT * FROM ATOFMSDataSetInfo WHERE DataSetID = 1");
+			assertTrue(rs.next());
+			assertEquals(rs.getString("DataSet"), "b");
+			assertEquals(rs.getInt("MinHeight"), 10);
+			assertEquals(rs.getInt("MinArea"), 20);
+			assertEquals(rs.getFloat("MinRelArea"), 0.1f);
+			assertTrue(rs.getBoolean("Autocal"));
+			
+			assertFalse(rs.next());
+			rs.close();
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
 			fail("Couldn't analyze success of readParFileAndCreateEmptyCollection");
+		}
+		
+		try {
+			ATOFMS.ATOFMSParticle.currCalInfo = new CalInfo("testRow\\b\\cal.cal", false);
+			importer.readParFileAndCreateEmptyCollection();
+		}
+		catch (java.io.IOException ex) {
+			fail();
+		}
+		catch (DataFormatException ex) {
+			fail();
+		}
+		
+		try {
+			Connection con = db.getCon();
+			ResultSet rs = con.createStatement().executeQuery(
+					"SELECT * FROM ATOFMSDataSetInfo WHERE DataSetID = 2");
+			assertTrue(rs.next());
+			assertFalse(rs.getBoolean("Autocal"));
+			rs.close();
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+			fail("Couldn't analyze success of readParFileAndCreateEmptyCollection");
+		}
+	}
+	
+	/**
+	 * A PrintStream that captures written data in a StringBuffer
+	 * Useful for redirecting standard output to a string.
+	 * @author shaferia
+	 */
+	private class StringPrintStream {
+		private StringBuffer buf = new StringBuffer();
+		private OutputStream os = new OutputStream() {
+			public void write(int b) throws IOException {
+				buf.append((char) b);
+			}
+		};
+		private PrintStream ps = new PrintStream(os);
+		
+		public PrintStream getPrintStream() {
+			return ps;
+		}
+		
+		/**
+		 * Returns everything written since last invocation of flush()
+		 * @return content written to this StringPrintStream's PrintStream
+		 */
+		public String flush() {
+			ps.flush();
+			return buf.toString();
+		}
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testReadSpectraAndCreateParticle() {
+		//Since exceptions aren't thrown back down the stack by the database, 
+		//	we need to see if any are thrown
+		StringPrintStream ps = new StringPrintStream();
+		PrintStream oldErr = System.err;
+		System.setErr(ps.getPrintStream());
+		
+		//Make sure standard output gets set back.
+		try {
+			try {
+				importer.parFile = new File((String)table.getValueAt(0,1));
+				importer.totalInBatch = 1;
+				ATOFMS.ATOFMSParticle.currCalInfo = new CalInfo("testRow\\b\\cal.cal", true);
+				ATOFMS.ATOFMSParticle.currPeakParams = new ATOFMS.PeakParams(10, 20, .1f, .5f);
+				importer.id = 
+					db.createEmptyCollectionAndDataset("ATOFMS", 0, "b", 
+							"comment", "'null', 'null', 10, 10, 0.005, 1");
+				importer.progressBar = new ProgressBarWrapper(null, "Progress", 10);
+			}
+			catch (java.io.IOException ex) {
+				fail("Couldn't set necessary files to create empty collection");
+			}
+			
+			try {
+				importer.readSpectraAndCreateParticle();			
+			}
+			catch (java.io.IOException ex) {
+				ex.printStackTrace();
+				fail("Couldn't read spectra");
+			}
+			
+			//wait for importer to finish
+			while (importer.constructsDone == 0);
+			
+			assertEquals(importer.totalInBatch, 1);
+			assertEquals(importer.constructsDone, 1);
+			assertEquals(importer.totalParticles, 10);
+			assertEquals(importer.particleNum, 10);
+			assertNotNull(importer.read);
+			
+			try {
+				
+				Connection con = db.getCon();
+				ResultSet rs = con.createStatement().executeQuery(
+						"SELECT * FROM ATOFMSAtomInfoDense");
+				
+				//Compare to expected dense info
+				String root = System.getProperty("user.dir");
+				ArrayList<String[]> expected = new ArrayList<String[]>();
+				expected.add(new String[]{"1", "2004-08-04 15:39:00.0", "1.031E-6", "0.0", "3129", 
+						root + "\\testRow\\b\\b-040804153913-00001.amz"});
+				expected.add(new String[]{"2", "2004-08-04 15:39:00.0", "9.96E-7", "0.0", "2763", 
+						root + "\\testRow\\b\\b-040804153917-00002.amz"});
+				expected.add(new String[]{"3", "2004-08-04 15:39:00.0", "1.002E-6", "0.0", "2482", 
+						root + "\\testRow\\b\\b-040804153940-00003.amz"});			
+				expected.add(new String[]{"4", "2004-08-04 15:40:00.0", "9.84E-7", "0.0", "2948", 
+						root + "\\testRow\\b\\b-040804154010-00004.amz"});
+				
+				int x = 0;
+				for (; x < expected.size(); ++x) {
+					assertTrue(rs.next());
+					for (int i = 0; i < expected.get(x).length; ++i)
+						assertEquals(rs.getString(i + 1), expected.get(x)[i]);
+				}
+				
+				for (; x < 10; ++x)
+					assertTrue(rs.next());
+				assertFalse(rs.next());
+				
+				rs.close();
+				
+				//Compare to expected sparse info
+				expected = new ArrayList<String[]>();
+				expected.add(new String[]{"1", "-98.0", "10842", "0.48205948", "875"});
+				expected.add(new String[]{"1", "39.0", "26017", "0.607363", "3525"});
+				expected.add(new String[]{"2", "-96.0", "722", "0.6283725", "112"});
+				expected.add(new String[]{"2", "12.0", "5673"});
+				expected.add(new String[]{"2"});
+				expected.add(new String[]{"2"});
+				expected.add(new String[]{"3", "-80.0", "10074"});
+				expected.add(new String[]{"3"});
+				expected.add(new String[]{"3"});
+				
+				rs = con.createStatement().executeQuery(
+						"SELECT * FROM ATOFMSAtomInfoSparse");
+				x = 0;
+				for (; x < expected.size(); ++x) {
+					assertTrue(rs.next());
+					for (int i = 0; i < expected.get(x).length; ++i)
+						assertEquals(rs.getString(i + 1), expected.get(x)[i]);
+				}
+				
+				for (; x < 27; ++x)
+					assertTrue(rs.next());
+				assertFalse(rs.next());	
+				
+				rs.close();
+				
+				//check InternalAtomOrder
+				rs = con.createStatement().executeQuery("SELECT * FROM InternalAtomOrder");
+				for (x = 0; x < 10; ++x) {
+					assertTrue(rs.next());
+					assertEquals(rs.getInt("AtomID"), x + 1);
+					assertEquals(rs.getInt("CollectionID"), 2);
+					assertEquals(rs.getInt("OrderNumber"), x + 1);
+				}
+				
+				assertFalse(rs.next());
+				
+				rs.close();
+			}
+			catch (SQLException ex) {
+				ex.printStackTrace();
+				fail("Couldn't analyze success of readSpectraAndCreateParticle");
+			}
+		}
+		finally {
+			assertEquals(ps.flush().length(), 0);
+			System.setErr(oldErr);
 		}
 	}
 }
