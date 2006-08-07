@@ -83,5 +83,37 @@ public class ProgressBarWrapper extends JDialog{
 	public boolean wasTerminated() {
 		return wasTerminated;
 	}
-
+	public void setMaximum(final int n){
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				pBar.setMaximum(n);
+				validate();
+			}
+		});
+	}
+	public void reset(){
+		curNum = 0;
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				pBar.setValue(0);
+				pLabel.setText("");validate();
+			}
+		});
+	}
+	public void setValue(final int n){
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				pBar.setValue(n);
+				validate();
+			}
+		});
+	}
+	public void setText(final String text) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				pLabel.setText(text);
+				validate();
+			}
+		});
+	}
 }

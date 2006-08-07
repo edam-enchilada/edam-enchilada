@@ -4,7 +4,10 @@ package dataImporters;
  * A table model made to work the same as a ParTableModel, for the purpose of importing many ATOFMS datasets.
  */
 
+import errorframework.ErrorLogger;
+import externalswing.SwingWorker;
 import gui.FilePicker;
+import gui.ProgressBarWrapper;
 
 import java.io.*;
 import java.util.*;
@@ -107,11 +110,23 @@ public class ATOFMSBatchTableModel extends AbstractTableModel implements ParTabl
 			frame.pack();
 
 			// this explodes if anything is wrong, but it's just a test, so oh well.
-			ATOFMSDataSetImporter dsi = 
-				new ATOFMSDataSetImporter(
-						a, frame);
-			
-				dsi.collectTableInfo();
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(frame, "Importing ATOFMS Datasets", 100);
+			progressBar.constructThis();
+			final JFrame frameRef = frame;
+			final ATOFMSBatchTableModel aRef = a;
+			final SwingWorker worker = new SwingWorker(){
+				public Object construct(){
+					try {
+						ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(aRef, frameRef, progressBar);
+						dsi.collectTableInfo();
+					} catch (Exception e) {
+						ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
+					}
+					return null;
+				}
+			};
+			worker.start();
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

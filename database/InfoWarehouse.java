@@ -322,4 +322,7 @@ public interface InfoWarehouse {
 	public String getCollectionDatatype(int subCollectionNum);
 	public boolean addCenterAtom(int centerAtomID, int centerCollID);
 	public HashMap<Integer,ArrayList<Integer>> getSubCollectionsHierarchy(Collection collection);
+	public boolean beginTransaction();
+	public boolean commitTransaction();
+	public boolean rollbackTransaction();
 }

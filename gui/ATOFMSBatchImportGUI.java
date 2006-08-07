@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.*;
+
 import javax.swing.*;
 
 import java.io.*;
@@ -8,6 +9,7 @@ import java.io.*;
 import dataImporters.ATOFMSBatchTableModel;
 import dataImporters.ATOFMSDataSetImporter;
 import errorframework.ErrorLogger;
+import externalswing.SwingWorker;
 
 /**
  * A GUI for importing several ATOFMS collections at once, using a CSV file that
@@ -20,11 +22,11 @@ import errorframework.ErrorLogger;
  */
 
 public class ATOFMSBatchImportGUI {
-	private Window parent;
+	private JFrame parent;
 	private ATOFMSBatchTableModel tab;
 	private int parentID;
 	
-	public ATOFMSBatchImportGUI(Window parent) {
+	public ATOFMSBatchImportGUI(JFrame parent) {
 		super();
 		this.parent = parent;
 	}
@@ -89,14 +91,28 @@ public class ATOFMSBatchImportGUI {
 	 * 
 	 * Can take a while...
 	 */
-	public void go() {
-		try {
-			ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent);
-			dsi.setParentID(parentID);
-			dsi.checkNullRows();
-			dsi.collectTableInfo();
-		} catch (Exception e) {
-			ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
-		}
+	public void go(final CollectionTree collectionPane) {
+		final ProgressBarWrapper progressBar = 
+			new ProgressBarWrapper(parent, "Importing ATOFMS Datasets", 100);
+		progressBar.constructThis();
+		final SwingWorker worker = new SwingWorker(){
+			public Object construct(){
+				try {
+					ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent, progressBar);
+					dsi.setParentID(parentID);
+					dsi.checkNullRows();
+					dsi.collectTableInfo();
+				} catch (Exception e) {
+					ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
+				}
+				return null;
+			}
+			public void finished(){
+				progressBar.disposeThis();
+				collectionPane.updateTree();
+				parent.validate();
+			}
+		};
+		worker.start();
 	}
 }

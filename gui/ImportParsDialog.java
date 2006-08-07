@@ -63,7 +63,9 @@ import javax.swing.table.TableColumn;
 import analysis.clustering.ClusterK;
 
 import dataImporters.ATOFMSDataSetImporter;
+import database.SQLServerDatabase;
 import errorframework.*;
+import externalswing.SwingWorker;
 
 
 /**
@@ -79,8 +81,9 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	private ParTableModel pTableModel,advancedTableModel,basicTableModel;
 	private JProgressBar progressBar;
 	private int dataSetCount;
-	private static Window parent = null;
+	private JFrame parent = null;
 	private boolean importedTogether = false, showAdvancedOptions = false;
+	private SQLServerDatabase db;
 	private int parentID = 0; //default parent collection is root
 	
 	/**
@@ -92,10 +95,11 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	 * @throws java.awt.HeadlessException From the constructor of 
 	 * JDialog.  
 	 */
-	public ImportParsDialog(Frame owner) throws HeadlessException {
+	public ImportParsDialog(JFrame owner) throws HeadlessException {
 		// calls the constructor of the superclass (JDialog), sets the title and makes the
 		// dialog modal.  
 		super(owner, "Import MS-Analyze *.pars as Collections", true);
+		this.db = MainFrame.db;
 		parent = owner;
 		setSize(890,500);
 		
@@ -151,6 +155,11 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		add(buttonPane, BorderLayout.SOUTH);
 		
 		setVisible(true);	
+	}
+	
+	public ImportParsDialog(JFrame owner, SQLServerDatabase db) throws HeadlessException {
+		this(owner);
+		this.db = db;
 	}
 	
 	public ImportParsDialog() {
@@ -226,39 +235,58 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	{
 		Object source = e.getSource();
 		if (source == okButton) {
-				ATOFMSDataSetImporter dsi;
-				CardLayout card = (CardLayout)(listPane.getLayout());
-				if(showAdvancedOptions){
-					dsi = 
-						new ATOFMSDataSetImporter(
-								advancedTableModel, parent);
-				}else{
-					dsi = 
-						new ATOFMSDataSetImporter(
-								basicTableModel, parent);
-				}
-				if (importedTogether)
-					dsi.setParentID(parentID);
-				// If a .par file or a .cal file is missing, don't start the process.
-				//try {
-					try {
-						dsi.checkNullRows();
-					} catch (DisplayException e1) {
-//						 Exceptions here mostly have to do with mis-entered data.
-						// Those that don't should probably be handled differently,
-						// but I'm just reworking this so that it uses exceptions
-						// in a way that's less silly, so I'm not worrying about that
-						// for now.  -Thomas
-						ErrorLogger.displayException(this,e1.toString());
-						return;
+				final JDialog thisRef = this;
+				final CardLayout card = (CardLayout)(listPane.getLayout());
+				final ProgressBarWrapper progressBar = 
+					new ProgressBarWrapper(parent, ATOFMSDataSetImporter.title, 100);
+				progressBar.constructThis();
+				final SQLServerDatabase dbRef = db;
+				
+				final SwingWorker worker = new SwingWorker(){
+					public Object construct(){
+						dbRef.beginTransaction();
+						ATOFMSDataSetImporter dsi;
+						if(showAdvancedOptions){
+							dsi = 
+								new ATOFMSDataSetImporter(
+										advancedTableModel, parent, progressBar);
+						}else{
+							dsi = 
+								new ATOFMSDataSetImporter(
+										basicTableModel, parent, progressBar);
+						}
+						if (importedTogether)
+							dsi.setParentID(parentID);
+						else dsi.setParentID(0);
+						// If a .par file or a .cal file is missing, don't start the process.
+						//try {
+						try {
+							dsi.checkNullRows();
+						}catch (DisplayException e1) {
+//							 Exceptions here mostly have to do with mis-entered data.
+							// Those that don't should probably be handled differently,
+							// but I'm just reworking this so that it uses exceptions
+							// in a way that's less silly, so I'm not worrying about that
+							// for now.  -Thomas
+							ErrorLogger.displayException(thisRef,e1.toString());
+							dbRef.rollbackTransaction();
+							return null;
+						} 
+						try{
+							dsi.collectTableInfo();
+							dbRef.commitTransaction();
+						} catch (InterruptedException e2){
+							dbRef.rollbackTransaction();
+						}
+						return null;
 					}
-					dsi.collectTableInfo();
-					dispose();
-				/*} catch (Exception exc) {
-					
-					System.out.println("**"+exc.toString());
-
-				}*/
+					public void finished(){
+						progressBar.disposeThis();
+						dispose();
+					}
+				};
+				worker.start();
+				
 		}
 		else if (source == parentButton){
 			//pop up a "create new collections" dialog box & keep number of new

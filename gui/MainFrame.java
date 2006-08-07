@@ -315,9 +315,9 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		if (source == batchLoadATOFMSItem) {
 			ATOFMSBatchImportGUI abig = new ATOFMSBatchImportGUI(this);
-			if (abig.init()) abig.go();
-			collectionPane.updateTree();
-			validate();
+			if (abig.init()) abig.go(collectionPane);
+			// tree update and validate is being done in method go,
+			// when 'finished' method runs --- DRM
 		}
 		
 		if (source == importParsButton || source == loadATOFMSItem) 

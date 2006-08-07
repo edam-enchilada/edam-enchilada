@@ -3824,6 +3824,43 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 	}
 	
+	public boolean beginTransaction(){
+		try {
+			con.setAutoCommit(false);
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	public boolean rollbackTransaction(){
+		try {
+			System.out.println("rolling back to savepoint");
+			long start = System.currentTimeMillis();
+			con.rollback();
+			long stop = System.currentTimeMillis();
+			con.setAutoCommit(true);
+			System.out.println("rolled back to savepoint in "+(stop-start)+" milliseconds.");
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	public boolean commitTransaction(){
+		try{
+			con.commit();
+			con.setAutoCommit(true);//stop doing transactions
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+	}
+
 	/**
 	 * This creates the empty collections and the queries and sends it to fillAtomsFromMemory 
 	 * method.  This only handles ATOFMS and TIME SERIES data, which will need to
