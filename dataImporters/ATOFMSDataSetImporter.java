@@ -332,6 +332,7 @@ public class ATOFMSDataSetImporter {
 			countSet.close();
 			
 			totalParticles += tParticles;
+			final int cursetParticles = tParticles;
 			
 			final SwingWorker worker = new SwingWorker() {
 				public Object construct() {
@@ -354,6 +355,7 @@ public class ATOFMSDataSetImporter {
 								String particleFileName;
 								//int doDisplay = 4;
 								int nextID = db.getNextID();
+								int startParticleNum = particleNum;
 								Collection curCollection = db.getCollection(id[0]);
 								while (readSet.ready()) { // repeat until end of file.
 									token = new StringTokenizer(readSet.readLine(), ",");
@@ -385,7 +387,9 @@ public class ATOFMSDataSetImporter {
 									particleNum++;
 									//doDisplay++;
 									if(particleNum % 10 == 0 && particleNum >= 10 && progressBar != null)
-										progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
+										progressBar.increment("Importing Particle #"+particleNum+" out of "+totalParticles
+												+" (#"+(particleNum - startParticleNum)+ " out of " + 
+												cursetParticles + " in dataset " + curCollection.getName() + ")");
 									
 								}
 								db.updateAncestors(curCollection);
