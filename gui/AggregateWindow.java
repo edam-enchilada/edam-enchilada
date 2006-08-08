@@ -366,12 +366,17 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			final SwingWorker aggWorker = new SwingWorker() {
 				private int collectionID;
 				public Object construct() {
+					try{
 					collectionID = aggregator.createAggregateTimeSeries(
 							newSeriesName,collections,initProgressBar,
 							parentFrame);
-					return null;
+					} catch(InterruptedException e){
+						return null;
+					}
+					return new Integer(collectionID);
 				}
 				public void finished() {
+					initProgressBar.disposeThis();
 					setVisible(false);
 					long timingEnd = new Date().getTime();
 					System.out.println("Aggregation Time: " + (timingEnd-timingStart));

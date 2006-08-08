@@ -52,6 +52,7 @@ import gui.*;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -91,7 +92,6 @@ public class ATOFMSDataSetImporter {
 	private boolean parent;
 	
 	//Table values - used repeatedly.
-	private int rowCount;
 	private String name = "";
 	private String massCalFile, sizeCalFile;
 	private int height, area;
@@ -99,33 +99,24 @@ public class ATOFMSDataSetImporter {
 	private float peakError;
 	private boolean autoCal;
 	
-	private String particleName;	
-	
 	// Progress Bar variables
 	protected ProgressBarWrapper progressBar;
-	protected JDialog waitBarDialog = null;
-	protected JProgressBar pBar = null;
 	public static final String title = "Importing ATOFMS DataSet";
-	protected JLabel pLabel = null;
-	private Container parentContainer;
 	
 	/* '.par' file */
 	protected File parFile;
 	
 	/* contains the collectionID and particleID */
 	private int[] id;
-	protected int positionInBatch, totalInBatch;
-	protected int constructsDone;
+	protected int collectionIndex, numCollections;
 	protected Integer nextParticleID = new Integer(0);
-	
-	/* Object that reads the spectrum */
-	ReadSpec read;
+	protected int[] numParticles;
 	
 	/* SQLServerDatabase object */
 	SQLServerDatabase db;
 	
 	/* Lock to make sure database is only accessed in one batch at a time */
-	private static Integer dbLock = new Integer(0);
+	//private static Integer dbLock = new Integer(0);
 	
 	/* the parent collection */
 	private int parentID = 0;
@@ -153,33 +144,23 @@ public class ATOFMSDataSetImporter {
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
 	 */
-	public void collectTableInfo() throws InterruptedException{
+	public void collectTableInfo() throws InterruptedException, DisplayException{
 		
-		constructsDone = 0;
-		rowCount = table.getRowCount()-1;
-		totalInBatch = rowCount;
-		
+		numCollections = table.getRowCount()-1;
+		try {
+			numParticles = getNumParticles();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		//Loops through each dataset and creates each collection.
-		for (int i=0;i<rowCount;i++) {
+		for (collectionIndex=0;collectionIndex<numCollections;collectionIndex++) {
 			if(progressBar.wasTerminated()){
 				throw new InterruptedException();
 			}
-				progressBar.setTitle(title+": "+(i+1)+" of "+rowCount);
+				progressBar.setTitle(title+": "+(collectionIndex+1)+" of "+numCollections);
 				// Table values for this row.
-				int nextCol = 1;
-				name = (String)table.getValueAt(i,nextCol++);
-				massCalFile = (String)table.getValueAt(i,nextCol++);
-				sizeCalFile = (String)table.getValueAt(i,nextCol++);
-				height= ((Integer)table.getValueAt(i,nextCol++)).intValue();
-				area = ((Integer)table.getValueAt(i,nextCol++)).intValue();
-				relArea = ((Float)table.getValueAt(i,nextCol++)).floatValue();
-				if(table.getColumnCount() == 9){
-					peakError = ((Float)table.getValueAt(i,nextCol++)).floatValue();
-				}else{
-					peakError = .50f;
-				}
-				autoCal = ((Boolean)table.getValueAt(i,nextCol++)).booleanValue();
-				positionInBatch = i + 1;
+				setVariablesFromTable(collectionIndex);
 				// Call relevant methods
 				try {
 					processDataSet();
@@ -192,12 +173,31 @@ public class ATOFMSDataSetImporter {
 					//e.printStackTrace();
 					ErrorLogger.writeExceptionToLog("Importing","File "+name+
 							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage());
+					throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
 				}catch (DataFormatException e) {
 					//e.printStackTrace();
 					ErrorLogger.writeExceptionToLog("Importing","File "+name+
 							" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()); 
+					throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
 				}
 		}
+	}
+	
+	public void setVariablesFromTable(int i){
+		int nextCol = 1;
+		name = (String)table.getValueAt(i,nextCol++);
+		massCalFile = (String)table.getValueAt(i,nextCol++);
+		sizeCalFile = (String)table.getValueAt(i,nextCol++);
+		height= ((Integer)table.getValueAt(i,nextCol++)).intValue();
+		area = ((Integer)table.getValueAt(i,nextCol++)).intValue();
+		relArea = ((Float)table.getValueAt(i,nextCol++)).floatValue();
+		if(table.getColumnCount() == 9){
+			peakError = ((Float)table.getValueAt(i,nextCol++)).floatValue();
+		}else{
+			peakError = .50f;
+		}
+		autoCal = ((Boolean)table.getValueAt(i,nextCol++)).booleanValue();
+		
 	}
 	
 	/**
@@ -242,6 +242,8 @@ public class ATOFMSDataSetImporter {
 	 * @return returns if there are no null rows, throws exception if there are.
 	 */
 	public void checkNullRows() throws DisplayException {
+		if(true) throw new DisplayException("The Peaklisting Parameters need to be greater " +
+				"than 0 at row # " + 0 + ".");
 		String name, massCalFile;
 		int height, area;
 		float relArea;
@@ -309,6 +311,42 @@ public class ATOFMSDataSetImporter {
 		
 	}
 	
+	public int[] getNumParticles() throws IOException{
+		int[] numParticles = new int[numCollections+1];
+		for (int i=0;i<numCollections;i++) {
+			String fileName = (String)table.getValueAt(i,1);
+			File parFile = new File(fileName);
+
+			File canonical = parFile.getAbsoluteFile();
+			File parent = canonical.getParentFile();
+			File grandParent = parent.getParentFile();
+			//System.out.println("Data set: " + parent.toString());
+			final ATOFMSDataSetImporter thisref = this;
+
+			String name = parent.getName();
+			name = parent.toString()+ File.separator + name + ".set";
+			if (new File(name).isFile()) {
+				BufferedReader countSet = new BufferedReader(
+						new FileReader(name));
+
+				int tParticles = 0;
+				int particleNum = 0;
+				while(countSet.ready())
+				{
+					countSet.readLine();
+					tParticles++;
+				}
+				countSet.close();
+				numParticles[i] = tParticles;
+				numParticles[numCollections] += tParticles;
+			}else{
+				numParticles[i] = 0;
+			}
+		}
+		return numParticles;
+
+	}
+	
 	/**
 	 * Reads the filename of each spectrum from the '.set' file, finds that file, reads 
 	 * the file's information, and creates the particle.
@@ -326,25 +364,13 @@ public class ATOFMSDataSetImporter {
 		String name = parent.getName();
 		name = parent.toString()+ File.separator + name + ".set";
 		if (new File(name).isFile()) {
-			BufferedReader countSet = new BufferedReader(
-					new FileReader(name));
-
-			int tParticles = 0;
-			int particleNum = 0;
-			while(countSet.ready())
-			{
-				countSet.readLine();
-				tParticles++;
-			}
-			countSet.close();
 			
-			progressBar.setMaximum(tParticles);
+			progressBar.setMaximum(numParticles[collectionIndex]);
 			progressBar.reset();
 			
-
+			int particleNum = 0;
 			Collection destination = db.getCollection(id[0]);
 			ATOFMSParticle currentParticle;
-			try {
 				BufferedReader readSet = new BufferedReader(new FileReader(name));
 
 					StringTokenizer token;
@@ -367,10 +393,10 @@ public class ATOFMSDataSetImporter {
 						}
 
 						token.nextToken();
-						particleName = token.nextToken().replace('\\', File.separatorChar);
+						String particleName = token.nextToken().replace('\\', File.separatorChar);
 						particleFileName = grandParent.toString() + File.separator + particleName;
 						//try {
-							read = new ReadSpec(particleFileName);
+							ReadSpec read = new ReadSpec(particleFileName);
 
 							currentParticle = read.getParticle();
 							db.insertParticle(
@@ -386,143 +412,23 @@ public class ATOFMSDataSetImporter {
 						nextID++;
 						particleNum++;
 						//doDisplay++;
-						if (particleNum%10 == 0 && particleNum > 0) {
+						//if((int)(100.0*particleNum/tParticles)>(int)(100.0*(particleNum-1)/tParticles)){
+						if(particleNum%10 == 0 && particleNum > 0){
 							//progressBar.increment("Importing Particle # "+particleNum+" out of "+tParticles);
+							//progressBar.setValue((int)(100.0*particleNum/tParticles));
 							progressBar.setValue(particleNum);
-							progressBar.setText("Importing Particle # "+particleNum+" out of "+tParticles);
+							progressBar.setText("Importing Particle # "+particleNum+" out of "+numParticles[collectionIndex]);
 						}
-							
-
 					}
 					db.updateAncestors(curCollection);
-				readSet.close();
-			} catch (IOException e) {
-				ErrorLogger.writeExceptionToLog("Importing","Error reading dataset for collection "+
-						destination.getName()+"\n\tMessage: "+e.toString()+","+e.getMessage());
-			}		
-			final String exceptionFile = particleName;
-			
-			
-
+					readSet.close();
 		} else {
-			ErrorLogger.displayException(parentContainer, 
+			ErrorLogger.displayException(progressBar, 
 					"Dataset has no hits because "+name+" does not exist.");
 		}
 
 	}
 	
-	/*public void readSpectraAndCreateParticle() 
-	throws IOException, NumberFormatException, InterruptedException{
-		//Read spectra & create particle.
-		File canonical = parFile.getAbsoluteFile();
-		File parent = canonical.getParentFile();
-		File grandParent = parent.getParentFile();
-		//System.out.println("Data set: " + parent.toString());
-		final ATOFMSDataSetImporter thisref = this;
-		
-		String name = parent.getName();
-		name = parent.toString()+ File.separator + name + ".set";
-		if (new File(name).isFile()) {
-			BufferedReader countSet = new BufferedReader(
-					new FileReader(name));
-			
-			int tParticles = 0;
-			
-			while(countSet.ready())
-			{
-				countSet.readLine();
-				tParticles++;
-			}
-			countSet.close();
-			
-			totalParticles += tParticles;
-			
-			progressBar.setMaximum(tParticles);
-			progressBar.reset();
-			
-			final Collection destination = db.getCollection(id[0]);
-			try {
-				BufferedReader readSet = new BufferedReader(new FileReader(name));
-
-				StringTokenizer token;
-				//int doDisplay = 4;
-				nextParticleID = db.getNextID();
-				Collection curCollection = db.getCollection(id[0]);
-				while (readSet.ready()) { // repeat until end of file.
-
-					if(progressBar.wasTerminated()){
-						throw new InterruptedException();
-					}
-
-					token = new StringTokenizer(readSet.readLine(), ",");
-
-					// .set files are sometimes made with really strange line delims,
-					// so we ignore empty lines.
-					if (! token.hasMoreTokens()) {
-						continue;
-					}
-
-					token.nextToken();
-					particleName = token.nextToken().replace('\\', File.separatorChar);
-					final String particleFileName = grandParent.toString() + File.separator + particleName;
-
-					final SwingWorker worker = new SwingWorker() {
-						public Object construct() {
-
-							try {
-								ReadSpec read = new ReadSpec(particleFileName);
-
-								ATOFMSParticle currentParticle = read.getParticle();
-								synchronized (nextParticleID) {				
-									db.insertParticle(
-
-											currentParticle.particleInfoDenseString(),
-											currentParticle.particleInfoSparseString(),
-											destination,id[1],nextParticleID, true);
-								}
-								nextParticleID++;
-								particleNum++;
-								if(particleNum % 10 == 0 && particleNum >= 10 && progressBar != null)
-									progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
-
-								
-							}
-							catch (Exception e) {
-								ErrorLogger.writeExceptionToLog("Importing","Error reading or inserting particle " + 
-										particleFileName+":\n\tMessage: "+e.getMessage());
-							}
-						}							
-						public void finished() {
-							synchronized (thisref) {
-								thisref.notifyAll();						
-							}
-						}
-					};
-			worker.start();
-			
-			db.updateAncestors(curCollection);
-			}
-			readSet.close();
-		} catch (IOException e) {
-			ErrorLogger.writeExceptionToLog("Importing","Error reading dataset for collection "+
-					destination.getName()+"\n\tMessage: "+e.toString()+","+e.getMessage());
-		}		
-		final String exceptionFile = particleName;
-		
-		++constructsDone;
-		if (constructsDone == totalInBatch)
-			progressBar.disposeThis();
-
-		
-			
-		} else {
-			ErrorLogger.displayException(parentContainer, 
-					"Dataset has no hits because "+name+" does not exist.");
-		}
-	
-	}
-
-	*/
 	// tests for .par version (.ams,.amz)
 	// String[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {

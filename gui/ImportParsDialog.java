@@ -262,22 +262,20 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 						//try {
 						try {
 							dsi.checkNullRows();
+							dsi.collectTableInfo();
+							dbRef.commitTransaction();
+						} catch (InterruptedException e2){
+							dbRef.rollbackTransaction();
 						}catch (DisplayException e1) {
 //							 Exceptions here mostly have to do with mis-entered data.
 							// Those that don't should probably be handled differently,
 							// but I'm just reworking this so that it uses exceptions
 							// in a way that's less silly, so I'm not worrying about that
 							// for now.  -Thomas
-							ErrorLogger.displayException(thisRef,e1.toString());
+							ErrorLogger.displayException(progressBar,e1.toString());
 							dbRef.rollbackTransaction();
 							return null;
 						} 
-						try{
-							dsi.collectTableInfo();
-							dbRef.commitTransaction();
-						} catch (InterruptedException e2){
-							dbRef.rollbackTransaction();
-						}
 						return null;
 					}
 					public void finished(){

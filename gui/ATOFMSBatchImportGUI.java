@@ -8,6 +8,8 @@ import java.io.*;
 
 import dataImporters.ATOFMSBatchTableModel;
 import dataImporters.ATOFMSDataSetImporter;
+import database.SQLServerDatabase;
+import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
@@ -95,17 +97,28 @@ public class ATOFMSBatchImportGUI {
 		final ProgressBarWrapper progressBar = 
 			new ProgressBarWrapper(parent, "Importing ATOFMS Datasets", 100);
 		progressBar.constructThis();
+		final SQLServerDatabase dbRef = MainFrame.db;
 		final SwingWorker worker = new SwingWorker(){
 			public Object construct(){
-				try {
 					ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent, progressBar);
-					dsi.setParentID(parentID);
-					dsi.checkNullRows();
-					dsi.collectTableInfo();
-				} catch (Exception e) {
-					ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
-				}
-				return null;
+					dbRef.beginTransaction();
+					try {
+						dsi.checkNullRows();
+						dsi.collectTableInfo();
+						dbRef.commitTransaction();
+					} catch (InterruptedException e2){
+						dbRef.rollbackTransaction();
+					}catch (DisplayException e1) {
+//						 Exceptions here mostly have to do with mis-entered data.
+						// Those that don't should probably be handled differently,
+						// but I'm just reworking this so that it uses exceptions
+						// in a way that's less silly, so I'm not worrying about that
+						// for now.  -Thomas
+						ErrorLogger.displayException(progressBar,e1.toString());
+						dbRef.rollbackTransaction();
+						return null;
+					} 
+					return null;
 			}
 			public void finished(){
 				progressBar.disposeThis();

@@ -52,7 +52,7 @@ public class AggregatorTest extends TestCase {
 	 * a time.
 	 *
 	 */
-	public void testCreateAggregateTimeSeries() {
+	public void testCreateAggregateTimeSeries(){
 
 /*		db.openConnection();
 		ResultSet rs;
@@ -69,8 +69,13 @@ public class AggregatorTest extends TestCase {
 			public void run() {
 				MainFrame.db = db;
 				MainFrame mf = new MainFrame();
-				int cID = aggregator.createAggregateTimeSeries("aggregated",collections,
-						progressBar, mf);
+				try {
+					int cID = aggregator.createAggregateTimeSeries("aggregated",collections,
+							progressBar, mf);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		
@@ -164,8 +169,13 @@ public class AggregatorTest extends TestCase {
 			public void run() {
 				MainFrame.db = db;
 				MainFrame mf = new MainFrame();
-				int cID = aggregator.createAggregateTimeSeries("aggregated1",
-						collections1,progressBar1, mf);
+				try {
+					int cID = aggregator.createAggregateTimeSeries("aggregated1",
+							collections1,progressBar1, mf);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		
@@ -184,8 +194,13 @@ public class AggregatorTest extends TestCase {
 			public void run() {
 				MainFrame.db = db;
 				MainFrame mf = new MainFrame();
-				int cID = aggregator.createAggregateTimeSeries("aggregated2",
-						collections2,progressBar2, mf);
+				try {
+					int cID = aggregator.createAggregateTimeSeries("aggregated2",
+							collections2,progressBar2, mf);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		

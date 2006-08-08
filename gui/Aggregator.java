@@ -66,35 +66,22 @@ public class Aggregator {
 	 * 
 	 * This method should always be called from outside the EDT, e.g. via
 	 * SwingWorker.
+	 * @return CollectionID of the new Collection or -1 if aggregation failed or was cancelled
 	 */
 	public int createAggregateTimeSeries(String syncRootName,
-			Collection[] collections, ProgressBarWrapper progressBar,
-			MainFrame mainFrame) {
-		int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
-		return createAggregateTimeSeries(rootCollectionID, collections,
-				progressBar, mainFrame);
-	}
-
-	/**
-	 * @param rootCollectionID the CollectionID for the new time-series data
-	 * @param collections the collections to be aggregated
-	 * @return
-	 * 
-	 * This method should be private: it depends on the above overloaded version.
-	 */
-	private int createAggregateTimeSeries(final int rootCollectionID,
-			final Collection[] collections,
-			final ProgressBarWrapper progressBar1, MainFrame mainFrame) {
+			Collection[] collections, final ProgressBarWrapper progressBar,
+			MainFrame mainFrame) throws InterruptedException{
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
-
+		int rootCollectionID = -1;
+		
 		//get the valid m/z values for each collection individually
-		Date s,e; // start and end dates.
+		Date startTime,endTime; // start and end dates.
 		for (int i = 0; i < collections.length; i++) {
 			final String text = "Retrieving Valid M/Z Values for Collection # "+(i+1)+" out of "+collections.length;
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
-					progressBar1.increment(text);
+					progressBar.increment(text);
 				}
 			});
 			Collection curColl = collections[i];
@@ -111,15 +98,16 @@ public class Aggregator {
 					db.getMaxMinDateInCollections(array,startDate,endDate);
 					long end = new Date().getTime();
 					System.out.println("getMaxMinDateInCollections: "+(end-begin)/1000+" sec.");
-					s = startDate.getTime();
-					e = endDate.getTime();
+					startTime = startDate.getTime();
+					endTime = endDate.getTime();
 				}
 				else {
-					s = start.getTime();
-					e = end.getTime();
+					startTime = start.getTime();
+					endTime = end.getTime();
 				}
+				
 				long begin = new Date().getTime();
-				mzValues[i] = db.getValidSelectedMZValuesForCollection(curColl, s, e);	
+				mzValues[i] = db.getValidSelectedMZValuesForCollection(curColl, startTime, endTime);	
 				long end = new Date().getTime();
 				System.out.println("getValidMZValuesForCollection: "+(end-begin)/1000+" sec.");
 				if (mzValues[i] != null)
@@ -130,28 +118,24 @@ public class Aggregator {
 				numSqlCalls[0]++;
 			}
 		}
-		if(progressBar1.wasTerminated()){
-			progressBar1.disposeThis();
-			return -1;
+		if(progressBar.wasTerminated()){
+			throw new InterruptedException();
 		}
-		final ProgressBarWrapper progressBar2 = 
-			new ProgressBarWrapper(parentFrame, "Aggregating Time Series", numSqlCalls[0]+1);
-		
-		progressBar2.constructThis();
+		progressBar.setTitle("Aggregating Time Series");
+		progressBar.setMaximum(numSqlCalls[0]+1);
 		
 		// By constructing progressBar2 BEFORE disposing progressBar1, the
 		// request for making progressBar2 is in the EDT queue waiting to go
 		// when progressBar1 is finally disposed. If we dispose progressBar1
 		// first (which is modal), we technically run the risk that another
 		// event will get in between the two.
-		progressBar1.disposeThis();
 		
 		//actually do the aggregation
 		for (int i = 0; i < collections.length; i++) {
 			final String name = collections[i].getName();
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
-					progressBar2.increment("Constructing time basis for "+name);
+					progressBar.increment("Constructing time basis for "+name);
 				}
 			});
 			long begin = new Date().getTime();
@@ -160,29 +144,22 @@ public class Aggregator {
 			else {
 				db.createTempAggregateBasis(collections[i],start,end,interval);
 			}
-			if(progressBar2.wasTerminated()){
-				progressBar2.disposeThis();
-				return -1;
+			if(progressBar.wasTerminated()){
+				throw new InterruptedException();
 			}
 			long end = new Date().getTime();
 			System.out.println("createTempAggBasis: "+(end-begin)/1000+" sec.");
 			begin = new Date().getTime();
-			db.createAggregateTimeSeries(progressBar2, rootCollectionID, collections[i], mzValues[i]);
-			if(progressBar2.wasTerminated()){
-				progressBar2.disposeThis();
-				return -1;
-			}
+			db.beginTransaction();
+			
+			rootCollectionID = db.createAggregateTimeSeries(progressBar, syncRootName, collections[i], mzValues[i]);
+			db.commitTransaction();
 			end = new Date().getTime();
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 			db.deleteTempAggregateBasis();
 		}
-		if(progressBar2.wasTerminated()){
-			progressBar2.disposeThis();
-			return -1;
-		}
 		mainFrame.updateSynchronizedTree(rootCollectionID);
 		
-		progressBar2.disposeThis();
 		
 		return rootCollectionID;
 	}

@@ -287,8 +287,8 @@ public interface InfoWarehouse {
 	public void deleteTempAggregateBasis();
 	public void getMaxMinDateInCollections(Collection[] collections, Calendar minDate, Calendar maxDate);
 	
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, 
-			Collection curColl, int[] mzValues);
+	public int createAggregateTimeSeries(ProgressBarWrapper progressBar, String rootName, 
+			Collection curColl, int[] mzValues) throws InterruptedException;
 	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromPercent(Collection collection,double magnitude, int minDuration);
 	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromMedian(Collection collection,double magnitude, int minDuration);
 	public ArrayList<TreeMap<Date,Double>> createAndDetectPlumesFromValue(Collection collection,double magnitude, int minDuration);

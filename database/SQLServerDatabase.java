@@ -188,6 +188,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		con = null;
 		try {
 			con = DriverManager.getConnection("jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
+			con.setAutoCommit(true);
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","Failed to establish a connection to SQL Server.");
 			System.err.println("Failed to establish a connection to SQL Server");
@@ -316,12 +317,13 @@ public class SQLServerDatabase implements InfoWarehouse
 			
 			//Changed back to use datasetName separately from params to fix
 			//importation from MSAnalyze.  TODO: We should discuss.  ~Leah
-			String statement = "INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) + " VALUES(" + 
-			returnVals[1] + ",'" + datasetName + "',"+ params + ")";
-			if (statement.charAt(statement.length()-2) == ',')
-				statement = statement.substring(0,statement.length()-2)+")";
-			//System.out.println(statement); //debugging
-			stmt.execute(statement);	
+			StringBuilder sql = new StringBuilder();
+			sql.append("INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) 
+					+ " VALUES(" + returnVals[1] + ",'" + datasetName + "'");
+			if(params.length()>0)sql.append(","+ params + ")");
+			
+			//System.out.println(sql.toString); //debugging
+			stmt.execute(sql.toString());	
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL Exception creating the new dataset.");
@@ -3860,24 +3862,29 @@ public class SQLServerDatabase implements InfoWarehouse
 		}
 		
 	}
-
 	/**
-	 * This creates the empty collections and the queries and sends it to fillAtomsFromMemory 
-	 * method.  This only handles ATOFMS and TIME SERIES data, which will need to
+	 * This creates the populates a time-series collection and returns the CollectionID of the new Collection.  
+	 * This only handles ATOFMS and TIME SERIES data, which will need to
 	 * be changed.
 	 * 
-	 * @return the list of CIDs that need to be updated in InternalAtomORder.
+	 * @return CollectionID of the new collection or -1 if aggregation failed or was cancelled
 	 */
-	public void createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) {
-		System.out.println("root: "+rootCollectionID+"\ncur: "+curColl.getCollectionID());
+	public int createAggregateTimeSeries(ProgressBarWrapper progressBar, String rootName, Collection curColl, int[] mzValues) 
+		throws InterruptedException{
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
 		AggregationOptions options = curColl.getAggregationOptions();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		try {
+		
 		Statement stmt = con.createStatement();
 		StringBuilder sql = new StringBuilder();
+		
+		// create the root collection
+		int rootCollectionID = createEmptyCollection("TimeSeries", 1, rootName, "", "");
+		
+		
 		// Create and Populate #atoms table with appropriate information.
 		/* IF DATATYPE IS ATOFMS */
 		if (curColl.getDatatype().equals("ATOFMS")) {	
@@ -3885,9 +3892,8 @@ public class SQLServerDatabase implements InfoWarehouse
 				ErrorLogger.writeExceptionToLog("SQLServer","Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return;
+				return -1;
 			} 
-			
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 			if (mzValues.length == 0) {
 				// do nothing!  allow emptiness.
@@ -3925,6 +3931,9 @@ public class SQLServerDatabase implements InfoWarehouse
 				int mzPeakLoc, mzCollectionID;
 				// for each mz value specified, make a new child collection and populate it.
 				for (int j = 0; j < mzValues.length; j++) {	
+					if(progressBar.wasTerminated()){
+						throw new InterruptedException();
+					}
 					mzPeakLoc = mzValues[j];
 					mzCollectionID = createEmptyCollection("TimeSeries", mzRootCollectionID, mzPeakLoc + "", "", "");
 					progressBar.increment("  " + collectionName + ", M/Z: " + mzPeakLoc);
@@ -3936,8 +3945,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					"ORDER BY NewAtomID;\n");
 				}
 				sql.append("DROP TABLE #atoms;\n");
+				
+				// if the user tried to cancel, STOP
 				if(progressBar.wasTerminated()){
-					return;
+					throw new InterruptedException();
 				}
 				progressBar.increment("  Executing Queries...");
 					// if the particle count is selected, produce that time series as well.
@@ -3945,7 +3956,10 @@ public class SQLServerDatabase implements InfoWarehouse
 					// it now tracks number of particles instead of sum of m/z particles.	
 				//System.out.println("Statement: "+sql.toString());
 				progressBar.setIndeterminate(true);
+				long start = System.currentTimeMillis();
 				stmt.execute(sql.toString());
+				long stop = System.currentTimeMillis();
+				System.out.println("executed in "+(stop-start)+" milliseconds.");
 			}
 			sql = new StringBuilder();
 			if (options.produceParticleCountTS) {
@@ -3967,8 +3981,16 @@ public class SQLServerDatabase implements InfoWarehouse
 				
 				progressBar.increment("  " + collectionName + ", Particle Counts");
 				//System.out.println("Statement: "+sql.toString());
+				long start = System.currentTimeMillis();
 				stmt.execute(sql.toString());
+				long stop = System.currentTimeMillis();
+				System.out.println("executed in "+(stop-start)+" milliseconds.");
 			}
+//			 if the user tried to cancel, STOP
+			if(progressBar.wasTerminated()){
+				throw new InterruptedException();
+			}
+			
 			
 			/* IF DATATYPE IS TIME SERIES */
 		} else if (curColl.getDatatype().equals("TimeSeries")) {
@@ -3997,7 +4019,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return;
+				return -1;
 			} else if (mzValues.length == 0) {
 				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
@@ -4066,11 +4088,21 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 		}
 		//stmt.execute(sql.toString());
+		
 		stmt.close();
+		
+		return rootCollectionID;
 		} catch (SQLException e) {
+			try{
+				con.setAutoCommit(true);
+			} catch (SQLException ex) {
+				System.err.println("problem setting auto-commit");
+				ex.printStackTrace();
+				System.exit(1);
+			}
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception aggregating collection: " + collectionName);
 			System.err.println("SQL exception aggregating collection: " + collectionName);
-			e.printStackTrace();
+			return -1;
 		}
 	}
 	
