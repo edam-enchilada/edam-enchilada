@@ -31,10 +31,10 @@ public class HistogramDatasetTest extends TestCase {
 		ALBPL base = new ALBPL(100), compare = new ALBPL(100);
 
 		
-		for (int i = 1; i <= 5; i++) {
+		for (int i = 1; i <= 100; i++) {
 			BinnedPeakList bpl = new BinnedPeakList();
-			for (int j = 0; j < rand.nextInt(5); j++) {
-				bpl.add(rand.nextInt(10) - 5, rand.nextFloat());
+			for (int j = 0; j < rand.nextInt(60); j++) {
+				bpl.add(rand.nextInt(10) - 30, rand.nextFloat());
 			}
 			
 			bpl.normalize(DistanceMetric.CITY_BLOCK);

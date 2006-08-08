@@ -56,6 +56,21 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			
 			plotPanel.add(zPlot);
 			
+			BrushManager brusher = new BrushManager(plot);
+			
+			MouseRedirector mode = new MouseRedirector("Mouse Function");
+			mode.addMouseMode("Zoom", zPlot);
+
+			// this is a little silly: zoomablechart registers itself as a listener
+			// of the plot, but we only want it sometimes, so we unregister it
+			// and register it on our selector.
+			plot.removeMouseListener(zPlot);
+			plot.removeMouseMotionListener(zPlot);
+			plot.addMouseListener(mode);
+			plot.addMouseMotionListener(mode);
+			
+			buttonPanel.add(mode);
+			
 			buttonPanel.add(new HistogramMouseDisplay(plot));
 			JButton zdef, zout;
 			zdef = new JButton("Zoom Default");

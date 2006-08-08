@@ -48,4 +48,10 @@ public class ZeroHistogramChartArea extends AbstractMetricChartArea {
 		// do nothing, since there's no room for a title (we're right against
 		// the x-axis of the graph above.)
 	}
+	
+	public void removeDataset(HistogramDataset dataset) {
+		System.out.println("not yet implemented: remove dataset from "
+				+this.getClass());
+	}
+	
 }

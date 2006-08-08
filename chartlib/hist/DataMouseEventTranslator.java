@@ -10,6 +10,9 @@ import javax.swing.event.MouseInputListener;
 
 import chartlib.AbstractMetricChartArea;
 
+/*
+ * Change so it can work on a Chart?  not too bad maybe?
+ */
 
 /**
  * A thing that sits between you and the things you're listening to, and

@@ -1,5 +1,6 @@
 package chartlib.hist;
 
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -12,28 +13,28 @@ import javax.swing.event.MouseInputAdapter;
 public class BrushManager extends MouseInputAdapter {
 	public static final int SELECTION_INCREASED = 1;
 	
+	private HistogramsPlot plot;
+	
+	Point dragStart = null;
+	
 	DataMouseEventTranslator trans;
 	ArrayList<ActionListener> listeners = new ArrayList<ActionListener>();
 	
 	ArrayList<BrushSelection> selected = new ArrayList<BrushSelection>();
 	
 	public BrushManager(HistogramsPlot plot) {
+		this.plot = plot;
 		trans = new DataMouseEventTranslator(plot);
 		trans.addMouseMotionListener(this);
 		trans.addMouseListener(this);
 	}
-
-	private void notifyListeners() {
-		for (ActionListener l : listeners) {
-			l.actionPerformed(
-					new ActionEvent(this, SELECTION_INCREASED, "selection"));
-		}
-	}
 	
+	public void listenTo() {}
+
 	public void mousePressed(MouseEvent me) {
-		DataMouseEvent e = cast(me);
-		
-		
+//		DataMouseEvent e = cast(me);
+//		
+//		
 		
 	}
 	
@@ -55,12 +56,23 @@ public class BrushManager extends MouseInputAdapter {
 	
 	
 	public void mouseClicked(MouseEvent me) {
+		System.out.print(".");
 		DataMouseEvent e = cast(me);
 		Point2D dataP = e.getPoint2D();
-		selected.add(new BrushSelection((int)dataP.getX(), (float)dataP.getY()));
+		selected.add(new BrushSelection(plot.whichGraph(e.getPoint()), 
+				(int)dataP.getX(), (float)dataP.getY()));
+		selectionChanged();
 	}
 	
+	private void selectionChanged() {
+		System.out.println("Sel changed.");
+	}
+
 	public void clearSelection() {
 		selected.clear();
+	}
+
+	public ArrayList<BrushSelection> getSelected() {
+		return selected;
 	}
 }

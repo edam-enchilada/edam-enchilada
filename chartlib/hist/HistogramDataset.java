@@ -99,6 +99,7 @@ public class HistogramDataset {
 		HashSet<Integer> keep = new HashSet<Integer>(atomIDs);
 		HistogramDataset[] intersected = new HistogramDataset[spectra.length];
 		
+		// probably once each for positive and negative spectra
 		for (int ds = 0; ds < spectra.length; ds++) {
 			intersected[ds] = new HistogramDataset(atomIDs.size(),
 					new ChainingHistogram[maxMZ], spectra[ds].color);
@@ -126,6 +127,11 @@ public class HistogramDataset {
 			}
 		}
 		return intersected;
+	}
+	
+	public static HistogramDataset[] getSelection(HistogramDataset[] spectra,
+			List<BrushSelection> selection) {
+		return null;
 	}
 	
 	@Override

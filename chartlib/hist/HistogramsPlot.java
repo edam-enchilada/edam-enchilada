@@ -110,6 +110,15 @@ public class HistogramsPlot extends Chart {
 			"HistogramsPlot: zerosArea doesn't know about multiple datasets yet.");
 		}
 	}
+	
+	public void removeDatasets(HistogramDataset[] sets) {
+		for (HistogramDataset set : sets) {
+			posHistArea.removeDataset(set);
+			negHistArea.removeDataset(set);
+			posZerosArea.removeDataset(set);
+			negZerosArea.removeDataset(set);
+		}
+	}
 
 
 	@Override
@@ -120,5 +129,19 @@ public class HistogramsPlot extends Chart {
 		return chartPanel;
 	}
 	
+	/**
+	 * Decides whether the point is above the negative or positive graph.
+	 * 
+	 * @param p a point relative to the HistogramsPlot coord system.
+	 * @return 0 if positive, 1 if negative, -1 if neither.
+	 */
+	public int whichGraph(Point p) {
+		Component c = getComponentAt(p);
+		if (c == posHistArea || c == posZerosArea) {
+			return 0;
+		} else if (c == negHistArea || c == negZerosArea) {
+			return 1;
+		} else return -1;
+	}
 
 }
