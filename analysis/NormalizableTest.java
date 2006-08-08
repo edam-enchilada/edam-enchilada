@@ -45,16 +45,16 @@ public class NormalizableTest extends TestCase {
 		BinnedPeak bp;
 		while(iter.hasNext()){
 			bp = iter.next();
-			assert (bp.key == bp.value): "Key: " + bp.key + " Value: " + bp.value;
+			assertEquals(bp.key, Math.round(bp.value));
 		}
 		
 		//testing with cube root
-		norm.reducePeaks(cube, .3);
+		norm.reducePeaks(cube, (1.0/3.0));
 		
 		iter = cube.iterator();
 		while(iter.hasNext()){
 			bp = iter.next();
-			assert (bp.key == bp.value): "Key: " + bp.key + " Value: " + bp.value;
+			assertEquals(bp.key, Math.round(bp.value));
 		}
 		
 	}
