@@ -152,8 +152,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		setFocusable(true);
 		// adding mouse listeners to the glass pane 
 		// makes the scroll bar inaccessible to the mouse.
-		addMouseListener(this);
-		addMouseMotionListener(this);
+//		addMouseListener(this);
+//		addMouseMotionListener(this);
 		addKeyListener(this);
 		
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
@@ -529,19 +529,5 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void setForceY(boolean forceY) {
 		this.forceY = forceY;
 	}
-	
-//	/**
-//	 * I don't know why adding a mousemotionlistener to the ZoomableChart
-//	 * doesn't work, but this does, so oh well.
-//	 * 
-//	 * @author smitht
-//	 */
-//	public void addMouseMotionListener(MouseMotionListener l) {
-//		glassPane.addMouseMotionListener(l);
-//	}
-//
-//	public void addMouseListener(MouseListener l) {
-//		glassPane.addMouseListener(l);
-//	}
-//	
+
 }
