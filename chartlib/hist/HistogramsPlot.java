@@ -73,6 +73,7 @@ public class HistogramsPlot extends Chart {
 			posHistArea = new HistogramsChartArea(datasets[0]);
 			posHistArea.setTitle("Positive Spectrum");
 			posHistArea.setAxisBounds(0, 300, 0, 1);
+			posHistArea.setTitleY("Relative Area");
 			this.add(posHistArea);
 		} else {
 			posHistArea.addDataset(datasets[0]);
@@ -80,6 +81,7 @@ public class HistogramsPlot extends Chart {
 		if (posZerosArea == null) {
 			posZerosArea = new ZeroHistogramChartArea(datasets[0]);
 			posZerosArea.setXAxisBounds(0, 300);
+			posZerosArea.setTitleY("Peaks Detected");
 			this.add(posZerosArea);
 		} else {
 			//zerosArea.addDataset(dataset);  // not implemented yet.
@@ -92,6 +94,7 @@ public class HistogramsPlot extends Chart {
 			negHistArea = new HistogramsChartArea(datasets[1]);
 			negHistArea.setTitle("Negative Spectrum");
 			negHistArea.setAxisBounds(0, 300, 0, 1);
+			negHistArea.setTitleY("Relative Area");
 			this.add(negHistArea);
 		} else {
 			negHistArea.addDataset(datasets[0]);
@@ -99,6 +102,7 @@ public class HistogramsPlot extends Chart {
 		if (negZerosArea == null) {
 			negZerosArea = new ZeroHistogramChartArea(datasets[1]);
 			negZerosArea.setXAxisBounds(0, 300);
+			negZerosArea.setTitleY("Peaks Detected");
 			this.add(negZerosArea);
 		} else {
 			//zerosArea.addDataset(dataset);  // not implemented yet.
