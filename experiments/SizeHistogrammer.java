@@ -2,7 +2,6 @@ package experiments;
 import database.*;
 import java.sql.*;
 
-import chartlib.hist.HistList;
 /**
  * Something to make a histogram of particle size.
  * 
