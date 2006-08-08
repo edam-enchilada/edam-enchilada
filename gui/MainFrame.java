@@ -853,10 +853,10 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		clusterItem = new JMenuItem("Cluster. . .", KeyEvent.VK_C);
 		clusterItem.addActionListener(this);
-		JMenuItem labelItem = new JMenuItem("Label. . .", 
-				KeyEvent.VK_L);
-		JMenuItem classifyItem = new JMenuItem("Classify. . . ", 
-				KeyEvent.VK_F);
+//		JMenuItem labelItem = new JMenuItem("Label. . .", 
+//				KeyEvent.VK_L);
+//		JMenuItem classifyItem = new JMenuItem("Classify. . . ", 
+//				KeyEvent.VK_F);
 		queryItem = new JMenuItem("Query. . . ", KeyEvent.VK_Q);
 		queryItem.addActionListener(this);
 		compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
@@ -867,8 +867,8 @@ public class MainFrame extends JFrame implements ActionListener
 		detectPlumesItem.addActionListener(this);
 		
 		analysisMenu.add(clusterItem);
-		analysisMenu.add(labelItem);
-		analysisMenu.add(classifyItem);
+//		analysisMenu.add(labelItem);
+//		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
 	//	analysisMenu.add(compressItem);
 		analysisMenu.add(visualizeItem);
