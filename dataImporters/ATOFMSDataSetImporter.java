@@ -242,8 +242,6 @@ public class ATOFMSDataSetImporter {
 	 * @return returns if there are no null rows, throws exception if there are.
 	 */
 	public void checkNullRows() throws DisplayException {
-		if(true) throw new DisplayException("The Peaklisting Parameters need to be greater " +
-				"than 0 at row # " + 0 + ".");
 		String name, massCalFile;
 		int height, area;
 		float relArea;
