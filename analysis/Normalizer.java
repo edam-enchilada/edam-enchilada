@@ -15,7 +15,14 @@ public class Normalizer extends Normalizable {
 		Iterator<Entry<Integer, Float>> iterator;
 
 		//first normalize postive and negative peaks
-		negMag = peakList.getPartialMag(dMetric, true);	
+//		first normalize postive and negative peaks
+		// THIS IS ACTUALLY PROBLEMATIC for clustering, because
+		// the theory for spherical k-means says that to get the optimal
+		// normalized cluster center, you need to find the optimal center,
+		// then scale via a scaling factor. This does something different,
+		// and if you do pos/neg scaling at each iteration, clustering doesn't
+		// converge. --- DRM
+		/*negMag = peakList.getPartialMag(dMetric, true);	
 		posMag = peakList.getPartialMag(dMetric, false);
 		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {
@@ -24,7 +31,7 @@ public class Normalizer extends Normalizable {
 				entry.setValue(entry.getValue() / negMag);
 			else 
 				entry.setValue(entry.getValue() / posMag);
-		}	
+		}*/	
 	
 		//normalize altogether
 		magnitude = peakList.getMagnitude(dMetric);	
