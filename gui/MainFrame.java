@@ -287,7 +287,8 @@ public class MainFrame extends JFrame implements ActionListener
 		if (source == aboutItem) {
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
-					"For support, please contact dmusican@carleton.edu."
+					"For support, please contact dmusican@carleton.edu." +
+					"\nRelease: August, 2006"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
