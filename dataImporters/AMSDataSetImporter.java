@@ -209,7 +209,7 @@ public class AMSDataSetImporter {
 		System.out.println("total particles: " + tParticles);
 
 		final ProgressBarWrapper progressBar = 
-			new ProgressBarWrapper((JFrame)mainFrame, "Importing ATOFMS Datasets", (totalParticles/10)+1);
+			new ProgressBarWrapper((JFrame)mainFrame, "Importing AMS Datasets", (totalParticles/10)+1);
 
 		final SwingWorker worker = new SwingWorker() {
 			
