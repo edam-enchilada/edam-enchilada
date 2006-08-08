@@ -99,3 +99,5 @@ that it works.
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
 
+Check the Task manager for extra javaw.exe's running.  If there are some, then
+something's wrong.
