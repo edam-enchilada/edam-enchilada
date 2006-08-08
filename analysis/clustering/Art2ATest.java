@@ -33,7 +33,6 @@ public class Art2ATest extends TestCase{
 	        int cID = 2;
 	        String name = "Test clustering";
 	        String comment = "Test comment";
-	        boolean refine = false;
 	        ArrayList<String> list = new ArrayList<String>();
 	        list.add("ATOFMSAtomInfoSparse.PeakArea");
 	    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
