@@ -123,7 +123,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	// Make sure that queued threads don't waste work 
 	// (since only last-queued thread in each window will matter)
-	private int numRunningThreads = 0;
+	private volatile int numRunningThreads = 0;
 	private JButton zoomOutButton;
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
@@ -175,6 +175,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	public ParticleAnalyzeWindow(final SQLServerDatabase db, JTable dt, int curRow,
 			Collection collection) {
 		super();
+		
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		
 		// Do one-time loading of ion signature information from file, db
 		if (cachedNegIons == null) {
