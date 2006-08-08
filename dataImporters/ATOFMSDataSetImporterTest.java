@@ -119,7 +119,6 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		JFrame mf = new JFrame();
 		final ProgressBarWrapper progressBar = 
 			new ProgressBarWrapper(mf, "Importing ATOFMS Datasets", 100);
-		progressBar.constructThis();
 		//final JFrame frameRef = frame;
 		//final ATOFMSBatchTableModel aRef = a;
 		importer = new ATOFMSDataSetImporter(table, mf, db, progressBar);
@@ -171,14 +170,6 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 
 		importer.collectTableInfo();
 
-		synchronized (importer) {
-			try {
-				importer.wait();
-			}
-			catch (InterruptedException ex) {
-				ex.printStackTrace();
-			}
-		}
 		
 		Statement stmt = db.getCon().createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT * FROM ATOFMSAtomInfoDense " +
