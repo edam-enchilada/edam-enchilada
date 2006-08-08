@@ -65,6 +65,7 @@ GUI tests:
 
 **Import the collections from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data
 into one parent collection.
+Actually, it should be a lot faster to do this from the external hard drive, so there would be fine.
 	__parent collection created with children collections
 
 **Try importing something that doesn't exist and something that does exist using
