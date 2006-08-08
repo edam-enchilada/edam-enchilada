@@ -870,7 +870,7 @@ public class MainFrame extends JFrame implements ActionListener
 		analysisMenu.add(labelItem);
 		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
-	//	analysisMenu.add(compressItem);
+		analysisMenu.add(compressItem);
 		analysisMenu.add(visualizeItem);
 		//analysisMenu.add(detectPlumesItem);
 		

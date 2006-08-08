@@ -85,7 +85,7 @@ public class BIRCH extends CompressData{
 	 */
 	//ThinkPad claims it has 1GB RAM - 1073741824 bytes
 	//1000 for test data, 150118 for i,  54857600
-	private final float MEM_THRESHOLD = 55000000;
+	private final float MEM_THRESHOLD = 150000;
 	
 	/*
 	 * Constructor.  Calls the CompressData Class's constructor.
@@ -109,7 +109,7 @@ public class BIRCH extends CompressData{
 		System.out.println("\n**********BUILDING THE PRELIMINARY TREE**********");
 		start = new Date().getTime();
 		realStart = new Date().getTime();
-		float t = (float)1.7;
+		float t = (float)0.0;
 		curTree = new CFTree(t, branchingFactor, distanceMetric); 
 		// Insert particles one by one.
 		ParticleInfo particle;
@@ -157,9 +157,9 @@ public class BIRCH extends CompressData{
 				
 			//	System.out.println("\nFINAL TREE: ");
 			//	curTree.printTree();
-				realEnd = new Date().getTime();
-				System.out.println("interval: " + (realEnd-realStart));
-				System.exit(1);
+//				realEnd = new Date().getTime();
+//				System.out.println("interval: " + (realEnd-realStart));
+//				System.exit(1);
 				System.out.println("*****************REBUILDING TREE*****************\n");
 			//	System.out.println("scanning distances...");
 			//	curTree.scanDistances();
