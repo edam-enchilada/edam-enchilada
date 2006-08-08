@@ -107,5 +107,13 @@ check the next & prev buttons for
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
 	
+**Import the small.task time series file \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries
+Verify that:
+	__Time series imports successfully
+	
+**Import AMS data from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\ams
+Choose Nitrate_MS.txt, t_series.txt, amus.txt. Verify that:
+	__AMS data imports successfully
+	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
