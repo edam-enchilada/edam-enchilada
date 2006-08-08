@@ -9,8 +9,6 @@ with the non-MSDE installer:
 **Try installing with no SQL Server on the computer.
 __An error message should pop up saying it couldn't find an SQL Server on 
 the computer.  Installation should abort.
-__Verify that error diagnostics appear in the "Output" window (should be
-hiding behind the main Enchilada window).
 
 **Try installing with SQL Server installed but the SpASMS login not present.
 __Should make the login, SpASMS/finally, with sysadmin.  Installation should
@@ -63,6 +61,10 @@ __should not leave behind anything in the program directory.
 
 GUI tests:
 
+**Import the collections from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data
+into one parent collection.
+	__parent collection created with children collections
+
 **Test drop down box for viewing 1000 particles at a time
 	__box works as expected
 	
@@ -78,26 +80,32 @@ check the next & prev buttons for
 		__highlighting peak with mouse causes peak in list on top right to highlight when in spectrum view
 		__highlighting peak with mouse causes labels to update when in peak view
 		__highlighting peak with mouse causes labels to update when in spectrum view
+		__Verify that the stuff ParticleAnalyzeWindow prints out appears in the "Output" window (should be hiding behind the main Enchilada window).
 		
-		
-**Try importing two collections into a single parent collection, and verify
-that it works.		
-	__parent collection created with children collections
 
 **Try zooming in on time-series of only one datapoint
+	__zooming in works.
+	__zooming out works. (doesn't work for aug 2006 release) :-(
 
-**Try clustering a small collection. Check that
+**Try clustering the small collection. (can't refine centroids) Check that
 	__clustering completes without errors
 	__leaves behind subcollections for each cluster
 	__creates an extra collection with cluster centroids
 	__each cluster centroid can be visualized by double clicking on it
+**Repeat for each type of clustering.
 	
-**Try aggregating a small collection. Check that
+**Try aggregating the small collection. Check that
 	__Time Basis: Selected Collection runs without errors
 	__Time Basis: Times runs without errors
 	
+**Try clustering the large collection with K-Means and refine centroids.
+	__clustering happens.
+
+**Try aggregating the large collection.
+	__aggregation happens.
+	
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
-
+	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
