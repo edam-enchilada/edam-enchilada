@@ -1,5 +1,7 @@
 Testing Script
 
+Run all the JUnit tests, making sure to enable assertions. (-ea in JVM args)
+
 Installer tests:
 There's no need to uninstall between every test, I think.
 
@@ -64,6 +66,12 @@ GUI tests:
 **Import the collections from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data
 into one parent collection.
 	__parent collection created with children collections
+
+**Try importing something that doesn't exist and something that does exist using
+ATOFMS batch import.
+	__correct files should import
+	__should not hang or anything
+	__should tell you that import failed on t'other ones (doesn't work, aug2006)
 
 **Test drop down box for viewing 1000 particles at a time
 	__box works as expected
