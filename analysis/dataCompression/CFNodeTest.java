@@ -34,7 +34,7 @@ public class CFNodeTest extends TestCase {
 		bp1.add(20, (float) 2);
 		bp1.add(90, (float) 2);
 		bp1.add(120, (float) 2);
-		childCF.updateCF(bp1, 1);
+		childCF.updateCF(bp1, 1, false);
 		
 		orphanNode = new CFNode(null, dMetric);
 		orphanCF = new ClusterFeature(orphanNode, dMetric);
@@ -45,7 +45,7 @@ public class CFNodeTest extends TestCase {
 		bp2.add(-160, (float) 1);
 		bp2.add(-100, (float) 1);
 		bp2.add(-30, (float) 1);
-		orphanCF.updateCF(bp2, 2);
+		orphanCF.updateCF(bp2, 2, false);
 		
 		farOffNode = new CFNode(null, dMetric);
 		farOffCF = new ClusterFeature(farOffNode, dMetric);
@@ -54,7 +54,7 @@ public class CFNodeTest extends TestCase {
 		bp3.add(500, 1);
 		bp3.add(501, 1);
 		bp3.add(502, 1);
-		farOffCF.updateCF(bp3, 3);
+		farOffCF.updateCF(bp3, 3, false);
 		
 	}
 	public void testSameContents() {
@@ -93,7 +93,8 @@ public class CFNodeTest extends TestCase {
 		assert(orphanNode.getTwoClosest() == null);
 		childNode.addCF(orphanCF);
 		childNode.addCF(farOffCF);
-		ClusterFeature[] array = childNode.getTwoClosest();
+		Pair<ClusterFeature[], Float> pair = childNode.getTwoClosest();
+		ClusterFeature[] array = pair.first;
 		assert(array[0] == orphanCF || array[0] == childCF);
 		assert(array[1] == orphanCF || array[1] == childCF);
 	}
@@ -108,19 +109,19 @@ public class CFNodeTest extends TestCase {
 	}
 
 	public void testGetClosest() {
-		assert(childNode.getClosest(childCF.getSums()) == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()) == childCF);
-		assert(childNode.getClosest(orphanCF.getSums()) == childCF);
+		assert(childNode.getClosest(childCF.getSums()).first == childCF);
+		assert(childNode.getClosest(farOffCF.getSums()).first == childCF);
+		assert(childNode.getClosest(orphanCF.getSums()).first == childCF);
 		
 		childNode.addCF(orphanCF);
-		assert(childNode.getClosest(childCF.getSums()) == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()) == childCF);
-		assert(childNode.getClosest(orphanCF.getSums()) == orphanCF);
+		assert(childNode.getClosest(childCF.getSums()).first == childCF);
+		assert(childNode.getClosest(farOffCF.getSums()).first == childCF);
+		assert(childNode.getClosest(orphanCF.getSums()).first == orphanCF);
 		
 		childNode.addCF(farOffCF);
-		assert(childNode.getClosest(childCF.getSums()) == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()) == farOffCF);
-		assert(childNode.getClosest(orphanCF.getSums()) == orphanCF);
+		assert(childNode.getClosest(childCF.getSums()).first == childCF);
+		assert(childNode.getClosest(farOffCF.getSums()).first == farOffCF);
+		assert(childNode.getClosest(orphanCF.getSums()).first == orphanCF);
 		
 	}
 

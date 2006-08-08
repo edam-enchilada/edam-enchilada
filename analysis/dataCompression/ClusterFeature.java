@@ -110,8 +110,9 @@ public class ClusterFeature {
 	 * @param list - binnedPeakList
 	 * @param atomID - atomID
 	 */
-	public void updateCF(BinnedPeakList list, int atomID) {
-		list.normalize(dMetric);
+	public void updateCF(BinnedPeakList list, int atomID, boolean normalized) {
+		if(!normalized)
+			list.normalize(dMetric);
 		
 		//System.out.println("SS: " + squareSums);
 		//System.out.println("mag: "+sums.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED));
@@ -152,9 +153,16 @@ public class ClusterFeature {
 			atomIDs.addAll(cfs.get(i).getAtomIDs());
 		}
 		Set<Entry<Integer, Float>> keys = tempSums.entrySet();
+	//	Float posMagnitude = (float) 0.0;
+	//	Float negMagnitude = (float) 0.0;
 		for(Entry<Integer, Float> x: keys) {
 			sums.addNoChecks(x.getKey(), x.getValue());
+	//		if(x.getKey()<0)
+	//			negMagnitude = negMagnitude + x.getValue();
+	//		else
+	//			posMagnitude = posMagnitude + x.getValue();
 		}
+	//	sums.normalizeGivenMag(dMetric, negMagnitude, posMagnitude);
 		sums.normalize(dMetric);
 		memory= 8*sums.length()+4*atomIDs.size();
 		return true;

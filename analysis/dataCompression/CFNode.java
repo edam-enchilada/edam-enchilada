@@ -115,7 +115,7 @@ public class CFNode {
 	 * The returned array is of the form {cf1,cf2}.
 	 * @return the array above
 	 */
-	public ClusterFeature[] getTwoClosest() {
+	public Pair<ClusterFeature[], Float> getTwoClosest() {
 		if (cfs.size() < 2) {
 			return null;
 		}
@@ -125,11 +125,11 @@ public class CFNode {
 		BinnedPeakList listI, listJ;
 		for (int i = 0; i < cfs.size(); i++) {
 			listI = cfs.get(i).getSums();
-			for (int j = i; j < cfs.size(); j++) {
+			for (int j = i+1; j < cfs.size(); j++) {
 				listJ = cfs.get(j).getSums();
 				thisDistance = listI.getDistance(listJ,
 						dMetric);
-				if (i != j && thisDistance < minDistance) {
+				if (thisDistance < minDistance) {
 					minDistance = thisDistance;
 					entryA = cfs.get(i);
 					entryB = cfs.get(j);
@@ -139,7 +139,7 @@ public class CFNode {
 		ClusterFeature[] closestTwo = new ClusterFeature[2];
 		closestTwo[0] = entryA;
 		closestTwo[1] = entryB;
-		return closestTwo;
+		return new Pair<ClusterFeature[], Float>(closestTwo, minDistance);
 	}
 	
 	/**
@@ -173,13 +173,56 @@ public class CFNode {
 		farthestTwo[1] = entryB;
 		return farthestTwo;
 	}
-	
+	public Pair<CFNode, CFNode> splitNode() {
+		
+		if (cfs.size() < 2) {
+			return null;
+		}
+		CFNode nodeA = new CFNode(null, dMetric);
+		CFNode nodeB = new CFNode(null, dMetric);
+
+		float maxDistance = Float.MIN_VALUE;
+		float thisDistance;
+		ClusterFeature entryA = null, entryB = null;
+		BinnedPeakList listI, listJ;
+		Float[][] arrayOfDistance = new Float[cfs.size()][cfs.size()];
+		int locA=0, locB=0;
+		for (int i = 0; i < cfs.size(); i++) {
+			listI = cfs.get(i).getSums();
+			for (int j = i; j < cfs.size(); j++) {
+				listJ = cfs.get(j).getSums();
+				thisDistance = listI.getDistance(listJ,
+						dMetric);
+				arrayOfDistance[i][j] = thisDistance;
+				arrayOfDistance[j][i] = thisDistance;
+				if (thisDistance > maxDistance) {
+					maxDistance = thisDistance;
+					entryA = cfs.get(i);
+					entryB = cfs.get(j);
+					locA = i;
+					locB = j;
+				}
+			}
+		}
+		nodeA.addCF(entryA);
+		nodeB.addCF(entryB);
+
+		for (int i = 0; i < cfs.size(); i++) {
+			if(i!=locA && i!=locB){
+				if(arrayOfDistance[i][locA]<arrayOfDistance[i][locB])
+					nodeA.addCF(cfs.get(i));
+				else
+					nodeB.addCF(cfs.get(i));
+			}
+		}
+		return new Pair<CFNode, CFNode>(nodeA, nodeB);
+	}
 	/**
 	 * Gets the closest CF in the node to the given entry.
 	 * @param entry - binnedPeakList to compare
 	 * @return - closest CF
 	 */
-	public ClusterFeature getClosest(BinnedPeakList entry) {
+	public Pair<ClusterFeature, Float> getClosest(BinnedPeakList entry) {
 		float minDistance = Float.MAX_VALUE;
 		float thisDistance;
 		ClusterFeature minCF = null;
@@ -194,9 +237,8 @@ public class CFNode {
 				}
 			}
 		}
-		return minCF;
+		return new Pair<ClusterFeature, Float>(minCF,minDistance);
 	}
-	
 	
 	/**
 	 * Updates the parent for the node and its CFs.

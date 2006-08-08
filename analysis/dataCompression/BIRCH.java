@@ -83,9 +83,9 @@ public class BIRCH extends CompressData{
 	 * 
 	 * memory is in bytes - janara
 	 */
-	
-	//1000 for test data, 150118 for i, 54857600
-	private final float MEM_THRESHOLD = 150118;
+	//ThinkPad claims it has 1GB RAM - 1073741824 bytes
+	//1000 for test data, 150118 for i,  54857600
+	private final float MEM_THRESHOLD = 55000000;
 	
 	/*
 	 * Constructor.  Calls the CompressData Class's constructor.
@@ -94,7 +94,7 @@ public class BIRCH extends CompressData{
 	{
 		super(c,database,name,comment,d);
 		// set parameters.
-		branchingFactor = 4; // should be an advanced option in the GUI
+		branchingFactor =4; // should be an advanced option in the GUI
 		collectionID = oldCollection.getCollectionID();
 		assignCursorType();
 		rebuildCount = 0; 
@@ -109,14 +109,15 @@ public class BIRCH extends CompressData{
 		System.out.println("\n**********BUILDING THE PRELIMINARY TREE**********");
 		start = new Date().getTime();
 		realStart = new Date().getTime();
-		curTree = new CFTree(threshold, branchingFactor, distanceMetric); 
+		float t = (float)1.7;
+		curTree = new CFTree(t, branchingFactor, distanceMetric); 
 		// Insert particles one by one.
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
 
 		while(curs.next()) {
 			particle = curs.getCurrent();
-	//		System.out.println("inserting particle " + particle.getID());
+			System.out.println("inserting particle " + particle.getID());
 			particle.getBinnedList().normalize(distanceMetric);
 			assert!particle.getBinnedList().containsZeros() : "zero present";
 			
@@ -156,6 +157,9 @@ public class BIRCH extends CompressData{
 				
 			//	System.out.println("\nFINAL TREE: ");
 			//	curTree.printTree();
+				realEnd = new Date().getTime();
+				System.out.println("interval: " + (realEnd-realStart));
+				System.exit(1);
 				System.out.println("*****************REBUILDING TREE*****************\n");
 			//	System.out.println("scanning distances...");
 			//	curTree.scanDistances();
@@ -328,7 +332,7 @@ public class BIRCH extends CompressData{
 		buildTree(0.0f);
 		System.out.println();
 		curTree.countNodes();
-		putCollectionInDB();
+	//	putCollectionInDB();
 	}
 
 	@Override
