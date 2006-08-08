@@ -82,7 +82,7 @@ import collection.Collection;
  * to DataSetProcessor.
  * 
  * 
- * @author ritza
+ * @author ritza, Jamie Olson
  *
  */
 public class ATOFMSDataSetImporter {
@@ -109,9 +109,11 @@ public class ATOFMSDataSetImporter {
 	/* contains the collectionID and particleID */
 	private int[] id;
 	protected int collectionIndex, numCollections;
-	protected Integer nextParticleID = new Integer(0);
+	protected Integer nextAtomID;
+	protected Integer particleNumber;
 	protected int[] numParticles;
-	
+	protected Collection[] collections;
+	private final ATOFMSDataSetImporter thisRef;
 	/* SQLServerDatabase object */
 	SQLServerDatabase db;
 	
@@ -131,14 +133,16 @@ public class ATOFMSDataSetImporter {
 		table = t;
 		mainFrame = mf;
 		this.progressBar = progressBar;
+		nextAtomID = new Integer(-1);
+		particleNumber = 0;
+		thisRef = this;
 	}
 	
 	public ATOFMSDataSetImporter(ParTable t, Window mf, SQLServerDatabase db,  ProgressBarWrapper progressBar) {
-		table = t;
-		mainFrame = mf;
+		this(t,mf,progressBar);
 		this.db = db;
-		this.progressBar = progressBar;
 	}
+	
 	
 	/**
 	 * Loops through each row, collects the information, and processes the
@@ -147,12 +151,14 @@ public class ATOFMSDataSetImporter {
 	public void collectTableInfo() throws InterruptedException, DisplayException{
 		
 		numCollections = table.getRowCount()-1;
+		collections = new Collection[numCollections];
 		try {
 			numParticles = getNumParticles();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		progressBar.setMaximum(numParticles[numCollections]);
 		//Loops through each dataset and creates each collection.
 		for (collectionIndex=0;collectionIndex<numCollections;collectionIndex++) {
 			if(progressBar.wasTerminated()){
@@ -181,6 +187,18 @@ public class ATOFMSDataSetImporter {
 					throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
 				}
 		}
+		while(particleNumber < numParticles[numCollections]){
+			try{
+				Thread.sleep(1000);
+			} catch (InterruptedException e){
+				
+			}
+		}
+		
+		for(Collection collection : collections){
+			db.updateAncestors(collection);
+		}
+		
 	}
 	
 	public void setVariablesFromTable(int i){
@@ -368,6 +386,7 @@ public class ATOFMSDataSetImporter {
 			
 			int particleNum = 0;
 			Collection destination = db.getCollection(id[0]);
+			collections[collectionIndex] = destination;
 			ATOFMSParticle currentParticle;
 				BufferedReader readSet = new BufferedReader(new FileReader(name));
 
@@ -393,20 +412,16 @@ public class ATOFMSDataSetImporter {
 						token.nextToken();
 						String particleName = token.nextToken().replace('\\', File.separatorChar);
 						particleFileName = grandParent.toString() + File.separator + particleName;
-						//try {
-							ReadSpec read = new ReadSpec(particleFileName);
 
-							currentParticle = read.getParticle();
-							db.insertParticle(
+						ReadSpec read = new ReadSpec(particleFileName);
+						
+						currentParticle = read.getParticle();
+						db.insertParticle(
 
-									currentParticle.particleInfoDenseString(),
-									currentParticle.particleInfoSparseString(),
-									destination,id[1],nextID, true);
-						//}
-						/*catch (Exception e) {
-							ErrorLogger.writeExceptionToLog("Importing","Error reading or inserting particle " + 
-									particleFileName+":\n\tMessage: "+e.getMessage());
-						}*/
+								currentParticle.particleInfoDenseString(),
+								currentParticle.particleInfoSparseString(),
+								destination,id[1],nextID, true);
+						
 						nextID++;
 						particleNum++;
 						//doDisplay++;
@@ -419,6 +434,96 @@ public class ATOFMSDataSetImporter {
 						}
 					}
 					db.updateAncestors(curCollection);
+					readSet.close();
+		} else {
+			ErrorLogger.displayException(progressBar, 
+					"Dataset has no hits because "+name+" does not exist.");
+		}
+
+	}
+	
+	/**
+	 * @author Jamie Olson
+	 * @throws IOException
+	 * @throws NumberFormatException
+	 * @throws InterruptedException
+	 */
+	public void readSpectraAndCreateParticleThreaded() 
+	throws IOException, NumberFormatException, InterruptedException{
+		//Read spectra & create particle.
+		File canonical = parFile.getAbsoluteFile();
+		File parent = canonical.getParentFile();
+		File grandParent = parent.getParentFile();
+		//System.out.println("Data set: " + parent.toString());
+		final ATOFMSDataSetImporter thisref = this;
+
+		String name = parent.getName();
+		name = parent.toString()+ File.separator + name + ".set";
+		if (new File(name).isFile()) {
+			
+			final Collection destination = db.getCollection(id[0]);
+				BufferedReader readSet = new BufferedReader(new FileReader(name));
+
+					StringTokenizer token;
+					//int doDisplay = 4;
+					while (readSet.ready()) { // repeat until end of file.
+
+						if(progressBar.wasTerminated()){
+							throw new InterruptedException();
+						}
+
+						token = new StringTokenizer(readSet.readLine(), ",");
+
+						// .set files are sometimes made with really strange line delims,
+						// so we ignore empty lines.
+						if (! token.hasMoreTokens()) {
+							continue;
+						}
+
+						token.nextToken();
+						String particleName = token.nextToken().replace('\\', File.separatorChar);
+						final String particleFileName = grandParent.toString() + File.separator + particleName;
+						final SwingWorker worker = new SwingWorker(){
+							public Object construct(){
+
+								ReadSpec read = null;
+								try {
+									read = new ReadSpec(particleFileName);
+								} catch (ZipException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+
+								ATOFMSParticle currentParticle = read.getParticle();
+								Integer atomID;
+								synchronized (nextAtomID){
+									atomID = getNextAtomID();
+									System.out.println("Atom ID: "+atomID+"\tParticle Number: "+particleNumber);
+									db.insertParticle(
+											currentParticle.particleInfoDenseString(),
+											currentParticle.particleInfoSparseString(),
+											destination,id[1],atomID, true);
+									particleNumber++;
+									//doDisplay++;
+									//if((int)(100.0*particleNum/tParticles)>(int)(100.0*(particleNum-1)/tParticles)){
+									if(particleNumber%10 == 0 && particleNumber > 0){
+										//progressBar.increment("Importing Particle # "+particleNum+" out of "+tParticles);
+										//progressBar.setValue((int)(100.0*particleNum/tParticles));
+										progressBar.setValue(particleNumber);
+										progressBar.setText("Importing Particle # "+particleNumber+" out of "+numParticles[numCollections]);
+									}
+								}
+								return atomID;
+							}
+							public void finish(){
+								thisRef.notify();
+							}
+						};
+						worker.start();
+					}
 					readSet.close();
 		} else {
 			ErrorLogger.displayException(progressBar, 
@@ -466,7 +571,12 @@ public class ATOFMSDataSetImporter {
 			("Corrupt data in " + parFile.toString() + " file.");
 		}
 	}
-
+	
+	private synchronized Integer getNextAtomID(){
+		if(nextAtomID < 0)nextAtomID = db.getNextID();
+		nextAtomID++;
+		return nextAtomID -1;
+	}
 	public void setParentID(int parentID) {
 		this.parentID = parentID;
 	}

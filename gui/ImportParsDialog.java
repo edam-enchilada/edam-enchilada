@@ -69,7 +69,7 @@ import externalswing.SwingWorker;
 
 
 /**
- * @author andersbe
+ * @author andersbe, Jamie Olson
  *
  */
 
@@ -237,44 +237,48 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		if (source == okButton) {
 				final JDialog thisRef = this;
 				final CardLayout card = (CardLayout)(listPane.getLayout());
+				final SQLServerDatabase dbRef = db;
+				//construct everything
 				final ProgressBarWrapper progressBar = 
 					new ProgressBarWrapper(parent, ATOFMSDataSetImporter.title, 100);
+				final ATOFMSDataSetImporter dsi;
+				if(showAdvancedOptions){
+					dsi = 
+						new ATOFMSDataSetImporter(
+								advancedTableModel, parent, progressBar);
+				}else{
+					dsi = 
+						new ATOFMSDataSetImporter(
+								basicTableModel, parent, progressBar);
+				}
+				if (importedTogether)
+					dsi.setParentID(parentID);
+				else dsi.setParentID(0);
+				// If a .par file or a .cal file is missing, don't start the process.
+				try {
+					dsi.checkNullRows();
+				} catch (DisplayException e1) {
+//					 Exceptions here mostly have to do with mis-entered data.
+					// Those that don't should probably be handled differently,
+					// but I'm just reworking this so that it uses exceptions
+					// in a way that's less silly, so I'm not worrying about that
+					// for now.  -Thomas
+					ErrorLogger.displayException(progressBar,e1.toString());
+					return;
+				} 
 				progressBar.constructThis();
-				final SQLServerDatabase dbRef = db;
+				
 				
 				final SwingWorker worker = new SwingWorker(){
 					public Object construct(){
 						dbRef.beginTransaction();
-						ATOFMSDataSetImporter dsi;
-						if(showAdvancedOptions){
-							dsi = 
-								new ATOFMSDataSetImporter(
-										advancedTableModel, parent, progressBar);
-						}else{
-							dsi = 
-								new ATOFMSDataSetImporter(
-										basicTableModel, parent, progressBar);
-						}
-						if (importedTogether)
-							dsi.setParentID(parentID);
-						else dsi.setParentID(0);
-						// If a .par file or a .cal file is missing, don't start the process.
-						//try {
-						try {
-							dsi.checkNullRows();
+						try{
 							dsi.collectTableInfo();
 							dbRef.commitTransaction();
 						} catch (InterruptedException e2){
 							dbRef.rollbackTransaction();
 						}catch (DisplayException e1) {
-//							 Exceptions here mostly have to do with mis-entered data.
-							// Those that don't should probably be handled differently,
-							// but I'm just reworking this so that it uses exceptions
-							// in a way that's less silly, so I'm not worrying about that
-							// for now.  -Thomas
 							ErrorLogger.displayException(progressBar,e1.toString());
-							dbRef.rollbackTransaction();
-							return null;
 						} 
 						return null;
 					}
