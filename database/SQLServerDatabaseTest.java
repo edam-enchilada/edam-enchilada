@@ -846,11 +846,13 @@ public class SQLServerDatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
+
 	public void testExportToMSAnalyzeDatabase() {
 		db.openConnection();
 		java.util.Date date = db.exportToMSAnalyzeDatabase(db.getCollection(2),"MSAnalyzeDB","MS-Analyze");
 		assertTrue(date.toString().equals("Tue Sep 02 17:30:38 CDT 2003"));
 		db.closeConnection();
+	
 	}
 	
 	

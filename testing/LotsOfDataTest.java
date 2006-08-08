@@ -77,6 +77,13 @@ public class LotsOfDataTest extends TestCase {
 		System.out.println(new Date());
 	}*/
 
+	/*
+	 * @author steinbel
+	 * fake test so running all unit tests doesn't give warning when above is
+	 * commented out
+	 */
+	public void testFake(){}
+	
 	protected void tearDown() throws Exception {
 		db.closeConnection();
 	}

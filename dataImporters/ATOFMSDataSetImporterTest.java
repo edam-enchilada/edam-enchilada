@@ -205,6 +205,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			assertEquals(i, atomIDs.get(i).intValue());
 		
 		assertEquals("b", db.getCollectionName(2));
+	
 	}
 	
 	/**
