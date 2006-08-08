@@ -17,7 +17,8 @@ public class TSImportTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		db = new SQLServerDatabase();
+		new database.CreateTestDatabase();
+		db = new SQLServerDatabase("TestDB");
 		if (! db.openConnection()) {
 			throw new Exception("Couldn't open DB con");
 		}

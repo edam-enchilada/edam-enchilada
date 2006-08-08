@@ -19,12 +19,17 @@ public class TSBulkInserterTest extends TestCase {
 	SQLServerDatabase db;
 	
 	
-	public void setUp() throws Exception {
-		db = new SQLServerDatabase();
+	protected void setUp() throws Exception {
+		new CreateTestDatabase();
+		db = new SQLServerDatabase("TestDB");
 		db.openConnection();
 		ins = new TSBulkInserter(db);
 	}
 
+	protected void tearDown() throws Exception {
+		db.closeConnection();
+	}
+	
 	/*
 	 * Test method for 'database.TSBulkInserter.addPoint(Date, Float)'
 	 */
