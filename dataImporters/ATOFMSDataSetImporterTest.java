@@ -171,15 +171,6 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 
 		importer.collectTableInfo();
 
-		synchronized (importer) {
-			try {
-				importer.wait();
-			}
-			catch (InterruptedException ex) {
-				ex.printStackTrace();
-			}
-		}
-		
 		Statement stmt = db.getCon().createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT * FROM ATOFMSAtomInfoDense " +
 				"ORDER BY AtomID");
