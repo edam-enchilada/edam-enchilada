@@ -167,6 +167,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		clusterDropDown.addItemListener(this);
 		dropDown.add(clusterDropDown);
 		normalizer = new JCheckBox("Normalize data");
+		normalizer.setSelected(true);
 
 		JPanel headerAndDropDown = new JPanel();
 		headerAndDropDown.add(header);
