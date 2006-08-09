@@ -26,16 +26,27 @@ public class NormalizerTest extends TestCase {
 		Float secondNorm4 = firstNorm4 / (firstMag);
 		Float secondMag = (secondNorm3 + secondNorm4) * 2;		
 		
+		Float noSeparateNorm3 = (float)(3.0/(3+4+3+4));
+		Float noSeparateNorm4 = (float)(4.0/(3+4+3+4));
+		
 		Normalizer norm = new Normalizer();
 		BinnedPeakList normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.CITY_BLOCK);
 		
-		assert(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK) == 1.0):
-			"Did not normalize properly with city block distance.";
-		assert(normalizeThis.getAreaAt(-200) == secondNorm3); 
-		assert(normalizeThis.getAreaAt(-100) == secondNorm4);
-		assert(normalizeThis.getAreaAt(0) == secondNorm3);
-		assert(normalizeThis.getAreaAt(100) == secondNorm4);
+		// Test for normalize properly with city block distance
+		// MODIFIED to work with non separate pos/neg normalization
+		// since this was removed for Aug2006 release (didn't work with
+		// clustering).
+		/*assertEquals(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),secondNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),secondNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);*/
+		assertEquals(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),noSeparateNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),noSeparateNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),noSeparateNorm4);
 		
 		
 		//normalize with dot-product distance
@@ -51,13 +62,23 @@ public class NormalizerTest extends TestCase {
 		
 		normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.DOT_PRODUCT);
+
+		noSeparateNorm3 = (float)(3.0/Math.sqrt(3*3+4*4+3*3+4*4));
+		noSeparateNorm4 = (float)(4.0/Math.sqrt(3*3+4*4+3*3+4*4));
 		
-		assert(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT) == 1.0):
-			"Did not normalize properly with city block distance.";
-		assert(normalizeThis.getAreaAt(-200) == secondNorm3); 
-		assert(normalizeThis.getAreaAt(-100) == secondNorm4);
-		assert(normalizeThis.getAreaAt(0) == secondNorm3);
-		assert(normalizeThis.getAreaAt(100) == secondNorm4);
+		// Did not normalize properly with city block distance.
+		// Note that these all need to be changed back to secondNorm
+		// (from firstNorm) once normalize puts pos/neg back in --DRM
+		/*assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),noSeparateNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);*/
+		assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),noSeparateNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),noSeparateNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),noSeparateNorm4);
 		
 		
 		//normalize with Euclidean squared
@@ -65,12 +86,12 @@ public class NormalizerTest extends TestCase {
 		normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 		
-		assert(normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED) == 1.0):
-			"Did not normalize properly with city block distance.";
-		assert(normalizeThis.getAreaAt(-200) == secondNorm3); 
-		assert(normalizeThis.getAreaAt(-100) == secondNorm4);
-		assert(normalizeThis.getAreaAt(0) == secondNorm3);
-		assert(normalizeThis.getAreaAt(100) == secondNorm4);
+		// Did not normalize properly with city block distance.
+		assertEquals(normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),noSeparateNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),noSeparateNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),noSeparateNorm4);
 	}
 
 
@@ -86,21 +107,24 @@ public class NormalizerTest extends TestCase {
 		other.normalize(DistanceMetric.CITY_BLOCK);
 		float distance = bpl.getDistance(other, DistanceMetric.CITY_BLOCK);
 		distance = norm.roundDistance(bpl, other, DistanceMetric.CITY_BLOCK, distance);
-		assert (distance <= 2.0): "Distance too great with city-block.";
+		// Test if distance too great with city block
+		assertTrue(distance <= 2.0);
 		
 		//test dot product
 		bpl.normalize(DistanceMetric.DOT_PRODUCT);
 		other.normalize(DistanceMetric.DOT_PRODUCT);
 		distance = bpl.getDistance(other, DistanceMetric.DOT_PRODUCT);
 		distance = norm.roundDistance(bpl, other, DistanceMetric.DOT_PRODUCT, distance);
-		assert (distance <= 2.0): "Distance too great with dot product.";
+		// Test if distance too great with dot product
+		assertTrue(distance <= 2.0);
 		
 		//test Euclidean squared
 		bpl.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 		other.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 		distance = bpl.getDistance(other, DistanceMetric.EUCLIDEAN_SQUARED);
 		distance = norm.roundDistance(bpl, other, DistanceMetric.EUCLIDEAN_SQUARED, distance);
-		assert (distance <= 2.0): "Distance too great with Euclidean squared.";
+		// Test if distance too great with Euclidean squared
+		assertTrue(distance <= 2.0);
 	}
 	
 	private BinnedPeakList generatePeaks(Normalizable norm){
