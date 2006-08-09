@@ -87,6 +87,11 @@ that it works.
 **Try zooming in on time-series of only one datapoint
 
 **Try clustering a small collection. Check that
+	__clustering works with these parameters:
+		__By a column from sparse info (eg. Peak Area)
+		__K-cluster, normalized.
+		__10 clusters
+		__no refined centroids
 	__clustering completes without errors
 	__leaves behind subcollections for each cluster
 	__creates an extra collection with cluster centroids
