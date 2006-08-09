@@ -56,7 +56,7 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			
 			plotPanel.add(zPlot);
 			
-			BrushManager brusher = new BrushManager(plot);
+			BrushManager brusher = new BrushManager();
 			
 			MouseRedirector mode = new MouseRedirector("Mouse Function");
 			mode.addMouseMode("Zoom", zPlot);

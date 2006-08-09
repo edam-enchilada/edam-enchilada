@@ -11,22 +11,12 @@ import java.util.ArrayList;
 import javax.swing.event.MouseInputAdapter;
 
 public class BrushManager extends MouseInputAdapter {
-	public static final int SELECTION_INCREASED = 1;
-	
-	private HistogramsPlot plot;
-	
 	Point dragStart = null;
-	
-	DataMouseEventTranslator trans;
-	ArrayList<ActionListener> listeners = new ArrayList<ActionListener>();
 	
 	ArrayList<BrushSelection> selected = new ArrayList<BrushSelection>();
 	
-	public BrushManager(HistogramsPlot plot) {
-		this.plot = plot;
-		trans = new DataMouseEventTranslator(plot);
-		trans.addMouseMotionListener(this);
-		trans.addMouseListener(this);
+	public BrushManager() {
+		
 	}
 	
 	public void listenTo() {}
@@ -46,7 +36,6 @@ public class BrushManager extends MouseInputAdapter {
 	}
 
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -58,8 +47,9 @@ public class BrushManager extends MouseInputAdapter {
 	public void mouseClicked(MouseEvent me) {
 		System.out.print(".");
 		DataMouseEvent e = cast(me);
+		int chartNum = e.getChartNumber(); // next: implement this.
 		Point2D dataP = e.getPoint2D();
-		selected.add(new BrushSelection(plot.whichGraph(e.getPoint()), 
+		selected.add(new BrushSelection(chartNum, 
 				(int)dataP.getX(), (float)dataP.getY()));
 		selectionChanged();
 	}

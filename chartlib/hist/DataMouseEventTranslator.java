@@ -6,6 +6,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
 import javax.swing.Box;
+import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
 
 import chartlib.AbstractMetricChartArea;
@@ -40,18 +41,23 @@ public class DataMouseEventTranslator implements
 	public DataMouseEventTranslator(Container c) {
 		this();
 		topLevel = c;
+		c.addMouseListener(this);
+		c.addMouseMotionListener(this);
 		
-		java.util.List<Component> found 
-			= externalswing.Useful.findAll(AbstractMetricChartArea.class, c);
-		if (found.size() == 0) {
-			throw new IllegalArgumentException();
-		}
-		for (Component comp : found) {
-			AbstractMetricChartArea ca = (AbstractMetricChartArea) comp;
-			ca.addMouseListener(this);
-			ca.addMouseMotionListener(this);
-			ca.addHierarchyListener(this);
-		}
+		
+		// sadly, we can't do this since we need to be able to switch this listener
+		// in and out (with MouseRedirector).
+//		java.util.List<Component> found 
+//			= externalswing.Useful.findAll(AbstractMetricChartArea.class, c);
+//		if (found.size() == 0) {
+//			throw new IllegalArgumentException();
+//		}
+//		for (Component comp : found) {
+//			AbstractMetricChartArea ca = (AbstractMetricChartArea) comp;
+//			ca.addMouseListener(this);
+//			ca.addMouseMotionListener(this);
+//			ca.addHierarchyListener(this);
+//		}
 	}
 	
 	public DataMouseEventTranslator() {
@@ -68,9 +74,12 @@ public class DataMouseEventTranslator implements
 	
 	protected DataMouseEvent makeTranslatedEvent(MouseEvent e) {
 		Point gPoint = e.getPoint(); // graphical point
-		Object source = e.getSource();
+		Object source = SwingUtilities.getDeepestComponentAt(e.getComponent(), 
+				e.getX(), e.getY());
 		Point2D tPoint = null;
 		boolean inDataArea = false;
+		
+		
 		
 		if (source instanceof AbstractMetricChartArea) {
 			AbstractMetricChartArea s = (AbstractMetricChartArea) source;

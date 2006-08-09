@@ -24,5 +24,11 @@ public class DataMouseEvent extends MouseEvent {
 	public Point2D getPoint2D() {
 		return dataPoint;
 	}
+
+	public int getChartNumber() {
+		
+		// TODO Auto-generated method stub
+		return 0;
+	}
 	
 }
