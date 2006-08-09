@@ -300,7 +300,8 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			if (parentID == -1) {
 				parentButton.setSelected(false);
 			} else {
-				parentLabel.setText("Importing into collection # " + parentID);
+				parentLabel.setText("Importing into collection " + 
+						db.getCollectionName(ecd.getCollectionID()));
 				importedTogether = true;
 			}
 		}
