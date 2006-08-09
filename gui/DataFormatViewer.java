@@ -26,9 +26,9 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 	public DataFormatViewer(Frame owner) {
 		super(owner,"Data Format Viewer", true);
 		
-		setSize(650,300);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		JPanel nameAndBox = new JPanel();
+		nameAndBox.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		JLabel datatypeName = new JLabel("Datatype: ");
 		ArrayList<String> names = MainFrame.db.getKnownDatatypes();
 		dataTypes = new String[names.size()];
@@ -42,21 +42,22 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 		cards = new JPanel(new CardLayout());
 		makeCards();
 		
+		JPanel bottomPane = new JPanel();
+		bottomPane.setLayout(new BoxLayout(bottomPane, BoxLayout.LINE_AXIS));
+		bottomPane.add(Box.createHorizontalGlue());
 		okButton = new JButton("OK");
 		okButton.addActionListener(this);
+		bottomPane.add(okButton);
 		
-		SpringLayout layout = new SpringLayout();
-		setLayout(layout);
-		add(nameAndBox);
-		add(cards);
-		add(okButton);
-		layout.putConstraint(SpringLayout.WEST, nameAndBox, 10, SpringLayout.WEST, getContentPane());
-		layout.putConstraint(SpringLayout.NORTH, nameAndBox, 10, SpringLayout.NORTH, getContentPane());
-		layout.putConstraint(SpringLayout.WEST, cards, 20, SpringLayout.WEST, getContentPane());
-		layout.putConstraint(SpringLayout.NORTH, cards, 10, SpringLayout.SOUTH, nameAndBox);
-		layout.putConstraint(SpringLayout.EAST, okButton, -20, SpringLayout.EAST, getContentPane());
-		layout.putConstraint(SpringLayout.SOUTH, okButton, -20, SpringLayout.SOUTH, getContentPane());
-		
+		setLayout(new BorderLayout());
+		JPanel all = new JPanel(new BorderLayout());
+		all.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+		all.add(nameAndBox, BorderLayout.NORTH);
+		all.add(cards, BorderLayout.CENTER);
+		all.add(bottomPane, BorderLayout.SOUTH);
+		add(all, BorderLayout.CENTER);
+
+		pack();
 		
 		setVisible(true);
 	}
@@ -68,7 +69,6 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 			JPanel dsi = new JPanel();
 			JPanel ais = new JPanel();
 			JPanel aid = new JPanel();
-			JPanel center = new JPanel();
 			dsi.setLayout(new BoxLayout(dsi, BoxLayout.PAGE_AXIS));
 			ais.setLayout(new BoxLayout(ais, BoxLayout.PAGE_AXIS));
 			aid.setLayout(new BoxLayout(aid, BoxLayout.PAGE_AXIS));
@@ -81,44 +81,38 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 			
 			ArrayList<ArrayList<String>> namesAndTypes = 
 				MainFrame.db.getColNamesAndTypes(dataTypes[i], DynamicTable.DataSetInfo);
-			dsi.add(new JLabel("DataSetInfo Columns:"));
-			dsi.add(new JLabel("				"));
+			dsi.setBorder(BorderFactory.createTitledBorder("DataSetInfo Columns"));
 			for (int j = 0; j < namesAndTypes.size(); j++)
 				dsi.add(new JLabel(namesAndTypes.get(j).get(0) + " :  " + namesAndTypes.get(j).get(1)));
 			
 			namesAndTypes = MainFrame.db.getColNamesAndTypes(dataTypes[i], DynamicTable.AtomInfoDense);
-			aid.add(new JLabel("AtomInfoDense Columns:"));
-			aid.add(new JLabel("				"));
+			aid.setBorder(BorderFactory.createTitledBorder("AtomInfoDense Columns"));
 			for (int j = 0; j < namesAndTypes.size(); j++) {
-				Box col = Box.createHorizontalBox();
-				
+				JPanel col = new JPanel();
+				col.setLayout(new BoxLayout(col, BoxLayout.X_AXIS));
 				col.add(new JLabel(namesAndTypes.get(j).get(0) + " :  " + namesAndTypes.get(j).get(1)));
+				col.add(Box.createHorizontalGlue());
 				col.add(new CreateIndexButton(dataTypes[i], namesAndTypes.get(j).get(0), 
 						! indexedColumns.contains(namesAndTypes.get(j).get(0))));
 				aid.add(col);
 			}
-			center.add(new JLabel("     "));
-			center.add(aid);
-			center.add(new JLabel("     "));
 			
 			namesAndTypes = MainFrame.db.getColNamesAndTypes(dataTypes[i], DynamicTable.AtomInfoSparse);
-			ais.add(new JLabel("AtomInfoSparse Columns:"));
-			ais.add(new JLabel("				"));
+			ais.setBorder(BorderFactory.createTitledBorder("AtomInfoSparse Columns"));
 			for (int j = 0; j < namesAndTypes.size(); j++)
 				ais.add(new JLabel(namesAndTypes.get(j).get(0) + " :  " + namesAndTypes.get(j).get(1)));
-			
-			panel.setLayout(new BorderLayout());
-			panel.add(dsi, BorderLayout.LINE_START);
-			panel.add(center, BorderLayout.CENTER);
-			panel.add(ais, BorderLayout.LINE_END);		
+
+			panel.setLayout(new GridLayout(1, 3));
+			panel.add(dsi);
+			panel.add(aid);
+			panel.add(ais);
 			cards.add(panel, dataTypes[i]);
 		}
 	}
-
+	
 	public void itemStateChanged(ItemEvent evt) {
 		CardLayout cl = (CardLayout)(cards.getLayout());
 		cl.show(cards, (String)evt.getItem());
-		
 	}
 
 	public void actionPerformed(ActionEvent evt) {
@@ -132,6 +126,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 		
 		public CreateIndexButton(String dataType, String column, boolean enabled) {
 			this.setText("Create Index");
+			this.setFont(this.getFont().deriveFont(this.getFont().getSize2D() * 0.9f));
 			if (! enabled) {
 				this.setEnabled(false);
 			} else {
@@ -154,7 +149,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 					    "Really create index?",
 					    JOptionPane.YES_NO_OPTION);
 				
-				if (n == 0) { // 0 is "yes", surprisingly
+				if (n == JOptionPane.YES_OPTION) {
 					if (MainFrame.db.createIndex(dataType, column)) {
 						this.setEnabled(false);
 						return;
