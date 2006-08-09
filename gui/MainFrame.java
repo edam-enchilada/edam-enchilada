@@ -210,8 +210,13 @@ public class MainFrame extends JFrame implements ActionListener
 				
 			}
 		});
-		
-
+		addWindowFocusListener(new WindowFocusListener() {
+			public void windowLostFocus(WindowEvent event) {
+				event.getOppositeWindow().requestFocus();
+			}
+			public void windowGainedFocus(WindowEvent e) {
+			}
+		});
 	}
 	
 	private void fixFonts(Font f) {
