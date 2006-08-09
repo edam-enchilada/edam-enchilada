@@ -78,11 +78,14 @@ ATOFMS batch import.
 	__box works as expected
 	
 **Try analyzing a particle from one collection
-switch the selected collection
+switch the selected collection in the main Enchilada window (to a smaller collection)
 check the next & prev buttons for 
 		__correct next & prev particles
 		__enabling/disabling of buttons appropriately
 		__displaying a particle with a higher row number than exists in showing collection
+		(Go to one of the last particles in the large collection. Switch the main
+		window's selected collection to a smaller one.  Click "next" and it should
+		advance without a hitch.) 
 		__spectrum view works
 		__zoom in spectrum view works
 		__highlighting peak with mouse causes peak in list on top right to highlight when in peak view
