@@ -160,6 +160,8 @@ public class MainFrame extends JFrame implements ActionListener
 		Font f = new Font("Dialog", Font.PLAIN, 11);
 		fixFonts(f);
 		
+		setIconImage(Toolkit.getDefaultToolkit().getImage("icon.gif"));
+		
 		setSize(800, 600);
 		
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
