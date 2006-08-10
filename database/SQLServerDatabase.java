@@ -789,6 +789,55 @@ public class SQLServerDatabase implements InfoWarehouse
 	/* Delete Atoms */
 	
 	/**
+	 * Removes an empty collection. Ensure that the collection is empty before deleting it.
+	 * @param collection the collection to remove
+	 * @return true on success
+	 * @author shaferia
+	 */
+	public boolean removeEmptyCollection(Collection collection) {
+		try {
+			int id = collection.getCollectionID();
+			
+			//ensure that this collection does not have subcollections or atoms
+			Statement stmt = con.createStatement();
+			StringBuilder query = new StringBuilder();
+			ResultSet rs =
+				stmt.executeQuery("SELECT " +
+						"AtomMembership.AtomID, " + 
+						"CenterAtoms.AtomID, " +
+						"CollectionRelationships.ParentID " +
+						"FROM AtomMembership, CenterAtoms, CollectionRelationships WHERE " +
+						"AtomMembership.CollectionID = " + id +
+						"AND CenterAtoms.CollectionID = " + id +
+						"AND CollectionRelationships.ParentID = " + id);
+			
+			if (rs.next()) {
+				System.err.println("Collection " + id + 
+						" is not empty; cannot remove it with removeEmptyCollection");
+				stmt.close();
+				return false;
+			}
+			else {
+				stmt.close();
+				
+				//delete the collection
+				stmt = con.createStatement();
+				stmt.addBatch("DELETE FROM Collections WHERE CollectionID = " + id);
+				stmt.addBatch("DELETE FROM CollectionRelationships WHERE ChildID = " + id);
+				stmt.executeBatch();
+				stmt.close();
+				return true;
+			}
+		}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLog("SQLServer","Error removing empty collection.");
+			System.err.println("Error removing empty collection");
+			ex.printStackTrace();
+			return false;			
+		}
+	}
+	
+	/**
 	 * orphanAndAdopt() essentially deletes a collection and assigns 
 	 * the ownership of all its children (collections and atoms) to 
 	 * their grandparent collection.  

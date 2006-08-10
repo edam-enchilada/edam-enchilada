@@ -18,6 +18,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -36,7 +37,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 
 	private JButton okButton;
 	private JButton cancelButton;
-	private JRadioButton parentButton;
+	private JCheckBox parentButton;
 	private JLabel parentLabel;
 	private AMSTableModel amsTableModel;
 	private JProgressBar progressBar;
@@ -74,7 +75,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 		cancelButton.addActionListener(this);
 		
 		//an option to import all the datasets into one parent collection
-		parentButton = new JRadioButton(
+		parentButton = new JCheckBox(
 				"Create a parent collection for all incoming datasets.",
 				false);
 		parentButton.setMnemonic(KeyEvent.VK_P);
@@ -152,21 +153,38 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 						dispose();
 		}
 		else if (source == parentButton){
-			//pop up a "create new collections" dialog box & keep number of new
-			//collection
-			EmptyCollectionDialog ecd = 
-				new EmptyCollectionDialog((JFrame)parent, "AMS", false);
-			parentID = ecd.getCollectionID();
-			
-			if (parentID == -1) {
-				parentButton.setSelected(false);
-			} else {
-				parentLabel.setText("Importing into collection # " + parentID);
-				importedTogether = true;
+			if (parentButton.isSelected())
+			{
+				//pop up a "create new collections" dialog box & keep number of new
+				//collection
+				EmptyCollectionDialog ecd = 
+					new EmptyCollectionDialog((JFrame)parent, "AMS", false);
+				parentID = ecd.getCollectionID();
+				
+				if (parentID == -1) {
+					parentButton.setSelected(false);
+				} else {
+					parentLabel.setText("Importing into collection " + ecd.getCollectionName());
+					importedTogether = true;
+				}
+			}
+			else {
+				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					System.err.println("Error deleting temporary collection");
+				parentLabel.setText("");
+				importedTogether = false;				
 			}
 		}
-		else if (source == cancelButton)
+		else if (source == cancelButton) {
+			if (importedTogether) {
+				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					System.err.println("Error deleting temporary collection");
+				parentLabel.setText("");
+				importedTogether = false;				
+			}
 			dispose();
+		}
+			
 	}
 	
 	/**

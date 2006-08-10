@@ -61,6 +61,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JTextField commentField;
 	private JComboBox datatypeBox;
 	private int collectionID = -1;
+	private String collectionName = "";
 	
 	public EmptyCollectionDialog(JFrame parent) {
 		this(parent, "", true);
@@ -155,10 +156,29 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	 * 
 	 * @return	collectionID for new empty collection
 	 */
-	public int getCollectionID(){
-		
+	public int getCollectionID() {
 		return collectionID;
-		
+	}
+	
+	/**
+	 * @return the name of the collection inputted into the dialog
+	 */
+	public String getCollectionName() {
+		return collectionName;
+	}
+	
+	/**
+	 * Removes an empty collection
+	 * @param id the id of the empty collection to remove
+	 * @return true on success
+	 * @author shaferia
+	 */
+	public static boolean removeEmptyCollection(int id) {
+		SQLServerDatabase db = new SQLServerDatabase();
+		db.openConnection();
+		boolean success = db.removeEmptyCollection(db.getCollection(id));
+		db.closeConnection();
+		return success;
 	}
 	
 	public void actionPerformed(ActionEvent e) {
@@ -169,6 +189,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 					SQLServerDatabase db = new SQLServerDatabase();
 					db.openConnection();
 					collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
+					collectionName = nameField.getText();
 					db.closeConnection();
 					System.out.println("Empty Collection ID: " + collectionID);
 					dispose();

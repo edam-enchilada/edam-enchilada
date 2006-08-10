@@ -75,6 +75,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -98,8 +99,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		private JButton okButton;
 		private JButton cancelButton;
 		private JButton dataTypeButton;
-		private JRadioButton parentButton;
-		private JLabel parentLabel;
+		private JCheckBox parentButton;
 		private EnchiladaDataTableModel eTableModel;
 		private int dataSetCount;
 		private static Window parent = null;
@@ -132,7 +132,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			
 			JScrollPane scrollPane = new JScrollPane(edTable);
 			
-			parentButton = new JRadioButton();
+			parentButton = new JCheckBox();
 			parentButton.setMnemonic(KeyEvent.VK_P);
 			parentButton.addActionListener(this);
 			
@@ -214,10 +214,9 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			buttonPane.setBorder(BorderFactory.createEmptyBorder(0,10,10,10));
 			
 			//import into a parent collection goes here
-			parentLabel = new JLabel("Create a parent collection for all"
+			parentButton.setText("Create a parent collection for all"
 					+ " incoming datasets.");
 			buttonPane.add(parentButton);
-			buttonPane.add(parentLabel);
 			
 			buttonPane.add(Box.createHorizontalGlue());
 			buttonPane.add(okButton);
@@ -265,9 +264,14 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 				db.updateAncestors(db.getCollection(cID));
 				dispose();
 			}
-			else if (source == cancelButton)
+			else if (source == cancelButton) {
+				if (importedTogether) {
+					if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+						System.err.println("Error deleting temporary collection");
+					importedTogether = false;				
+				}
 				dispose();
-			
+			}
 			else if (source == dataTypeButton){
 						
 				FilePicker fp = new FilePicker("Import", "md", this);
@@ -321,17 +325,24 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			}
 			
 			else if (source == parentButton){
-				//pop up a "create new collections" dialog box & keep number of new
-				//collection
-				EmptyCollectionDialog ecd = 
-					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", true);
-				parentID = ecd.getCollectionID();
-				
-				if (parentID == -1) {
-					parentButton.setSelected(false);
-				} else {
-					parentLabel.setText("Importing into collection # " + parentID);
-					importedTogether = true;
+				//pop up a "create new collections" dialog box & keep number of new collection
+				if (parentButton.isSelected()) {
+					EmptyCollectionDialog ecd = 
+						new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+					parentID = ecd.getCollectionID();
+					
+					if (parentID == -1) {
+						parentButton.setSelected(false);
+					} else {
+						parentButton.setText("Importing into collection " + ecd.getCollectionName());
+						importedTogether = true;
+					}
+				}
+				else {
+					if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+						System.err.println("Error deleting temporary collection");
+					parentButton.setText("Create a parent collection for all incoming datasets");
+					importedTogether = false;
 				}
 			}
 		}

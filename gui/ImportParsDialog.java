@@ -75,7 +75,7 @@ import externalswing.SwingWorker;
 
 public class ImportParsDialog extends JDialog implements ActionListener {
 	private JButton okButton, cancelButton, advancedOptionsButton;
-	private JRadioButton parentButton;
+	private JCheckBox parentButton;
 	private JLabel parentLabel;
 	private JPanel listPane;
 	private ParTableModel pTableModel,advancedTableModel,basicTableModel;
@@ -120,7 +120,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		advancedOptionsButton.addActionListener(this);
 		
 		//an option to import all the datasets into one parent collection
-		parentButton = new JRadioButton(
+		parentButton = new JCheckBox(
 				"Create a parent collection for all incoming datasets.",
 				false);
 		parentButton.setMnemonic(KeyEvent.VK_P);
@@ -291,18 +291,24 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				
 		}
 		else if (source == parentButton){
-			//pop up a "create new collections" dialog box & keep number of new
-			//collection
-			EmptyCollectionDialog ecd = 
-				new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
-			parentID = ecd.getCollectionID();
-			
-			if (parentID == -1) {
-				parentButton.setSelected(false);
-			} else {
-				parentLabel.setText("Importing into collection " + 
-						db.getCollectionName(ecd.getCollectionID()));
-				importedTogether = true;
+			//pop up a "create new collections" dialog box & keep number of new collection
+			if (parentButton.isSelected()) {
+				EmptyCollectionDialog ecd = 
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+				parentID = ecd.getCollectionID();
+				
+				if (parentID == -1) {
+					parentButton.setSelected(false);
+				} else {
+					parentLabel.setText("Importing into collection " + ecd.getCollectionName());
+					importedTogether = true;
+				}
+			}
+			else {
+				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					System.err.println("Error deleting temporary collection");
+				parentLabel.setText("");
+				importedTogether = false;
 			}
 		}
 		else if (source == advancedOptionsButton){
@@ -335,10 +341,17 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				card.show(listPane, "Simple");
 			}
 		}
-		else if (source == cancelButton)
+		else if (source == cancelButton) {
+			if (importedTogether) {
+				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					System.err.println("Error deleting temporary collection");
+				parentLabel.setText("");
+				importedTogether = false;				
+			}
 			dispose();
+		}
 	}
-	
+
 	/**
 	 * Method to determine whether the datasets are being imported together into
 	 * a single parent collection.
