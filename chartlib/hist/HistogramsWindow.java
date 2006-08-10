@@ -5,7 +5,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeListener;
 
 import java.util.*;
-import java.util.List;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,7 +22,7 @@ import externalswing.Useful;
  *
  */
 
-public class HistogramsWindow extends JFrame implements ActionListener {
+public class HistogramsWindow extends JFrame {
 	private HistogramsPlot plot;
 	ZoomableChart zPlot;
 	private JSlider brightnessSlider;
@@ -51,7 +50,9 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		this.add(plotPanel, BorderLayout.CENTER);
 		this.add(buttonPanel, BorderLayout.EAST);
 		
-		
+		/*
+		 * This is really drawn-out, I'm sorry.
+		 */
 		try {
 			plot = new HistogramsPlot(collID);
 			plot.setTitle("Spectrum histogram for collection #" + collID);
@@ -70,14 +71,16 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			
 			// The datamousejkjkdjfkjdkf listens to the plot.  the redirector
 			// listens to the datamouseuijdfij.  the brush manager and the
-			// zoomablechart both listen to the redirector, which sends only
-			// one of them any event.
+			// zoomablechart both listen to the redirector, which, given
+			// some event, sends it to one of those two, depending on what the
+			// user has selected.
 			DataMouseEventTranslator dtrans = new DataMouseEventTranslator();
 			plot.addMouseListener(dtrans);
 			plot.addMouseMotionListener(dtrans);
 			MouseRedirector mode = new MouseRedirector("Mouse Function");
 			dtrans.addMouseListener(mode);
 			dtrans.addMouseMotionListener(mode);
+			
 			mode.addMouseMode("Zoom", zPlot);
 			
 			final BrushManager brusher = new BrushManager(plot);
@@ -111,10 +114,13 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			});
 			buttonPanel.add(zout);
 			
+			/*
+			 * Sliders are remarkably difficult to set up prettily.
+			 */
 			brightnessSlider = new JSlider(0, 50);
 			brightnessSlider.setName("brightness");
 			brightnessSlider.setMajorTickSpacing(25);
-			Hashtable labels = new Hashtable();
+			Hashtable<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
 			labels.put(new Integer(0), new JLabel("Light"));
 			labels.put(new Integer(50), new JLabel("Dark"));
 			brightnessSlider.setLabelTable(labels);
@@ -122,6 +128,7 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			brightnessSlider.setPaintTicks(true);
 			addActionListeners(plot, brightnessSlider);
 			brightnessSlider.setValue(25);
+			
 			buttonPanel.add(brightnessSlider);
 		} catch (SQLException e) {
 			plotPanel.add(new JTextArea(e.toString()));
@@ -145,14 +152,8 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 		}
 	}
 
-
-	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
-
-	}
-
 	public static void main(String[] args) throws SQLException {
-		HistogramsWindow grr = new HistogramsWindow(2);
+		HistogramsWindow grr = new HistogramsWindow(2); // some collection.
 
 		grr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

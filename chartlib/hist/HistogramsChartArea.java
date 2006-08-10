@@ -3,30 +3,28 @@
  */
 package chartlib.hist;
 
-import java.awt.*;
+import static java.lang.Math.min;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.*;
+import java.util.LinkedList;
 import java.util.List;
 
-import ATOFMS.ParticleInfo;
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
-import analysis.DistanceMetric;
-import chartlib.AbstractMetricChartArea;
-import chartlib.ZoomableChart;
-import static java.lang.Math.min;
-import java.lang.Math;
-
-import javax.swing.JFrame;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import database.CollectionCursor;
-import database.SQLServerDatabase;
+import chartlib.AbstractMetricChartArea;
 
 /**
+ * A chartarea for drawing these wonky Spectrum Histograms.
+ * 
  * @author smitht
  *
  */
@@ -147,6 +145,7 @@ public class HistogramsChartArea
 		}
 	}
 
+	// damn null pointer exceptions!
 	public int getCountAt(int mz, float relArea) {
 		if (collectionHistograms != null && collectionHistograms.size() > 0)
 			if (collectionHistograms.get(0).hists.length > mz)
@@ -178,7 +177,8 @@ public class HistogramsChartArea
 		}
 		
 		if (packY) {
-			// be very lazy and say it's always 0..1
+			// be very lazy and say it's always 0..1.  this should almost always
+			// be true.
 			yAxis.setRange(0, 1);
 		}
 	}
@@ -186,6 +186,7 @@ public class HistogramsChartArea
 
 	public void addDataset(HistogramDataset newSet) {
 		collectionHistograms.add(newSet);
+		repaint();
 	}
 	
 	public boolean removeDataset(HistogramDataset dset) {
@@ -201,6 +202,11 @@ public class HistogramsChartArea
 		repaint();
 	}
 
+	/**
+	 * If you want to change how the brightness slider works, change this
+	 * formula.  You could also change the range of it, which is somewhere
+	 * in HistogramsWindow.
+	 */
 	public void stateChanged(ChangeEvent e) {
 		JSlider source = (JSlider) e.getSource();
 //		this.setBrightness(1f / (source.getValue() / 200f));

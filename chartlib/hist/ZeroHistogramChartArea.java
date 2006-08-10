@@ -1,6 +1,10 @@
 package chartlib.hist;
-
-import java.awt.Color;
+/**
+ * Somewhat badly named, currently this chartarea displays the number of NONzero
+ * peaks for each m/z value.
+ * 
+ * @author smitht
+ */
 import chartlib.AbstractMetricChartArea;
 import java.awt.Dimension;
 import java.awt.Graphics2D;

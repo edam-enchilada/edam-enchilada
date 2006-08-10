@@ -1,15 +1,24 @@
 package chartlib.hist;
 
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+/**
+ * BrushManager - interpret brushing mouse events.
+ * 
+ * An object of this class keeps track of what areas of a HistogramsPlot have
+ * been brushed by the user.  When new areas get brushed, or the brushing
+ * gets reset, it notifies the HistogramsPlot that was supplied to its 
+ * constructor that this has happened.
+ * <p>
+ * It doesn't draw any feedback on how much you've brushed while you're dragging,
+ * but it could, and that would be a nice user interface change.
+ * 
+ * @author smitht
+ */
+
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.MouseInputListener;
 
 public class BrushManager implements MouseInputListener {

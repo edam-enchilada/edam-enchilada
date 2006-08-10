@@ -5,7 +5,6 @@ import java.util.*;
 import experiments.Tuple;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
-import analysis.Normalizer;
 import junit.framework.TestCase;
 
 public class HistogramDatasetTest extends TestCase {
@@ -16,9 +15,8 @@ public class HistogramDatasetTest extends TestCase {
 	private int maxMZ = 30;
 	private int testMZ = 70;
 	
-	
+	//to save typing.
 	private class ALBPL extends ArrayList<Tuple<Integer, BinnedPeakList>> {
-		// to save typing.
 		public ALBPL() {
 			super();
 		}
@@ -31,19 +29,24 @@ public class HistogramDatasetTest extends TestCase {
 		super.setUp();
 		
 		ALBPL base = new ALBPL(100), compare = new ALBPL(100);
+		// i becomes sorta an atomID.
 		for (int i = 1; i <= 100; i++) {
+			// Create a binned peak list.
 			BinnedPeakList bpl = new BinnedPeakList();
 			for (int j = 0; j < rand.nextInt(60); j++) { // num peaks
 				bpl.add(rand.nextInt(maxMZ * 2) - maxMZ, rand.nextFloat());
 			}
 			
+			// put every other binned peak list in what will become the validation
+			// histogram.
 			if (i % 2 == 0) {
-				// add a peak that won't ever exist otherwise
+				// add a peak that won't ever exist otherwise, for getSelection
 				bpl.add(testMZ, rand.nextFloat());
 				
 				bpl.normalize(DistanceMetric.CITY_BLOCK);
 				
 				compare.add(new Tuple<Integer, BinnedPeakList>(i, bpl));
+				// keep is the list for testIntersect()
 				keep.add(i);
 			} else {
 				bpl.normalize(DistanceMetric.CITY_BLOCK);
@@ -63,6 +66,7 @@ public class HistogramDatasetTest extends TestCase {
 	}
 
 	public void testEquals() {
+		// these should be identical.
 		for (int i = 0; i < baseHist.length; i++) {
 			assertTrue(baseHist[i].equals(anotherBaseHist[i]));
 		}
@@ -72,6 +76,7 @@ public class HistogramDatasetTest extends TestCase {
 		// an empty one should be the same as a null one.
 		assertTrue(baseHist[0].equals(anotherBaseHist[0]));
 		
+		// these should not be equal.
 		baseHist[0].hists[20].addPeak(0.4f, 12345);
 		assertFalse(baseHist[0].equals(anotherBaseHist[0]));
 

@@ -13,13 +13,7 @@ import externalswing.ProgressTask;
 import externalswing.SwingWorker;
 
 /**
- * Need to figure out how to do positive and negative spectra.  Maybe
- * put HistogramDataset generation here, and split them up into two datasets,
- * pos/neg.  Then make two of the chart areas.
- * <p>
- * Sure.
- * <p>
- * Then, make a HistogramsButtonPanel or something, 
+ * A chart with special stuff for spectrum histograms.
  * @author smitht
  *
  */
@@ -161,16 +155,18 @@ public class HistogramsPlot extends Chart {
 						hplot.setTitle("Finding matching particles...");
 					}
 				});
+				
 				hplot.brushSpectra 
 					= HistogramDataset.getSelection(baseSpectra, selected);
 				hplot.brushSpectra[0].color = Color.RED;
 				hplot.brushSpectra[1].color = Color.RED;
+				
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						hplot.setTitle(oldTitle);
 					}
 				});
-			return null;
+				return null;
 			}
 			
 			@Override

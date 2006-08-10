@@ -4,9 +4,18 @@ import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 
+/**
+ * This is a special kind of mouse event that also stores the coordinates of the
+ * clicked point in graph coordinates (like, mz value and relative area).
+ * 
+ * @author smitht
+ *
+ */
+
 public class DataMouseEvent extends MouseEvent {
 	private Point2D dataPoint;
 	private boolean inDataArea;
+	// chartnumber: 0 for positive spectrum, 1 for negative.
 	private int chartNumber;
 	
 	public DataMouseEvent(Component source, int id, long when, int modifiers,

@@ -1,29 +1,16 @@
 package chartlib.hist;
 
 /**
- * HistList.java - Slightly modified ArrayList<Integer> for holding histograms.
+ * BinAddressableArrayList.java - Slightly modified ArrayList for holding histograms.
  * 
- * There are two methods with changed semantics: add(int,int) (that is, with
- * a target index) will not give you an IndexOutOfBoundsException if you add
+ * There's no add() method, and the set method, expandAndSet(float, T), is
+ * protected.  This is because the only child of this class, ChainingHistogram,
+ * doesn't want that capability to be public:  rather than setting the entry
+ * to something, it really wants to modify the entry.
+ *
+ * get(index) will not give you an IndexOutOfBoundsException if you add
  * past the end of the list: instead it just adds 0s between the current end
  * of the list and the new element.
- * 
- * Similarly, get(index) won't give you that exception, it will just give you
- * 0s.
- * 
- * A new method has been added, addPeak(float).  When you call it, it adds 1
- * to the count in the bin that the argument belongs in.
- * 
- * It's impossible to add a peak of height 0, because for ATOFMS data you
- * never want to do this.  But this HistList thing will have to change if
- * we ever want to store signed data (where negative values are valid).  Or
- * maybe it won't have to change, but it will definitey have to be thought
- * about.   
- * 
- * TODO: Try different rules for splitting at 0.
- * Probably want to split where there is a significant population both with
- * and without 0.  The number of bins with at least Sensitivity hits in them
- * is actually not as nice a statistic as the straight-up number of hits.
  * 
  * @author Thomas Smith
  */
@@ -144,7 +131,6 @@ public class BinAddressableArrayList<T> {
 	}
 	
 	public boolean equals(Object thatObject) {
-		System.out.println("...");
 		if (thatObject == null || !(thatObject.getClass().equals(this.getClass())))
 			return false;
 		BinAddressableArrayList that = (BinAddressableArrayList) thatObject;
@@ -153,7 +139,6 @@ public class BinAddressableArrayList<T> {
 		
 		if (that.binWidth != this.binWidth) return false;
 		
-		System.out.println(" set now ");
 		
 		for (int i = 0; i < list.size(); i++) {
 			HashSet<T> thisSet, thatSet;
@@ -176,7 +161,6 @@ public class BinAddressableArrayList<T> {
 			}
 		}
 		
-		System.out.println("yay");
 		
 		return true;
 	}

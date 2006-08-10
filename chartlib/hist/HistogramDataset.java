@@ -3,7 +3,6 @@ package chartlib.hist;
 import java.awt.Color;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -13,8 +12,12 @@ import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 import database.SQLServerDatabase;
 import experiments.Tuple;
-import externalswing.ProgressTask;
 
+/**
+ * Holds all the information needed to graph 
+ * @author smitht
+ *
+ */
 
 public class HistogramDataset {
 	public ChainingHistogram[] hists;
@@ -35,7 +38,7 @@ public class HistogramDataset {
 	{
 		SQLServerDatabase db = HistogramsPlot.getDB();
 		collection.Collection coll = db.getCollection(collID);
-		if (coll.getDatatype() != "ATOFMS") 
+		if (! coll.getDatatype().equals("ATOFMS")) 
 			throw new IllegalArgumentException("Spectrum Plots only work " +
 					"on ATOFMS for now.");
 		// I haven't tried them on AMS, they might work.  I don't understand AMS

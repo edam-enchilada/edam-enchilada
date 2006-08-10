@@ -2,14 +2,16 @@ package chartlib.hist;
 
 import java.util.ArrayList;
 
-import ATOFMS.ParticleInfo;
-import analysis.BinnedPeakList;
 
 /**
  * This histogram actually stores references to the source of
  * the hit in each bin.  erm, like, by looking at a bin, you can
- * find out what objects are there.  It's a lot like a chaining
- * hash table, except that the hash function is meaningful.
+ * find out what atoms from the database are there.  It's a lot like a chaining
+ * hash table, except that the hash function is meaningful: it is the relative
+ * area of a particular m/z value for a particle.  If that doesn't make sense,
+ * just look at the addPeak() method.
+ * 
+ * @author smitht
  */
 public class ChainingHistogram 
 	extends BinAddressableArrayList<ArrayList<Integer>>
@@ -25,7 +27,9 @@ public class ChainingHistogram
 		ArrayList<Integer> target;
 		
 		target = get(peakHeight);
-		if (target == null) { // if the list is not this long, or if it is but nothing has been added to this bin yet.
+		if (target == null) { 
+			// if the list is not this long,
+			// or if it is but nothing has been added to this bin yet.
 			target = new ArrayList<Integer>();
 			expandAndSet(peakHeight, target);
 		}
@@ -48,7 +52,8 @@ public class ChainingHistogram
 	}
 	
 	public int getHitCount() {
-		// TODO: assert that the hitcount here is equal to the sum of the hits in each arraylist.  how?
+		// TODO: assert that the hitcount here is equal to the sum of the 
+		// hits in each arraylist.  how?
 		return hitCount;
 	}
 	

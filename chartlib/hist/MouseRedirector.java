@@ -144,6 +144,6 @@ public class MouseRedirector extends JPanel implements MouseInputListener {
 		fr.add(pan);
 		fr.pack();
 		fr.setVisible(true);
-		fr.setDefaultCloseOperation(fr.EXIT_ON_CLOSE);
+		fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 }

@@ -3,7 +3,6 @@ package chartlib.hist;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.SwingUtilities;
@@ -11,16 +10,10 @@ import javax.swing.event.MouseInputListener;
 
 import chartlib.AbstractMetricChartArea;
 
-/*
- * Change so it can work on a Chart?  not too bad maybe?
- */
 
 /**
  * A thing that sits between you and the things you're listening to, and
  * adds information about what the given points are on the graph.
- * <p>
- * To function, it must be a mouseinputlistener on the ChartAreas, not on
- * Charts or anything else. 
  * 
  * @author smitht
  *

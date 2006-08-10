@@ -10,6 +10,7 @@ import javax.swing.border.BevelBorder;
 import java.awt.*;
 
 /**
+ * Tells the user what m/z value and relative area and hit count they're looking at.
  * 
  * @author smitht
  *
