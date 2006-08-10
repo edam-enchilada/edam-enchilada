@@ -212,10 +212,30 @@ public class MainFrame extends JFrame implements ActionListener
 				
 			}
 		});
+		//Various hacks, the fault of:
+		//@author shaferia
+		// - fix Swing focus bug that causes problems with fast alt-tabbing
+		// - apply Enchilada icon to all frames
 		addWindowFocusListener(new WindowFocusListener() {
 			public void windowLostFocus(WindowEvent event) {
-				if (event.getOppositeWindow() != null)
-					event.getOppositeWindow().requestFocus();
+				Window w = event.getOppositeWindow();
+				if (w != null) {
+					w.requestFocus();
+					if (w instanceof Frame) {
+						boolean found = false;
+						for (WindowFocusListener listen : w.getWindowFocusListeners()) {
+							if (this == listen) {
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							if (event.getWindow() != null && event.getWindow() instanceof Frame)
+								((Frame) w).setIconImage(((Frame)event.getWindow()).getIconImage());
+							w.addWindowFocusListener(this);
+						}
+					}
+				}
 			}
 			public void windowGainedFocus(WindowEvent e) {
 			}
