@@ -530,8 +530,13 @@ public class MainFrame extends JFrame implements ActionListener
 				JOptionPane.showMessageDialog(this, "Please select a collection to visualize.", 
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 			else
+			try {
 				(new chartlib.hist.HistogramsWindow(
-						getSelectedCollection().getCollectionID())).setVisible(true);
+					getSelectedCollection().getCollectionID())).setVisible(true);
+			} catch (IllegalArgumentException exce) {
+				JOptionPane.showMessageDialog(this, "Spectrum Histograms only" +
+						" work on ATOFMS collections for now.");
+			}
 		}
 		else if (source == detectPlumesItem){
 			if (synchronizedPane.getSelectedCollection() == null)
