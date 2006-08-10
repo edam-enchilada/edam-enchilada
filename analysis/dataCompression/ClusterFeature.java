@@ -43,6 +43,7 @@ package analysis.dataCompression;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import analysis.BinnedPeak;
@@ -53,6 +54,7 @@ import analysis.Normalizer;
 /**
  * 
  * @author ritza
+ * @author christej
  *
  * ClusterFeature contains the information for each cluster feature
  * in the CFTree.  It includes the number of particles in the cf, the sums of
@@ -62,7 +64,6 @@ import analysis.Normalizer;
  *
  * 
  */
-
 public class ClusterFeature {
 	private int count;
 	private BinnedPeakList sums;
@@ -123,11 +124,11 @@ public class ClusterFeature {
 		count++;
 		sums.normalize(dMetric);
 		// calculate the square sums.
-		BinnedPeak peak;
-		Iterator<BinnedPeak> iterator = list.iterator();
+		Entry<Integer, Float> peak;
+		Iterator<Map.Entry<Integer, Float>> iterator = list.getPeaks().entrySet().iterator();
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			squareSums += peak.value*peak.value;
+			squareSums += peak.getValue()*peak.getValue();
 		}
 		
 		memory+= (8*sums.length()-oldPeakListMem)+4;
@@ -138,8 +139,10 @@ public class ClusterFeature {
 	 * @return true if successful, false if there's no child.
 	 */
 	public boolean updateCF() {
-		if (child == null || child.getCFs().size() == 0) 
+		if (child == null || child.getCFs().size() == 0) {
+			sums.normalize(dMetric);
 			return false;
+		}
 		atomIDs = new ArrayList<Integer>();
 		ArrayList<ClusterFeature> cfs = child.getCFs();
 		count = 0;
@@ -197,15 +200,15 @@ public class ClusterFeature {
 			return false;
 		}
 		
-		Iterator<BinnedPeak> sumsA = sums.iterator();
-		Iterator<BinnedPeak> sumsB = cf.getSums().iterator();
-		BinnedPeak peakA;
-		BinnedPeak peakB;
+		Iterator<Map.Entry<Integer, Float>> sumsA =cf.getSums().getPeaks().entrySet().iterator();
+		Iterator<Map.Entry<Integer, Float>> sumsB = sums.getPeaks().entrySet().iterator();
+		Entry<Integer, Float> peakA;
+		Entry<Integer, Float> peakB;
 		while (sumsA.hasNext()) {
 			peakA = sumsA.next();
 			peakB = sumsB.next();
-			if (peakA.value != peakB.value || peakA.key != peakB.key) {
-				System.out.print(peakA.key+","+peakA.value+" =?= "+peakB.key+","+peakB.value);
+			if (peakA.getValue() != peakB.getValue() || peakA.getKey() != peakB.getKey()) {
+				System.out.print(peakA.getKey()+","+peakA.getValue()+" =?= "+peakB.getKey()+","+peakB.getValue());
 					System.out.println("FALSE");
 					return false;
 			}
@@ -263,12 +266,12 @@ public class ClusterFeature {
 	}
 	public void setSums(BinnedPeakList s) {
 		sums = s;
-		Iterator<BinnedPeak> iterator = s.iterator();
-		BinnedPeak peak;
+		Iterator<Map.Entry<Integer, Float>> iterator = s.getPeaks().entrySet().iterator();
+		Entry<Integer, Float> peak;
 		squareSums = 0;
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			squareSums += peak.value*peak.value;
+			squareSums += peak.getValue()*peak.getValue();
 		}
 	}
 	/**

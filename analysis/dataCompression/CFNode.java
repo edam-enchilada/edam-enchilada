@@ -48,6 +48,7 @@ import analysis.DistanceMetric;
  * features that belong to that node.
  * 
  * @author ritza
+ * @author christej
  *
  */
 public class CFNode {

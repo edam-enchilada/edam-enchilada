@@ -58,7 +58,7 @@ import database.*;
  * features are then clustered to produced more refined clusters.
  * 
  * @author ritza
- *
+ * @author christej
  */
 public class BIRCH extends CompressData{
 	/* Class Variables */
@@ -72,7 +72,12 @@ public class BIRCH extends CompressData{
 	private long buildTotal = 0; 
 	private long rebuildTotal = 0;
 	private int rebuildCount;
-	
+	private float lastThreshold;
+	private float newThreshold;
+	private float threshold;
+	private int size;
+	private int lastFit;
+	private int newFit;
 	/**
 	 * MEM_THRESHOLD is a new way of calculating memory predictably.  This threshold
 	 * should ultimately be the max threshold of the system that Enchilada is being
@@ -94,10 +99,12 @@ public class BIRCH extends CompressData{
 	{
 		super(c,database,name,comment,d);
 		// set parameters.
-		branchingFactor =4; // should be an advanced option in the GUI
+		branchingFactor = 4; // should be an advanced option in the GUI
 		collectionID = oldCollection.getCollectionID();
 		assignCursorType();
 		rebuildCount = 0; 
+		size = 0;
+		newThreshold = 0;
 	}
 	
 	/**
@@ -105,19 +112,20 @@ public class BIRCH extends CompressData{
 	 * increasing the threshold if we run out of memory.
 	 * @param threshold - initial threshold for tree.
 	 */
-	public void buildTree(float threshold) {
+	public void buildTree(float x) {
 		System.out.println("\n**********BUILDING THE PRELIMINARY TREE**********");
 		start = new Date().getTime();
 		realStart = new Date().getTime();
 		float t = (float)0.0;
-		curTree = new CFTree(t, branchingFactor, distanceMetric); 
+		curTree = new CFTree(t, branchingFactor, distanceMetric); ; 
 		// Insert particles one by one.
 		ParticleInfo particle;
 		CFNode changedNode, lastSplitNode;
 
 		while(curs.next()) {
 			particle = curs.getCurrent();
-			System.out.println("inserting particle " + particle.getID());
+		//	System.out.println("inserting particle " + particle.getID() + " threshold " + curTree.getThreshold());
+		//	System.out.println("memory " + curTree.getMemory());
 			particle.getBinnedList().normalize(distanceMetric);
 			assert!particle.getBinnedList().containsZeros() : "zero present";
 			
@@ -154,18 +162,21 @@ public class BIRCH extends CompressData{
 				rebuildCount++;
 				System.out.println("OUT OF MEMORY @ "+ curTree.getMemory() + "\n");
 				curTree.countNodes();
-				
+				System.out.println("t " + curTree.getThreshold());
 			//	System.out.println("\nFINAL TREE: ");
 			//	curTree.printTree();
-//				realEnd = new Date().getTime();
-//				System.out.println("interval: " + (realEnd-realStart));
-//				System.exit(1);
+				realEnd = new Date().getTime();
+				System.out.println("interval: " + (realEnd-realStart));
+			//	System.exit(1);
 				System.out.println("*****************REBUILDING TREE*****************\n");
 			//	System.out.println("scanning distances...");
 			//	curTree.scanDistances();
 				// rebuild tree.
 			//	putCollectionInDB();
+				size = curTree.getSize();
+				newFit = size;
 				rebuildTree();
+				lastFit = curTree.getSize();
 				end = new Date().getTime();
 				rebuildTotal = rebuildTotal + (end-start);
 				start = new Date().getTime();
@@ -179,21 +190,74 @@ public class BIRCH extends CompressData{
 //		curTree.printTree();
 //		System.out.println("scanning distances...");
 //		curTree.scanAllNodes();
+		ArrayList<Integer> array = curTree.checkRepresentation();
+		array = sort(array);
+		for(int i = 1; i<array.size(); i++){
+			System.out.println(array.get(i));
+			if( array.get(i) != (array.get(i-1) + 1))
+				System.out.println("OH NO");
+		}
+		System.out.println("array.size() "+ array.size());
 		System.out.println("interval: " + (realEnd-realStart));
 		System.out.println("buildTotal : " + buildTotal);
 		System.out.println("rebuildtotal : " + rebuildTotal);
 		System.out.println("rebuildCount : " + rebuildCount);
 	}
-	
+	public ArrayList<Integer> sort(ArrayList<Integer> array){
+		ArrayList<Integer> array2 = new ArrayList<Integer>();
+		int j = 0;
+		while(array.size()>0){
+			int min = array.get(0);
+			int pos = 0;
+			for(int i = 0; i<array.size(); i++){
+				if(array.get(i)<min){
+					min = array.get(i);
+					pos = i;
+				}
+			}
+			array2.add(min);
+			array.remove(pos);
+		}
+		return array2;
+	}
 	/**
 	 * Rebuilds the tree if we run out of memory.  Calls rebuildTreeRecurse,
 	 * then removes all the empty nodes in the new tree.  Sets the current
 	 * tree to the new one at the end of the method.
 	 */
+	public float linearThreshold(){
+		float deltaThreshold = newThreshold-lastThreshold;
+		float deltaSize = newFit - lastFit;
+		float slope = deltaSize/deltaThreshold;
+		float intcpt = newFit-slope*newThreshold;
+		float t = (2*size - intcpt)/slope;
+		System.out.println("newThreshold " +newThreshold);
+		System.out.println("lastThreshold " +lastThreshold);
+		System.out.println("deltaThreshold " +deltaThreshold);
+		System.out.println("lastFit " +lastFit);
+		System.out.println("newFit " +newFit);
+		System.out.println("deltaSize " + deltaSize);
+		System.out.println("intcpt " + intcpt);
+		System.out.println("2*size " + 2*size);
+		System.out.println("slope " + slope);
+		System.out.println("t " + t);
+		
+		
+		
+		return t;
+	}
 	public void rebuildTree() {
+		float t = 0;
+		if(rebuildTotal>1)
+			t = linearThreshold();
+		lastThreshold = newThreshold;
 		// predict the next best threshold.
 		curTree.assignLeaves();
-		float newThreshold = curTree.nextThreshold();
+		if(rebuildTotal<1)
+			newThreshold = curTree.nextThreshold();
+		else
+			newThreshold = t;
+
 		System.out.println("new THRESHOLD: " + newThreshold);
 		
 		CFTree newTree = new CFTree(newThreshold, branchingFactor, distanceMetric);
@@ -223,6 +287,8 @@ public class BIRCH extends CompressData{
 		// reassign memory allocation to each node.
 		newTree.findTreeMemory(newTree.root, true);
 		curTree = newTree;
+		curTree.setSize(size);
+		System.out.println("end of rebuildTree(), threshold = " + curTree.getThreshold());
 	}
 	
 	/**
@@ -236,7 +302,6 @@ public class BIRCH extends CompressData{
 	public CFTree rebuildTreeRecurse(CFTree newTree, CFNode newCurNode, 
 			CFNode oldCurNode, CFNode lastLeaf) {
 		newTree.assignLeaves();
-	
 		//if it's a leaf, we want to insert each cluster feature
 		//into the new tree, merging as many cluster features
 		//as possible
@@ -249,7 +314,7 @@ public class BIRCH extends CompressData{
 			// reinsert leaf;
 			boolean reinserted;
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
-		//		System.out.println("\nAdding CF:");
+			//	System.out.println("\nAdding CF:");
 				ClusterFeature thisCF = oldCurNode.getCFs().get(i);
 		//		thisCF.printCF("");
 				//try to reinsert the cf
@@ -277,7 +342,7 @@ public class BIRCH extends CompressData{
 		else {
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
 			//	System.out.println("adding an empty cluster feature to build the path for");
-			//	oldCurNode.getCFs().get(i).printCF("");
+		//	oldCurNode.getCFs().get(i).printCF("");
 				
 				//keep making empty cfs till there are the same number in newCurNode as in oldCurNode
 				while (newCurNode.getSize() <= i) {
@@ -332,6 +397,7 @@ public class BIRCH extends CompressData{
 		buildTree(0.0f);
 		System.out.println();
 		curTree.countNodes();
+		System.out.println(curTree.getSize());
 	//	putCollectionInDB();
 	}
 

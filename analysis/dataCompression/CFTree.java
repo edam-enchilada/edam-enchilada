@@ -41,10 +41,13 @@ package analysis.dataCompression;
 import java.util.ArrayList;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
+import analysis.Normalizable;
+import analysis.Normalizer;
 
 /**
  * 
  * @author ritza
+ * @author christej
  *
  * CFTree is a representation of all the data for clustering compressed in
  * such a way that all of it is stored in a tree structure in memory.  
@@ -65,6 +68,7 @@ public class CFTree {
 	
 	private ArrayList<BinnedPeakList> testDisList; //used for test purposes only
 	private long memory;
+	private int size;
 	/**
 	 * Constructor.  
 	 * @param t - threshold for the tree
@@ -75,6 +79,7 @@ public class CFTree {
 		branchFactor = b;
 		dMetric = d;
 		root = new CFNode(null,dMetric); // initialize the root
+		size = 0;
 	}
 	
 	/**
@@ -94,6 +99,7 @@ public class CFTree {
 			firstCF.updateCF(entry, atomID, true);
 			root.addCF(firstCF);
 			memory=root.getMemory();
+			size++;
 			return root;
 		}
 		Pair<ClusterFeature, Float> pair = findClosestLeafEntry(entry, root);
@@ -105,6 +111,7 @@ public class CFTree {
 		Float distance = pair.second;
 		if (distance <= threshold) {
 			closestLeaf.updateCF(entry, atomID, true);
+			size++;
 		}
 		//	else, add it to the closestNode as a new CF.
 		else {
@@ -116,6 +123,7 @@ public class CFTree {
 			newEntry.updateCF(entry, atomID, true);
 			newEntry.updatePointers(null, closestNode);
 			closestNode.addCF(newEntry);
+			size++;
 		}
 		memory+=closestNode.getMemory();
 		updateNonSplitPath(closestNode);
@@ -233,11 +241,36 @@ public class CFTree {
 		memory-=node.getMemory();
 		CFNode nodeA = new CFNode(null, dMetric);
 		CFNode nodeB = new CFNode(null, dMetric);
-		Pair<CFNode, CFNode> pair = node.splitNode();
-		assert(pair!=null) : "trying to split a node with 1 CF";
-		nodeA = pair.first;
-		nodeB = pair.second;
-	
+		ClusterFeature[] farthestTwo = node.getTwoFarthest();
+		assert (farthestTwo != null) : "trying to split a node with 1 CF";
+		ClusterFeature entryA = farthestTwo[0];
+		ClusterFeature entryB = farthestTwo[1];
+		
+		assert (entryA != null) : "EntryA is null";
+		assert (entryB != null) : "EntryB is null";
+		
+		assert (entryA.getSums().testForMax(entryA.getCount())) :"TEST FOR MAX FAILS!";
+		assert (entryB.getSums().testForMax(entryB.getCount())) :"TEST FOR MAX FAILS!";
+				
+		ArrayList<ClusterFeature> cfs = node.getCFs();
+		BinnedPeakList listI, listJ;
+		
+		// use entryA and entryB as two seeds; separate entries.
+		nodeA.addCF(entryA);
+		nodeB.addCF(entryB);
+		float distA, distB;
+		for (int i = 0; i < cfs.size(); i++) {
+			if (cfs.get(i) != entryA && cfs.get(i) != entryB) {
+				listI = cfs.get(i).getSums();
+				distA = listI.getDistance(entryA.getSums(), dMetric);
+				distB = listI.getDistance(entryB.getSums(), dMetric);
+				if (distA <= distB) {
+					nodeA.addCF(cfs.get(i));
+				}
+				else
+					nodeB.addCF(cfs.get(i));
+			}
+		}
 		for (int i = 0; i < nodeA.getSize(); i++) {
 			assert(nodeA.getCFs().get(i).getSums().testForMax(nodeA.getCFs().get(i).getCount())) : 
 				"TEST FOR MAX FAILS IN NODE";
@@ -394,16 +427,19 @@ public class CFTree {
 		
 		memory-=curNode.getMemory();
 		
+		BinnedPeakList combinedb = new BinnedPeakList(new Normalizer());
 		BinnedPeakList b1 = entry.getSums();
 		b1.multiply(entry.getCount());
 		
 		BinnedPeakList b2 = entryToMerge.getSums();
 		b2.multiply(entryToMerge.getCount());
 		
-		b1.addAnotherParticle(b2);
-		b1.normalize(dMetric);
+		combinedb.addAnotherParticle(b1);
+		combinedb.addAnotherParticle(b2);
+		combinedb.normalize(dMetric);
 		
-		ArrayList<Integer> newAtomIds = entry.getAtomIDs();
+		ArrayList<Integer> newAtomIds = new ArrayList<Integer>();
+		newAtomIds.addAll(entry.getAtomIDs());
 		newAtomIds.addAll(entryToMerge.getAtomIDs());
 		
 		ClusterFeature returnThis = new ClusterFeature(
@@ -697,11 +733,11 @@ public class CFTree {
 	 * @param delimiter - current delimiter for level.
 	 */
 	public void printTreeRecurse(CFNode node, String delimiter) {
+		Float mag = (float) 0.0;
 		if (!node.isLeaf()) {	
 			System.out.println(delimiter + "NEW NODE");
 			for (int i = 0; i < node.getSize(); i++) {
 				node.getCFs().get(i).printCF(delimiter);
-				node.getCFs().get(i).getSums().getMagnitude(dMetric);
 				printTreeRecurse(node.getCFs().get(i).child, delimiter + "    ");
 			}
 		}
@@ -709,7 +745,6 @@ public class CFTree {
 			System.out.println(delimiter + "NEW LEAF");
 			for (int i = 0; i < node.getSize(); i++) {
 				node.getCFs().get(i).printCF(delimiter);
-				node.getCFs().get(i).getSums().getMagnitude(dMetric);
 			}
 		}
 	}
@@ -819,7 +854,15 @@ public class CFTree {
 	public long getMemory() {
 		return memory;
 	}
-	
+	public int getSize() {
+		return size;
+	}
+	public void setSize(int s) {
+		size = s;
+	}
+	public float getThreshold(){
+		return threshold;
+	}
 	/**
 	 * Test code - shouldn't be used in actual implementation.
 	 * @param current
@@ -833,4 +876,23 @@ public class CFTree {
 			if(current.getCFs().get(i).child != null)
 				findTreeMemory(current.getCFs().get(i).child,false);
 	}
+
+	public ArrayList<Integer> checkRepresentation() {
+		ArrayList<Integer> array = new ArrayList<Integer>();
+		CFNode node = firstLeaf;
+		ClusterFeature curCF;
+		while(node!=null) {
+			for(int i = 0; i<node.getCFs().size(); i++){
+				curCF = node.getCFs().get(i);
+				for(int j = 0; j< curCF.getAtomIDs().size(); j++){
+					array.add(curCF.getAtomIDs().get(j));
+				}
+			}
+			node = node.nextLeaf;
+		}
+		return (ArrayList<Integer>) array;
+	}
+
+	
+	
 }
