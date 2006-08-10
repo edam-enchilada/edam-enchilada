@@ -58,39 +58,39 @@ public class CFNodeTest extends TestCase {
 		
 	}
 	public void testSameContents() {
-		assert !childNode.sameContents(orphanNode);
-		assert !orphanNode.sameContents(childNode);
+		assertFalse(childNode.sameContents(orphanNode));
+		assertFalse(orphanNode.sameContents(childNode));
 		orphanCF.getSums().printPeakList();
 		orphanCF.setSums(bp1);
 		orphanCF.getSums().printPeakList();
 		childCF.getSums().printPeakList();
-		assert childNode.sameContents(orphanNode);
-		assert orphanNode.sameContents(childNode);
+		assertTrue(childNode.sameContents(orphanNode));
+		assertTrue(orphanNode.sameContents(childNode));
 
 	}
 
 	public void testAddCF() {
 		ArrayList<ClusterFeature> array = childNode.getCFs();
-		assert(array.size() == 1);
-		assert(array.get(0) == childCF);
+		assertEquals(array.size(), 1);
+		assertEquals(array.get(0), childCF);
 		childNode.addCF(childCF);
-		assert(array.size() == 2);
+		assertEquals(array.size(), 2);
 		childNode.addCF(orphanCF);
-		assert(array.size() == 3);
-		assert(array.get(2) == orphanCF);
+		assertEquals(array.size(), 3);
+		assertEquals(array.get(2), orphanCF);
 		//parents do not update automatically, i'm not sure if this ought to be changed or not
-		assert(parentCF.getCount() == 0);
+		assertEquals(parentCF.getCount(), 0);
 	}
 
 	public void testRemoveCF() {
 		ArrayList<ClusterFeature> array = childNode.getCFs();
-		assert(array.size() == 1);
+		assertEquals(array.size(), 1);
 		childNode.removeCF(childCF);
-		assert(array.size() == 0);
+		assertEquals(array.size(), 0);
 	}
 
 	public void testGetTwoClosest() {
-		assert(orphanNode.getTwoClosest() == null);
+		assertNull(orphanNode.getTwoClosest());
 		childNode.addCF(orphanCF);
 		childNode.addCF(farOffCF);
 		Pair<ClusterFeature[], Float> pair = childNode.getTwoClosest();
@@ -100,47 +100,47 @@ public class CFNodeTest extends TestCase {
 	}
 
 	public void testGetTwoFarthest() {
-		assert(orphanNode.getTwoFarthest() == null);
+		assertNull(orphanNode.getTwoFarthest());
 		childNode.addCF(orphanCF);
 		childNode.addCF(farOffCF);
 		ClusterFeature[] array = childNode.getTwoFarthest();
-		assert(array[0] == childCF || array[0] == farOffCF);
-		assert(array[1] == childCF || array[1] == farOffCF);
+		assertTrue(array[0] == childCF || array[0] == farOffCF);
+		assertTrue(array[1] == childCF || array[1] == farOffCF);
 	}
 
 	public void testGetClosest() {
-		assert(childNode.getClosest(childCF.getSums()).first == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()).first == childCF);
-		assert(childNode.getClosest(orphanCF.getSums()).first == childCF);
+		assertEquals(childNode.getClosest(childCF.getSums()).first, childCF);
+		assertEquals(childNode.getClosest(farOffCF.getSums()).first, childCF);
+		assertEquals(childNode.getClosest(orphanCF.getSums()).first, childCF);
 		
 		childNode.addCF(orphanCF);
-		assert(childNode.getClosest(childCF.getSums()).first == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()).first == childCF);
-		assert(childNode.getClosest(orphanCF.getSums()).first == orphanCF);
+		assertEquals(childNode.getClosest(childCF.getSums()).first, childCF);
+		assertEquals(childNode.getClosest(farOffCF.getSums()).first, childCF);
+		assertEquals(childNode.getClosest(orphanCF.getSums()).first, orphanCF);
 		
 		childNode.addCF(farOffCF);
-		assert(childNode.getClosest(childCF.getSums()).first == childCF);
-		assert(childNode.getClosest(farOffCF.getSums()).first == farOffCF);
-		assert(childNode.getClosest(orphanCF.getSums()).first == orphanCF);
+		assertEquals(childNode.getClosest(childCF.getSums()).first, childCF);
+		assertEquals(childNode.getClosest(farOffCF.getSums()).first, farOffCF);
+		assertEquals(childNode.getClosest(orphanCF.getSums()).first, orphanCF);
 		
 	}
 
 	public void testUpdateParent() {
 		childNode.updateParent(orphanCF);
-		assert(childCF.curNode == childNode);
-		assert(childCF.curNode.parentCF == orphanCF);
-		assert(childCF.curNode.parentNode == orphanNode);
-		assert(childNode.parentCF == orphanCF);
-		assert(childNode.parentNode == orphanNode);
-		assert(orphanCF.child == childNode);
-		assert(orphanCF.curNode == orphanNode);
+		assertEquals(childCF.curNode, childNode);
+		assertEquals(childCF.curNode.parentCF, orphanCF);
+		assertEquals(childCF.curNode.parentNode, orphanNode);
+		assertEquals(childNode.parentCF, orphanCF);
+		assertEquals(childNode.parentNode, orphanNode);
+		assertEquals(orphanCF.child, childNode);
+		assertEquals(orphanCF.curNode, orphanNode);
 	}
 
 	public void testIsLeaf() {
-		assert(childNode.isLeaf());
-		assert(orphanNode.isLeaf());
-		assert(farOffNode.isLeaf());
-		assert(!parentNode.isLeaf());
+		assertTrue(childNode.isLeaf());
+		assertTrue(orphanNode.isLeaf());
+		assertTrue(farOffNode.isLeaf());
+		assertFalse(parentNode.isLeaf());
 	}
 
 }

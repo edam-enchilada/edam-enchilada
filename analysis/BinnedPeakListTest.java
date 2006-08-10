@@ -33,16 +33,14 @@ public class BinnedPeakListTest extends TestCase {
 		bpl.add(-100, 4);
 		bpl.add(0, 3);
 		bpl.add(100, 4);
-		
-		assert (bpl.getPartialMag(DistanceMetric.CITY_BLOCK, true) == 7):
-			"incorrect negative magnitude for city-block, should be 7";
-		assert (bpl.getPartialMag(DistanceMetric.CITY_BLOCK, false) == 7):
-			"incorrect positive magnitude for city-block, should be 7";
-		
-		assert (bpl.getPartialMag(DistanceMetric.DOT_PRODUCT, true) == 5):
-			"incorrect negative magnitude for other, should be 5";
-		assert (bpl.getPartialMag(DistanceMetric.EUCLIDEAN_SQUARED, false) == 5):
-			"incorrect positive magnitude for other, should be 5";
+		assertEquals("incorrect negative magnitude for city-block, should be 7", 
+				bpl.getPartialMag(DistanceMetric.CITY_BLOCK, true), 7.0f);
+		assertEquals("incorrect positive magnitude for city-block, should be 7", 
+				bpl.getPartialMag(DistanceMetric.CITY_BLOCK, false), 7.0f);
+		assertEquals("incorrect negative magnitude for other, should be 5", 
+				bpl.getPartialMag(DistanceMetric.DOT_PRODUCT, true), 5.0f);
+		assertEquals ("incorrect positive magnitude for other, should be 5", 
+				bpl.getPartialMag(DistanceMetric.EUCLIDEAN_SQUARED, false), 5.0f);
 	}
 	
 	/*
@@ -58,12 +56,10 @@ public class BinnedPeakListTest extends TestCase {
 		
 		bpl.multiply((float)20000);
 		
-		assert(bpl.getAreaAt(-1) == -20000): "failed at location -1, value: " + bpl.getAreaAt(-1);
-		assert(bpl.getAreaAt(1) == 20000): "failed at location 1, value: " + bpl.getAreaAt(1);
-		assert(bpl.getAreaAt(2) == 40000): "failed at location 2, value: " + bpl.getAreaAt(2);
-		assert(bpl.getAreaAt(3) == 60000): "failed at location 3, value: " + bpl.getAreaAt(3);
-		
-		
+		assertEquals("failed at location -1, value: " + bpl.getAreaAt(-1), bpl.getAreaAt(-1), -20000f);
+		assertEquals("failed at location 1, value: " + bpl.getAreaAt(1), bpl.getAreaAt(1), 20000f);
+		assertEquals("failed at location 2, value: " + bpl.getAreaAt(2), bpl.getAreaAt(2), 40000f);
+		assertEquals("failed at location 3, value: " + bpl.getAreaAt(3), bpl.getAreaAt(3), 60000f);
 		
 	}
 	
@@ -375,8 +371,7 @@ public class BinnedPeakListTest extends TestCase {
 				else if (dMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // If no match in shorter list, contributes nothing
 				else {
-				    assert false :
-				        "Invalid distance metric: " + dMetric;
+				    fail("Invalid distance metric: " + dMetric);
 					distance = -1.0f;
 				}
 			}	
@@ -401,8 +396,7 @@ public class BinnedPeakListTest extends TestCase {
 					else if (dMetric == DistanceMetric.DOT_PRODUCT)
 					    ; // Again, nothing to subtract off here
 					else {
-					    assert false :
-					        "Invalid distance metric: " + dMetric;
+					    fail("Invalid distance metric: " + dMetric);
 						distance = -1.0f;
 					}
 					
@@ -418,8 +412,7 @@ public class BinnedPeakListTest extends TestCase {
 					        temp.value*longerLists[temp.key+MAX_LOCATION];
 					}
 					else {
-					    assert false :
-					        "Invalid distance metric: " + dMetric;
+					    fail("Invalid distance metric: " + dMetric);
 						distance = -1.0f;
 					}
 					
@@ -433,8 +426,7 @@ public class BinnedPeakListTest extends TestCase {
 					else if (dMetric == DistanceMetric.DOT_PRODUCT)
 					    ; // Nothing to add here if new match
 					else {
-					    assert false :
-					        "Invalid distance metric: " + dMetric;
+					    fail("Invalid distance metric: " + dMetric);
 						distance = -1.0f;
 					}
 				}
@@ -451,10 +443,10 @@ public class BinnedPeakListTest extends TestCase {
 			if (dMetric == DistanceMetric.DOT_PRODUCT)
 			    distance = 1-distance;
 
-			assert distance < 2.01 :
-			    "Distance should be <= 2.0, actually is " + distance +"\n" 
-			    + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
-			    + getMagnitude(dMetric) + "\n" ;
+			assertTrue("Distance should be <= 2.0, actually is " + distance +"\n" 
+				    + "Magnitudes: toList = " + toList.getMagnitude(dMetric) + " this = "
+				    + getMagnitude(dMetric) + "\n", distance < 2.01 );
+
 			if (distance > 2) {
 				//System.out.println("Rounding off " + distance +
 				//		"to 2.0");
@@ -497,8 +489,8 @@ public class BinnedPeakListTest extends TestCase {
 		 */
 		public void add(float location, float area)
 		{
-			assert(location < MAX_LOCATION && location > - MAX_LOCATION) :
-				"Location to add is out of bounds" + location;
+			assertTrue("Location to add is out of bounds" + location, 
+					(location < MAX_LOCATION && location > - MAX_LOCATION));
 			float temp = 0;
 			boolean exists = false;
 			int locationInt;
@@ -547,8 +539,8 @@ public class BinnedPeakListTest extends TestCase {
 		 */
 		public void addNoChecks(int location, float area)
 		{
-			assert(location < MAX_LOCATION && location > - MAX_LOCATION) : 
-				"key is out of bounds: " + location;
+			assertTrue("key is out of bounds: " + location, 
+					(location < MAX_LOCATION && location > - MAX_LOCATION));
 			//peaks.add(new BinnedPeak(key,value));
 			locations.add(new Integer(location));
 			areas.add(new Float(area));

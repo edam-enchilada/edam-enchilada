@@ -78,7 +78,8 @@ public class CreateTestDatabase {
 		}
     		
 		try {
-			assert (con.createStatement() != null): "con should not be null";
+			if (con.createStatement() == null)
+				System.err.println("con should not be null");
 		} catch (SQLException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

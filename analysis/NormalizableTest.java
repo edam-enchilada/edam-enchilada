@@ -45,7 +45,7 @@ public class NormalizableTest extends TestCase {
 		BinnedPeak bp;
 		while(iter.hasNext()){
 			bp = iter.next();
-			assert (bp.key == bp.value): "Key: " + bp.key + " Value: " + bp.value;
+			assertEquals("Key: " + bp.key + " Value: " + bp.value, bp.key, bp.value);
 		}
 		
 		//testing with cube root
@@ -54,7 +54,7 @@ public class NormalizableTest extends TestCase {
 		iter = cube.iterator();
 		while(iter.hasNext()){
 			bp = iter.next();
-			assert (bp.key == bp.value): "Key: " + bp.key + " Value: " + bp.value;
+			assertEquals("Key: " + bp.key + " Value: " + bp.value, bp.key, bp.value);
 		}
 		
 	}

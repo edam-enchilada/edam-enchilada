@@ -55,7 +55,7 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.normalize(dMetric);
 		bp1.addAnotherParticle(bp2);
 		bp1.normalize(dMetric);
-		assert test.getSums().getDistance(bp1, dMetric)==0.0 : "not equal";
+		assertEquals(test.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	
 	public void testAbsorbCF() {
@@ -92,7 +92,7 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.multiply(2);
 		bp1.addAnotherParticle(bp3);
 		bp1.normalize(dMetric);
-		assert testCF1.getSums().getDistance(bp1, dMetric)==0.0 : "not equal";
+		assertEquals(testCF1.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	
 	public void testIsEqual() {
@@ -101,27 +101,27 @@ public class ClusterFeatureTest extends TestCase {
 		bp2.add(-210, (float) 0.1);
 		ClusterFeature testCF2 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
 		testCF2.updateCF(bp2, 2, false);
-		assert !testCF2.isEqual(testCF1) : "they are equal";
+		assertFalse(testCF2.isEqual(testCF1));
 
 		testCF2.setCount(1);
-		assert !testCF2.isEqual(testCF1) : "they are equal";
+		assertFalse(testCF2.isEqual(testCF1));
 		
 		BinnedPeakList bp3 = new BinnedPeakList(new Normalizer());
 		bp3.copyBinnedPeakList(bp1);
 		testCF2.setSums(bp3);
 
-		assert testCF2.isEqual(testCF1) : "they are not equal";
+		assertTrue(testCF2.isEqual(testCF1));
 		
 	}
 
 	public void testMakesSumsSparse() {
 		ClusterFeature testCF2 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
 		testCF2.updateCF(bp1, 1, false);
-		assert testCF1.isEqual(testCF2) : "not equal";
+		assertTrue(testCF1.isEqual(testCF2));
 		testCF1.getSums().add(0,0);
-		assert !testCF1.isEqual(testCF2) : "are equal";
+		assertFalse(testCF1.isEqual(testCF2));
 		testCF1.makeSumsSparse();
-		assert testCF1.isEqual(testCF2): "not equal";
+		assertTrue(testCF1.isEqual(testCF2));
 	}
 	
 	public void testUpdateCFBoolean() {
@@ -151,7 +151,7 @@ public class ClusterFeatureTest extends TestCase {
 		
 		testCF1.updateCF();
 
-		assert !testCF1.isEqual(test) : "are equal";
+		assertFalse(testCF1.isEqual(test));
 		ArrayList<Integer> array = new ArrayList<Integer>();
 		array.add(2);
 		array.add(3);
