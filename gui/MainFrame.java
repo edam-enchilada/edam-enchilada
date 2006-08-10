@@ -214,7 +214,8 @@ public class MainFrame extends JFrame implements ActionListener
 		});
 		addWindowFocusListener(new WindowFocusListener() {
 			public void windowLostFocus(WindowEvent event) {
-				event.getOppositeWindow().requestFocus();
+				if (event.getOppositeWindow() != null)
+					event.getOppositeWindow().requestFocus();
 			}
 			public void windowGainedFocus(WindowEvent e) {
 			}
