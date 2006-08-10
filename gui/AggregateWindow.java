@@ -216,7 +216,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		final JCheckBox noMZValues = new JCheckBox("Don't aggregate M/Z values", false);
 		noMZValues.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				options.allMZValues = ! noMZValues.isSelected();
+				options.setMZValues(noMZValues.isSelected() ? "" : mzValues.getText());
+				if (noMZValues.isSelected())
+					options.allMZValues = false;
 				mzValues.setEnabled(! noMZValues.isSelected());
 			}
 		});
