@@ -37,18 +37,19 @@ public class FlatImportGUI {
 		//fileChooser.setFile(fileFilter);
 		fileChooser.setVisible(true);
 		String filename = fileChooser.getDirectory()+fileChooser.getFile();
-		 */
-//		Object[] options = {"bulk .task file",
-//		".csv file",
-//		"Cancel"};
-//		int n = JOptionPane.showOptionDialog(parent,
-//		"What do you want to import?","Select Your Import Format",
-//		JOptionPane.YES_NO_CANCEL_OPTION,
-//		JOptionPane.QUESTION_MESSAGE,
-//		null,
-//		options,
-//		options[0]);
-		int n = 0;
+		*/ 
+		
+		Object[] options = {"bulk .task file",
+		".csv file",
+		"Cancel"};
+		int n = JOptionPane.showOptionDialog(parent,
+		"What do you want to import?","Select Your Import Format",
+		JOptionPane.YES_NO_CANCEL_OPTION,
+		JOptionPane.QUESTION_MESSAGE,
+		null,
+		options,
+		options[0]);
+		
 		if(n==2)return;
 		if(n==0){
 

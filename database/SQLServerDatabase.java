@@ -3869,7 +3869,7 @@ public class SQLServerDatabase implements InfoWarehouse
 	 * 
 	 * @return CollectionID of the new collection or -1 if aggregation failed or was cancelled
 	 */
-	public int createAggregateTimeSeries(ProgressBarWrapper progressBar, String rootName, Collection curColl, int[] mzValues) 
+	public boolean createAggregateTimeSeries(ProgressBarWrapper progressBar, int rootCollectionID, Collection curColl, int[] mzValues) 
 		throws InterruptedException{
 		int collectionID = curColl.getCollectionID();
 		String collectionName = curColl.getName();
@@ -3882,7 +3882,6 @@ public class SQLServerDatabase implements InfoWarehouse
 		StringBuilder sql = new StringBuilder();
 		
 		// create the root collection
-		int rootCollectionID = createEmptyCollection("TimeSeries", 1, rootName, "", "");
 		
 		
 		// Create and Populate #atoms table with appropriate information.
@@ -3892,7 +3891,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				ErrorLogger.writeExceptionToLog("SQLServer","Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return -1;
+				return false;
 			} 
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 			if (mzValues.length == 0) {
@@ -4019,7 +4018,7 @@ public class SQLServerDatabase implements InfoWarehouse
 				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
-				return -1;
+				return false;
 			} else if (mzValues.length == 0) {
 				ErrorLogger.writeExceptionToLog("SQLServer","Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
@@ -4091,7 +4090,7 @@ public class SQLServerDatabase implements InfoWarehouse
 		
 		stmt.close();
 		
-		return rootCollectionID;
+		return true;
 		} catch (SQLException e) {
 			try{
 				con.setAutoCommit(true);
@@ -4102,7 +4101,7 @@ public class SQLServerDatabase implements InfoWarehouse
 			}
 			ErrorLogger.writeExceptionToLog("SQLServer","SQL exception aggregating collection: " + collectionName);
 			System.err.println("SQL exception aggregating collection: " + collectionName);
-			return -1;
+			return false;
 		}
 	}
 	

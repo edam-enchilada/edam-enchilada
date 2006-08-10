@@ -57,6 +57,7 @@ public class Aggregator {
 		return progressBar;
 	}
 
+	
 	/**
 	 * @param syncRootName name for time series
 	 * @param collections the collections to be aggregated
@@ -73,7 +74,6 @@ public class Aggregator {
 			MainFrame mainFrame) throws InterruptedException{
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
-		int rootCollectionID = -1;
 		
 		//get the valid m/z values for each collection individually
 		Date startTime,endTime; // start and end dates.
@@ -131,6 +131,10 @@ public class Aggregator {
 		// event will get in between the two.
 		
 		//actually do the aggregation
+		db.beginTransaction();
+		
+		int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
+		
 		for (int i = 0; i < collections.length; i++) {
 			final String name = collections[i].getName();
 			SwingUtilities.invokeLater(new Runnable() {
@@ -150,9 +154,8 @@ public class Aggregator {
 			long end = new Date().getTime();
 			System.out.println("createTempAggBasis: "+(end-begin)/1000+" sec.");
 			begin = new Date().getTime();
-			db.beginTransaction();
 			
-			rootCollectionID = db.createAggregateTimeSeries(progressBar, syncRootName, collections[i], mzValues[i]);
+			db.createAggregateTimeSeries(progressBar, rootCollectionID, collections[i], mzValues[i]);
 			db.commitTransaction();
 			end = new Date().getTime();
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
