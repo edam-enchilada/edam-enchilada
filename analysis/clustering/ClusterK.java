@@ -92,7 +92,6 @@ public abstract class ClusterK extends Cluster {
 	private JLabel errorLabel;
 	private JFrame container;
 	
-	private ClusterInformation cInfo;
 	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
@@ -114,7 +113,7 @@ public abstract class ClusterK extends Cluster {
 		parameterString = name.concat(",K=" + k);
 		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
-		cInfo = c;
+		super.clusterInfo = c;//set inherited variable
 	}
 	
 	/**
@@ -271,10 +270,10 @@ public abstract class ClusterK extends Cluster {
 	{
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
+			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), clusterInfo));
 		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), cInfo));
+		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), clusterInfo));
 		return true;
 		default :
 			return false;

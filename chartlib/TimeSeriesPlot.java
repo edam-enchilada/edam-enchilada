@@ -71,6 +71,7 @@ public class TimeSeriesPlot extends Chart {
 			nextChart.setSize(new Dimension(height,width));
 			nextChart.setMinimumSize(new Dimension(height,width));
 			nextChart.setAxisBounds( 0, 1, 0, 1);
+			nextChart.setNumTicksX(5, 3);
 			
 			nextChart.setForegroundColor(DATA_COLORS[count]);
 			chartAreas.add(nextChart);

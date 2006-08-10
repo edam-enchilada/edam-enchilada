@@ -187,17 +187,7 @@ public class ATOFMSDataSetImporter {
 					throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
 				}
 		}
-		while(particleNumber < numParticles[numCollections]){
-			try{
-				Thread.sleep(1000);
-			} catch (InterruptedException e){
-				
-			}
-		}
 		
-		for(Collection collection : collections){
-			db.updateAncestors(collection);
-		}
 		
 	}
 	
@@ -447,7 +437,7 @@ public class ATOFMSDataSetImporter {
 	 * @throws IOException
 	 * @throws NumberFormatException
 	 * @throws InterruptedException
-	 */
+	 *//*
 	public void readSpectraAndCreateParticleThreaded() 
 	throws IOException, NumberFormatException, InterruptedException{
 		//Read spectra & create particle.
@@ -531,7 +521,7 @@ public class ATOFMSDataSetImporter {
 		}
 
 	}
-	
+	*/
 	// tests for .par version (.ams,.amz)
 	// String[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {

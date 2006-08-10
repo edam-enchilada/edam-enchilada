@@ -119,7 +119,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		JFrame mf = new JFrame();
 		final ProgressBarWrapper progressBar = 
 			new ProgressBarWrapper(mf, "Importing ATOFMS Datasets", 100);
-		progressBar.constructThis();
+		//progressBar.constructThis();
 		//final JFrame frameRef = frame;
 		//final ATOFMSBatchTableModel aRef = a;
 		importer = new ATOFMSDataSetImporter(table, mf, db, progressBar);
@@ -142,6 +142,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			e.printStackTrace();
 		}
 		table = null;
+		
 	}
 	
 	
@@ -171,6 +172,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 
 		importer.collectTableInfo();
 
+		
 		Statement stmt = db.getCon().createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT * FROM ATOFMSAtomInfoDense " +
 				"ORDER BY AtomID");
@@ -205,6 +207,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			assertEquals(i, atomIDs.get(i).intValue());
 		
 		assertEquals("b", db.getCollectionName(2));
+	
 	}
 	
 	/**

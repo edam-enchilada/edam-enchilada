@@ -27,69 +27,70 @@ public class FlatImportGUI {
 	"  You can correct your date format by opening the file in a spreadsheet " +
 	"application and creating a custom format.";	
 
-	
+
 	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
 		this.parent = parent;
-		
+
 		/*FileDialog fileChooser = new FileDialog(this, 
                 "Choose a place to write the plumes:",
                  FileDialog.LOAD);
 		//fileChooser.setFile(fileFilter);
 		fileChooser.setVisible(true);
 		String filename = fileChooser.getDirectory()+fileChooser.getFile();
-		*/
-		Object[] options = {"bulk .task file",
-                ".csv file",
-                "Cancel"};
-		int n = JOptionPane.showOptionDialog(parent,
-				"What do you want to import?","Select Your Import Format",
-				JOptionPane.YES_NO_CANCEL_OPTION,
-				JOptionPane.QUESTION_MESSAGE,
-				null,
-				options,
-				options[0]);
+		 */
+//		Object[] options = {"bulk .task file",
+//		".csv file",
+//		"Cancel"};
+//		int n = JOptionPane.showOptionDialog(parent,
+//		"What do you want to import?","Select Your Import Format",
+//		JOptionPane.YES_NO_CANCEL_OPTION,
+//		JOptionPane.QUESTION_MESSAGE,
+//		null,
+//		options,
+//		options[0]);
+		int n = 0;
 		if(n==2)return;
 		if(n==0){
-		
-		
-		FileDialog fileChooser = new FileDialog(parent, 
-                "Locate a .task File:",
-                 FileDialog.LOAD);
-		fileChooser.setFile("*.task");
-		fileChooser.setVisible(true);
-		String filename = fileChooser.getDirectory()+fileChooser.getFile();
-		if (fileChooser.getFile() == null) {
-			return;
-			// should this throw an exception instead?  i think this is ok...
-		}
-		importer = new TSImport(db, parent);
-		
-		try {
-			importer.readTaskFile(filename);
-		} catch(UnsupportedFormatException u){
-			//If the date format was wrong, let the user know, because they can fix it
-			JOptionPane.showMessageDialog(parent, dateMessage);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Exception importing (generally)");
-			ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
-		}
+
+
+			FileDialog fileChooser = new FileDialog(parent, 
+					"Locate a .task File:",
+					FileDialog.LOAD);
+			fileChooser.setFile("*.task");
+			fileChooser.setVisible(true);
+			String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			if (fileChooser.getFile() == null) {
+				return;
+				// should this throw an exception instead?  i think this is ok...
+			}
+			importer = new TSImport(db, parent);
+
+			try {
+				importer.readTaskFile(filename);
+			} catch(UnsupportedFormatException u){
+				//If the date format was wrong, let the user know, because they can fix it
+				JOptionPane.showMessageDialog(parent, dateMessage);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.err.println("Exception importing (generally)");
+				ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
+			}
 		}else if(n==1){
 			FileDialog fileChooser = new FileDialog(parent, 
-	                "Locate a .csv File:",
-	                 FileDialog.LOAD);
+					"Locate a .csv File:",
+					FileDialog.LOAD);
 			fileChooser.setFile("*.csv");
 			fileChooser.setVisible(true);
 			if (fileChooser.getFile() == null) {
 				return;
 			}
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
-			
+
 			importer = new TSImport(db, parent);
-			
+
 			try {
 				importer.readCSVFile(filename);
-			
+
 			} catch(UnsupportedFormatException u){
 				//If the date format was wrong, let the user know, because they can fix it
 				JOptionPane.showMessageDialog(parent, dateMessage);

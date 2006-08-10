@@ -158,7 +158,7 @@ public class GraphAxis {
 		setPosition(position);
 		min = 0;
 		max = 1;
-		bigTicks = 5;
+		bigTicks = 8;
 		smallTicks = 1;
 		makeTicks();
 		orientation = findOrientation();

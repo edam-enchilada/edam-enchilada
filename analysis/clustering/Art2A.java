@@ -65,7 +65,6 @@ public class Art2A extends Cluster
 	private float learningRate;
 	private int size;
 	protected NonZeroCursor curs;
-	private ClusterInformation cInfo;
 	// stableIterations contains the number of iterations that ART-2a
 	// terminates after if there has not been an improvement in totalDistance
 	private final int stableIterations = 10;
@@ -87,7 +86,7 @@ public class Art2A extends Cluster
 		collectionID = cID;
 		totalDistancePerPass = new ArrayList<Double>();
 		size = db.getCollectionSize(collectionID);	
-		cInfo = c;
+		super.clusterInfo = c;//set inherited variable
 	}
 	
 	private BinnedPeakList adjustByLearningRate(
@@ -167,10 +166,10 @@ public class Art2A extends Cluster
 		// TODO: no memory binned cursor here anymore; have to fix eventually.
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), cInfo));
+			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), clusterInfo));
 			return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), cInfo));
+		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), clusterInfo));
 			return true;
 		default :
 			return false;
