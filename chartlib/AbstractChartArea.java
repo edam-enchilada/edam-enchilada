@@ -13,6 +13,10 @@ import javax.swing.JComponent;
  * It has axes but doesn't pay too much attention to them.
  * It has axis labels that you can manipulate.
  * See LineChartArea for an example of a use of this.
+ * <p>
+ * I don't expect there ever to be a subclass of this except AbstractMetricChartArea,
+ * so feel free to ignore this class as much as possible, and to assume that all
+ * charts inherit from that one.
  * 
  * @author smitht
  *

@@ -2,6 +2,7 @@ package chartlib.hist;
 
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import javax.swing.*;
 
@@ -9,6 +10,7 @@ import chartlib.*;
 
 import database.SQLServerDatabase;
 import externalswing.ProgressTask;
+import externalswing.SwingWorker;
 
 /**
  * Need to figure out how to do positive and negative spectra.  Maybe
@@ -26,15 +28,15 @@ public class HistogramsPlot extends Chart {
 	private HistogramsChartArea posHistArea, negHistArea;
 	private ZeroHistogramChartArea posZerosArea, negZerosArea;
 	
+	private HistogramDataset[] baseSpectra, brushSpectra;
+	
 	public HistogramsPlot(final int collID) throws SQLException {
 		ProgressTask task = new ProgressTask(null, "Analysing collection", true) {
 			public void run() {
 				pSetInd(true);
 				setStatus("Creating histogram for collection.");
 				try {
-					final HistogramDataset[] datasets;
-					
-					datasets = HistogramDataset.analyseCollection(collID, Color.BLACK);
+					baseSpectra = HistogramDataset.analyseCollection(collID, Color.BLACK);
 					
 					if (terminate)
 						return;
@@ -42,7 +44,7 @@ public class HistogramsPlot extends Chart {
 					// EDT for gui work
 					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
-							addDatasets(datasets);
+							addDatasets(baseSpectra);
 						}
 					});
 				} catch (SQLException e) {
@@ -97,7 +99,7 @@ public class HistogramsPlot extends Chart {
 			negHistArea.setTitleY("Relative Area");
 			this.add(negHistArea);
 		} else {
-			negHistArea.addDataset(datasets[0]);
+			negHistArea.addDataset(datasets[1]);
 		}
 		if (negZerosArea == null) {
 			negZerosArea = new ZeroHistogramChartArea(datasets[1]);
@@ -136,12 +138,50 @@ public class HistogramsPlot extends Chart {
 	 * @return 0 if positive, 1 if negative, -1 if neither.
 	 */
 	public int whichGraph(Point p) {
-		Component c = getComponentAt(p);
+		Component c = findComponentAt(p);
 		if (c == posHistArea || c == posZerosArea) {
 			return 0;
 		} else if (c == negHistArea || c == negZerosArea) {
 			return 1;
 		} else return -1;
+	}
+
+
+	public void setBrushSelection(final ArrayList<BrushSelection> selected) {
+		if (brushSpectra != null) removeDatasets(brushSpectra);
+		repaint();
+		
+		final HistogramsPlot hplot = this;
+		SwingWorker sw = new SwingWorker() {
+			@Override
+			public Object construct() {
+				final String oldTitle = hplot.getTitle();
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						hplot.setTitle("Finding matching particles...");
+					}
+				});
+				hplot.brushSpectra 
+					= HistogramDataset.getSelection(baseSpectra, selected);
+				hplot.brushSpectra[0].color = Color.RED;
+				hplot.brushSpectra[1].color = Color.RED;
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						hplot.setTitle(oldTitle);
+					}
+				});
+			return null;
+			}
+			
+			@Override
+			public void finished() {
+				hplot.addDatasets(brushSpectra);
+				hplot.repaint();
+			}
+			
+		};
+		
+		sw.start();
 	}
 
 }

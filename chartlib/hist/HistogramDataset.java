@@ -35,6 +35,11 @@ public class HistogramDataset {
 	{
 		SQLServerDatabase db = HistogramsPlot.getDB();
 		collection.Collection coll = db.getCollection(collID);
+		if (coll.getDatatype() != "ATOFMS") 
+			throw new IllegalArgumentException("Spectrum Plots only work " +
+					"on ATOFMS for now.");
+		// I haven't tried them on AMS, they might work.  I don't understand AMS
+		// enough to know.
 		SQLServerDatabase.BPLOnlyCursor particleCursor = db.getBPLOnlyCursor(coll);
 		
 		HistogramDataset[] ret = analyseBPLs(particleCursor, c);
@@ -131,9 +136,33 @@ public class HistogramDataset {
 	
 	public static HistogramDataset[] getSelection(HistogramDataset[] spectra,
 			List<BrushSelection> selection) {
-		return null;
+		ArrayList<Integer> atomIDs = new ArrayList<Integer>();
+		
+		for (BrushSelection sel : selection) {
+			HistogramDataset ds = spectra[sel.spectrum];
+			if (ds == null) continue;
+			if (ds.hists == null) continue;
+			ChainingHistogram hist = ds.hists[sel.mz];
+			if (hist == null) continue;
+			
+			Iterator<ArrayList<Integer>> bins = hist.getIterator(sel.min, sel.max);
+			
+			while (bins.hasNext()) {
+				ArrayList<Integer> bin = bins.next();
+				if (bin == null) continue;
+				atomIDs.addAll(bin);
+			}
+		}
+		
+		// It happens not to matter if there are duplicate atomIDs:  intersect()
+		// constructs a hashset from the arraylist, and a set doesn't care about
+		// duplicates.
+		return intersect(spectra, atomIDs);
 	}
 	
+	/**
+	 * Equals is needed for the unit test.
+	 */
 	@Override
 	public boolean equals(Object thatObject) {
 		if (thatObject == null || !(thatObject instanceof HistogramDataset)) 

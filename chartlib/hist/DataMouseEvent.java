@@ -7,14 +7,16 @@ import java.awt.geom.Point2D;
 public class DataMouseEvent extends MouseEvent {
 	private Point2D dataPoint;
 	private boolean inDataArea;
+	private int chartNumber;
 	
 	public DataMouseEvent(Component source, int id, long when, int modifiers,
 			int x, int y, int clickCount, boolean popupTrigger, int button,
-			boolean inDataArea, Point2D dataPoint) {
+			boolean inDataArea, Point2D dataPoint, int chartNumber) {
 		super(source, id, when, modifiers, x, y, clickCount,
 				popupTrigger, button);
-		dataPoint = new Point2D.Double(x, y);
+		this.dataPoint = dataPoint;
 		this.inDataArea = inDataArea;
+		this.chartNumber = chartNumber;
 	}
 	
 	public boolean isInDataArea() {
@@ -26,9 +28,7 @@ public class DataMouseEvent extends MouseEvent {
 	}
 
 	public int getChartNumber() {
-		
-		// TODO Auto-generated method stub
-		return 0;
+		return chartNumber;
 	}
 	
 }

@@ -59,8 +59,9 @@ public class HistogramMouseDisplay extends JPanel
 		this.setMinimumSize(this.getSize());
 	}
 	
-	// don't care.
-	public void mouseDragged(MouseEvent e) {}
+	public void mouseDragged(MouseEvent e) {
+		mouseMoved(e);
+	}
 
 	public void mouseMoved(MouseEvent e) {
 		assert(e.getSource().equals(chart));  

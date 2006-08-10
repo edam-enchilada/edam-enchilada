@@ -397,6 +397,11 @@ public class Chart extends JPanel implements Zoomable
 	{
 		this.title = title;
 		titleLabel.setText(title);
+		titleLabel.repaint();
+	}
+	
+	public String getTitle() {
+		return this.title;
 	}
 	
 	/**

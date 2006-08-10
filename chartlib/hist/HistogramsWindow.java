@@ -38,6 +38,12 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 	public HistogramsWindow(int collID) {
 		super("Spectrum Histogram");
 		
+		String datatype = HistogramsPlot.getDB().getCollection(collID)
+								.getDatatype();
+		if (! datatype.equals("ATOFMS"))
+			throw new IllegalArgumentException(
+					"Can't handle non-ATOFMS datatypes.");
+		
 		setLayout(new BorderLayout());
 		plotPanel = new JPanel();
 		buttonPanel = new JPanel();
@@ -56,20 +62,36 @@ public class HistogramsWindow extends JFrame implements ActionListener {
 			
 			plotPanel.add(zPlot);
 			
-			BrushManager brusher = new BrushManager();
-			
-			MouseRedirector mode = new MouseRedirector("Mouse Function");
-			mode.addMouseMode("Zoom", zPlot);
-
 			// this is a little silly: zoomablechart registers itself as a listener
 			// of the plot, but we only want it sometimes, so we unregister it
-			// and register it on our selector.
+			// and register it on the MouseRedirector, below.
 			plot.removeMouseListener(zPlot);
 			plot.removeMouseMotionListener(zPlot);
-			plot.addMouseListener(mode);
-			plot.addMouseMotionListener(mode);
 			
+			// The datamousejkjkdjfkjdkf listens to the plot.  the redirector
+			// listens to the datamouseuijdfij.  the brush manager and the
+			// zoomablechart both listen to the redirector, which sends only
+			// one of them any event.
+			DataMouseEventTranslator dtrans = new DataMouseEventTranslator();
+			plot.addMouseListener(dtrans);
+			plot.addMouseMotionListener(dtrans);
+			MouseRedirector mode = new MouseRedirector("Mouse Function");
+			dtrans.addMouseListener(mode);
+			dtrans.addMouseMotionListener(mode);
+			mode.addMouseMode("Zoom", zPlot);
+			
+			final BrushManager brusher = new BrushManager(plot);
+			mode.addMouseMode("Brush", brusher);
+
 			buttonPanel.add(mode);
+			
+			JButton clearBrush = new JButton("Clear selection");
+			buttonPanel.add(clearBrush);
+			clearBrush.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					brusher.clearSelection();
+				}
+			});
 			
 			buttonPanel.add(new HistogramMouseDisplay(plot));
 			JButton zdef, zout;

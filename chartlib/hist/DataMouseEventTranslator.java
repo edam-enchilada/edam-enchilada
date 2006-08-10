@@ -28,8 +28,6 @@ import chartlib.AbstractMetricChartArea;
 public class DataMouseEventTranslator implements
 		MouseInputListener, HierarchyListener {
 	private Component dispatcher;
-	private Container topLevel;
-	
 	/**
 	 * This constructor searches the Container for ChartAreas and adds self
 	 * as a listener to them.
@@ -40,7 +38,6 @@ public class DataMouseEventTranslator implements
 	 */
 	public DataMouseEventTranslator(Container c) {
 		this();
-		topLevel = c;
 		c.addMouseListener(this);
 		c.addMouseMotionListener(this);
 		
@@ -78,26 +75,37 @@ public class DataMouseEventTranslator implements
 				e.getX(), e.getY());
 		Point2D tPoint = null;
 		boolean inDataArea = false;
+		int chartNum = -1;
 		
+		if (e.getID() == MouseEvent.MOUSE_CLICKED) {
+			chartNum = -1;
+		}
 		
+		HistogramsPlot hplot;
+		if (e.getComponent() instanceof HistogramsPlot) {
+			hplot = (HistogramsPlot) e.getComponent();
+			//Point newPoint = SwingUtilities.convertMouseEvent(source, sourceEvent, destination)
+			chartNum = hplot.whichGraph(gPoint);
+			// why not Chart.getChartIndexAt()?  Because there is more than one
+			// chartarea per spectrum.
+		} else {
+			System.err.println("DataMouseEventTranslator doesn't know what to do");
+		}
 		
 		if (source instanceof AbstractMetricChartArea) {
+			Point convPoint = 
+				SwingUtilities.convertPoint(e.getComponent(), gPoint, 
+						(Component) source);
 			AbstractMetricChartArea s = (AbstractMetricChartArea) source;
-			tPoint = s.getDataValueForPoint(gPoint); // translated point
-			inDataArea = s.isInDataArea(gPoint);
+			tPoint = s.getDataValueForPoint(convPoint); // translated point
+			inDataArea = s.isInDataArea(convPoint);
 		}
-		// the event translator isn't yet used for anything except histograms,
-		// and they don't need this part.  so it's commented out.
-//		if (source instanceof LocatablePeaks) {
-//			nearPoint = ((LocatablePeaks) source).getBarAt(gPoint, 3);
-		// might be right, might not...
-//		}
 		
 		// Wow, that's a lot of parameters.
 		return new DataMouseEvent((Component) e.getSource(), e.getID(), 
 				e.getWhen(), e.getModifiers(), gPoint.x, gPoint.y, 
 				e.getClickCount(), e.isPopupTrigger(), e.getButton(), 
-				inDataArea, tPoint);
+				inDataArea, tPoint, chartNum);
 	}
 	
 	public void hierarchyChanged(HierarchyEvent e) {

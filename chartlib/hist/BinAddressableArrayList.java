@@ -32,6 +32,7 @@ package chartlib.hist;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /*
  * Basically, a HistList is an ArrayList that can be accessed by peak height
@@ -179,5 +180,9 @@ public class BinAddressableArrayList<T> {
 		
 		return true;
 	}
-		
+	
+	public Iterator<T> getIterator(float min, float max) {
+		ensureBinExists(max);
+		return list.subList(heightToIndex(min), heightToIndex(max) + 1).iterator();
+	}
 }
