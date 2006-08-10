@@ -367,8 +367,11 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == deleteAdoptItem)
 		{
 			final Collection[] c = getSelectedCollections();
-			if(c == null)
+			if(c == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to delete",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
+			}
 			
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
@@ -395,8 +398,11 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 			final Collection[] c = getSelectedCollections();
 			final CollectionTree collTree = selectedCollectionTree;
-			if(c == null)
+			if(c == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to delete",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
+			}
 			
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
@@ -420,16 +426,31 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == copyItem)
 		{
-			cutBool = false;
 			copyID = 
 				getSelectedCollection().getCollectionID();
+			if (copyID == 0) { //don't allow copying/pasting of root
+				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			}
+			else {
+				cutBool = false;
+				pasteItem.setEnabled(true);
+			}
 		}
 		
 		else if (source == cutItem)
 		{
-			cutBool = true;
 			copyID = 
 				getSelectedCollection().getCollectionID();
+			if (copyID == 0) { //don't allow copying/pasting of root
+				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			}
+			else {
+				cutBool = true;
+				pasteItem.setEnabled(true);
+			}
+			
 		}
 		
 		else if (source == pasteItem)
@@ -438,7 +459,7 @@ public class MainFrame extends JFrame implements ActionListener
 			//@author steinbel
 
 			if (copyID != 
-				getSelectedCollection().getCollectionID() || copyID>-1)
+				getSelectedCollection().getCollectionID() && copyID>-1)
 			{
 				//check if the datatypes are the same
 				if(getSelectedCollection().getCollectionID() == 0
@@ -468,30 +489,52 @@ public class MainFrame extends JFrame implements ActionListener
 				}
 				else
 					JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
-							" be of the same data type");
+							" be of the same data type", "Invalid collection", JOptionPane.WARNING_MESSAGE);
 			} else
-				System.err.println("Cannot copy/paste to the same " +
-				"destination as the source");
+				JOptionPane.showMessageDialog(this, "Cannot copy/paste to the same " +
+						"destination as the source", "Invalid collection", JOptionPane.WARNING_MESSAGE);
 		}
-		else if (source == queryItem) {new QueryDialog(this, 
-				collectionPane, db, getSelectedCollection());}
-		
-		else if (source == clusterItem) {new ClusterDialog(this, 
-				collectionPane, db);}
+		else if (source == queryItem) {
+			if (collectionPane.getSelectedCollection() == null)
+				JOptionPane.showMessageDialog(this, "Please select a collection to query.", 
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			else
+				new QueryDialog(this, collectionPane, db, getSelectedCollection());
+		}
+		else if (source == clusterItem) {
+			if (collectionPane.getSelectedCollection() == null)
+				JOptionPane.showMessageDialog(this, "Please select a collection to cluster.", 
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			else
+				new ClusterDialog(this, collectionPane, db);
+		}
 		else if (source == visualizeItem) {
-			(new chartlib.hist.HistogramsWindow(
-				getSelectedCollection().getCollectionID())).setVisible(true);
+			if (getSelectedCollection().getCollectionID() == 0)
+				JOptionPane.showMessageDialog(this, "Please select a collection to visualize.", 
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			else
+				(new chartlib.hist.HistogramsWindow(
+						getSelectedCollection().getCollectionID())).setVisible(true);
 		}
 		else if (source == detectPlumesItem){
-			new DetectPlumesDialog(this,synchronizedPane, db);
+			if (synchronizedPane.getSelectedCollection() == null)
+				JOptionPane.showMessageDialog(this, "Please select a collection which to detect plumes.", 
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			else
+				new DetectPlumesDialog(this,synchronizedPane, db);
 		}
 		
 		else if (source == compressItem) {
-			//TODO: Provide a way to set the collection's name
-			//or give it better default
-			BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",DistanceMetric.EUCLIDEAN_SQUARED);
-			b.compress();
-			collectionPane.updateTree();
+			if (collectionPane.getSelectedCollection() == null)
+				JOptionPane.showMessageDialog(this, "Please select a collection to compress.", 
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			else {
+				//TODO: Provide a way to set the collection's name
+				//or give it better default
+				BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",DistanceMetric.EUCLIDEAN_SQUARED);
+				b.compress();
+				collectionPane.updateTree();
+			}
 		}
 		
 		/*
@@ -849,6 +892,7 @@ public class MainFrame extends JFrame implements ActionListener
 		copyItem.addActionListener(this);
 		pasteItem = new JMenuItem("Paste",KeyEvent.VK_P);
 		pasteItem.addActionListener(this);
+		pasteItem.setEnabled(false);
 		JMenuItem selectAllItem = new JMenuItem("Select All", KeyEvent.VK_A);
 		
 		menuBar.add(editMenu);
