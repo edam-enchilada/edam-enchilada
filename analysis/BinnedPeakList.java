@@ -41,6 +41,7 @@ package analysis;
 
 import java.util.*;
 import java.util.Map.Entry;
+import analysis.dataCompression.Pair;
 
 /**
  * @author andersbe
@@ -88,7 +89,22 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		normalizable = original.getNormalizable();
 	}
-
+	public boolean comparePeakLists(BinnedPeakList toCompare) {
+		boolean equal = true;
+		Iterator<Map.Entry<Integer, Float>> i = peaks.entrySet().iterator();
+		Iterator<Map.Entry<Integer, Float>> i2 = toCompare.getPeaks().entrySet().iterator();
+		Entry<Integer, Float> entry;
+		Entry<Integer, Float> entry2;
+		while(i.hasNext() && i2.hasNext()){
+			entry = i.next();
+			entry2 = i2.next();
+			if(!entry.getKey().equals(entry2.getKey()) || !entry.getValue().equals(entry2.getValue())){
+				equal = false;
+				break;
+			}
+		}
+		return equal;
+	}
 	public boolean containsZeros() {
 		
 		Iterator<BinnedPeak> iter = iterator();
@@ -128,11 +144,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	{
 		float magnitude = 0;
 
-		Iterator<BinnedPeak> i = iterator();
+		Iterator<Map.Entry<Integer, Float>> i = peaks.entrySet().iterator();
 		if (dMetric == DistanceMetric.CITY_BLOCK)
 			while (i.hasNext())
 			{
-				magnitude += i.next().value;
+				magnitude += i.next().getValue();
 			}
 		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 		         dMetric == DistanceMetric.DOT_PRODUCT)
@@ -140,7 +156,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			float currentArea;
 			while (i.hasNext())
 			{
-				currentArea = i.next().value;
+				currentArea = i.next().getValue();
 				magnitude += currentArea*currentArea;
 			}
 			magnitude = (float) Math.sqrt(magnitude);
@@ -150,6 +166,41 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		return magnitude;
 	}
 	
+	public Pair<Float, Float> getNegPosMagnitude(DistanceMetric dMetric)
+	{
+		float negMagnitude = 0;
+		float posMagnitude = 0;
+		Entry<Integer, Float> entry;
+		
+		Iterator<Map.Entry<Integer, Float>> i = peaks.entrySet().iterator();
+		if (dMetric == DistanceMetric.CITY_BLOCK)
+			while (i.hasNext())
+			{
+				entry = i.next();
+				if(entry.getKey()<0)
+					negMagnitude += entry.getValue();
+				else
+					posMagnitude += entry.getValue();
+			}
+		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
+		         dMetric == DistanceMetric.DOT_PRODUCT)
+		{
+			float currentArea;
+			while (i.hasNext())
+			{
+				entry = i.next();
+				if(entry.getKey()<0)
+					negMagnitude += entry.getValue()*entry.getValue();
+				else
+					posMagnitude += entry.getValue()*entry.getValue();
+			}
+			negMagnitude = (float) Math.sqrt(negMagnitude);
+			posMagnitude = (float) Math.sqrt(posMagnitude);
+		}
+	//	if(magnitude>1.0)
+	//		System.out.println("BAD MAGNITUDE " + magnitude);
+		return new Pair<Float, Float>(negMagnitude, posMagnitude);
+	}
 	/**
 	 * @author steinbel
 	 * Gets the magnitude of either the negative or non-negative peaks only.
@@ -201,7 +252,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		Map.Entry<Integer, Float> i = null, j = null;
 		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
 			thatIter = other.peaks.entrySet().iterator();
-		
+			
 		float distance = 0;
 		
 		// if one of the peak lists is empty, do something about it.
@@ -338,6 +389,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	public void add(BinnedPeak bp) {
 		add(bp.key, bp.value);
 	}
+	private void add(Entry<Integer, Float> entry) {
+		add(entry.getKey(), entry.getValue());
+		
+	}
 	
 	/**
 	 * Returns the number of locations represented by this 
@@ -410,13 +465,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	public float getLargestArea() {
 		return Collections.max(peaks.values());
 	}
-	
+	public SortedMap<Integer, Float> getPeaks() {
+		return peaks;
+	}
 	/**
 	 * Find the sum of two particles.
 	 * @param other the particle to add to this one.
 	 */
 	public void addAnotherParticle(BinnedPeakList other) {
-		Iterator<BinnedPeak> i = other.iterator();
+		Iterator<Map.Entry<Integer, Float>> i = other.peaks.entrySet().iterator();
 		while (i.hasNext()) {
 			add(i.next());
 		}
