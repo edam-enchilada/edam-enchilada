@@ -652,6 +652,16 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	
 	/**
 	 * @author steinbel
+	 * A method to normalize this BinnedPeakList by normalizing the positive
+	 * and negative spectra separately and then together.
+	 * @param dMetric  the distance metric to use when normalizing
+	 */
+	public void posNegNormalize(DistanceMetric dMetric){
+		normalizable.posNegNormalize(this, dMetric);
+	}
+	
+	/**
+	 * @author steinbel
 	 * A method to reduce the peak area by the power passed in (preprocessing
 	 * to be used before clustering).
 	 * @param power	The power to which to raise the area of the peaks.  (.5 is good.)

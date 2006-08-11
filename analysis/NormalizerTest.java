@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 
 public class NormalizerTest extends TestCase {
 
-	
 	protected void setUp() throws Exception {
 
 		super.setUp();
@@ -14,17 +13,14 @@ public class NormalizerTest extends TestCase {
 		
 	}
 	
+	/**
+	 * @author steinbel
+	 * @author dmusican
+	 */
 	public void testNormalize() {
 			
 		//normalize with city-block distance
 		
-		//figure out what the square peaks should be if normalized with city block
-		Float firstNorm3 = (float) 3.0/ (3 + 4);
-		Float firstNorm4 = (float) 4.0/ (3 + 4);
-		Float firstMag = (firstNorm3 + firstNorm4)*2;
-		Float secondNorm3 = firstNorm3 / (firstMag);
-		Float secondNorm4 = firstNorm4 / (firstMag);
-		Float secondMag = (secondNorm3 + secondNorm4) * 2;		
 		
 		Float noSeparateNorm3 = (float)(3.0/(3+4+3+4));
 		Float noSeparateNorm4 = (float)(4.0/(3+4+3+4));
@@ -34,14 +30,6 @@ public class NormalizerTest extends TestCase {
 		normalizeThis.normalize(DistanceMetric.CITY_BLOCK);
 		
 		// Test for normalize properly with city block distance
-		// MODIFIED to work with non separate pos/neg normalization
-		// since this was removed for Aug2006 release (didn't work with
-		// clustering).
-		/*assertEquals(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK),1.0f);
-		assertEquals(normalizeThis.getAreaAt(-200),secondNorm3); 
-		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
-		assertEquals(normalizeThis.getAreaAt(0),secondNorm3);
-		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);*/
 		assertEquals(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK),1.0f);
 		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
 		assertEquals(normalizeThis.getAreaAt(-100),noSeparateNorm4);
@@ -49,16 +37,7 @@ public class NormalizerTest extends TestCase {
 		assertEquals(normalizeThis.getAreaAt(100),noSeparateNorm4);
 		
 		
-		//normalize with dot-product distance
-		
-		//figure out what the square peaks should be if normalized with
-		//dot product or euclidean squared
-		firstNorm3 = (float) 3.0/ (float) Math.sqrt(3*3 + 4*4);
-		firstNorm4 = (float) 4.0/ (float) Math.sqrt(3*3 + 4*4);
-		firstMag = (firstNorm3*firstNorm3 + firstNorm4*firstNorm4)*2;
-		secondNorm3 = firstNorm3 / (float) Math.sqrt(firstMag);
-		secondNorm4 = firstNorm4 / (float) Math.sqrt(firstMag);
-		secondMag = (secondNorm3 * secondNorm3 + secondNorm4 * secondNorm4) * 2;		
+		//normalize with dot-product distance	
 		
 		normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.DOT_PRODUCT);
@@ -69,11 +48,7 @@ public class NormalizerTest extends TestCase {
 		// Did not normalize properly with city block distance.
 		// Note that these all need to be changed back to secondNorm
 		// (from firstNorm) once normalize puts pos/neg back in --DRM
-		/*assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
-		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
-		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
-		assertEquals(normalizeThis.getAreaAt(0),noSeparateNorm3);
-		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);*/
+
 		assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
 		assertEquals(normalizeThis.getAreaAt(-200),noSeparateNorm3); 
 		assertEquals(normalizeThis.getAreaAt(-100),noSeparateNorm4);
@@ -85,14 +60,7 @@ public class NormalizerTest extends TestCase {
 		
 		normalizeThis = generateSquarePeaks(norm);
 		normalizeThis.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
-		
-		/*assertEquals("Did not normalize properly with city block distance.",
-				normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED), 1.0f);
-		assertEqualsDelta(normalizeThis.getAreaAt(-200), secondNorm3); 
-		assertEqualsDelta(normalizeThis.getAreaAt(-100), secondNorm4);
-		assertEqualsDelta(normalizeThis.getAreaAt(0), secondNorm3);
-		assertEqualsDelta(normalizeThis.getAreaAt(100), secondNorm4);
-		*/
+
 		assertEquals("Did not normalize properly with city block distance.",
 				normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED), 1.0f);
 		assertEqualsDelta(normalizeThis.getAreaAt(-200), noSeparateNorm3); 
@@ -101,7 +69,60 @@ public class NormalizerTest extends TestCase {
 		assertEqualsDelta(normalizeThis.getAreaAt(100), noSeparateNorm4);
 		
 	}
+	
+	/**
+	 * @author steinbel
+	 */
+	public void testPosNegNormalize(){
 
+		Float firstNorm3 = (float) 3.0/ (3 + 4);
+		Float firstNorm4 = (float) 4.0/ (3 + 4);
+		Float firstMag = (firstNorm3 + firstNorm4)*2;
+		Float secondNorm3 = firstNorm3 / (firstMag);
+		Float secondNorm4 = firstNorm4 / (firstMag);
+		Float secondMag = (secondNorm3 + secondNorm4) * 2;	
+		
+		Normalizer norm = new Normalizer();
+		BinnedPeakList normalizeThis = generateSquarePeaks(norm);
+		
+		normalizeThis.posNegNormalize(DistanceMetric.CITY_BLOCK);
+		assertEquals(normalizeThis.getMagnitude(DistanceMetric.CITY_BLOCK),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),secondNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),secondNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);
+		
+		firstNorm3 = (float) 3.0/ (float) Math.sqrt(3*3 + 4*4);
+		firstNorm4 = (float) 4.0/ (float) Math.sqrt(3*3 + 4*4);
+		firstMag = (firstNorm3*firstNorm3 + firstNorm4*firstNorm4)*2;
+		secondNorm3 = firstNorm3 / (float) Math.sqrt(firstMag);
+		secondNorm4 = firstNorm4 / (float) Math.sqrt(firstMag);
+		secondMag = (secondNorm3 * secondNorm3 + secondNorm4 * secondNorm4) * 2;	
+		
+		normalizeThis = generateSquarePeaks(norm);
+		normalizeThis.posNegNormalize(DistanceMetric.DOT_PRODUCT);
+		
+		assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
+		assertEquals(normalizeThis.getAreaAt(-200),secondNorm3); 
+		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
+		assertEquals(normalizeThis.getAreaAt(0),secondNorm3);
+		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);
+	
+		normalizeThis = generateSquarePeaks(norm);
+		normalizeThis.posNegNormalize(DistanceMetric.EUCLIDEAN_SQUARED);
+		
+		assertEquals("Did not normalize properly with city block distance.",
+				normalizeThis.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED), 1.0f);
+		assertEqualsDelta(normalizeThis.getAreaAt(-200), secondNorm3); 
+		assertEqualsDelta(normalizeThis.getAreaAt(-100), secondNorm4);
+		assertEqualsDelta(normalizeThis.getAreaAt(0), secondNorm3);
+		assertEqualsDelta(normalizeThis.getAreaAt(100), secondNorm4);
+		
+	}
+
+	/**
+	 * @author dmusican
+	 */
 	public void assertEqualsDelta(float one, float two) {
 		final float delta = 0.0000001f;
 		assertTrue(one < (two + delta) && one > (two - delta));

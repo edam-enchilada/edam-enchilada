@@ -24,4 +24,8 @@ public abstract class Normalizable {
 			entry.setValue(newVal);
 		}
 	}
+	public void posNegNormalize(BinnedPeakList list, DistanceMetric metric) {
+		// overridden in subclass if actually used
+		
+	}
 }
