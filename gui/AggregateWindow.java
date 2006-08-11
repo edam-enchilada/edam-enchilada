@@ -335,6 +335,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			if (baseSequenceOnCollection) {
 				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
 				aggregator = new Aggregator(this, db, selectedCollection);
+				System.out.println("selected Collection: "+selectedCollection.getCollectionID());
 			} else {
 				Calendar start = startTime.getDate();
 				Calendar end = endTime.getDate();
@@ -360,19 +361,28 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    			return;
 				}
 				aggregator = new Aggregator(this, db, start, end, interval);
+				System.out.println("start: "+start.getTimeInMillis()+"\nend: "+end.getTimeInMillis()+
+						"\ninterval: "+interval.getTimeInMillis());
 			}
-
 			final ProgressBarWrapper initProgressBar =
 				aggregator.createAggregateTimeSeriesPrepare(collections);
+			System.out.print("collections: ");
+			for(Collection collection : collections){
+				System.out.print(collection.getCollectionID()+", ");
+			}
+			System.out.println();
 			
 			final SwingWorker aggWorker = new SwingWorker() {
 				private int collectionID;
 				public Object construct() {
+					db.beginTransaction();
 					try{
 					collectionID = aggregator.createAggregateTimeSeries(
 							newSeriesName,collections,initProgressBar,
 							parentFrame);
+					db.commitTransaction();
 					} catch(InterruptedException e){
+						db.rollbackTransaction();
 						return null;
 					}
 					return new Integer(collectionID);

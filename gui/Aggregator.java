@@ -131,7 +131,6 @@ public class Aggregator {
 		// event will get in between the two.
 		
 		//actually do the aggregation
-		db.beginTransaction();
 		
 		int rootCollectionID = db.createEmptyCollection("TimeSeries", 1, syncRootName, "", "");
 		
@@ -156,7 +155,6 @@ public class Aggregator {
 			begin = new Date().getTime();
 			
 			db.createAggregateTimeSeries(progressBar, rootCollectionID, collections[i], mzValues[i]);
-			db.commitTransaction();
 			end = new Date().getTime();
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 			db.deleteTempAggregateBasis();
