@@ -58,8 +58,7 @@ public class CFNodeTest extends TestCase {
 		
 	}
 	public void testSameContents() {
-		//commented out by steinbel 8.11.06 because it broke unit testing
-		/*assertFalse(childNode.sameContents(orphanNode));
+		assertFalse(childNode.sameContents(orphanNode));
 		assertFalse(orphanNode.sameContents(childNode));
 		orphanCF.getSums().printPeakList();
 		orphanCF.setSums(bp1);
@@ -67,7 +66,7 @@ public class CFNodeTest extends TestCase {
 		childCF.getSums().printPeakList();
 		assertTrue(childNode.sameContents(orphanNode));
 		assertTrue(orphanNode.sameContents(childNode));
-*/
+
 	}
 
 	public void testAddCF() {

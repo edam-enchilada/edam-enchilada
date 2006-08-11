@@ -207,11 +207,16 @@ public class ClusterFeature {
 		while (sumsA.hasNext()) {
 			peakA = sumsA.next();
 			peakB = sumsB.next();
-			if (peakA.getValue() != peakB.getValue() || peakA.getKey() != peakB.getKey()) {
-				System.out.print(peakA.getKey()+","+peakA.getValue()+" =?= "+peakB.getKey()+","+peakB.getValue());
+			if (peakA.getKey().intValue() != peakB.getKey().intValue()) {
+				System.out.print(peakA.getKey()+", =?= "+peakB.getKey());
 					System.out.println("FALSE");
 					return false;
 			}
+			if (peakA.getValue().floatValue() != peakB.getValue().floatValue() ){
+				System.out.println(peakA.getValue() + " " + peakB.getValue());
+				return false;
+			}
+
 		}
 		return true;
 	}
