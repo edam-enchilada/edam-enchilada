@@ -68,7 +68,6 @@ public class ReadSpec {
 	private ByteBuffer byteBuff;
 	private ATOFMSParticle particle;
 	
-	private  final int MAX_AMS_SPECTRUM_POINTS = 30000;
 	private  final int MAX_PEAKS = 16; 
 	
 	private int[] posdata;
@@ -197,12 +196,15 @@ public class ReadSpec {
 	 */
 	public void readFromOldFile(String name) {
 		//Instantiate arrays that will contain the data.
-		posdata = new int[MAX_AMS_SPECTRUM_POINTS];
-		negdata = new int[MAX_AMS_SPECTRUM_POINTS];
-		
+
 		// Read information from the byte array.
-		//int numpoints = 
+		int numpoints = 
 			byteBuff.getInt();
+		assert (numpoints == 30000) : 
+			"Version 201 and 202 ATOFMS files should have 30000 spectrum points";
+		
+		posdata = new int[numpoints];
+		negdata = new int[numpoints];
 		//int counter = 
 			byteBuff.getInt();
 		int scatdelay = 
@@ -249,7 +251,7 @@ public class ReadSpec {
 		// Version 201 uses chars, version 202 uses unsigned shorts.
 		short shrt = 0;
 		if (version == 201) {
-			for (int i=0; i < MAX_AMS_SPECTRUM_POINTS; i++)
+			for (int i=0; i < numpoints; i++)
 			{
 				int temp = byteBuff.get();
 				if (temp < 0)
@@ -257,7 +259,7 @@ public class ReadSpec {
 				else	
 					posdata[i] = temp;
 			}
-			for (int i=0; i < MAX_AMS_SPECTRUM_POINTS; i++) 
+			for (int i=0; i < numpoints; i++) 
 			{
 				int temp = byteBuff.get();
 				if (temp < 0)
@@ -267,10 +269,10 @@ public class ReadSpec {
 			}
 		}
 		else { 
-			for (int i=0; i < MAX_AMS_SPECTRUM_POINTS; i++) {
+			for (int i=0; i < numpoints; i++) {
 				posdata[i] = byteBuff.getChar();
 			}
-			for (int i=0; i < MAX_AMS_SPECTRUM_POINTS; i++) {
+			for (int i=0; i < numpoints; i++) {
 				negdata[i] = byteBuff.getChar();
 			}
 		}
