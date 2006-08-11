@@ -79,6 +79,7 @@ public class TSImportTest extends TestCase {
 	}
 	
 	public void tearDown() {
+		db.closeConnection();
 		tsFile.delete();
 		new File(taskFile).delete();
 	}
