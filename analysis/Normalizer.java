@@ -3,7 +3,7 @@ package analysis;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import analysis.dataCompression.Pair;
 public class Normalizer extends Normalizable {
 
 	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
@@ -33,8 +33,9 @@ public class Normalizer extends Normalizable {
 		Map.Entry<Integer, Float> entry;
 		Iterator<Map.Entry<Integer, Float>> iterator;
 		
-		negMag = peakList.getPartialMag(dMetric, true);
-		posMag = peakList.getPartialMag(dMetric, false);
+		Pair<Float, Float> pair = peakList.getNegPosMagnitude(dMetric);
+		negMag = pair.first;
+		posMag = pair.second;;
 		iterator = peakList.peaks.entrySet().iterator();
 		while (iterator.hasNext()) {
 			entry = iterator.next();
