@@ -140,6 +140,14 @@ public class CFTree {
 			System.out.println("reinserting cluster feature # " + numDataPoints);
 		
 		// If this is the first entry, make it the root.
+		if (root.getSize()==0) {
+			root.addCF(cf);
+			firstLeaf = root;
+			for (int i = 0; i < root.getCFs().size(); i++) {
+				root.getCFs().get(i).updateCF();
+			}
+			return true;
+		}
 		if (root.getSize() == 1 && root.getCFs().get(0).getCount() == 0) {
 			firstLeaf.addCF(cf);
 			cf.updatePointers(null, firstLeaf);

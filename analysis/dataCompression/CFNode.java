@@ -80,7 +80,7 @@ public class CFNode {
 		boolean same = true;
 		int i = 0;
 		for (i = 0; i < cfs.size(); i++) {
-			if(!nodeToCompare.getCFs().get(i).isEqual((cfs.get(i)))) {
+			if(nodeToCompare.getCFs().size()<=i || !nodeToCompare.getCFs().get(i).isEqual((cfs.get(i)))) {
 				same = false;
 				break;
 			}

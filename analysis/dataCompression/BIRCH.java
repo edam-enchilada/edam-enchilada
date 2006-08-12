@@ -276,7 +276,7 @@ public class BIRCH extends CompressData{
 		lastThreshold = curThreshold;
 		// predict the next best threshold.
 		curTree.assignLeaves();
-		if(rebuildTotal<1)
+		if(rebuildTotal<1 || t > 2.0)
 			curThreshold = curTree.nextThreshold();
 		else
 			curThreshold = t;
