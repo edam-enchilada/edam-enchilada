@@ -52,9 +52,9 @@ public class ClusterFeatureTest extends TestCase {
 		expected.add(2);
 		assertEquals(test.getAtomIDs(), expected);
 		assertEquals(test.getCount(), 2);
-		bp1.normalize(dMetric);
+		bp1.posNegNormalize(dMetric);
 		bp1.addAnotherParticle(bp2);
-		bp1.normalize(dMetric);
+		bp1.posNegNormalize(dMetric);
 		assertEquals(test.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	
@@ -88,10 +88,10 @@ public class ClusterFeatureTest extends TestCase {
 		assertEquals(testCF1.getCount(), 3);
 
 		bp1.addAnotherParticle(bp2);
-		bp1.normalize(dMetric);
+		bp1.posNegNormalize(dMetric);
 		bp1.multiply(2);
 		bp1.addAnotherParticle(bp3);
-		bp1.normalize(dMetric);
+		bp1.posNegNormalize(dMetric);
 		assertEquals(testCF1.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	

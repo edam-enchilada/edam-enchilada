@@ -9,6 +9,7 @@ import collection.Collection;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
+import database.SQLServerDatabase.BPLOnlyCursor;
 
 
 /**
@@ -42,7 +43,7 @@ public abstract class CompressData {
 	 * collection you are dividing.  Initialize this to one of the
 	 * implementations using a get method from InfoWarehouse
 	 */
-	protected CollectionCursor curs = null;
+	protected BPLOnlyCursor curs = null;
 	
 	public CompressData(Collection c, InfoWarehouse database, String name, String comment, DistanceMetric d) {
 		db = database;

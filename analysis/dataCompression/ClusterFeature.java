@@ -65,11 +65,11 @@ import analysis.Normalizer;
  * 
  */
 public class ClusterFeature {
-	private int count;
+	private int count; //num particles represented
 	private BinnedPeakList sums;
 	private float squareSums;
 	public CFNode child = null;
-	public CFNode curNode;
+	public CFNode curNode; //node it belongs to
 	private ArrayList<Integer> atomIDs;
 	private DistanceMetric dMetric;
 	
@@ -113,16 +113,14 @@ public class ClusterFeature {
 	 */
 	public void updateCF(BinnedPeakList list, int atomID, boolean normalized) {
 		if(!normalized)
-			list.normalize(dMetric);
+			list.posNegNormalize(dMetric);
 		
-		//System.out.println("SS: " + squareSums);
-		//System.out.println("mag: "+sums.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED));
 		int oldPeakListMem = 8*sums.length();
 		atomIDs.add(new Integer(atomID));
 		sums.multiply(count);
 		sums.addAnotherParticle(list);
 		count++;
-		sums.normalize(dMetric);
+		sums.posNegNormalize(dMetric);
 		// calculate the square sums.
 		Entry<Integer, Float> peak;
 		Iterator<Map.Entry<Integer, Float>> iterator = list.getPeaks().entrySet().iterator();
@@ -140,7 +138,7 @@ public class ClusterFeature {
 	 */
 	public boolean updateCF() {
 		if (child == null || child.getCFs().size() == 0) {
-			sums.normalize(dMetric);
+			sums.posNegNormalize(dMetric);
 			return false;
 		}
 		atomIDs = new ArrayList<Integer>();
@@ -156,17 +154,11 @@ public class ClusterFeature {
 			atomIDs.addAll(cfs.get(i).getAtomIDs());
 		}
 		Set<Entry<Integer, Float>> keys = tempSums.entrySet();
-	//	Float posMagnitude = (float) 0.0;
-	//	Float negMagnitude = (float) 0.0;
 		for(Entry<Integer, Float> x: keys) {
 			sums.addNoChecks(x.getKey(), x.getValue());
-	//		if(x.getKey()<0)
-	//			negMagnitude = negMagnitude + x.getValue();
-	//		else
-	//			posMagnitude = posMagnitude + x.getValue();
 		}
-	//	sums.normalizeGivenMag(dMetric, negMagnitude, posMagnitude);
-		sums.normalize(dMetric);
+
+		sums.posNegNormalize(dMetric);
 		memory= 8*sums.length()+4*atomIDs.size();
 		return true;
 	}
@@ -191,16 +183,12 @@ public class ClusterFeature {
 	 */
 	public boolean isEqual(ClusterFeature cf) {
 		if (cf.getCount() != count || cf.getSums().length() != sums.length())
-		{
 			return false;
-		}
 		
 		if (squareSums != cf.squareSums)
-		{
 			return false;
-		}
 		
-		Iterator<Map.Entry<Integer, Float>> sumsA =cf.getSums().getPeaks().entrySet().iterator();
+		Iterator<Map.Entry<Integer, Float>> sumsA = cf.getSums().getPeaks().entrySet().iterator();
 		Iterator<Map.Entry<Integer, Float>> sumsB = sums.getPeaks().entrySet().iterator();
 		Entry<Integer, Float> peakA;
 		Entry<Integer, Float> peakB;
@@ -307,7 +295,7 @@ public class ClusterFeature {
 		sums.multiply(count);
 		absorbed.sums.multiply(absorbed.count);
 		sums.addAnotherParticle(absorbed.getSums());
-		sums.normalize(dMetric);
+		sums.posNegNormalize(dMetric);
 		squareSums+=absorbed.getSumOfSquares();
 		count+=absorbed.getCount();
 		atomIDs.addAll(absorbed.getAtomIDs());

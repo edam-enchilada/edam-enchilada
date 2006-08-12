@@ -72,6 +72,10 @@ public class CFNode {
 			parentNode = p.curNode;
 		dMetric = d;
 	}
+	
+	/**
+	 * returns true if they contain all the same clusterFeatures
+	 */
 	public boolean sameContents(CFNode nodeToCompare) {
 		boolean same = true;
 		int i = 0;
@@ -174,6 +178,10 @@ public class CFNode {
 		farthestTwo[1] = entryB;
 		return farthestTwo;
 	}
+	/**
+	 * splits a node by finding the two farthest apart clusterfeatures
+	 * and making them the two seed nodes
+	 */
 	public Pair<CFNode, CFNode> splitNode() {
 		
 		if (cfs.size() < 2) {
@@ -329,9 +337,5 @@ public class CFNode {
 			returnThis+=cfs.get(i).getMemory();
 		return returnThis;
 	}
-	/*public static void main(String args) {
-		CFNode node = new CFNode();
-		node.cfs.add(new ClusterFeature())
-		
-	}*/
+
 }
