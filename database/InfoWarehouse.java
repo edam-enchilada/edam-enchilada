@@ -64,6 +64,7 @@ import ATOFMS.Peak;
 
 
 import collection.Collection;
+import database.SQLServerDatabase.BPLOnlyCursor;
 
 
 /**
@@ -260,6 +261,7 @@ public interface InfoWarehouse {
 	public CollectionCursor getPeakCursor(Collection collection);
 	
 	public CollectionCursor getBinnedCursor(Collection collection);
+	public BPLOnlyCursor getBPLOnlyCursor(Collection collection) throws SQLException;
 	
 	public CollectionCursor getClusteringCursor(Collection collection, ClusterInformation cInfo);
 	
