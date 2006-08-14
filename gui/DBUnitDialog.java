@@ -91,6 +91,7 @@ import org.dbunit.ext.mssql.InsertIdentityOperation;
 import org.dbunit.operation.DatabaseOperation;
 import org.dbunit.operation.TransactionOperation;
 
+import database.Database;
 import database.SQLServerDatabase;
 
 import errorframework.ErrorLogger;
@@ -127,7 +128,7 @@ public class DBUnitDialog extends JFrame implements ActionListener{
 		
 //		 Verify that database exists, and give user opportunity to create
 		// if it does not.
-		if (!SQLServerDatabase.isPresent(databaseName)) {
+		if (Database.getDatabase(databaseName).isPresent()) {
 			if (JOptionPane.showConfirmDialog(this,
 					"Database: '"+databaseName+"' not found. Would you like to create one?\n" +
 					"Make sure to select yes only if there is no database already present,\n"

@@ -1340,7 +1340,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		// Verify that database exists, and give user opportunity to create
 		// if it does not.
-		if (!SQLServerDatabase.isPresent("SpASMSdb")) {
+		if (!Database.getDatabase("SpASMSdb").isPresent()) {
 			if (JOptionPane.showConfirmDialog(null,
 					"No database found. Would you like to create one?\n" +
 					"Make sure to select yes only if there is no database already present,\n"

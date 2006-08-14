@@ -77,9 +77,6 @@ public interface InfoWarehouse {
 	/**
 	 * Opens a connection to the database, flat file, memory structure,
 	 * or whatever you're working with.  
-	 * @param url	The url of the sql server to connect to
-	 * @param port	The port to connect on
-	 * @param database	The name of the database to connect to.  
 	 * @return true on success
 	 */
 	public boolean openConnection();
@@ -88,6 +85,11 @@ public interface InfoWarehouse {
 	 * @return true on success.
 	 */
 	public boolean closeConnection();
+	
+	/**
+	 * @return true if this resource is available for use
+	 */
+	public boolean isPresent();
 	
 	/**
 	 * Creates an empty collection with no atomic analysis units in it.

@@ -102,124 +102,38 @@ import experiments.Tuple;
  * @author andersbe
  *
  */
-public class SQLServerDatabase implements InfoWarehouse
-{
+public class SQLServerDatabase extends Database
+{	
 	/* Class Variables */
-	protected Connection con;
-	private String url;
-	private String port;
-	private String database;
 	private static int instance = 0;
-	private String tempdir = System.getenv("TEMP");
 	
 	// for batch stuff
 	private Statement batchStatement;
 	private ArrayList<Integer> alteredCollections;
-	private boolean isDirty = false;
 	
 	public SQLServerDatabase()
 	{
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
-		
-		File f = new File("config.ini");
-		try {
-			Scanner scan = new Scanner(f);
-			while (scan.hasNext()) {
-				String tag = scan.next();
-				String val = scan.next();
-				if (scan.hasNext())
-					scan.nextLine();
-				
-				if (tag.equalsIgnoreCase("db_url:")) { url = val; }
-				else if (tag.equalsIgnoreCase("db_port:")) { port = val; }
-			}
-			scan.close();
-		} catch (FileNotFoundException e) { 
-			// Don't worry if the file doesn't exist... 
-			// just go on with the default values 
-		}
+		loadConfiguration("MSDE");
 	}
 	
 	public SQLServerDatabase(String dbName) {
 		this();
 		database = dbName;
 	}
-	
-	/**
-	 * Determine if the database is actually present (returns true if it is).
-	 */
-	public static boolean isPresent(String dbName) {
-		
-		boolean foundDatabase = false;
-		try {
-			SQLServerDatabase db = new SQLServerDatabase("");
-			db.openConnection();
-			Connection con = db.getCon();
-			Statement stmt = con.createStatement();
-			
-			// See if database exists. If it does, drop it.
-			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
-			while (!foundDatabase && rs.next())
-				if (rs.getString(1).equals(dbName))
-					foundDatabase = true;
-			stmt.close();
-		} catch (SQLException e) {
-			ErrorLogger.displayException(null,"Error in testing if "+dbName+" is present.");
-		}
-		return foundDatabase;
+
+	public boolean isPresent() {
+		return isPresentImpl("EXEC sp_helpdb");
 	}
 	
-	/**
-	 * Opens a connection to the database, flat file, memory structure,
-	 * or whatever you're working with.  
-	 * @return true on success
-	 */
-	public boolean openConnection()
-	{
-		try {
-			Class.forName("net.sourceforge.jtds.jdbc.Driver").newInstance();
-		} catch (Exception e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Failed to load current driver for database.");
-			System.err.println("Failed to load current driver.");
-			return false;
-		} // end catch
-		con = null;
-		try {
-			con = DriverManager.getConnection("jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;","SpASMS","finally");
-			con.setAutoCommit(true);
-		} catch (Exception e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Failed to establish a connection to SQL Server.");
-			System.err.println("Failed to establish a connection to SQL Server");
-			System.err.println(e);
-		}
-		return true;
-	}
-	
-	public boolean isDirty(){
-		return isDirty;
-	}
-	/**
-	 * Closes existing connection
-	 * @return true on success.
-	 */
-	public boolean closeConnection()
-	{
-		if (con != null)
-		{
-			try {
-				con.close();
-			} catch (Exception e) {
-				ErrorLogger.writeExceptionToLog("SQLServer","Could not close the connection to SQL Server.");
-				System.err.println("Could not close the connection: ");
-				System.err.println(e);
-				return false;
-			}
-			return true;
-		}
-		else
-			return false;
+	public boolean openConnection() {
+		return openConnectionImpl(
+				"net.sourceforge.jtds.jdbc.Driver",
+				"jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;",
+				"SpASMS",
+				"finally");
 	}
 	
 	/* Create Empty Collections */

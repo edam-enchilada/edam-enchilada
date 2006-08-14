@@ -71,10 +71,10 @@ import atom.GeneralAtomFromDB;
  * @author andersbe
  *
  */
-public class SQLServerDatabaseTest extends TestCase {
+public class DatabaseTest extends TestCase {
 	private SQLServerDatabase db;
 	
-	public SQLServerDatabaseTest(String aString)
+	public DatabaseTest(String aString)
 	{
 		
 		super(aString);
@@ -843,7 +843,8 @@ public class SQLServerDatabaseTest extends TestCase {
 	
 	public void testIsPresent() {
 		db.openConnection();
-		assertTrue(SQLServerDatabase.isPresent("TestDB"));
+		InfoWarehouse db = Database.getDatabase("TestDB");
+		assertTrue(db.isPresent());
 		db.closeConnection();
 	}
 	
@@ -1889,7 +1890,7 @@ public class SQLServerDatabaseTest extends TestCase {
 		assertTrue(db.containsDatatype("Datatype2"));
 		assertTrue(db.containsDatatype("SimpleParticle"));
 		assertTrue(db.containsDatatype("TimeSeries"));
-
+		
 		try {
 			//won't happen in reality, but quotes ought to be stripped in general
 			db.containsDatatype("'ATOFMS'");
