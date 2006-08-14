@@ -367,7 +367,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 		public static void main(String[] args){
 			
 			try {
-				SQLServerDatabase.rebuildDatabase("SpASMSdb");
+				Database.rebuildDatabase("SpASMSdb");
 			} catch (SQLException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
@@ -375,7 +375,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 						"Could not rebuild the database." +
 						"  Close any other programs that may be accessing the database and try again.");
 			}
-	    	SQLServerDatabase db = new SQLServerDatabase();
+	    	InfoWarehouse db = Database.getDatabase();
 			db.openConnection();
 			Connection connect = db.getCon();
 			DynamicTableGenerator echo = new DynamicTableGenerator(connect);

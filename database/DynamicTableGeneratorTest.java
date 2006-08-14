@@ -13,7 +13,7 @@ import junit.framework.TestCase;
 public class DynamicTableGeneratorTest extends TestCase {
 	
 	private CreateTestDatabase2 ctd;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private Connection con;
 	private ArrayList<File> metaFiles;
 
@@ -23,7 +23,7 @@ public class DynamicTableGeneratorTest extends TestCase {
 	protected void setUp() throws Exception {
 		ctd = new CreateTestDatabase2();
 		metaFiles = ctd.createMetaFiles();
-		db = new SQLServerDatabase("TestDB2");
+		db = Database.getDatabase("TestDB2");
 		db.openConnection();
 		con = db.getCon();
 		super.setUp();

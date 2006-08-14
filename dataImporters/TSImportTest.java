@@ -5,11 +5,12 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 public class TSImportTest extends TestCase {
 	private String taskFile;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private static final int NUM_PARTICLES = 5000;
 	private File tsFile;
 	
@@ -18,7 +19,7 @@ public class TSImportTest extends TestCase {
 		super.setUp();
 		
 		new database.CreateTestDatabase();
-		db = new SQLServerDatabase("TestDB");
+		db = Database.getDatabase("TestDB");
 		if (! db.openConnection()) {
 			throw new Exception("Couldn't open DB con");
 		}

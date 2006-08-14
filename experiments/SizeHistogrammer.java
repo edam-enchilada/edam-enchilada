@@ -1,5 +1,6 @@
 package experiments;
 import database.*;
+
 import java.sql.*;
 
 /**
@@ -23,7 +24,7 @@ public class SizeHistogrammer {
 	 * @param args
 	 */
 	public static void main(String[] args) throws SQLException {
-		SQLServerDatabase db = new SQLServerDatabase();
+		InfoWarehouse db = Database.getDatabase();
 		if (!db.openConnection()) throw new RuntimeException();
 		
 		Connection conn = db.getCon();

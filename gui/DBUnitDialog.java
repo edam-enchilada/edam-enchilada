@@ -93,6 +93,7 @@ import org.dbunit.operation.TransactionOperation;
 
 import database.Database;
 import database.SQLServerDatabase;
+import database.InfoWarehouse;
 
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
@@ -136,7 +137,7 @@ public class DBUnitDialog extends JFrame implements ActionListener{
 						JOptionPane.YES_OPTION) {
 				
 				try{
-					SQLServerDatabase.rebuildDatabase(databaseName);
+					Database.rebuildDatabase(databaseName);
 				}catch(SQLException s){
 					JOptionPane.showMessageDialog(this,
 							"Could not rebuild the database." +
@@ -183,7 +184,7 @@ public class DBUnitDialog extends JFrame implements ActionListener{
 	}
 	public void actionPerformed(ActionEvent e)
 	{
-		final SQLServerDatabase db = new SQLServerDatabase(databaseName);
+		final InfoWarehouse db = Database.getDatabase(databaseName);
 		db.openConnection();
 		
 		//Open database connection:
@@ -212,7 +213,7 @@ public class DBUnitDialog extends JFrame implements ActionListener{
 				public Object construct(){
 					try {
 						System.out.println("exporting database");
-						db.exportDatabase(filename,fileType);
+						((SQLServerDatabase)db).exportDatabase(filename,fileType);
 						System.out.println("exported database");
 					} catch (FileNotFoundException e1) {
 						SwingUtilities.invokeLater(new Runnable(){
@@ -261,7 +262,7 @@ public class DBUnitDialog extends JFrame implements ActionListener{
 					public Object construct(){
 						try {
 							System.out.println("importing database");
-							db.importDatabase(filename,fileType);
+							((SQLServerDatabase)db).importDatabase(filename,fileType);
 							System.out.println("imported database");
 						} catch (FileNotFoundException e1) {
 							SwingUtilities.invokeLater(new Runnable(){

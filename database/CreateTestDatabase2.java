@@ -58,16 +58,16 @@ import javax.swing.JOptionPane;
  * @author ritza
  */
 public class CreateTestDatabase2 {
-	public SQLServerDatabase tempDB;
+	public InfoWarehouse tempDB;
 	Connection con;
 	private static final char quote = '"';
 	
 	public CreateTestDatabase2() {
-        tempDB = new SQLServerDatabase();
+        tempDB = Database.getDatabase();
         tempDB.openConnection();
         con = tempDB.getCon();
         try {
-			SQLServerDatabase.rebuildDatabase("TestDB2");
+			Database.rebuildDatabase("TestDB2");
 		} catch (SQLException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();

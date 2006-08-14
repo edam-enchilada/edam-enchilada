@@ -59,7 +59,8 @@ import atom.GeneralAtomFromDB;
 
 
 import database.CreateTestDatabase;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
@@ -78,7 +79,7 @@ import gui.ProgressBarWrapper;
  */
 public class ATOFMSDataSetImporterTest extends TestCase {
 	ATOFMSDataSetImporter importer;
-	SQLServerDatabase db;
+	InfoWarehouse db;
 	ParTableModel table;
 	/*
 	 * @see TestCase#setUp()
@@ -92,7 +93,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 	{
 		//TODO: commented this out AR
 		try {
-			SQLServerDatabase.rebuildDatabase("TestDB");
+			Database.rebuildDatabase("TestDB");
 		} catch (SQLException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -100,7 +101,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 					"Could not rebuild the database." +
 					"  Close any other programs that may be accessing the database and try again.");
 		}
-		db = new SQLServerDatabase("TestDB");
+		db = Database.getDatabase("TestDB");
 		assertEquals(true, db.openConnection());
 		
 		// create table with one entry.
@@ -133,7 +134,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 			System.runFinalization();
 			System.gc();
 			
-			SQLServerDatabase tempDB = new SQLServerDatabase();
+			InfoWarehouse tempDB = Database.getDatabase();
 			tempDB.openConnection();
 			Connection con = tempDB.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");

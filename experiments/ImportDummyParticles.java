@@ -15,7 +15,8 @@ import java.util.Random;
 
 import java.sql.*;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import java.io.*;
 
 /**
@@ -27,7 +28,7 @@ import java.io.*;
  */
 public class ImportDummyParticles {
 	private ArrayList<Integer> collectionIDs;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private int counter = 0;
 	private Statement stmt;
 	private int newCollectionID, newDatasetID;
@@ -53,7 +54,7 @@ public class ImportDummyParticles {
 		collectionIDs = new ArrayList<Integer>();
 		random = new Random(12345678);
 		//Open database connection:
-		db = new SQLServerDatabase();
+		db = Database.getDatabase();
 		db.openConnection();
 		try {
 			stmt = db.getCon().createStatement();

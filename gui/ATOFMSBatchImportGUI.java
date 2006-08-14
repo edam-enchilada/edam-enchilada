@@ -8,7 +8,7 @@ import java.io.*;
 
 import dataImporters.ATOFMSBatchTableModel;
 import dataImporters.ATOFMSDataSetImporter;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
@@ -97,7 +97,7 @@ public class ATOFMSBatchImportGUI {
 		final ProgressBarWrapper progressBar = 
 			new ProgressBarWrapper(parent, "Importing ATOFMS Datasets", 100);
 		progressBar.constructThis();
-		final SQLServerDatabase dbRef = MainFrame.db;
+		final InfoWarehouse dbRef = MainFrame.db;
 		final SwingWorker worker = new SwingWorker(){
 			public Object construct(){
 					ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent, progressBar);

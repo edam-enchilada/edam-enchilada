@@ -3,6 +3,7 @@ import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import collection.Collection;
 import database.CollectionCursor;
+import database.InfoWarehouse;
 import database.SQLServerDatabase;
 import java.sql.*;
 
@@ -18,7 +19,7 @@ public class PeakListCursorExperiment {
 	public static void main(String[] args) throws SQLException {
 		int count = 0;
 		long newStart, newEnd, oldStart, oldEnd;
-		SQLServerDatabase db = chartlib.hist.HistogramsPlot.getDB();
+		InfoWarehouse db = chartlib.hist.HistogramsPlot.getDB();
 		
 		SQLServerDatabase.BPLOnlyCursor newtype 
 			= db.getBPLOnlyCursor(db.getCollection(24));

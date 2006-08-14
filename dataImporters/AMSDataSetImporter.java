@@ -19,7 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import collection.Collection;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 import errorframework.*;
 import externalswing.SwingWorker;
 import gui.AMSTableModel;
@@ -55,8 +55,8 @@ public class AMSDataSetImporter {
 	private int[] id;
 	protected int positionInBatch, totalInBatch;
 	
-	/* SQLServerDatabase object */
-	SQLServerDatabase db;
+	/* Database object */
+	InfoWarehouse db;
 	
 	/* Lock to make sure database is only accessed in one batch at a time */
 	private static Integer dbLock = new Integer(0);

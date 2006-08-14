@@ -6,7 +6,8 @@ package experiments;
 
 import java.util.*;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import ATOFMS.*;
 
 /**
@@ -16,14 +17,14 @@ import ATOFMS.*;
 public class ImportExperimentParticles {
 	private static int amplitude;
 	private ArrayList<ATOFMSParticle> particles;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	
 	public ImportExperimentParticles() {
 		particles = new ArrayList<ATOFMSParticle>();
 		ArrayList<Integer>  indices = new ArrayList<Integer>(2000);
 		
 		//Open database connection:
-		db = new SQLServerDatabase();
+		db = Database.getDatabase();
 		db.openConnection();
 		
 		

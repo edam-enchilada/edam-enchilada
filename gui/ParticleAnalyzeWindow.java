@@ -66,7 +66,8 @@ import chartlib.ZoomableChart;
 
 import collection.Collection;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 
 /**
@@ -97,7 +98,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private JPanel bottomPanel;
 	
 	//Data elements
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private JTable particlesTable;
 	private int curRow;
 	private int totRows;
@@ -172,7 +173,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * Both begin empty.
 	 * @param chart
 	 */
-	public ParticleAnalyzeWindow(final SQLServerDatabase db, JTable dt, int curRow,
+	public ParticleAnalyzeWindow(final InfoWarehouse db, JTable dt, int curRow,
 			Collection collection) {
 		super();
 		
@@ -739,10 +740,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 					//atom, go to the db to find the next atom in its collection 
 				int[] nextAtom = new int[2];
 				if (source == prevButton)
-					nextAtom = db.getAdjacentAtomInCollection(coll.getCollectionID(),
+					nextAtom = ((Database)db).getAdjacentAtomInCollection(coll.getCollectionID(),
 							atomID, -1);
 				else
-					nextAtom = db.getAdjacentAtomInCollection(coll.getCollectionID(),
+					nextAtom = ((Database)db).getAdjacentAtomInCollection(coll.getCollectionID(),
 							atomID, 1);
 				
 				showAdjacentParticle(nextAtom);
@@ -839,7 +840,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		//Get OrigDataSet from database
 		
-		SQLServerDatabase db = MainFrame.db;
+		InfoWarehouse db = MainFrame.db;
 		Connection con = db.getCon();
 		
 		try {

@@ -63,7 +63,7 @@ import javax.swing.table.TableColumn;
 import analysis.clustering.ClusterK;
 
 import dataImporters.ATOFMSDataSetImporter;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 import errorframework.*;
 import externalswing.SwingWorker;
 
@@ -83,7 +83,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	private int dataSetCount;
 	private JFrame parent = null;
 	private boolean importedTogether = false, showAdvancedOptions = false;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private int parentID = 0; //default parent collection is root
 	
 	/**
@@ -157,7 +157,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		setVisible(true);	
 	}
 	
-	public ImportParsDialog(JFrame owner, SQLServerDatabase db) throws HeadlessException {
+	public ImportParsDialog(JFrame owner, InfoWarehouse db) throws HeadlessException {
 		this(owner);
 		this.db = db;
 	}
@@ -237,7 +237,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		if (source == okButton) {
 				final JDialog thisRef = this;
 				final CardLayout card = (CardLayout)(listPane.getLayout());
-				final SQLServerDatabase dbRef = db;
+				final InfoWarehouse dbRef = db;
 				//construct everything
 				final ProgressBarWrapper progressBar = 
 					new ProgressBarWrapper(parent, ATOFMSDataSetImporter.title, 100);

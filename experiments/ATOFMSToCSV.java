@@ -23,7 +23,7 @@ public class ATOFMSToCSV {
 	 * @param args
 	 */
 	public static void main(String[] args) throws SQLException {
-		SQLServerDatabase db = new SQLServerDatabase();
+		InfoWarehouse db = Database.getDatabase();
 		if (!db.openConnection()) throw new RuntimeException();
 		
 		CollectionCursor b = db.getBinnedCursor(db.getCollection(7));

@@ -11,13 +11,14 @@ import analysis.Normalizer;
 
 
 import database.CreateTestDatabase;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import junit.framework.TestCase;
 
 public class KMediansTest extends TestCase {
 
 	    private KMedians kmedians;
-	    private SQLServerDatabase db;
+	    private InfoWarehouse db;
 	    String dbName = "TestDB";
 	    
 	    /*
@@ -26,7 +27,7 @@ public class KMediansTest extends TestCase {
 	    protected void setUp() throws Exception {
 	        super.setUp();
 	        new CreateTestDatabase();
-			db = new SQLServerDatabase("TestDB");
+			db = Database.getDatabase("TestDB");
 			db.openConnection();
 			
 	        int cID = 2;
@@ -48,8 +49,7 @@ public class KMediansTest extends TestCase {
 			db.closeConnection();
 			System.runFinalization();
 			System.gc();
-		    SQLServerDatabase.dropDatabase(dbName);
-	        
+		    Database.dropDatabase(dbName);
 	    }
 
 	    public void testGetDistance() {

@@ -14,7 +14,8 @@ import ATOFMS.Peak;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 /**
  * @author steinbel
@@ -29,11 +30,11 @@ import database.SQLServerDatabase;
  */
 public class PredictionAggregator {
 
-	SQLServerDatabase db;
+	InfoWarehouse db;
 	Connection con;
 	
 	public PredictionAggregator(){
-		db = new SQLServerDatabase();
+		db = Database.getDatabase();
 	}
 	
 	public void open(){

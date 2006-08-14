@@ -8,7 +8,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Random;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 /**
  * Creates a time series CSV file with any number of rows.
  * Files created are stored in C:\temp\.  Cannot be used unless
@@ -20,7 +20,7 @@ import database.SQLServerDatabase;
 public class CreateDummyCSV {
 	Calendar calendar;
 	Random random;
-	SQLServerDatabase db;
+	InfoWarehouse db;
 	String filename;
 	PrintWriter timeseries;
 	SimpleDateFormat dateFormat;

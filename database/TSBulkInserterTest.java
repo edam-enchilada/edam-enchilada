@@ -16,12 +16,12 @@ import java.util.Map.Entry;
 public class TSBulkInserterTest extends TestCase {
 	private TSBulkInserter ins;
 	
-	SQLServerDatabase db;
+	InfoWarehouse db;
 	
 	
 	protected void setUp() throws Exception {
 		new CreateTestDatabase();
-		db = new SQLServerDatabase("TestDB");
+		db = Database.getDatabase("TestDB");
 		db.openConnection();
 		ins = new TSBulkInserter(db);
 	}

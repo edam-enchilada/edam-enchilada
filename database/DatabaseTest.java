@@ -72,7 +72,7 @@ import atom.GeneralAtomFromDB;
  *
  */
 public class DatabaseTest extends TestCase {
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	
 	public DatabaseTest(String aString)
 	{
@@ -83,7 +83,7 @@ public class DatabaseTest extends TestCase {
 	protected void setUp()
 	{
 		new CreateTestDatabase(); 		
-		db = new SQLServerDatabase("TestDB");
+		db = Database.getDatabase("TestDB");
 	}
 	
 	protected void tearDown()
@@ -92,7 +92,7 @@ public class DatabaseTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			db = new SQLServerDatabase("");
+			db = Database.getDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
@@ -667,7 +667,7 @@ public class DatabaseTest extends TestCase {
 			progressBar.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 			progressBar.setVisible(false);
 			
-			assertTrue(db.compactDatabase(progressBar));
+			assertTrue(((Database)db).compactDatabase(progressBar));
 			
 
 			//ATOFMSAtomInfoDense
@@ -818,10 +818,10 @@ public class DatabaseTest extends TestCase {
 
 		try {
 			db.closeConnection();
-			assertTrue(SQLServerDatabase.rebuildDatabase("TestDB"));			
+			assertTrue(Database.rebuildDatabase("TestDB"));			
 			db.openConnection();
 			
-			SQLServerDatabase mainDB = new SQLServerDatabase();
+			InfoWarehouse mainDB = Database.getDatabase();
 			mainDB.openConnection();
 			Connection con = mainDB.getCon();
 			Statement stmt = con.createStatement();
@@ -926,7 +926,7 @@ public class DatabaseTest extends TestCase {
 	/* Can't try dropping db because it's in use.
 	public void testDropDatabase() {
 		db.openConnection();
-		assertTrue(SQLServerDatabase.dropDatabase("TestDB"));
+		assertTrue(Database.dropDatabase("TestDB"));
 		setUp();
 	} */
 	
@@ -1067,7 +1067,6 @@ public class DatabaseTest extends TestCase {
 	}
 
 	/**
-	 * Tests SQLServerDatabase.join
 	 * @author shaferia
 	 */
 	public void testJoin()
@@ -1114,7 +1113,7 @@ public class DatabaseTest extends TestCase {
 	 * @param name the database table to output
 	 * @author shaferia
 	 */
-	public static void printDBSection(SQLServerDatabase database, String name) {
+	public static void printDBSection(InfoWarehouse database, String name) {
 		printDBSection(database, name, Integer.MAX_VALUE);
 	}
 	
@@ -1124,7 +1123,7 @@ public class DatabaseTest extends TestCase {
 	 * @param rows a single argument giving the maximum number of rows to output
 	 * @author shaferia
 	 */
-	public static void printDBSection(SQLServerDatabase database, String name, int rows) {
+	public static void printDBSection(InfoWarehouse database, String name, int rows) {
 		Statement stmt = null;
 		ResultSet rs = null;
 		
@@ -1240,7 +1239,7 @@ public class DatabaseTest extends TestCase {
 		db.openConnection();
 		
 		//test adding to end
-		db.addSingleInternalAtomToTable(6, 2);
+		((Database)db).addSingleInternalAtomToTable(6, 2);
 
 		try {
 			Connection con = db.getCon();
@@ -1264,11 +1263,11 @@ public class DatabaseTest extends TestCase {
 		db.updateInternalAtomOrder(db.getCollection(2));
 
 		//addSingleInternalAtomToTable should order things correctly - make sure that happens
-		db.addSingleInternalAtomToTable(4, 2);
-		db.addSingleInternalAtomToTable(3, 2);
-		db.addSingleInternalAtomToTable(1, 2);
-		db.addSingleInternalAtomToTable(5, 3);
-		db.addSingleInternalAtomToTable(2, 2);
+		((Database)db).addSingleInternalAtomToTable(4, 2);
+		((Database)db).addSingleInternalAtomToTable(3, 2);
+		((Database)db).addSingleInternalAtomToTable(1, 2);
+		((Database)db).addSingleInternalAtomToTable(5, 3);
+		((Database)db).addSingleInternalAtomToTable(2, 2);
 
 		try {
 			Connection con = db.getCon();
@@ -1328,10 +1327,10 @@ public class DatabaseTest extends TestCase {
 	public void testCreateIndex() {
 		db.openConnection();
 		
-		assertTrue(db.createIndex("ATOFMS", "Size, LaserPower"));
-		assertTrue(db.createIndex("ATOFMS", "Size, Time"));
-		assertFalse(db.createIndex("ATOFMS", "Size, LaserPower"));
-		assertFalse(db.createIndex("ATOFMS", "size, time"));
+		assertTrue(((Database)db).createIndex("ATOFMS", "Size, LaserPower"));
+		assertTrue(((Database)db).createIndex("ATOFMS", "Size, Time"));
+		assertFalse(((Database)db).createIndex("ATOFMS", "Size, LaserPower"));
+		assertFalse(((Database)db).createIndex("ATOFMS", "size, time"));
 		
 		try {
 			Connection con = db.getCon();
@@ -1362,16 +1361,16 @@ public class DatabaseTest extends TestCase {
 		System.out.printf("Current working directory is %s\n", System.getProperty("user.dir"));
 		
 		try {
-			db.exportDatabase("test1.out", 1);
-			java.io.File f = new java.io.File("test1.out");
-			assertTrue(f.exists());
+			//db.exportDatabase("test1.out", 1);
+			//java.io.File f = new java.io.File("test1.out");
+			//assertTrue(f.exists());
 			
 			//TODO: Determine status of [(export)(import)]Database
 			/*
 			tearDown();
-			db = new SQLServerDatabase();
+			db = Database.getDatabase();
 	        try {
-				SQLServerDatabase.rebuildDatabase("TestDB");
+				Database.rebuildDatabase("TestDB");
 			} catch (SQLException e2) {
 				e2.printStackTrace();
 				JOptionPane.showMessageDialog(null,
@@ -1383,7 +1382,7 @@ public class DatabaseTest extends TestCase {
 			db.exportDatabase("test2.out", 1);
 			*/
 			
-			f.delete();
+			//f.delete();
 		}
 		catch (Exception ex) {
 			System.out.println("Exception handling file.");
@@ -1400,24 +1399,24 @@ public class DatabaseTest extends TestCase {
 	public void testGetAdjacentAtomInCollection() {
 		db.openConnection();
 		
-		int[] adj = db.getAdjacentAtomInCollection(2, 3, 1);
+		int[] adj = ((Database)db).getAdjacentAtomInCollection(2, 3, 1);
 		assertEquals(adj[0], 4);
 		assertEquals(adj[1], 4);
 		
-		adj = db.getAdjacentAtomInCollection(3, 7, -1);
+		adj = ((Database)db).getAdjacentAtomInCollection(3, 7, -1);
 		assertEquals(adj[0], 6);
 		assertEquals(adj[1], 1);
 		
-		adj = db.getAdjacentAtomInCollection(4, 12, 2);
+		adj = ((Database)db).getAdjacentAtomInCollection(4, 12, 2);
 		assertEquals(adj[0], 14);
 		assertEquals(adj[1], 4);
 		
 		//The following two assertions should print SQLExceptions.
 		
-		adj = db.getAdjacentAtomInCollection(2, 1, -1);
+		adj = ((Database)db).getAdjacentAtomInCollection(2, 1, -1);
 		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
-		adj = db.getAdjacentAtomInCollection(2, 5, 1);
+		adj = ((Database)db).getAdjacentAtomInCollection(2, 5, 1);
 		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
 		db.closeConnection();
@@ -1580,9 +1579,9 @@ public class DatabaseTest extends TestCase {
 		
 		try {
 			//an empty database has version "Aug2006.1" currently
-			assertEquals(db.getDatabaseVersion(), "Aug2006.1");
+			assertEquals(db.getVersion(), "Aug2006.1");
 		}
-		catch (SQLException ex) {
+		catch (Exception ex) {
 			fail();
 			ex.printStackTrace();
 		}
@@ -1591,9 +1590,9 @@ public class DatabaseTest extends TestCase {
 			db.getCon().createStatement().executeUpdate(
 					"UPDATE DBInfo SET Value = 'New!' WHERE Name = 'Version'");
 			
-			assertEquals(db.getDatabaseVersion(), "New!");
+			assertEquals(db.getVersion(), "New!");
 		}
-		catch (SQLException ex) {
+		catch (Exception ex) {
 			fail();
 			ex.printStackTrace();
 		}
@@ -1608,7 +1607,7 @@ public class DatabaseTest extends TestCase {
 		}
 		
 		try {
-			db.getDatabaseVersion();
+			db.getVersion();
 			
 			//shouldn't get this far.
 			fail();

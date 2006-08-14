@@ -14,6 +14,7 @@ import java.util.*;
 
 import javax.swing.*;
 
+import database.Database;
 import database.DynamicTable;
 import errorframework.*;
 
@@ -74,7 +75,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 			aid.setLayout(new BoxLayout(aid, BoxLayout.PAGE_AXIS));
 			
 			try {
-				indexedColumns = MainFrame.db.getIndexedColumns(dataTypes[i]);
+				indexedColumns = ((Database)MainFrame.db).getIndexedColumns(dataTypes[i]);
 			} catch (Exception e) {
 				ErrorLogger.writeExceptionToLog("DataFormatViewer","Error finding which columns are indexed!");
 			}
@@ -150,7 +151,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 					    JOptionPane.YES_NO_OPTION);
 				
 				if (n == JOptionPane.YES_OPTION) {
-					if (MainFrame.db.createIndex(dataType, column)) {
+					if (((Database)MainFrame.db).createIndex(dataType, column)) {
 						this.setEnabled(false);
 						return;
 					} else {

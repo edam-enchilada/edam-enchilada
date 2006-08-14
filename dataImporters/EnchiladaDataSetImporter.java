@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 import errorframework.*;
 import externalswing.ProgressTask;
 
@@ -46,7 +46,7 @@ import externalswing.ProgressTask;
 public class EnchiladaDataSetImporter extends DefaultHandler {
 	
 	private String data = "";
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private Connection con;
 	private Statement stmt;
 	private String datatype;
@@ -66,7 +66,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 	private Frame parent;
 	private ImportEnchiladaDataDialog ench;
 	
-	public EnchiladaDataSetImporter(SQLServerDatabase sqlsdb) throws WriteException{
+	public EnchiladaDataSetImporter(InfoWarehouse sqlsdb) throws WriteException{
 		
 		db = sqlsdb;
 		con = db.getCon();

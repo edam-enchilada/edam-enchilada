@@ -21,7 +21,7 @@ public class TSBulkInserter {
 	private int maxBufferSize = 1024 * 950 * 3; // a bit before 1M for each StringBuilder.
 	
 	
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private Connection con;
 	
 	/**
@@ -29,7 +29,7 @@ public class TSBulkInserter {
 	 *
 	 */
 	public TSBulkInserter() {
-		db = new SQLServerDatabase();
+		db = Database.getDatabase();
 		db.openConnection();
 		setUp();
 	}
@@ -38,7 +38,7 @@ public class TSBulkInserter {
 	 * Create a new TSBulkInserter with an already-connected database.
 	 * @param db
 	 */
-	public TSBulkInserter(SQLServerDatabase db) {
+	public TSBulkInserter(InfoWarehouse db) {
 		this.db = db;
 		setUp();
 	}

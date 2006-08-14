@@ -9,7 +9,8 @@ import javax.swing.JOptionPane;
 import analysis.DistanceMetric;
 
 import database.CreateTestDatabase;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 /**
  * Tester class for BIRCH.  Creates and manipulates BIRCHdb.
@@ -17,18 +18,18 @@ import database.SQLServerDatabase;
  *
  */
 public class Tester {
-	static SQLServerDatabase db;
-	SQLServerDatabase tempDB;
+	static InfoWarehouse db;
+	InfoWarehouse tempDB;
 	Connection con;
 	
 	public Tester()
 	{
-        tempDB = new SQLServerDatabase();
+        tempDB = Database.getDatabase();
         tempDB.openConnection();
         con = tempDB.getCon();
         
         try {
-			SQLServerDatabase.rebuildDatabase("BIRCHdb");
+			Database.rebuildDatabase("BIRCHdb");
 		} catch (SQLException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -160,7 +161,7 @@ public class Tester {
 	
 	public static void main(String[] args) {
 		new Tester();
-		db = new SQLServerDatabase("BIRCHdb");
+		db = Database.getDatabase("BIRCHdb");
 		db.openConnection();
 		BIRCH birch = new BIRCH(db.getCollection(2),db,"BIRCH","comment",DistanceMetric.EUCLIDEAN_SQUARED);
 		birch.compress();

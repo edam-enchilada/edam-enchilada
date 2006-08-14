@@ -66,7 +66,10 @@ import java.util.Date;
 import java.util.Scanner;
 import java.util.Vector;
 
-import database.*;
+import database.InfoWarehouse;
+import database.Database;
+import database.VersionChecker;
+import database.DynamicTable;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
@@ -133,7 +136,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JTable particlesTable = null;
 	private Vector<Vector<Object>> data = null;
 	
-	public static SQLServerDatabase db;
+	public static InfoWarehouse db;
 	private JComponent infoPanel;
 	
 	private JTabbedPane collectionViewPanel;
@@ -665,7 +668,7 @@ public class MainFrame extends JFrame implements ActionListener
 					public Object construct() {
 						db.closeConnection();
 						try {
-							SQLServerDatabase.rebuildDatabase("SpASMSdb");
+							Database.rebuildDatabase("SpASMSdb");
 							return true;
 						}
 						catch (SQLException ex) {
@@ -699,7 +702,7 @@ public class MainFrame extends JFrame implements ActionListener
 			progressBar.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
-					db.compactDatabase(progressBar);
+					((Database)db).compactDatabase(progressBar);
 					return null;
 				}
 				public void finished() {
@@ -759,7 +762,7 @@ public class MainFrame extends JFrame implements ActionListener
 			progressBar.setIndeterminate(true);
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
-					db.compactDatabase(progressBar);
+					((Database)db).compactDatabase(progressBar);
 					db.closeConnection();
 					return null;
 				}
@@ -1348,7 +1351,7 @@ public class MainFrame extends JFrame implements ActionListener
 						JOptionPane.YES_OPTION) {
 				
 				try{
-					SQLServerDatabase.rebuildDatabase("SpASMSdb");
+					Database.rebuildDatabase("SpASMSdb");
 				}catch(SQLException s){
 					JOptionPane.showMessageDialog(null,
 							"Could not rebuild the database." +
@@ -1360,7 +1363,7 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		//Open database connection:
-		db = new SQLServerDatabase("SpASMSdb");
+		db = Database.getDatabase("SpASMSdb");
 		db.openConnection();
 		
 
@@ -1384,7 +1387,7 @@ public class MainFrame extends JFrame implements ActionListener
 						null, options, options[1]);
 				if (action == 0){
 					db.closeConnection();
-					SQLServerDatabase.rebuildDatabase("SpASMSdb");
+					Database.rebuildDatabase("SpASMSdb");
 					db.openConnection();
 				} else
 					System.exit(0);

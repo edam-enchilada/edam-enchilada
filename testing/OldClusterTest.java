@@ -13,22 +13,21 @@ import analysis.clustering.ClusterInformation;
 import analysis.clustering.KMeans;
 
 import database.CreateTestDatabase2;
-import database.SQLServerDatabase;
+import database.Database;
+import database.InfoWarehouse;
 import junit.framework.TestCase;
 
 public class OldClusterTest extends TestCase {
 	
 
 	private Cluster cluster;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private Connection con;
 	
 
 	protected void setUp() throws Exception {
-
-		//SQLServerDatabase.rebuildDatabase("TestDB2");
 		new CreateTestDatabase2();
-		db = new SQLServerDatabase("TestDB2");
+		db = Database.getDatabase("TestDB2");
 		db.openConnection();
 		con = db.getCon();
 		//TODO: make this work with differnt types of clusters

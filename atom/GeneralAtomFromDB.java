@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import database.DynamicTable;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 
 public class GeneralAtomFromDB {
 
@@ -15,9 +15,9 @@ public class GeneralAtomFromDB {
 	protected ArrayList<String> fieldValues;
 	protected String datatype;
 	protected int atomID;
-	protected SQLServerDatabase db;
+	protected InfoWarehouse db;
 	
-	public GeneralAtomFromDB(int atomID,SQLServerDatabase database) {
+	public GeneralAtomFromDB(int atomID,InfoWarehouse database) {
 		db = database;
 		this.atomID = atomID;
 		datatype = db.getAtomDatatype(atomID);

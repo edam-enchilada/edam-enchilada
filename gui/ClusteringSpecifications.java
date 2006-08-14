@@ -14,7 +14,6 @@ import javax.swing.*;
 
 import dataImporters.EnchiladaDataSetImporter;
 import database.DynamicTable;
-import database.SQLServerDatabase;
 
 public class ClusteringSpecifications extends JDialog implements ActionListener, ItemListener{
 

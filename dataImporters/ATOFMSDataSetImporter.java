@@ -44,6 +44,8 @@
  */
 package dataImporters;
 
+import database.InfoWarehouse;
+import database.Database;
 import database.SQLServerDatabase;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
@@ -114,8 +116,9 @@ public class ATOFMSDataSetImporter {
 	protected int[] numParticles;
 	protected Collection[] collections;
 	private final ATOFMSDataSetImporter thisRef;
-	/* SQLServerDatabase object */
-	SQLServerDatabase db;
+	
+	/* Database object */
+	InfoWarehouse db;
 	
 	/* Lock to make sure database is only accessed in one batch at a time */
 	//private static Integer dbLock = new Integer(0);
@@ -138,7 +141,7 @@ public class ATOFMSDataSetImporter {
 		thisRef = this;
 	}
 	
-	public ATOFMSDataSetImporter(ParTable t, Window mf, SQLServerDatabase db,  ProgressBarWrapper progressBar) {
+	public ATOFMSDataSetImporter(ParTable t, Window mf, InfoWarehouse db,  ProgressBarWrapper progressBar) {
 		this(t,mf,progressBar);
 		this.db = db;
 	}
@@ -287,7 +290,7 @@ public class ATOFMSDataSetImporter {
 			db = MainFrame.db;
 		}
 		if (db == null) { // still
-			db = new SQLServerDatabase();
+			db = Database.getDatabase();
 			db.openConnection();
 		}
 		id = new int[2];
@@ -406,8 +409,7 @@ public class ATOFMSDataSetImporter {
 						ReadSpec read = new ReadSpec(particleFileName);
 						
 						currentParticle = read.getParticle();
-						db.insertParticle(
-
+						((SQLServerDatabase)db).insertParticle(
 								currentParticle.particleInfoDenseString(),
 								currentParticle.particleInfoSparseString(),
 								destination,id[1],nextID, true);

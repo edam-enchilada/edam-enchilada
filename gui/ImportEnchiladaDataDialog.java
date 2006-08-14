@@ -50,7 +50,7 @@ package gui;
 import dataImporters.EnchiladaDataSetImporter;
 import errorframework.*;
 import database.DynamicTableGenerator;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -104,7 +104,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		private int dataSetCount;
 		private static Window parent = null;
 		private boolean exceptions = false;
-		private SQLServerDatabase db = MainFrame.db;
+		private InfoWarehouse db = MainFrame.db;
 		private JTextArea typelist;
 		private boolean importedTogether = false;
 		private int parentID = -1;

@@ -10,8 +10,8 @@ import org.dbunit.dataset.*;
 import org.dbunit.dataset.xml.*;
 import org.dbunit.dataset.excel.*;
 
-
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 /**
  * Still working on this one . . . having lots of trouble with importing
@@ -25,7 +25,7 @@ import database.SQLServerDatabase;
  // sense for test to be failing when whole battery was run.
 public class ClusterTest extends DatabaseTestCase{
 
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private IDataSet loadedDataSet;
 
 	
@@ -45,7 +45,7 @@ public class ClusterTest extends DatabaseTestCase{
 	
 	@Override
 	protected IDatabaseConnection getConnection() throws Exception {
-		db = new SQLServerDatabase("TestDB2");
+		db = Database.getDatabase("TestDB2");
 		db.openConnection();
 		IDatabaseConnection con = new DatabaseConnection(db.getCon());
 		return con;

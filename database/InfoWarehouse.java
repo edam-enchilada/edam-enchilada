@@ -181,6 +181,7 @@ public interface InfoWarehouse {
 	 * @return	an array of subchildren
 	 */
 	public ArrayList<Integer> getImmediateSubCollections(Collection collection);
+	public ArrayList<Integer> getImmediateSubCollections(ArrayList<Integer> collections);
 	
 	/**
 	 * Returns every Atom that exists in the collection identified
@@ -329,4 +330,12 @@ public interface InfoWarehouse {
 	public boolean beginTransaction();
 	public boolean commitTransaction();
 	public boolean rollbackTransaction();
+	
+	public int getRepresentedCluster(int atomID);
+	public ArrayList<String> getKnownDatatypes();
+	public String getVersion();
+	public String getAtomDatatype(int atomID);
+	public boolean containsDatatype(String type);
+	public String getATOFMSFileName(int atomID);
+	public boolean removeEmptyCollection(Collection collection);
 }

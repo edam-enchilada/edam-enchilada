@@ -10,11 +10,12 @@ import javax.swing.SwingUtilities;
 import collection.Collection;
 
 import database.CreateTestDatabase2;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import junit.framework.TestCase;
 
 public class AggregatorTest extends TestCase {
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private Aggregator aggregator;
 	
 	public AggregatorTest(String aString)
@@ -25,7 +26,7 @@ public class AggregatorTest extends TestCase {
 	protected void setUp()
 	{
 		new CreateTestDatabase2(); 		
-		db = new SQLServerDatabase("TestDB2");
+		db = Database.getDatabase("TestDB2");
 	}
 	
 	protected void tearDown()
@@ -34,7 +35,7 @@ public class AggregatorTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			db = new SQLServerDatabase("");
+			db = Database.getDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			//con.createStatement().executeUpdate("DROP DATABASE TestDB2");

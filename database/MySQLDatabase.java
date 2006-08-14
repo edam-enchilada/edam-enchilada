@@ -440,4 +440,43 @@ public class MySQLDatabase extends Database {
 		return null;
 	}
 
+	public ArrayList<String> getKnownDatatypes() {
+		notdone();// TODO fix
+		return null;
+	}
+
+	public int getRepresentedCluster(int atomID) {
+		notdone();// TODO fix
+		return 0;
+	}
+
+	public String getVersion() {
+		notdone();// TODO fix
+		return null;
+	}
+
+	public boolean containsDatatype(String type) {
+		notdone();// TODO fix
+		return false;
+	}
+
+	public String getATOFMSFileName(int atomID) {
+		notdone();// TODO fix
+		return null;
+	}
+
+	public String getAtomDatatype(int atomID) {
+		notdone();// TODO fix
+		return null;
+	}
+
+	public ArrayList<Integer> getImmediateSubCollections(ArrayList<Integer> collections) {
+		notdone();// TODO fix
+		return null;
+	}
+
+	public boolean removeEmptyCollection(Collection collection) {
+		notdone();// TODO fix
+		return false;
+	}
 }

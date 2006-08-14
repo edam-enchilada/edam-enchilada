@@ -7,7 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import database.CreateTestDatabase;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import errorframework.WriteException;
 import junit.framework.TestCase;
 
@@ -17,7 +18,7 @@ import junit.framework.TestCase;
 public class EnchiladaDataSetImporterTest extends TestCase{
 	
 	private EnchiladaDataSetImporter edsi;
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	private ArrayList<File> tempFiles;
 
 	protected void setUp() throws WriteException{
@@ -37,7 +38,7 @@ public class EnchiladaDataSetImporterTest extends TestCase{
 		try {
 			System.runFinalization();
 			System.gc();
-			db = new SQLServerDatabase("");
+			db = Database.getDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");

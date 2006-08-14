@@ -45,7 +45,8 @@ package gui;
 
 import javax.swing.*;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -174,7 +175,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	 * @author shaferia
 	 */
 	public static boolean removeEmptyCollection(int id) {
-		SQLServerDatabase db = new SQLServerDatabase();
+		InfoWarehouse db = Database.getDatabase();
 		db.openConnection();
 		boolean success = db.removeEmptyCollection(db.getCollection(id));
 		db.closeConnection();
@@ -186,7 +187,7 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		if (source == okButton) {
 			if(!nameField.getText().equals("")) {
 				if(datatypeBox.getSelectedIndex()!= -1) {
-					SQLServerDatabase db = new SQLServerDatabase();
+					InfoWarehouse db = Database.getDatabase();
 					db.openConnection();
 					collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
 					collectionName = nameField.getText();

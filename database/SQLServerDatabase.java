@@ -104,7 +104,7 @@ import experiments.Tuple;
  */
 public class SQLServerDatabase extends Database
 {	
-	/* Class Variables */
+	//This isn't used anymore. Safe for deletion.
 	private static int instance = 0;
 	
 	// for batch stuff
@@ -912,117 +912,7 @@ public class SQLServerDatabase extends Database
 		return true;
 	}
 
-	/**
-	 * Deletes a collection and unlike orphanAndAdopt() also recursively
-	 * deletes all direct descendents.
-	 * This method merely selects the collections to be deleted and stores them in #deleteTemp
-	 * 
-	 * @param collectionID The id of the collection to delete
-	 * @return true on success. 
-	 */
-	public boolean compactDatabase(ProgressBarWrapper progressBar)
-	{
-		System.out.println("Compacting database and removing unaccessible atoms..");
-		try {
-			Statement stmt = con.createStatement();
-			Statement typesStmt = con.createStatement();
-			StringBuilder sql = new StringBuilder();
-			sql.append("IF object_id('tempdb..#collections') IS NOT NULL\n"+
-					"BEGIN\n" +
-					"DROP TABLE #collections;\n"+
-					"END\n");
-			sql.append("CREATE TABLE #collections (CollectionID int, \n PRIMARY KEY([CollectionID]));\n");
-			// Update the InternalAtomOrder table:  Assumes that subcollections
-			// are already updated for the parentCollection.
-			// clear InternalAtomOrder table of the deleted collection and all subcollections.
-			
-			sql.append("insert #collections (CollectionID) \n" +
-					"	SELECT DISTINCT CollectionID\n" +
-					"	FROM AtomMembership\n" +
-					"	WHERE AtomMembership.CollectionID NOT IN " +
-					"		(SELECT CollectionID\n" +
-					"		FROM Collections\n" +
-					"		);\n");
-			
-			
-			sql.append("DELETE AtomMembership\nFROM AtomMembership\n"
-					+ "INNER JOIN #collections\n ON " +
-							"(#collections.CollectionID = AtomMembership.CollectionID);\n");
-			sql.append("DELETE FROM InternalAtomOrder\n"
-					+ "WHERE CollectionID IN (SELECT * FROM #collections);\n");
-			
-			ResultSet types = typesStmt.executeQuery("SELECT DISTINCT Datatype FROM MetaData");
-			
-			while(types.next()){
-				String datatype = types.getString(1);
-				String sparseTableName = getDynamicTableName(DynamicTable.AtomInfoSparse,datatype);
-				String denseTableName = getDynamicTableName(DynamicTable.AtomInfoDense,datatype);
-				
-				sql.append("IF object_id('tempdb..#atoms') IS NOT NULL \n"+
-						"BEGIN\n" +
-						"DROP TABLE  #atoms;\n"+
-						"END\n");
 
-				sql.append("CREATE TABLE #atoms (AtomID int, \n PRIMARY KEY([AtomID]));\n");
-				sql.append("insert #atoms (AtomID) \n" +
-						"	SELECT AtomID\n" +
-						"	FROM "+denseTableName+"\n" +
-						"	WHERE AtomID NOT IN " +
-						"		(SELECT AtomID\n" +
-						"		FROM AtomMembership\n" +
-						"		);\n");
-				
-				// Also: We could delete all the particles from the particles
-				// table IF we want to by now going through the particles 
-				// table and choosing every one that does not exist in the 
-				// Atom membership table and deleting it.  However, this would
-				// remove particles that were referenced in the DataSetMembers 
-				// table.  If we don't want this to happen, comment out the 
-				// following code, which also removes all references in the 
-				// DataSetMembers table:
-				//System.out.println(1);
-				sql.append("DELETE FROM DataSetMembers\n" +
-				"WHERE AtomID IN (SELECT * FROM #atoms);\n");
-				// it is ok to call atominfo tables here because datatype is
-				// set from recursiveDelete() above.
-				// note: Sparse table may not necessarily exist. So check first.
-				sql.append("IF EXISTS (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = '" + sparseTableName + "')" +
-						"DELETE "+sparseTableName+" FROM " + sparseTableName + "\n" +
-						"INNER JOIN #atoms ON (#atoms.AtomID = "+sparseTableName+".AtomID);\n");
-				sql.append("DELETE "+denseTableName+" FROM " + denseTableName + "\n" +
-						"INNER JOIN #atoms ON (#atoms.AtomID = "+denseTableName+".AtomID);\n");
-				
-				sql.append("DROP TABLE #atoms;\n");
-				//This separation is necessary!!
-				// SQL Server parser is stupid and if you create, delete, and recreate a temporary table
-				// the parser thinks you're doing something wrong and will die.
-				if(progressBar.wasTerminated()){
-					sql = new StringBuilder();
-					sql.append("DROP TABLE #collections;\n");
-					stmt.execute(sql.toString());
-					stmt.close();
-					return false;
-				}
-				System.out.println(sql.toString());
-				stmt.execute(sql.toString());
-				sql = new StringBuilder();
-				
-			}
-			
-			sql.append("DROP TABLE #collections;\n");
-			System.out.println(sql.toString());
-			stmt.execute(sql.toString());
-			isDirty = false;
-			stmt.close();
-			//updateAncestors(0);
-		} catch (Exception e){
-			ErrorLogger.writeExceptionToLog("SQLServer","Exception deleting collection.");
-			System.err.println("Exception deleting collection: ");
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
 	
 	
 	/**
@@ -1204,55 +1094,6 @@ public class SQLServerDatabase extends Database
 			e.printStackTrace();
 		}
 		return success;
-	}
-	
-	/**
-	 * Updates InternalAtomOrder
-	 * @param atomID
-	 * @param toParentID
-	 */	
-	public void addSingleInternalAtomToTable(int atomID, int toParentID) {
-		//update InternalAtomOrder; have to iterate through all
-		// atoms sequentially in order to insert it. 
-		Statement stmt;
-		try {
-			stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT AtomID FROM" +
-					" InternalAtomOrder WHERE CollectionID = "+toParentID + " ORDER BY AtomID");
-			int order = 1;
-			boolean looking = true;
-			if (!rs.next())
-				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+",1)");
-			else {
-				while (atomID > rs.getInt(1) && rs.next()) {
-					order++;
-					// jump to spot in db where atomID fits.
-				}
-
-				if (rs.getRow() == 0)
-					//if we're at the end of the collection,
-					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
-							+atomID+","+toParentID+","+(order + 1)+")");
-				else if (atomID != rs.getInt(1)) {
-					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
-							+atomID+","+toParentID+","+order+")");
-					
-					do {
-						order++;
-						stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + order + 
-								" WHERE AtomID = "+rs.getInt(1) + 
-								" AND CollectionID = " +toParentID);
-					}
-					while (rs.next());
-				}
-			}
-
-			stmt.executeBatch();
-			stmt.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 	/**
@@ -1757,6 +1598,7 @@ public class SQLServerDatabase extends Database
 		}
 		return particleInfo;
 	}
+	
 	public void exportDatabase(String filename,int fileType) throws FileNotFoundException {
 		DatabaseConnection dbconn = null;
 		IDataSet dataSet = null;
@@ -1817,37 +1659,6 @@ public class SQLServerDatabase extends Database
 			e1.printStackTrace();
 		}
 		*/
-	}
-	/**
-	 * Returns the adjacent atom for the collection, according to InternalAtomOrder.
-	 * @param collection	The ID of the collection under scrutiny.
-	 * @param currentID		The current atom's ID.
-	 * @param position		1 for next atomID, -1 for previous atomID.
-	 * @return	index[0] The ID of the adjacent atom in the collection.
-	 * 			index[1] The position of the adjacent atom in the collection.
-	 */
-	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
-		int nextID = -99;
-		int pos = -77;
-		String query = "SELECT AtomID, OrderNumber FROM InternalAtomOrder " +  
-		"WHERE (CollectionID = " + collection + ") AND (OrderNumber = " +
-		                   "(SELECT OrderNumber FROM InternalAtomOrder " +
-		                    "WHERE CollectionID = " + collection +
-		                    " AND AtomID = " + currentID + ") + " + position + ")";
-		Statement stmt;
-		try {
-			stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			rs.next();
-			nextID = rs.getInt(1);
-			pos = rs.getInt(2);
-			stmt.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return new int[]{nextID, pos};
 	}
 	
 	/**
@@ -2256,140 +2067,6 @@ public class SQLServerDatabase extends Database
 		//s = s.replace('"', ' ');
 		return s;
 	}
-	
-	/**
-	 * rebuilds the database; sets the static tables.
-	 * @param dbName
-	 * @return true if successful
-	 */
-	public static boolean rebuildDatabase(String dbName) throws SQLException{
-		SQLServerDatabase db = null;
-		Scanner in = null;
-		Connection con = null;
-		
-		// Connect to SQL Server independent of a particular database,
-		// and drop and add the database.
-		// This code works under the assumption that a user called SpASMS has
-		// already been created with a password of 'finally'. This user must have
-		// already been granted appropriate privileges for adding and dropping
-		// databases and tables.
-		try {
-			db = new SQLServerDatabase();
-			db.database = "";
-			db.openConnection();
-			con = db.getCon();
-			Statement stmt = con.createStatement();
-			// See if database exists. If it does, drop it.
-			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
-			boolean foundDatabase = false;
-			while (!foundDatabase && rs.next())
-				if (rs.getString(1).equals(dbName))
-					foundDatabase = true;	
-			if (foundDatabase)
-				stmt.executeUpdate("drop database " + dbName);
-			
-			stmt.executeUpdate("create database " + dbName);
-			stmt.close();
-		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
-			System.err.println("Error in rebuilding SQL Server database.");
-			e.printStackTrace();
-			throw new SQLException();
-		} finally {
-			if (db != null)
-				db.closeConnection();
-		}
-		// Run all the queries in the SQLServerRebuildDatabase.txt file, which
-		// inserts all of the necessary tables.
-		try {
-			db = new SQLServerDatabase();
-			db.database = dbName;
-			db.openConnection();
-			con = db.getCon();
-			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
-			String query = "";
-			StringTokenizer token;
-			// loop through license block
-			while (in.hasNext()) {
-				query = in.nextLine();
-				token = new StringTokenizer(query);
-				if (token.hasMoreTokens()) {
-					String s = token.nextToken();
-					if (s.equals("CREATE"))
-						break;
-				}
-			}
-			// Update the database according to the stmts.
-			con.createStatement().executeUpdate(query);
-			
-			while (in.hasNext()) {
-				query = in.nextLine();
-				//System.out.println(query);
-				con.createStatement().executeUpdate(query);
-			}
-			
-		} catch (IOException e) {
-			System.err.println("IOException occurred when rebuilding the database.");
-			return true;
-		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Error rebuilding SQL Server database.");
-			System.err.println("Error in adding tables to database.");
-			e.printStackTrace();
-			return false;
-		} finally {
-			if (db != null)
-				db.closeConnection();
-			if (in != null)
-				in.close();
-			
-		}
-		return true;
-	}
-	
-	/**
-	 * drops the given database.
-	 * @param dbName
-	 * @return
-	 */
-	public static boolean dropDatabase(String dbName) {
-		SQLServerDatabase db = null;
-		Connection con = null;
-		
-		// Connect to SQL Server independent of a particular database,
-		// and drop and add the database.
-		// This code works under the assumption that a user called SpASMS has
-		// already been created with a password of 'finally'. This user must have
-		// already been granted appropriate privileges for adding and dropping
-		// databases and tables.
-		try {
-			db = new SQLServerDatabase();
-			db.database = "";
-			db.openConnection();
-			con = db.getCon();
-			Statement stmt = con.createStatement();
-			
-			// See if database exists. If it does, drop it.
-			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
-			boolean foundDatabase = false;
-			while (!foundDatabase && rs.next())
-				if (rs.getString(1).equals(dbName))
-					foundDatabase = true;	
-			if (foundDatabase)
-				stmt.executeUpdate("drop database " + dbName);
-			
-			stmt.close();
-		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog("SQLServer","Error dropping SQL Server database.");
-			System.err.println("Error in dropping SQL Server database.");
-			e.printStackTrace();
-			return false;
-		} finally {
-			if (db != null)
-				db.closeConnection();
-		}
-		return true;
-	}		
-	
 	
 	/** (non-Javadoc)
 	 * @see database.InfoWarehouse#getPeaks(int)
@@ -2823,11 +2500,11 @@ public class SQLServerDatabase extends Database
 		private Statement stmt;
 		private String where;
 		private Collection collection;
-		SQLServerDatabase db;
+		InfoWarehouse db;
 		/**
 		 * @param collectionID
 		 */
-		public SQLCursor(Collection col, String where, SQLServerDatabase db) {
+		public SQLCursor(Collection col, String where, InfoWarehouse db) {
 			super(col);
 			collection = col;
 			this.where = where;
@@ -3457,61 +3134,6 @@ public class SQLServerDatabase extends Database
 			System.err.println("SQL exception retrieving max time for collections");
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * Create an index on some part of AtomInfoDense for a datatype.  Possibly
-	 * useful if you're going to be doing a *whole lot* of queries on a
-	 * particular field or set of fields.  For syntax in the fieldSpec, look
-	 * at an SQL reference.  If it's just one field, just put the name of the
-	 * column there.
-	 * 
-	 * @author smitht
-	 * @return true if the index was successfully created, false otherwise.
-	 */
-	public boolean createIndex(String dataType, String fieldSpec) {
-		String table = getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
-		
-		String indexName = "index_" + fieldSpec.replaceAll("[^A-Za-z0-9]","");
-		String s = "CREATE INDEX " + indexName + " ON " + table 
-			+ " (" + fieldSpec + ")";
-		
-		try {
-			Statement stmt = con.createStatement();
-			boolean ret = stmt.execute(s);
-			stmt.close();
-			return true;
-		} catch (SQLException e) {
-			System.err.println(e.toString());
-			return false;
-		}
-	}
-	
-	/**
-	 * Returns a list of indexed columns in an AtomInfoDense table.
-	 * 
-	 * @author smitht
-	 */
-	public Set<String> getIndexedColumns(String dataType) throws SQLException {
-		Set<String> indexed = new HashSet<String>();
-		
-		String table = this.getDynamicTableName(DynamicTable.AtomInfoDense, dataType);
-		
-		Statement stmt = con.createStatement();
-		ResultSet r = stmt.executeQuery("EXEC sp_helpindex " + table);
-		
-		String[] tmp;
-		while (r.next()) {
-			tmp = r.getString("index_keys").split(", ");
-			for (int i = 0; i < tmp.length; i++) {
-				indexed.add(tmp[i]);
-			}
-		}
-		
-		r.close();
-		stmt.close();
-		
-		return indexed;
 	}
 	
 	/**
@@ -5134,12 +4756,12 @@ public class SQLServerDatabase extends Database
 	 * database contains, which hopefully corresponds to the structure of the
 	 * database.
 	 * @return the version string, or "No database version" if the database is from before version strings.
-	 * @throws SQLException
+	 * @throws IllegalStateException
 	 */
-	public String getDatabaseVersion() throws SQLException {
+	public String getVersion() {
 		String version;
-		Statement stmt = con.createStatement();
 		try {
+			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(
 					"SELECT Value FROM DBInfo WHERE Name = 'Version'");
 			if (! rs.next()) {
@@ -5151,7 +4773,7 @@ public class SQLServerDatabase extends Database
 		} catch (SQLException e) {
 			version = "No database version";
 		} catch (Exception e) {
-			throw new SQLException("Can't understand what state the DB is in. (has version field but no value)");
+			throw new IllegalStateException("Can't understand what state the DB is in. (has version field but no value)");
 		}
 		return version;
 	}

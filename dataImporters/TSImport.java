@@ -10,7 +10,8 @@ import javax.swing.ProgressMonitorInputStream;
 
 import collection.Collection;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import database.TSBulkInserter;
 
 import errorframework.DisplayException;
@@ -39,7 +40,7 @@ public class TSImport{
 	public static final int PARSEERROR = 3;
 	private int status = TSImport.NORMAL;
 	
-	private SQLServerDatabase db;
+	private InfoWarehouse db;
 	
 	private Frame parent;
 	
@@ -48,7 +49,7 @@ public class TSImport{
 	public static final String dfString = "yyyy-MM-dd HH:mm:ss";
     private static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
 
-    public TSImport(SQLServerDatabase db, Frame parent) {
+    public TSImport(InfoWarehouse db, Frame parent) {
     	super();
     	this.parent = parent;
     	this.db = db;
@@ -273,7 +274,7 @@ public class TSImport{
     }
 
     public static void main(String[] args) {
-    	SQLServerDatabase db = new SQLServerDatabase("SpASMSdb");
+    	InfoWarehouse db = Database.getDatabase("SpASMSdb");
     	db.openConnection();
     	
     	TSImport t = new TSImport(db, null);

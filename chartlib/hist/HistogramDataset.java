@@ -10,6 +10,7 @@ import java.util.List;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
+import database.InfoWarehouse;
 import database.SQLServerDatabase;
 import experiments.Tuple;
 
@@ -36,7 +37,7 @@ public class HistogramDataset {
 	public static HistogramDataset[] analyseCollection(int collID, Color c) 
 		throws SQLException
 	{
-		SQLServerDatabase db = HistogramsPlot.getDB();
+		InfoWarehouse db = HistogramsPlot.getDB();
 		collection.Collection coll = db.getCollection(collID);
 		if (! coll.getDatatype().equals("ATOFMS")) 
 			throw new IllegalArgumentException("Spectrum Plots only work " +

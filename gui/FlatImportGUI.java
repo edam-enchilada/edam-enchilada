@@ -7,7 +7,7 @@ import javax.swing.JOptionPane;
 
 import dataImporters.*;
 import dataImporters.TSImport.UnsupportedFormatException;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
 
 import errorframework.*;
 
@@ -28,7 +28,7 @@ public class FlatImportGUI {
 	"application and creating a custom format.";	
 
 
-	public FlatImportGUI(Frame parent, SQLServerDatabase db) {
+	public FlatImportGUI(Frame parent, InfoWarehouse db) {
 		this.parent = parent;
 
 		/*FileDialog fileChooser = new FileDialog(this, 

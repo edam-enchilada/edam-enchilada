@@ -51,7 +51,8 @@ import analysis.Normalizer;
 
 
 import database.CreateTestDatabase;
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import junit.framework.TestCase;
 /*
  * Created on Dec 16, 2004
@@ -69,7 +70,7 @@ import junit.framework.TestCase;
 public class KMeansTest extends TestCase {
 
     private KMeans kmeans;
-    private SQLServerDatabase db;
+    private InfoWarehouse db;
     String dbName = "TestDB";
     
     /*
@@ -79,7 +80,7 @@ public class KMeansTest extends TestCase {
         super.setUp();
         
 		new CreateTestDatabase();
-		db = new SQLServerDatabase("TestDB");
+		db = Database.getDatabase("TestDB");
 		db.openConnection();
 		
         int cID = 2;
@@ -101,8 +102,7 @@ public class KMeansTest extends TestCase {
 		db.closeConnection();
 		System.runFinalization();
 		System.gc();
-	    SQLServerDatabase.dropDatabase(dbName);
-        
+	    Database.dropDatabase(dbName);
     }
 
     public void testGetDistance() {

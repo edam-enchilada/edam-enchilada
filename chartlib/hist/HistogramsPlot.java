@@ -8,7 +8,8 @@ import javax.swing.*;
 
 import chartlib.*;
 
-import database.SQLServerDatabase;
+import database.InfoWarehouse;
+import database.Database;
 import externalswing.ProgressTask;
 import externalswing.SwingWorker;
 
@@ -54,11 +55,11 @@ public class HistogramsPlot extends Chart {
 	}
 	
 	
-	public static SQLServerDatabase getDB() {
+	public static InfoWarehouse getDB() {
 		if (gui.MainFrame.db != null) {
 			return gui.MainFrame.db;
 		} else {
-			SQLServerDatabase db = new SQLServerDatabase();
+			InfoWarehouse db = Database.getDatabase();
 			db.openConnection();
 			return db;
 		}
