@@ -845,6 +845,12 @@ public class DatabaseTest extends TestCase {
 		db.openConnection();
 		InfoWarehouse db = Database.getDatabase("TestDB");
 		assertTrue(db.isPresent());
+		db = Database.getDatabase("shouldntexist");
+		assertFalse(db.isPresent());
+		
+		//uses default database
+		db = Database.getDatabase();
+		assertTrue(db.isPresent());
 		db.closeConnection();
 	}
 	

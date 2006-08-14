@@ -7,7 +7,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 import java.util.Scanner;
 
 import errorframework.ErrorLogger;
@@ -77,21 +76,31 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	protected boolean isPresentImpl(String command) {
 		boolean foundDatabase = false;
+		String testdb = database;
 		try {
+			database = "";
 			openConnection();
 			Connection con = getCon();
 			Statement stmt = con.createStatement();
 			
-			// See if database exists. If it does, drop it.
+			// See if database exists.
 			ResultSet rs = stmt.executeQuery(command);
 			while (!foundDatabase && rs.next())
-				if (rs.getString(1).equals(database))
+				if (rs.getString(1).equals(testdb))
 					foundDatabase = true;
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.displayException(null,"Error in testing if "+database+" is present.");
+			ErrorLogger.displayException(null,"Error in testing if "+testdb+" is present.");
 		}
+		database = testdb;
 		return foundDatabase;
+	}
+	
+	/**
+	 * Retrieve the {@link java.sql.Connection Connection} for this database
+	 */
+	public Connection getCon() {
+		return con;
 	}
 	
 	/**
@@ -100,7 +109,7 @@ public abstract class Database implements InfoWarehouse {
 	 * @param connectionstr the connection string to be used with DriverManager.getConnection
 	 * @param user username
 	 * @param pass password
-	 * @return
+	 * @return true on success
 	 */
 	protected boolean openConnectionImpl(String driver, String connectionstr, String user, String pass) {
 		try {

@@ -2243,16 +2243,6 @@ public class SQLServerDatabase extends Database
 	}
 	
 	/**
-	 * returns the connection.  Used to be a private or protected 
-	 * method (don't know when we last changed it).
-	 * @return connection
-	 */
-	public Connection getCon()
-	{
-		return con;
-	}
-	
-	/**
 	 * Replaces characters which would interrupt SQL Server's 
 	 * parsing of a string with their escape equivalents
 	 * @param s String to modify
