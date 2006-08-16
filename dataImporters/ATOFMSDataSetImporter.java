@@ -46,7 +46,6 @@ package dataImporters;
 
 import database.InfoWarehouse;
 import database.Database;
-import database.SQLServerDatabase;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
@@ -109,7 +108,7 @@ public class ATOFMSDataSetImporter {
 	protected File parFile;
 	
 	/* contains the collectionID and particleID */
-	private int[] id;
+	protected int[] id;
 	protected int collectionIndex, numCollections;
 	protected Integer nextAtomID;
 	protected Integer particleNumber;
@@ -409,8 +408,8 @@ public class ATOFMSDataSetImporter {
 						ReadSpec read = new ReadSpec(particleFileName);
 						
 						currentParticle = read.getParticle();
-						((SQLServerDatabase)db).insertParticle(
-								currentParticle.particleInfoDenseString(),
+						((Database)db).insertParticle(
+								currentParticle.particleInfoDenseString(db.getDateFormat()),
 								currentParticle.particleInfoSparseString(),
 								destination,id[1],nextID, true);
 						

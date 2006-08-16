@@ -115,7 +115,7 @@ public class ImportExperimentParticles {
 					file = "i-040808160921-00310.amz";
 				}
 				readSpec = new ReadExpSpec("Particles for Clustering\\" + file); 
-				db.insertParticle(readSpec.getParticle().particleInfoDenseString(),
+				db.insertParticle(readSpec.getParticle().particleInfoDenseString(db.getDateFormat()),
 						readSpec.getParticle().particleInfoSparseString(), db.getCollection(id[0]),id[1],newAtomID++);
 			}
 			db.updateAncestors(db.getCollection(id[0]));

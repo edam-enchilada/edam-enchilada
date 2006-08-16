@@ -218,9 +218,10 @@ public class ReadSpec {
 			byteBuff.getInt();
 		iontype = 
 			byteBuff.getShort();
-		//int timestamp = 
+		long timestamp = 
 			byteBuff.getInt();
-		String timetext = getByteString(byteBuff,20);
+		//String timetext = 
+			getByteString(byteBuff,20);
 		float laserpow = byteBuff.getFloat();
 		//int posarea = 
 		byteBuff.getInt();
@@ -278,7 +279,7 @@ public class ReadSpec {
 		}
 		// Create the ATOFMS particle.
 
-		particle = createParticle(name, timetext, laserpow, 
+		particle = createParticle(name, new Date(timestamp*1000), laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 
 	}
@@ -403,7 +404,7 @@ public class ReadSpec {
 			}
 		}
 		// Create the ATOFMS particle.
-		String timetext = (dFormat.format(new Date(timestamp*1000)));
+		//String timetext = (dFormat.format(new Date(timestamp*1000)));
 		//System.out.println(timestamp);
 		//System.out.println(new Date().getTime());
 		//System.out.println(timetext);
@@ -415,7 +416,7 @@ public class ReadSpec {
 		//for (int i = 5285; i < 5295; i++)
 		//	System.out.println(posdata[i]);
 		
-		particle = createParticle(name, timetext, laserpow, 
+		particle = createParticle(name, new Date(timestamp*1000), laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 
 	}
@@ -423,7 +424,7 @@ public class ReadSpec {
 	// This code was taken out of the above methods to be overridden in the
 	// ReadExpSpec class for experimental purposes.
 	public ATOFMSParticle createParticle(String name,
-			String timetext,
+			Date time,
 			float laserpow,
 			float digitrate,
 			int scatdelay,
@@ -434,7 +435,7 @@ public class ReadSpec {
 				digitrate, scatdelay, posdata, negdata);
 		*/
 		
-		ATOFMSParticle p = new ATOFMSParticle(name, timetext, laserpow, 
+		ATOFMSParticle p = new ATOFMSParticle(name, time, laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 		return p;
 	}

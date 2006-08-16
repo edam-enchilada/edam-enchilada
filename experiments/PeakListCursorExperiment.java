@@ -4,7 +4,7 @@ import analysis.BinnedPeakList;
 import collection.Collection;
 import database.CollectionCursor;
 import database.InfoWarehouse;
-import database.SQLServerDatabase;
+import database.Database;
 import java.sql.*;
 
 /**
@@ -21,7 +21,7 @@ public class PeakListCursorExperiment {
 		long newStart, newEnd, oldStart, oldEnd;
 		InfoWarehouse db = chartlib.hist.HistogramsPlot.getDB();
 		
-		SQLServerDatabase.BPLOnlyCursor newtype 
+		Database.BPLOnlyCursor newtype 
 			= db.getBPLOnlyCursor(db.getCollection(24));
 		
 		newStart = System.currentTimeMillis();

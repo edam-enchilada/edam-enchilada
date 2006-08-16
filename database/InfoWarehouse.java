@@ -47,6 +47,7 @@ package database;
 import gui.ProgressBarWrapper;
 import gui.LabelingIon;
 import java.sql.*;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -64,7 +65,7 @@ import ATOFMS.Peak;
 
 
 import collection.Collection;
-import database.SQLServerDatabase.BPLOnlyCursor;
+import database.Database.BPLOnlyCursor;
 
 
 /**
@@ -338,4 +339,15 @@ public interface InfoWarehouse {
 	public boolean containsDatatype(String type);
 	public String getATOFMSFileName(int atomID);
 	public boolean removeEmptyCollection(Collection collection);
+	
+	/**
+	 * Get the date format used by this InfoWarehouse
+	 * @return a DateFormat object that can format Dates inserted into this InfoWarehouse.
+	 */
+	public DateFormat getDateFormat();
+	
+	/**
+	 * @return the name of the backing store this InfoWarehouse uses (SQLServer, MySQL, FlatFile, etc.)
+	 */
+	public String getName();
 }

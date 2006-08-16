@@ -9,7 +9,7 @@ import collection.Collection;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
-import database.SQLServerDatabase.BPLOnlyCursor;
+import database.Database.BPLOnlyCursor;
 
 
 /**

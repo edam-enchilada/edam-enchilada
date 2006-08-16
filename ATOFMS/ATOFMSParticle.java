@@ -50,6 +50,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Date;
+import java.text.DateFormat;
 
 /**
  * @author ritza
@@ -61,7 +63,7 @@ public class ATOFMSParticle {
 	private final int MAX_BIN_NUMBER;
 
 	public String filename;
-	public String time;
+	public Date time;
 	public float laserPower;
 	public float digitRate;
 	public int scatDelay;
@@ -96,7 +98,7 @@ public class ATOFMSParticle {
 	 * @param nSpect - neg spectrum
 	 */
 	public ATOFMSParticle(String fname, 
-						  String timestr, 
+						  Date timet, 
 						  float lasPow,
 						  float dRate,
 						  int sDelay,
@@ -106,7 +108,7 @@ public class ATOFMSParticle {
 	{
 		MAX_BIN_NUMBER = pSpect.length;
 		filename = fname;
-		time = timestr;
+		time = timet;
 		laserPower = lasPow/1000;
 		if (currCalInfo.sizecal)
 		{
@@ -430,8 +432,8 @@ public class ATOFMSParticle {
 		return spec;
 	}
 	
-	public String particleInfoDenseString() {
-		return "'" + time.substring(0, time.length() - 3) + "', " + 
+	public String particleInfoDenseString(DateFormat d) {
+		return "'" + d.format(time) + "', " + 
 		laserPower + ", " + size + ", " + scatDelay + ", '" + filename + "'";
 	}
 	

@@ -7,6 +7,7 @@
 package experiments;
 
 import java.io.File;
+import java.util.Date;
 import java.io.IOException;
 import java.util.zip.ZipException;
 
@@ -28,7 +29,7 @@ public class ReadExpSpec extends ReadSpec{
 	}
 	
 	public ATOFMSParticle createParticle(String name,
-			String timetext,
+			Date timetext,
 			float laserpow,
 			float digitrate,
 			int scatdelay,

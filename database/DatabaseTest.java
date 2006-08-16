@@ -72,7 +72,7 @@ import atom.GeneralAtomFromDB;
  *
  */
 public class DatabaseTest extends TestCase {
-	private InfoWarehouse db;
+	private Database db;
 	
 	public DatabaseTest(String aString)
 	{
@@ -83,7 +83,7 @@ public class DatabaseTest extends TestCase {
 	protected void setUp()
 	{
 		new CreateTestDatabase(); 		
-		db = Database.getDatabase("TestDB");
+		db = (Database) Database.getDatabase("TestDB");
 	}
 	
 	protected void tearDown()
@@ -92,7 +92,7 @@ public class DatabaseTest extends TestCase {
 		try {
 			System.runFinalization();
 			System.gc();
-			db = Database.getDatabase("");
+			db = (Database) Database.getDatabase("");
 			db.openConnection();
 			Connection con = db.getCon();
 			con.createStatement().executeUpdate("DROP DATABASE TestDB");
@@ -667,7 +667,7 @@ public class DatabaseTest extends TestCase {
 			progressBar.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 			progressBar.setVisible(false);
 			
-			assertTrue(((Database)db).compactDatabase(progressBar));
+			assertTrue(db.compactDatabase(progressBar));
 			
 
 			//ATOFMSAtomInfoDense
@@ -823,15 +823,7 @@ public class DatabaseTest extends TestCase {
 			
 			InfoWarehouse mainDB = Database.getDatabase();
 			mainDB.openConnection();
-			Connection con = mainDB.getCon();
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("EXEC sp_helpdb");
-			boolean foundDatabase = false;
-			while (!foundDatabase && rs.next())
-				if (rs.getString(1).equals("TestDB"))
-					foundDatabase = true;
-			assertTrue(foundDatabase);
-			stmt.close();
+			assertTrue(mainDB.isPresent());
 			mainDB.closeConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -1239,7 +1231,7 @@ public class DatabaseTest extends TestCase {
 		db.openConnection();
 		
 		//test adding to end
-		((Database)db).addSingleInternalAtomToTable(6, 2);
+		db.addSingleInternalAtomToTable(6, 2);
 
 		try {
 			Connection con = db.getCon();
@@ -1263,11 +1255,11 @@ public class DatabaseTest extends TestCase {
 		db.updateInternalAtomOrder(db.getCollection(2));
 
 		//addSingleInternalAtomToTable should order things correctly - make sure that happens
-		((Database)db).addSingleInternalAtomToTable(4, 2);
-		((Database)db).addSingleInternalAtomToTable(3, 2);
-		((Database)db).addSingleInternalAtomToTable(1, 2);
-		((Database)db).addSingleInternalAtomToTable(5, 3);
-		((Database)db).addSingleInternalAtomToTable(2, 2);
+		db.addSingleInternalAtomToTable(4, 2);
+		db.addSingleInternalAtomToTable(3, 2);
+		db.addSingleInternalAtomToTable(1, 2);
+		db.addSingleInternalAtomToTable(5, 3);
+		db.addSingleInternalAtomToTable(2, 2);
 
 		try {
 			Connection con = db.getCon();
@@ -1327,10 +1319,10 @@ public class DatabaseTest extends TestCase {
 	public void testCreateIndex() {
 		db.openConnection();
 		
-		assertTrue(((Database)db).createIndex("ATOFMS", "Size, LaserPower"));
-		assertTrue(((Database)db).createIndex("ATOFMS", "Size, Time"));
-		assertFalse(((Database)db).createIndex("ATOFMS", "Size, LaserPower"));
-		assertFalse(((Database)db).createIndex("ATOFMS", "size, time"));
+		assertTrue(db.createIndex("ATOFMS", "Size, LaserPower"));
+		assertTrue(db.createIndex("ATOFMS", "Size, Time"));
+		assertFalse(db.createIndex("ATOFMS", "Size, LaserPower"));
+		assertFalse(db.createIndex("ATOFMS", "size, time"));
 		
 		try {
 			Connection con = db.getCon();
@@ -1399,24 +1391,24 @@ public class DatabaseTest extends TestCase {
 	public void testGetAdjacentAtomInCollection() {
 		db.openConnection();
 		
-		int[] adj = ((Database)db).getAdjacentAtomInCollection(2, 3, 1);
+		int[] adj = db.getAdjacentAtomInCollection(2, 3, 1);
 		assertEquals(adj[0], 4);
 		assertEquals(adj[1], 4);
 		
-		adj = ((Database)db).getAdjacentAtomInCollection(3, 7, -1);
+		adj = db.getAdjacentAtomInCollection(3, 7, -1);
 		assertEquals(adj[0], 6);
 		assertEquals(adj[1], 1);
 		
-		adj = ((Database)db).getAdjacentAtomInCollection(4, 12, 2);
+		adj = db.getAdjacentAtomInCollection(4, 12, 2);
 		assertEquals(adj[0], 14);
 		assertEquals(adj[1], 4);
 		
 		//The following two assertions should print SQLExceptions.
 		
-		adj = ((Database)db).getAdjacentAtomInCollection(2, 1, -1);
+		adj = db.getAdjacentAtomInCollection(2, 1, -1);
 		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
-		adj = ((Database)db).getAdjacentAtomInCollection(2, 5, 1);
+		adj = db.getAdjacentAtomInCollection(2, 5, 1);
 		assertTrue((adj[0] < 0) && (adj[1] < 0));
 		
 		db.closeConnection();
@@ -1919,6 +1911,137 @@ public class DatabaseTest extends TestCase {
 		}
 		catch (RuntimeException ex) {
 			System.out.println("This should be an error: " + ex.getMessage());
+		}
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testBatchExecuter() {
+		db.openConnection();
+		
+		try {
+			Statement stmt = db.getCon().createStatement();
+			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
+			ex.append("UPDATE DBInfo SET Value = 'fooo!' WHERE Name = 'Version'");
+			ex.execute();
+			stmt.close();
+			
+			stmt = db.getCon().createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT Value FROM DBInfo WHERE Name = 'Version'");
+			assertTrue(rs.next());
+			assertEquals(rs.getString(1), "fooo!");
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+			fail("Batch executer did not complete properly");
+		}
+		
+		try {
+			Statement stmt = db.getCon().createStatement();
+			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
+			ex.execute();
+			
+			fail("Batch executer should not execute empty statements.");
+		}
+		catch (SQLException ex) {
+			//success
+		}
+		
+		try {
+			int[][] values = 
+			{
+					{1,2},	
+					{2,5},
+					{3,3},
+					{4,4},
+					{5,1},
+					{6,6}
+			};
+			Statement stmt = db.getCon().createStatement();
+			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
+			ex.append("DELETE FROM AtomMembership");
+			for (int i = 0; i < values.length; ++i)
+				//make sure it works for newlines and no newlines on the end.
+				ex.append("INSERT INTO AtomMembership VALUES(" + 
+						values[i][0] + "," + values[i][1] + ")" + ((i % 2 == 0) ? "" : "\n"));
+			ex.execute();
+			stmt.close();
+			
+			stmt = db.getCon().createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM AtomMembership ORDER BY CollectionID");
+			for (int i = 0; i < values.length; ++i) {
+				assertTrue(rs.next());
+				assertEquals(rs.getInt(1), values[i][0]);
+				assertEquals(rs.getInt(2), values[i][1]);
+			}
+			assertFalse(rs.next());
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+			fail("Problem with multiple BatchExecuter comparison");
+		}
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testInserter() {
+		db.openConnection();
+		
+		try {
+			Statement stmt = db.getCon().createStatement();
+			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
+			Database.Inserter bi = db.getInserter(ex, "Collections");
+			bi.close();
+			ex.execute();
+		}
+		catch (SQLException ex) {
+			fail("Inserting nothing into from bulk file should be okay.");
+		}
+		
+		String iname = "[Couldn't create inserter]";
+		try {
+			Object[][] values = 
+			{
+					{2, "Hi!", "Foo!", "Desck!", "ATOFMS"},
+					{3, "Baz", "Gir", "Zim", "AMS"},
+					{4, "-", "-", "-", "-"}
+			};
+			
+			Statement stmt = db.getCon().createStatement();
+			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
+			Database.Inserter bi = db.getInserter(ex, "Collections");
+			iname = bi.getClass().getName();
+			
+			db.getCon().createStatement().executeUpdate("DELETE FROM Collections");
+			
+			for (int i = 0; i < values.length; ++i)
+				bi.append(values[i][0] + "," + values[i][1] + "," + 
+						values[i][2] + "," + values[i][3] + "," + values[i][4]);
+			bi.close();
+			ex.execute();
+			
+			
+			ResultSet rs = (stmt = db.getCon().createStatement()).executeQuery(
+					"SELECT * FROM Collections ORDER BY CollectionID");
+			
+			for (int i = 0; i < values.length; ++i) {
+				assertTrue(rs.next());
+				assertEquals(rs.getInt(1), values[i][0]);
+				assertEquals(rs.getString(2), values[i][1]);
+				assertEquals(rs.getString(3), values[i][2]);
+				assertEquals(rs.getString(4), values[i][3]);
+				assertEquals(rs.getString(5), values[i][4]);
+			}
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+			fail("Problem with Inserter " + iname + " execution");
 		}
 		
 		db.closeConnection();

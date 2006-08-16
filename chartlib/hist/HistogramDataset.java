@@ -11,7 +11,7 @@ import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 import database.InfoWarehouse;
-import database.SQLServerDatabase;
+import database.Database;
 import experiments.Tuple;
 
 /**
@@ -44,7 +44,7 @@ public class HistogramDataset {
 					"on ATOFMS for now.");
 		// I haven't tried them on AMS, they might work.  I don't understand AMS
 		// enough to know.
-		SQLServerDatabase.BPLOnlyCursor particleCursor = db.getBPLOnlyCursor(coll);
+		Database.BPLOnlyCursor particleCursor = db.getBPLOnlyCursor(coll);
 		
 		HistogramDataset[] ret = analyseBPLs(particleCursor, c);
 		

@@ -8,6 +8,7 @@ package experiments;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Date;
 
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.Peak;
@@ -28,7 +29,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 	}
 	
 	public ATOFMSParticleExp(String fname, 
-			String timestr, 
+			Date timestr, 
 			float lasPow,
 			float dRate,
 			int sDelay,
