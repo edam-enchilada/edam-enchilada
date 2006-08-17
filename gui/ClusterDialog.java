@@ -44,7 +44,7 @@
 package gui;
 
 import javax.swing.*;
-import javax.swing.border.Border;
+import javax.swing.border.*;
 
 import database.DynamicTable;
 import database.InfoWarehouse;
@@ -119,20 +119,9 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		parent = frame;
 		this.cTree = cTree;
 		this.db = db;
-		//Set window settings.
-		setSize(550, 750);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
-		int fontSize = 16;
-		JLabel step1 = new JLabel(" 1.  Select Clustering Specifications ");
-		step1.setFont(new Font(step1.getFont().getName(), step1.getFont().getStyle(), fontSize));
-		step1.setBorder(BorderFactory.createEtchedBorder());
-		JLabel step2 = new JLabel(" 2.  Choose Appropriate Clustering Algorithm ");
-		step2.setFont(new Font(step2.getFont().getName(), step2.getFont().getStyle(), fontSize));
-		step2.setBorder(BorderFactory.createEtchedBorder());
-		JLabel step3 = new JLabel(" 3.  Begin Clustering ");
-		step3.setFont(new Font(step3.getFont().getName(), step3.getFont().getStyle(), fontSize));
-		step3.setBorder(BorderFactory.createEtchedBorder());
+		JPanel rootPanel = new JPanel();
 		
 		JPanel clusterAlgorithms = setClusteringAlgorithms();
 		JPanel clusterSpecs = setClusteringSpecifications();
@@ -141,15 +130,31 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		JPanel commonInfo = setCommonInfo();
 		getRootPane().setDefaultButton(okButton);
 		
-		add(step1);
-		add(clusterSpecs);
-		add(step2);
-		add(clusterAlgorithms);
-		add(step3);
-		add(commonInfo);
-		setLayout(new FlowLayout(FlowLayout.LEFT));
+		clusterSpecs.setBorder(getSectionBorder("1. Select Clustering Specifications"));
+		rootPanel.add(clusterSpecs);
+		
+		clusterAlgorithms.setBorder(getSectionBorder("2. Choose Appropriate Clustering Algorithm"));
+		rootPanel.add(clusterAlgorithms);
+
+		commonInfo.setBorder(getSectionBorder("3. Begin Clustering"));
+		rootPanel.add(commonInfo);
+		rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.PAGE_AXIS));
+		
+		add(rootPanel, BorderLayout.CENTER);
+		//rootPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		pack();
+		
 		//Display the dialogue box.
 		setVisible(true);
+	}
+	
+	private Border getSectionBorder(String title) {
+		TitledBorder border = BorderFactory.createTitledBorder(title);
+		Font font = border.getTitleFont();
+		border.setTitleFont(new Font(font.getName(), font.getStyle(), 16));
+		Border superBorder = BorderFactory.createCompoundBorder(
+				BorderFactory.createEmptyBorder(10, 10, 10, 10), border);
+		return superBorder;
 	}
 	
 	/**
@@ -174,13 +179,12 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		headerAndDropDown.add(dropDown);
 		headerAndDropDown.add(normalizer);
 		
-		JLabel dividingLine = 
-			new JLabel("------------------------------------------" +
-			"---------------------------------------------------");
+		JSeparator divider = new JSeparator(JSeparator.HORIZONTAL);
+		divider.setBorder(BorderFactory.createRaisedBevelBorder());
 		
 		//Create the art2a panel that will show when "Art2a" is selected.
 		JPanel parameters = new JPanel();
-		parameters.setSize(400,200);
+		parameters.setLayout(new FlowLayout());
 		JLabel vigLabel = new JLabel("Vigilance:");
 		JLabel learnLabel = new JLabel("Learning Rate:");
 		JLabel passesLabel = new JLabel("Max # of Passes: ");
@@ -211,7 +215,6 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		
 		//Create the kCluster panel that will show when "K-Cluster" is selected.
 		parameters = new JPanel();
-		parameters.setSize(400,200);
 		JLabel kLabel = new JLabel("Number of Clusters:");
 		kClusterText = new JTextField(5);
 		refineCentroids = new JCheckBox("Refine Centroids");
@@ -252,11 +255,12 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		
 		// Add all of the components to the main panel.
 		JPanel mainPanel = new JPanel();
-		mainPanel.setPreferredSize(new Dimension(500,160));
+		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
 		mainPanel.add(headerAndDropDown);
-		mainPanel.add(dividingLine);
+		mainPanel.add(Box.createVerticalStrut(5));
+		mainPanel.add(divider);
+		mainPanel.add(Box.createVerticalStrut(5));
 		mainPanel.add(algorithmCards);
-		mainPanel.setLayout(new FlowLayout());
 		return mainPanel;
 	}
 	
@@ -276,41 +280,27 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		
 		// Set dense panel
 		JPanel densePanel = new JPanel();
-		SpringLayout denseLayout = new SpringLayout();
-		densePanel.setLayout(denseLayout);	
-		densePanel.setPreferredSize(new Dimension(250,300));
+		densePanel.setLayout(new BoxLayout(densePanel, BoxLayout.PAGE_AXIS));	
 		denseKeyLabel = new JLabel(denseKey);
 		densePanel.add(denseKeyLabel);
 		JLabel denseChoose = new JLabel("Choose one or more values below:");
 		densePanel.add(denseChoose);
-		denseLayout.putConstraint(SpringLayout.WEST, denseKeyLabel, 10, SpringLayout.WEST, densePanel);
-		denseLayout.putConstraint(SpringLayout.NORTH, denseKeyLabel, 10, SpringLayout.NORTH, densePanel);
-		denseLayout.putConstraint(SpringLayout.WEST, denseChoose, 20, SpringLayout.WEST, densePanel);
-		denseLayout.putConstraint(SpringLayout.NORTH, denseChoose, 10, SpringLayout.SOUTH, denseKeyLabel);
 		JScrollPane denseButtonPane = getDenseButtonPane(denseButtons);
+		densePanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 30));
 		densePanel.add(denseButtonPane);
-		denseLayout.putConstraint(SpringLayout.WEST, denseButtonPane, 10, SpringLayout.WEST, densePanel);
-		denseLayout.putConstraint(SpringLayout.NORTH, denseButtonPane, 20, SpringLayout.SOUTH, denseChoose);
 
 		// set sparse panel
 		JPanel sparsePanel = new JPanel();
-		SpringLayout sparseLayout = new SpringLayout();
-		sparsePanel.setLayout(sparseLayout);	
-		sparsePanel.setPreferredSize(new Dimension(250,300));
+		sparsePanel.setLayout(new BoxLayout(sparsePanel, BoxLayout.PAGE_AXIS));
 		sparseKey = db.getPrimaryKey(cTree.getSelectedCollection().getDatatype(),DynamicTable.AtomInfoSparse);
 		assert (sparseKey.size() == 1) : "More than one sparse key!";
 		sparseKeyLabel = new JLabel("key = " + sparseKey.get(0));
 		sparsePanel.add(sparseKeyLabel);
 		JLabel sparseChoose = new JLabel("Choose one value below:");
 		sparsePanel.add(sparseChoose);
-		sparseLayout.putConstraint(SpringLayout.WEST, sparseKeyLabel, 10, SpringLayout.WEST, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.NORTH, sparseKeyLabel, 10, SpringLayout.NORTH, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.WEST, sparseChoose, 20, SpringLayout.WEST, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.NORTH, sparseChoose, 10, SpringLayout.SOUTH, sparseKeyLabel);
 		JScrollPane sparseButtonPane = getSparseButtonPane(sparseButtons);
+		sparsePanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 30));
 		sparsePanel.add(sparseButtonPane);
-		sparseLayout.putConstraint(SpringLayout.WEST, sparseButtonPane, 10, SpringLayout.WEST, sparsePanel);
-		sparseLayout.putConstraint(SpringLayout.NORTH, sparseButtonPane, 20, SpringLayout.SOUTH, sparseChoose);
 		
 		// Add dense and sparse panels to cards
 		specificationCards = new JPanel(new CardLayout());
@@ -319,12 +309,13 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		specificationCards.add(sparsePanel, sparse);
 		
 		// add cards to final panel
-		JPanel panel = new JPanel();
-		panel.setLayout(new FlowLayout());
-		panel.setPreferredSize(new Dimension(500, 340));
-		panel.add(new JLabel("Choose Type of Particle Information to Cluster on: "));
-		panel.add(infoTypeDropdown);
-		panel.add(specificationCards);
+		JPanel panel = new JPanel(new BorderLayout());
+		JPanel topPanel = new JPanel();
+		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
+		topPanel.add(new JLabel("Choose Type of Particle Information to Cluster on: "), BorderLayout.WEST);
+		topPanel.add(infoTypeDropdown, BorderLayout.CENTER);
+		panel.add(topPanel, BorderLayout.NORTH);
+		panel.add(specificationCards, BorderLayout.CENTER);
 	
 		return panel;
 		
@@ -342,7 +333,6 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		for (int i = 0; i < buttons.size(); i++) 
 			pane.add(buttons.get(i));
 		JScrollPane scrollPane = new JScrollPane(pane);
-		scrollPane.setPreferredSize(new Dimension(200, 200));
 		return scrollPane;	
 	}
 	
@@ -361,7 +351,6 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			pane.add(buttons.get(i));
 		}
 		JScrollPane scrollPane = new JScrollPane(pane);
-		scrollPane.setPreferredSize(new Dimension(200, 200));
 		return scrollPane;	
 	}
 	
@@ -402,7 +391,6 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	 */
 	public JPanel setCommonInfo(){
 		JPanel commonInfo = new JPanel();
-		commonInfo.setPreferredSize(new Dimension(500, 100));
 		//Create Name text field;
 		JPanel comment = new JPanel();
 		JLabel commentLabel = new JLabel("Comment: ");

@@ -45,6 +45,8 @@ package gui;
 
 import javax.swing.*;
 
+import sun.util.calendar.JulianCalendar;
+
 import collection.Collection;
 
 import analysis.CollectionDivider;
@@ -52,8 +54,12 @@ import analysis.SQLDivider;
 
 import database.InfoWarehouse;
 
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.awt.event.*;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * @author ritza
@@ -82,25 +88,16 @@ implements ActionListener, ItemListener
 	private JButton okButton; //Default button
 	private JButton okButton2;
 	private JButton cancelButton;
+	
+	private JPanel timePanel;
+	private JPanel sizePanel;
+	private JPanel countPanel;
 	private JCheckBox timeButton;
 	private JCheckBox sizeButton;
 	private JCheckBox countButton;
-
-	private JComboBox fromMonth;
-	private JComboBox fromDay;
-	private JComboBox fromYear;
-	private JComboBox fromHour;
-	private JComboBox fromMinute;
-	private JComboBox fromSecond;
-	private JComboBox fromAMPM;
 	
-	private JComboBox toMonth;
-	private JComboBox toDay;
-	private JComboBox toYear;
-	private JComboBox toHour;
-	private JComboBox toMinute;
-	private JComboBox toSecond;
-	private JComboBox toAMPM;
+	private DatePicker fromTime;
+	private DatePicker toTime;
 	
 	private JTextField fromSize;
 	private JTextField toSize;
@@ -126,7 +123,6 @@ implements ActionListener, ItemListener
 	{
 		super(frame, "Query", true);
 		//Make sure we have nice window decorations.
-		setSize(510,450);
 		
 		this.cTree = cTree;
 		this.db = db;
@@ -141,10 +137,11 @@ implements ActionListener, ItemListener
 		tabbedPane.addTab("Basic",null,basic,null);
 		getRootPane().setDefaultButton(okButton);
 		//tabbedPane.addTab("Advanced",null,advanced,null);
-		tabbedPane.setSize(350,400);
 		
 		add(tabbedPane); // Add the tabbed pane to the dialogue box.
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+		pack();
 
 		//Display the dialogue box.
 		setVisible(true);
@@ -157,147 +154,91 @@ implements ActionListener, ItemListener
 	 */
 	public JPanel basicQuery() 
 	{
-		JPanel p = new JPanel();
+		JPanel p = new JPanel(new BorderLayout());
+		
+		JPanel opts = new JPanel();
+		GridBagLayout layout = new GridBagLayout();
+		GridBagConstraints c = new GridBagConstraints();
+		opts.setLayout(layout);
 		
 		timeButton = new JCheckBox("Time:");
 		timeButton.addItemListener(this);
-		JLabel timeLabel = new JLabel("mm/dd/yyyy hh:mm:ss AM/PM");
+		
+		timePanel = new JPanel();
+		
+		JPanel fromTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		fromTimePanel.add(new JLabel("From: "));
+		fromTimePanel.add(fromTime = new DatePicker());
+		
+		JPanel toTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		toTimePanel.add(new JLabel("To: "));
+		toTimePanel.add(toTime = new DatePicker());
+		
+		timePanel.setLayout(new BoxLayout(timePanel, BoxLayout.PAGE_AXIS));
+		timePanel.add(fromTimePanel);
+		timePanel.add(toTimePanel);
+		
+		JPanel explPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		explPanel.add(new JLabel("mm/dd/yyyy hh:mm:ss AM/PM"));
+		timePanel.add(explPanel);
+		
+		
 		sizeButton = new JCheckBox("Size:");
 		sizeButton.addItemListener(this);
+		
+		sizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JLabel sizeLabel = new JLabel("microns");
-		countButton = new JCheckBox("Count:");
-		countButton.addItemListener(this);
-		//Create the user-input parameter panels:
-		JPanel timeParamFromPanel = new JPanel();
-		JPanel timeParamToPanel = new JPanel();
-
-		//fromTime = new JTextField(10);
-		String[] months = { 
-				"01", "02", "03", "04", "05", "06","07","08","09",
-				"10","11","12"};
-		fromMonth = new JComboBox(months);
-		toMonth = new JComboBox(months);
-		
-		String[] days = {
-				"01", "02", "03", "04", "05", "06","07","08","09",
-				"10","11","12","13","14","15","16","17","18","19",
-				"20","21","22","23","24","25","26","27","28","29",
-				"30","31"};
-		fromDay = new JComboBox(days);
-		toDay = new JComboBox(days);
-		String[] years = new String[50];
-		for (int i = 0; i < 50; i++)
-			years[i] = Integer.toString(i+1990);
-		fromYear = new JComboBox(years);
-		toYear = new JComboBox(years);
-		
-		fromHour = new JComboBox(months);
-		toHour = new JComboBox(months);
-		
-		String[] minutes = new String[60];
-		for (int i = 0; i < 60; i++)
-		{
-			minutes[i] = Integer.toString(i+1);
-			if (i + 1 < 10)
-			{
-				minutes[i] = "0" + minutes[i];
-			}
-		}
-		fromMinute = new JComboBox(minutes);
-		toMinute = new JComboBox(minutes);
-		
-		fromSecond = new JComboBox(minutes);
-		toSecond = new JComboBox(minutes);
-		
-		String[] AMPM = { "AM", "PM" };
-		fromAMPM = new JComboBox(AMPM);
-		toAMPM = new JComboBox(AMPM);
-		
-		//toTime = new JTextField(10);
-		
-		timeParamFromPanel.add(fromMonth);
-		timeParamFromPanel.add(new JLabel("/"));
-		timeParamFromPanel.add(fromDay);
-		timeParamFromPanel.add(new JLabel("/"));
-		timeParamFromPanel.add(fromYear);
-		
-		timeParamFromPanel.add(new JLabel(" "));
-		
-		timeParamFromPanel.add(fromHour);
-		timeParamFromPanel.add(new JLabel(":"));
-		timeParamFromPanel.add(fromMinute);
-		timeParamFromPanel.add(new JLabel(":"));
-		timeParamFromPanel.add(fromSecond);
-		
-		timeParamFromPanel.add(new JLabel(" "));
-		
-		timeParamFromPanel.add(fromAMPM);
-		
-		
-		
-		timeParamFromPanel.add(new JLabel(" to "));
-		
-		timeParamToPanel.add(toMonth, BorderLayout.SOUTH);
-		timeParamToPanel.add(new JLabel("/"),BorderLayout.SOUTH);
-		timeParamToPanel.add(toDay,BorderLayout.SOUTH);
-		timeParamToPanel.add(new JLabel("/"),BorderLayout.SOUTH);
-		timeParamToPanel.add(toYear,BorderLayout.SOUTH);
-		
-		timeParamToPanel.add(new JLabel(" "),BorderLayout.SOUTH);
-		
-		timeParamToPanel.add(toHour,BorderLayout.SOUTH);
-		timeParamToPanel.add(new JLabel(":"),BorderLayout.SOUTH);
-		timeParamToPanel.add(toMinute,BorderLayout.SOUTH);
-		timeParamToPanel.add(new JLabel(":"),BorderLayout.SOUTH);
-		timeParamToPanel.add(toSecond,BorderLayout.SOUTH);
-		
-		timeParamToPanel.add(new JLabel(" "));
-		
-		timeParamToPanel.add(toAMPM);
-		
-		JPanel sizeParamPanel = new JPanel();
 		fromSize = new JTextField(10);
 		toSize = new JTextField(10);
+		sizePanel.add(fromSize);
+		sizePanel.add(new JLabel(" to "));
+		sizePanel.add(toSize);//setParamPanel();
+		sizePanel.add(sizeLabel);
 		
-		sizeParamPanel.add(fromSize);
-		sizeParamPanel.add(new JLabel(" to "));
-		sizeParamPanel.add(toSize);//setParamPanel();
-		JPanel countParamPanel = new JPanel();
-		//JLabel toLabel = new JLabel("to");
 		
+		countPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		countButton = new JCheckBox("Count:");
+		countButton.addItemListener(this);
 		fromCount = new JTextField(10);
 		toCount = new JTextField(10);
+		countPanel.add(fromCount);
+		countPanel.add(new JLabel(" to "));
+		countPanel.add(toCount);
 		
-		countParamPanel.add(fromCount);
-		countParamPanel.add(new JLabel(" to "));
-		countParamPanel.add(toCount);
-	
 		commonInfo = setCommonInfo();
-		// Add all components to JPanel p.
-		JPanel timePanel = new JPanel();
-		timePanel.setLayout(new BorderLayout());
-		timeButton.setBorder(
-				BorderFactory.createEmptyBorder(0,9,0,0));
-		timePanel.add(timeButton,BorderLayout.WEST);
-		timePanel.add(timeParamFromPanel, BorderLayout.CENTER);
-		timePanel.add(timeParamToPanel, BorderLayout.SOUTH);
 		
-		JPanel sizePanel = new JPanel();
-		sizePanel.add(sizeButton);
-		sizePanel.add(sizeParamPanel);
+		c.anchor = GridBagConstraints.WEST;
 		
-		JPanel countPanel = new JPanel();
-		countPanel.add(countButton);
-		countPanel.add(countParamPanel);
+		c.fill = GridBagConstraints.NONE;
+		c.weightx = 0.0;
+		layout.setConstraints(timeButton, c);
+		layout.setConstraints(sizeButton, c);
+		layout.setConstraints(countButton, c);
+		
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1.0;
+		c.anchor = GridBagConstraints.PAGE_START;
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		layout.setConstraints(timePanel, c);
+		layout.setConstraints(sizePanel, c);
+		layout.setConstraints(countPanel, c);
+		
+		setEnabledChildren(timePanel, false);
+		setEnabledChildren(sizePanel, false);
+		setEnabledChildren(countPanel, false);
+		
+		opts.add(timeButton);
+		opts.add(timePanel);
+		opts.add(sizeButton);
+		opts.add(sizePanel);
+		opts.add(countButton);
+		opts.add(countPanel);
 		
 		// Add all of the components to the panel.
-		p.add(timePanel);
-		p.add(timeLabel);
-		p.add(sizePanel);
-		p.add(sizeLabel);
-		p.add(countPanel);
-		p.add(commonInfo);
+		p.add(opts, BorderLayout.CENTER);
+		p.add(commonInfo, BorderLayout.SOUTH);
 		
+		/*
 		// Use Spring Layout to organize the panel:
 		SpringLayout layout = new SpringLayout();
 		p.setLayout(layout);
@@ -340,6 +281,9 @@ implements ActionListener, ItemListener
 		layout.putConstraint(
 				SpringLayout.NORTH, commonInfo, 30, 
 				SpringLayout.SOUTH, countPanel);
+		*/
+		
+		p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 18));
 		
 		return p;
 	}
@@ -417,11 +361,11 @@ implements ActionListener, ItemListener
 	{
 		JPanel commonInfo = new JPanel();
 		//Create Name text field;
-		JPanel name = new JPanel();
+		JPanel namePanel = new JPanel();
 		JLabel nameLabel = new JLabel("Name: ");
 		nameField = new JTextField(30);
-		name.add(nameLabel);
-		name.add(nameField);
+		namePanel.add(nameLabel);
+		namePanel.add(nameField);
 		
 		JPanel commentPanel = new JPanel();
 		JLabel commentLabel = new JLabel("Comment: ");
@@ -448,9 +392,14 @@ implements ActionListener, ItemListener
 		buttons.add(thisOkButton);
 		buttons.add(cancelButton);
 
+		JSeparator divider = new JSeparator(JSeparator.HORIZONTAL);
+		divider.setBorder(BorderFactory.createRaisedBevelBorder());
 		
 		//Add info to panel and lay out.
-		commonInfo.add(name);
+		commonInfo.add(Box.createVerticalStrut(15));
+		commonInfo.add(divider);
+		commonInfo.add(Box.createVerticalStrut(15));
+		commonInfo.add(namePanel);
 		commonInfo.add(commentPanel);
 		commonInfo.add(buttons);
 		commonInfo.setLayout(new BoxLayout(
@@ -463,29 +412,46 @@ implements ActionListener, ItemListener
 	{
 		Object source = e.getItemSelectable();
 		
-		
-		
 		if (e.getStateChange() == ItemEvent.DESELECTED)
 		{
 			if (source == timeButton) {
 				timeSelected = false;
+				setEnabledChildren(timePanel, false);
 			} else if (source == sizeButton) {
 				sizeSelected = false;
+				setEnabledChildren(sizePanel, false);
 			} else if (source == countButton) {
 				countSelected = false;
+				setEnabledChildren(countPanel, false);
 			}
 		}
 		else if (e.getStateChange() == ItemEvent.SELECTED)
 		{
 			if (source == timeButton) {
 				timeSelected = true;
+				setEnabledChildren(timePanel, true);
 			} else if (source == sizeButton) {
 				sizeSelected = true;
+				setEnabledChildren(sizePanel, true);
 			} else if (source == countButton) {
 				countSelected = true;
+				setEnabledChildren(countPanel, true);
 			}
 		}
 	
+	}
+	
+	/**
+	 * Sets the enabled state of c and all its children to b
+	 * @param c the component to modify
+	 * @param b if true, make enabled.
+	 */
+	public void setEnabledChildren(Component c, boolean b) {
+		c.setEnabled(b);
+		
+		if (c instanceof Container)
+			for (Component subc : ((Container)c).getComponents())
+				setEnabledChildren(subc, b);
 	}
 	
 	//TODO: Check user input for correctness
@@ -498,6 +464,16 @@ implements ActionListener, ItemListener
 		{
 			String where = "";
 			if (source == okButton || source == okButton2) {
+				//TODO: once "Advanced" tab is implemented, add criteria here
+				if (!(sizeSelected || timeSelected || countSelected)) {
+					JOptionPane.showMessageDialog(
+							this,
+							"Please select query criteria!",
+							"Query error",
+							JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
 				if (sizeSelected)
 				{
 					where += "[size] <= " + toSize.getText() 
@@ -508,21 +484,9 @@ implements ActionListener, ItemListener
 					if (sizeSelected)
 						where += " AND";
 					where += " [time] <= '" + 
-					toMonth.getSelectedItem() + "/" + 
-					toDay.getSelectedItem() + "/" +
-					toYear.getSelectedItem() + " " +
-					toHour.getSelectedItem() + ":" + 
-					toMinute.getSelectedItem() + ":" + 
-					toSecond.getSelectedItem() + " " +
-					toAMPM.getSelectedItem()
+					toTime.getTimeString()
 					+ "' AND [time] >= '" + 
-					fromMonth.getSelectedItem() + "/" + 
-					fromDay.getSelectedItem() + "/" +
-					fromYear.getSelectedItem() + " " +
-					fromHour.getSelectedItem() + ":" + 
-					fromMinute.getSelectedItem() + ":" + 
-					fromSecond.getSelectedItem() + " " +
-					fromAMPM.getSelectedItem() + "'";
+					fromTime.getTimeString() + "'";
 				}
 				if (countSelected)
 				{	
@@ -555,6 +519,115 @@ implements ActionListener, ItemListener
 			}
 		}
 	}
+	
+	/**
+	 * Puts a box around the existing date selector for nicer code
+	 * @author shaferia
+	 */
+	private class DatePicker extends JPanel {
+		private JComboBox month;
+		private JComboBox day;
+		private JComboBox year;
+		private JComboBox hour;
+		private JComboBox minute;
+		private JComboBox second;
+		private JComboBox ampm;
+		
+		private String[] padding = {
+				"", "0", "00", "000", "0000", "00000"
+		};
+		
+		public DatePicker(java.awt.LayoutManager mgr) {
+			this();	
+		}
+		
+		public DatePicker() {
+			super();
 
-
+			month = new JComboBox(getPaddedNumArray(1, 12, 2));
+			day = new JComboBox(getPaddedNumArray(1, 31, 2));
+			year = new JComboBox(getPaddedNumArray(1990, 2039, 4));
+			hour = new JComboBox(getPaddedNumArray(1, 12, 2));
+			minute = new JComboBox(getPaddedNumArray(0, 59, 2));
+			second = new JComboBox(getPaddedNumArray(0, 59, 2));
+			ampm = new JComboBox(new String[]{"AM", "PM"});
+			
+			add(month);
+			add(getTextObj("/"));
+			add(day);
+			add(getTextObj("/"));
+			add(year);
+			
+			add(getTextObj(" "));
+			
+			add(hour);
+			add(getTextObj(":"));
+			add(minute);
+			add(getTextObj(":"));
+			add(second);
+			
+			add(getTextObj(" "));
+			
+			add(ampm);
+		}
+		
+		private JLabel getTextObj(String text) {
+			JLabel obj = new JLabel(text);
+			obj.setFont(new Font(obj.getFont().getName(),
+					obj.getFont().getStyle() | Font.BOLD,
+					13));
+			return obj;
+		}
+		
+		/**
+		 * Return an array of Strings of constant length with numbers in a range
+		 * @param from the number to start at
+		 * @param to the number to end at
+		 * @param padLen the length that all Strings should be (up to 5)
+		 * @return zero-padded Strings
+		 */
+		private String[] getPaddedNumArray(int from, int to, int padLen) {
+			assert (padLen < 5) : "zero padding size is too large";
+			String[] nums = new String[to - from + 1];
+			String res = null;
+			
+			for (int x = 0; x < nums.length; ++x) {
+				res = Integer.toString(x + from);
+				nums[x] = padding[Math.max(padLen - res.length(), 0)] + res;
+			}
+			
+			return nums;
+		}
+		
+		/**
+		 * Returns an object representation of the currently selected time
+		 * @return a Date object representing the current date and time
+		 */
+		public Date getDate() {
+			Calendar c = Calendar.getInstance();
+			c.set(
+					Integer.parseInt((String)year.getSelectedItem()),
+					Integer.parseInt((String)month.getSelectedItem()),
+					Integer.parseInt((String)day.getSelectedItem()),
+					Integer.parseInt((String)hour.getSelectedItem()), 
+					Integer.parseInt((String)minute.getSelectedItem()),
+					Integer.parseInt((String)second.getSelectedItem()));
+			return c.getTime();
+		}
+		
+		/**
+		 * Returns a String representing the currently selected time
+		 * @return a String of format mm/dd/yyyy hh:mm:ss ap
+		 */
+		public String getTimeString() {
+			return 
+			month.getSelectedItem() + "/" + 
+			day.getSelectedItem() + "/" +
+			year.getSelectedItem() + " " +
+			hour.getSelectedItem() + ":" + 
+			minute.getSelectedItem() + ":" + 
+			second.getSelectedItem() + " " +
+			ampm.getSelectedItem();
+		}
+	}
 }

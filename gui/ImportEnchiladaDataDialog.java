@@ -337,7 +337,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 				//pop up a "create new collections" dialog box & keep number of new collection
 				if (parentButton.isSelected()) {
 					EmptyCollectionDialog ecd = 
-						new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+						new EmptyCollectionDialog((JFrame)parent, "ATOFMS", true);
 					parentID = ecd.getCollectionID();
 					
 					if (parentID == -1) {
