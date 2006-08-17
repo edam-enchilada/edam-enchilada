@@ -148,5 +148,10 @@ Verify that:
 Choose Nitrate_MS.txt, t_series.txt, amus.txt. Verify that:
 	__AMS data imports successfully
 	
+**Try to import an existing datatype in the metadata format.  Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
+(Note that this is not a complete .md file - just enough to catch the problem.)
+Enchilada should
+	__Pop up a message informing the user that the datatype name is already in use.
+	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.

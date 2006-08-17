@@ -300,6 +300,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 						}
 						
 						
+
 						if (!db.containsDatatype(typeName)){						
 							Connection con = db.getCon();
 							DynamicTableGenerator newType =
@@ -309,7 +310,15 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 							ErrorLogger.flushLog(this);
 							typelist.append(typeName + "\n");
 						}
-						
+						else {
+							//@author steinbel
+							//error message saying that type is found
+							//either already imported or using an existing name
+							ErrorLogger.displayException(this, "'" + typeName
+									+ "' is already a datatype.\n  If you still wish to" +
+											" create a new datatype, please change" +
+											" its name.");
+						}
 						//if the scanner couldn't find anything, the file's not
 						//in the right format
 					} catch (NoSuchElementException e1){

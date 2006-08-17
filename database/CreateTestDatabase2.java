@@ -307,8 +307,6 @@ public class CreateTestDatabase2 {
 				+ "<!ATTLIST datasetinfo dataSetName CDATA #REQUIRED>\n"
 				+ "<!ELEMENT atominfodense (field*, atominfosparse*)>\n"
 				+ "<!ELEMENT atominfosparse (field*)>\n"
-				+ "<!-- The AIS elements MUST specify which AIS table they belong to.  -->\n"
-				+ "<!ATTLIST atominfosparse table CDATA #REQUIRED>\n"
 				+ "<!ELEMENT field (#PCDATA)>");
 			//System.out.println(string);//debugging
 			writer.write(string);
@@ -336,7 +334,7 @@ public class CreateTestDatabase2 {
 		 *			<atominfodense>
 		 *				<field>1.00</field>
 		 *				<field>2.00</field>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>4</field>
 		 *					<field>1</field>
 		 *				</atominfosparse>
@@ -345,11 +343,11 @@ public class CreateTestDatabase2 {
 		 *			<atominfodense>
 		 *				<field>21.0</field>
 		 *				<field>12.2</field>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>9</field>
 		 *					<field>0</field>
 		 *				</atominfosparse>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>8</field>
 		 *					<field>0</field>
 		 *				</atominfosparse>
@@ -357,15 +355,15 @@ public class CreateTestDatabase2 {
 		 *			<atominfodense>
 		 *				<field>56.6</field>
 		 *				<field>76.5</field>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>10</field>
 		 *					<field>1</field>
 		 *				</atominfosparse>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>1</field>
 		 *					<field>0</field>
 		 *				</atominfosparse>
-		 *				<atominfosparse table="">
+		 *				<atominfosparse>
 		 *					<field>2</field>
 		 *					<field>1</field>
 		 *				</atominfosparse>
@@ -386,20 +384,20 @@ public class CreateTestDatabase2 {
 					+ quote + "> <field>22</field> <atominfodense> <field>33.00</field>"
 					+ "<field>42.00</field> </atominfodense> <atominfodense>"
 					+ "<field>1.00</field> <field>2.00</field>"
-					+ "<atominfosparse table=" + quote + quote + ">	<field>4</field>"
+					+ "<atominfosparse>	<field>4</field>"
 					+ "<field>1</field> </atominfosparse> </atominfodense>"
 					+ "<atominfodense> <field>21.0</field> <field>12.2</field>"
-					+ "<atominfosparse table=" + quote + quote + ">"
+					+ "<atominfosparse>"
 					+ "<field>9</field> <field>0</field> </atominfosparse>"
-					+ "<atominfosparse table=" + quote + quote + ">"
+					+ "<atominfosparse>"
 					+ "<field>8</field> <field>0</field> </atominfosparse>"
 					+ "</atominfodense> <atominfodense> <field>56.6</field>"
 					+ "<field>76.5</field> <atominfosparse table=" + quote +
 					quote + "> <field>10</field> <field>1</field>"
-					+ "</atominfosparse> <atominfosparse table=" + quote +
-					quote + "> <field>1</field> <field>0</field>"
-					+ "</atominfosparse> <atominfosparse table=" + quote + 
-					quote + "> <field>2</field> <field>1</field>"
+					+ "</atominfosparse> <atominfosparse> " +
+							"<field>1</field> <field>0</field>"
+					+ "</atominfosparse> <atominfosparse>" +
+							" <field>2</field> <field>1</field>"
 					+ "</atominfosparse> </atominfodense> </datasetinfo>"
 					+ "</enchiladadata>");
 			//System.out.println(string);//debugging
@@ -430,18 +428,16 @@ public class CreateTestDatabase2 {
 			writer = new FileWriter(metaD, true);
 			writer.write("<?xml version=" + quote + "1.0" + quote+ " " +
 				"encoding=" + quote + "utf-8" + quote + "?>\n"
-				+ "<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse+)>\n"
+				+ "<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse)>\n"
 				+ "<!-- The metadata element MUST have a datatype associated with it -->\n"
 				+ "<!ATTLIST metadata datatype CDATA #REQUIRED>\n"
 				+ "<!ELEMENT datasetinfo (field*)>\n"
 				+ "<!ELEMENT atominfodense (field*)>\n"
 				+ "<!ELEMENT atominfosparse (field*)>\n"
-				+ "<!-- In case more than one AIS tabe is required, each must"
-				+ " have a name/number. -->\n"
-				+ "<!ATTLIST atominfosparse table CDATA #REQUIRED>\n"
+				+ "<!ELEMENT atominfosparse (field*)>\n"
 				+ "<!ELEMENT field (#PCDATA)>\n"
 				+ "<!-- Attributes are the type of data in that field, and whether"
-				+ " or not it is a primary key - used for the AIS table(s).  -->\n"
+				+ " or not it is a primary key - used for the AIS table.  -->\n"
 				+ "<!ATTLIST field \n"
 				+ "type CDATA #REQUIRED\n"
 				+ "primaryKey (true | false) " + quote + "false" + quote + "\n"
@@ -464,6 +460,34 @@ public class CreateTestDatabase2 {
 					+ "<metadata datatype=" + quote + "SimpleParticle" + quote + ">\n"
 					+ "<datasetinfo> \n"
 					+ "<field type=" + quote + "int" + quote + ">Number</field>\n"
+					+ "</datasetinfo> \n"
+					+ "<atominfodense> \n"
+					+ "<field type=" + quote + "real" + quote + ">Size</field>\n"
+					+ "<field type=" + quote + "real" + quote + ">Magnitude</field>\n"
+					+ "</atominfodense>\n"
+					+ "<atominfosparse table=" + quote + quote + ">\n"
+					+ "<field type=" + quote + "int" + quote + " primaryKey="
+					+ quote + "true" + quote + ">Delay</field>\n"
+					+ "<field type=" + quote + "bit" + quote + ">Valid</field>\n"
+					+ "</atominfosparse>\n"
+					+ "</metadata>");
+			writer.close();
+		} catch (IOException e) {
+			System.err.println("Error creating temporary simpleparticle .md file");
+			e.printStackTrace();
+		}
+		files.add(testMeta);
+		
+		File testMetaBad = new File("testBad.md");
+		try {
+			testMetaBad.createNewFile();
+			writer = new FileWriter(testMetaBad, true);
+			writer.write("<?xml version=" + quote + "1.0" + quote + " encoding="
+					+ quote + "utf-8" + quote + "?>\n"
+					+ "<!DOCTYPE metadata SYSTEM " + quote + "meta.dtd" + quote + ">\n"
+					+ "<metadata datatype=" + quote + "BadExample" + quote + ">\n"
+					+ "<datasetinfo> \n"
+					+ "<field type=" + quote + "int" + quote + ">atomid</field>\n"
 					+ "</datasetinfo>\n"
 					+ "<atominfodense>\n"
 					+ "<field type=" + quote + "real" + quote + ">Size</field>\n"
@@ -473,14 +497,14 @@ public class CreateTestDatabase2 {
 					+ "<field type=" + quote + "int" + quote + " primaryKey="
 					+ quote + "true" + quote + ">Delay</field>\n"
 					+ "<field type=" + quote + "bit" + quote + ">Valid</field>\n"
-					+ "</atominfosparse>/n"
+					+ "</atominfosparse>\n"
 					+ "</metadata>");
 			writer.close();
 		} catch (IOException e) {
-			System.err.println("Error creating temporary simpleparticle .md file");
+			System.err.println("Error creating temporary badexample .md file");
 			e.printStackTrace();
 		}
-		files.add(testMeta);
+		files.add(testMetaBad);
 		return files;
 	}
 	

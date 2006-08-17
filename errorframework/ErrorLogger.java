@@ -27,6 +27,12 @@ import javax.swing.JOptionPane;
  *
  */
 public class ErrorLogger {
+	public static boolean testing;  /* Used for disposing of modal dialogs when
+									 * simply running tests.  Set to false in
+									 * Mainframe for normal use, but can be
+									 * set to true in any tests that 
+									 * would provoke a modal dialog. - steinbel
+									 */
 	public static File dir; 
 	public static File file; 
 	public static boolean error = false;
@@ -91,7 +97,9 @@ public class ErrorLogger {
 	 * @param message - message to output.
 	 */
 	public static void displayException(Component parent, String message) {
-		JOptionPane.showMessageDialog(parent, message);
+		//unit tests don't show the dialogs because they require a response - steinbel
+		if (!testing)
+			JOptionPane.showMessageDialog(parent, message);
 	}
 	
 	/**

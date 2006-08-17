@@ -38,6 +38,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 	private boolean datasetinfo;
 	private boolean atominfodense;
 	private boolean atominfosparse;
+	private boolean illegal = false;
 	private String fieldType;
 	private int primaryKey;
 	private int columnCounter = 0;
@@ -147,14 +148,20 @@ public class DynamicTableGenerator extends DefaultHandler {
 		}
 		String s = new String(buf, offset, len);
 		
-		//don't allow the use of reserved field names or their case variants
+		//warn the user about the use of reserved field names or 
+		//their case variants  (abort import??)
 		for (int i=0; i<reservedNames.length; i++){
 			if (s.equalsIgnoreCase(reservedNames[i])){
 				ErrorLogger.writeExceptionToLog("Importing",
 						"Use of '" + s + "' as a field name conflicts with "
 						+ "reserved field name '" + reservedNames[i] + "'.");
+				ErrorLogger.displayException(null, "Use of '" + s + "' as a "
+						+ "field name is not advised.  See ErrorLog for details.");
+				illegal = true;
 			}
 		}
+		if (illegal)
+			return;
 		
 		String statement = "INSERT INTO MetaData VALUES ('" + datatype +
 			"','[" + s + "]','" + fieldType + "'," + primaryKey + ","
@@ -184,6 +191,11 @@ public class DynamicTableGenerator extends DefaultHandler {
 		String eName = lName; // element name
 		if ("".equals(eName)) 
 			eName = qName; // namespaceAware = false
+		
+		//if illegal column names were used, don't add anything to the database
+		if (illegal)
+			return;
+		
 		
 		//different cases for different elements
 		if (eName.equals("metadata"))
@@ -292,7 +304,19 @@ public class DynamicTableGenerator extends DefaultHandler {
 	 
 	 public String createDynamicTables(String datatype) {
 		 		 
-		 String tableStr;
+		 String tableStr = "";
+		 
+		 //if the user has tried to use illegal column names, don't create tables
+		 if (illegal){
+			 tableStr = "DELETE FROM MetaData WHERE Datatype = '" + datatype + "'";
+			 try {
+				stmt.executeUpdate(tableStr);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			 return tableStr;
+		 }
 		 
 		 /*
 		  * The code for creating these tables is from Anna's original importer.
@@ -331,7 +355,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 			 stmt.execute(tableStr);
 	
 			 
-			 //create as many AtomInfoSparse tables as were specified in the .md
+			 //create AtomInfoSparse table
 			 tableStr = "CREATE TABLE " + datatype + "AtomInfoSparse" + " (";
 			 rs = stmt.executeQuery("SELECT ColumnName, ColumnType, PrimaryKey FROM MetaData " +
 					 "WHERE Datatype = '" + datatype + "' AND TableID = " + 
@@ -367,7 +391,8 @@ public class DynamicTableGenerator extends DefaultHandler {
 		public static void main(String[] args){
 			
 			try {
-				Database.rebuildDatabase("SpASMSdb");
+				Database.rebuildDatabase("TestDB");
+				
 			} catch (SQLException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();

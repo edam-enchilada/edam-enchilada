@@ -185,6 +185,11 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
+		/* @author steinbel
+		 * Set ErrorLogger testing boolean to "false" so error dialogs will show.
+		 */
+		ErrorLogger.testing = false;
+		
 		/**
 		 * Create and add a menu bar to the frame.
 		 */

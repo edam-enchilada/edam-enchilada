@@ -130,7 +130,8 @@ public class ImportExperimentParticles {
 	}
 	
 	public static void main(String[] args) {
-		amplitude = Integer.parseInt(args[0]);
+		//amplitude = Integer.parseInt(args[0]);
+		amplitude = 40;
 		ImportExperimentParticles imp = 
 			new ImportExperimentParticles();
 	}

@@ -2,7 +2,7 @@
 
 <!-- WARNING: changes to this file will cause Enchilada to break. -->
 
-<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse+)>
+<!ELEMENT metadata (datasetinfo, atominfodense, atominfosparse)>
 	<!-- The metadata element MUST have a datatype associated with it -->
 	<!ATTLIST metadata datatype CDATA #REQUIRED>
 	
