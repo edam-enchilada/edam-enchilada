@@ -5,13 +5,16 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-import database.Database.BatchExecuter;
-import database.Database.BatchInserter;
-import database.Database.BulkInserter;
-import database.Database.Inserter;
-import database.SQLServerDatabase.StringBatchExecuter;
-
+/**
+ * Makes database work with MySQL
+ * @author shaferia
+ */
 public class MySQLDatabase extends Database {
+	
+	/**
+	 * Connect to the database using default settings, or overriding them with
+	 * the MySQL section from config.ini if applicable.
+	 */
 	public MySQLDatabase() {
 		url = "localhost";
 		port = "3306";
@@ -24,10 +27,18 @@ public class MySQLDatabase extends Database {
 		database = dbName;
 	}
 	
+	/**
+	 * @see InfoWarehouse.java#isPresent()
+	 */
 	public boolean isPresent() {
 		return isPresentImpl("SHOW DATABASES");
 	}
 	
+	/**
+	 * Open a connection to a MySQL database:
+	 * uses the jdbc driver from mysql-connector-java-*-bin.jar
+	 * TODO: change security model
+	 */
 	public boolean openConnection() {
 		return openConnectionImpl(
 				"com.mysql.jdbc.Driver",
@@ -36,10 +47,17 @@ public class MySQLDatabase extends Database {
 				"sa-account-password");
 	}
 	
+	/**
+	 * @return the MySQL native DATETIME format
+	 */
 	public DateFormat getDateFormat() {
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	}
 	
+	/**
+	 * @return a BatchExecuter that completes batches of commands with
+	 * addBatch() and executeBatch(), as MySQL does not support multi-command strings
+	 */
 	protected BatchExecuter getBatchExecuter(Statement stmt) {
 		return new BatchBatchExecuter(stmt);
 	}
@@ -58,7 +76,9 @@ public class MySQLDatabase extends Database {
 		}
 	}
 	
-
+	/**
+	 * @return a BulkInserter that provides MySQL with a way to read SQL Server - formatted bulk files.
+	 */
 	protected Inserter getBulkInserter(BatchExecuter stmt, String table) {
 		return new BulkInserter(stmt, table) {
 			protected String getBatchSQL() {
@@ -71,6 +91,10 @@ public class MySQLDatabase extends Database {
 		};
 	}
 	
+	/**
+	 * Use to indicate that a method isn't complete - 
+	 * goes one frame up on the stack trace for information.
+	 */
 	public void notdone() {
 		StackTraceElement sti = null;
 		try {

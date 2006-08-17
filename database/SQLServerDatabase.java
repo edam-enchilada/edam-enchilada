@@ -50,21 +50,19 @@ import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-/* 
- * Maybe a good way to refactor this file is to separate out methods that
- * are used by importers from those used by clustering code, and so on.
- * It might work well, or it might not...
- */
-
 /**
- * @author andersbe
- *
+ * Makes database work with SQL Server
+ * @author andersbe, shaferia
  */
 public class SQLServerDatabase extends Database
 {	
 	//This isn't used anymore. Safe for deletion.
 	private static int instance = 0;
 	
+	/**
+	 * Connect to the database using default settings, or overriding them with
+	 * the SQLServer section from config.ini if applicable.
+	 */
 	public SQLServerDatabase()
 	{
 		url = "localhost";
@@ -78,10 +76,18 @@ public class SQLServerDatabase extends Database
 		database = dbName;
 	}
 
+	/**
+	 * @see InfoWarehouse.java#isPresent()
+	 */
 	public boolean isPresent() {
 		return isPresentImpl("EXEC sp_helpdb");
 	}
 	
+	/**
+	 * Open a connection to a MySQL database:
+	 * uses the jtds driver from jtds-*.jar
+	 * TODO: change security model
+	 */
 	public boolean openConnection() {
 		return openConnectionImpl(
 				"net.sourceforge.jtds.jdbc.Driver",
@@ -90,10 +96,18 @@ public class SQLServerDatabase extends Database
 				"finally");
 	}
 	
+	/**
+	 * @return the SQL Server native DATETIME format
+	 */
 	public DateFormat getDateFormat() {
 		return new SimpleDateFormat("MM-dd-yy HH:mm:ss");
 	}
 	
+	/**
+	 * @return a BatchExecuter that uses StringBuilder concatenation
+	 * to build queries. According to earlier documentation,  this is 
+	 * faster than equivalent addBatch() and executeBatch()
+	 */
 	protected BatchExecuter getBatchExecuter(Statement stmt) {
 		return new StringBatchExecuter(stmt);
 	}
@@ -119,6 +133,9 @@ public class SQLServerDatabase extends Database
 		}
 	}
 
+	/**
+	 * @return a SQL Server BulkInserter that reads from comma-delimited bulk files
+	 */
 	protected BulkInserter getBulkInserter(BatchExecuter stmt, String table) {
 		return new BulkInserter(stmt, table) {
 			protected String getBatchSQL() {

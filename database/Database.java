@@ -58,6 +58,12 @@ import experiments.Tuple;
 import gui.LabelingIon;
 import gui.ProgressBarWrapper;
 
+/* 
+ * Maybe a good way to refactor this file is to separate out methods that
+ * are used by importers from those used by clustering code, and so on.
+ * It might work well, or it might not...
+ */
+
 /**
  * Encapsulates InfoWarehouse functionality for a relational database
  * @author andersbe, shaferia
@@ -69,6 +75,8 @@ public abstract class Database implements InfoWarehouse {
 	protected String database;
 	
 	protected String tempdir = System.getenv("TEMP");
+	
+	//the name of this database, for debugging and error reporting purposes
 	private String dbType;
 	
 	// for batch stuff
@@ -189,6 +197,10 @@ public abstract class Database implements InfoWarehouse {
 		return true;
 	}
 
+	/**
+	 * Close the connection to this database
+	 * @return true on success
+	 */
 	public boolean closeConnection()
 	{
 		if (con != null)
@@ -272,7 +284,17 @@ public abstract class Database implements InfoWarehouse {
 			this.table = table;
 		}
 		
+		/**
+		 * Add values to the series of INSERT commands or bulk file that
+		 * this Inserter will insert
+		 * @param values the delimited set of values to insert
+		 * @throws SQLException
+		 */
 		public abstract void append(String values) throws SQLException;
+		
+		/**
+		 * @return free any resources used by this Inserter
+		 */
 		public abstract void close();
 	}
 	
