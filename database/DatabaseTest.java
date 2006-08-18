@@ -58,6 +58,8 @@ import java.util.Date;
 
 import javax.swing.JDialog;
 
+import collection.Collection;
+
 
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.CalInfo;
@@ -295,8 +297,7 @@ public class DatabaseTest extends TestCase {
 				assertTrue(rs2.next());
 				assertTrue(rs.getInt(1) == rs2.getInt(1));
 			}
-			assertFalse(rs2.next());
-			db.closeConnection();
+			assertFalse(rs2.next());	
 			rs.close();
 			stmt.close();
 			rs2.close();
@@ -306,6 +307,12 @@ public class DatabaseTest extends TestCase {
 			e.printStackTrace();
 		}
 		
+		//test to make sure that a collection can't be copied to itself
+		//this should print an exception message.
+		assertEquals(-1, db.copyCollection(db.getCollection(0), db.getCollection(0)));
+		assertEquals(-1, db.copyCollection(db.getCollection(2), db.getCollection(2)));
+		
+		db.closeConnection();
 	}
 
 	public void testMoveCollection() {
@@ -520,6 +527,11 @@ public class DatabaseTest extends TestCase {
 		// removed an assert false here - changed the code to give an error 
 		// if a collectionID is passed that isn't really a collection in the db.
 		assertFalse(db.orphanAndAdopt(db.getCollection(2))); //is not a subcollection (prints this)
+		
+		//Make sure orphan and adopt can't be performed on either root
+		//these should print error messages
+		assertFalse(db.orphanAndAdopt(db.getCollection(0)));
+		assertFalse(db.orphanAndAdopt(db.getCollection(1)));
 		
 		db.closeConnection();
 	}
@@ -2043,6 +2055,36 @@ public class DatabaseTest extends TestCase {
 			ex.printStackTrace();
 			fail("Problem with Inserter " + iname + " execution");
 		}
+		
+		db.closeConnection();
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetCollection() {
+		db.openConnection();
+		
+		Collection c = db.getCollection(0);
+		assertEquals(c.getDatatype(), "root");
+		assertEquals(c.getDescription(), "root");
+		assertEquals(c.getComment(), "root for unsynchronized data");
+		assertEquals(c.getName(), "ROOT");
+		assertEquals(c.getCollectionID(), 0);
+		
+		c = db.getCollection(1);
+		assertEquals(c.getDatatype(), "root");
+		assertEquals(c.getDescription(), "root");
+		assertEquals(c.getComment(), "root for synchronized data");
+		assertEquals(c.getName(), "ROOT-SYNCHRONIZED");
+		assertEquals(c.getCollectionID(), 1);
+		
+		c = db.getCollection(2);
+		assertEquals(c.getDatatype(), "ATOFMS");
+		assertEquals(c.getDescription(), "onedescrip");
+		assertEquals(c.getComment(), "one");
+		assertEquals(c.getName(), "One");
+		assertEquals(c.getCollectionID(), 2);
 		
 		db.closeConnection();
 	}

@@ -1028,6 +1028,9 @@ public abstract class Database implements InfoWarehouse {
 	{
 		int newID = -1;
 		try {
+			if (collection.getCollectionID() == toCollection.getCollectionID())
+				throw new SQLException("Cannot copy a collection into itself");
+			
 			Statement stmt = con.createStatement();
 			
 			// Get Collection info:
