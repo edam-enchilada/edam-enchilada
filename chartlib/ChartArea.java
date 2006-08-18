@@ -190,7 +190,10 @@ public class ChartArea extends AbstractMetricChartArea {
 		Stroke oldStroke = g2d.getStroke();
 		g2d.setColor(Color.BLACK);
 		g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		int radius = 3;
+		int radius = 0;
+		// Radius changed to 0 for more clear figures. The x's were too
+		// cumbersome for dense plots. If this sticks, we can remove
+		// the radius variable entirely here. -- dmusican
 		g2d.draw(new Line2D.Double((double)xCoord-radius, yCoord-radius, (double)xCoord+radius, yCoord+radius));
 		g2d.draw(new Line2D.Double((double)xCoord+radius, yCoord-radius, (double)xCoord-radius, yCoord+radius));
 		g2d.setClip(oldClip);
