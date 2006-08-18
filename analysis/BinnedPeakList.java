@@ -68,6 +68,9 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		normalizable = norm;
 	}
 	
+	/**
+	 * Creates a BinnedPeakList with a new Normalizer
+	 */
 	public BinnedPeakList() {
 		peaks = new TreeMap<Integer, Float>();
 		normalizable = new Normalizer();
@@ -76,9 +79,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	public Normalizable getNormalizable(){
 		return normalizable;
 	}
+	
 	/**
-	 * Creates a copy of a binnedPeakList
-	 * @param original
+	 * Deep-copies the data in this BinnedPeakList from another BinnedPeakList
+	 * @param original the BinnedPeakList to copy from
 	 */
 	public void copyBinnedPeakList(BinnedPeakList original) {
 		Iterator<BinnedPeak> i = original.iterator();
@@ -89,6 +93,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		normalizable = original.getNormalizable();
 	}
+	
+	/**
+	 * Compares the BinnedPeak data of two BinnedPeakLists
+	 * @param toCompare the other BinnedPeakList to use
+	 * @return true if equal
+	 */
 	public boolean comparePeakLists(BinnedPeakList toCompare) {
 		boolean equal = true;
 		Iterator<Map.Entry<Integer, Float>> i = peaks.entrySet().iterator();
@@ -105,6 +115,11 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		return equal;
 	}
+	
+	/**
+	 * Checks the BinnedPeakList for zero values
+	 * @return true if this BinnedPeakList contains any zero values (peak areas)
+	 */
 	public boolean containsZeros() {
 		
 		Iterator<BinnedPeak> iter = iterator();
@@ -116,6 +131,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		return false;
 	}
+	
+	/**
+	 * Create a new BinnedPeakList and copy in all non-zero valued 
+	 * BinnedPeaks from this BinnedPeakList
+	 * @return a BinnedPeakList with no zero-valued BinnedPeaks
+	 */
 	public BinnedPeakList getFilteredZerosList() {
 		BinnedPeakList newSums = new BinnedPeakList(new Normalizer());
 		Iterator<BinnedPeak> iter = iterator();
@@ -128,9 +149,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 		return newSums;
 	}
+	
+	/**
+	 * Find whether this BinnedPeakList is normalized with respect to the given DistanceMetric
+	 * @param dMetric the DistanceMetric with which to test magnitude
+	 * @return true if the magnitude of this BinnedPeakList is with 0.00001 of 1
+	 */
 	public boolean isNormalized(DistanceMetric dMetric) {
 		float mag = getMagnitude(dMetric);
-		if(mag == (float) 0)
+		if(mag <= 1.0002f && mag >=0.9998f)
 			return true;
 		else
 			return false;
@@ -139,6 +166,10 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	/**
 	 * Return the magnitude of this peaklist, according to the supplied
 	 * distance metric (it varies according to measurement).
+	 * @param dMetric the DistanceMetric to use. Definitions of magnitude are:
+	 * 			DistanceMetric.CITY_BLOCK: the sum of the list's values
+	 * 			DistanceMetric.EUCLIDEAN_SQUARED, DistanceMetric.DOT_PRODUCT:
+	 * 				the standard deviation of the list
 	 */
 	public float getMagnitude(DistanceMetric dMetric)
 	{

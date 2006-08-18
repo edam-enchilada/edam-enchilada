@@ -270,6 +270,352 @@ public class BinnedPeakListTest extends TestCase {
 			
 		}
 	}
+
+	/**
+	 * Get testing BinnedPeak data
+	 * @param size the number of (key, value) pairs to return
+	 * @param keyMag the maximum magnitude of peak location (keys)
+	 * @param valMag the maximum magnitude of peak area (values)
+	 * @param zeroKeys whether any keys should be zero
+	 * @param zeroVals whether any values should be zero
+	 * @return an unordered list of peaks
+	 * @author shaferia
+	 */
+	private BinnedPeak[] getTestData(
+			int size,
+			int keyMag,
+			float valMag,
+			boolean zeroKeys, 
+			boolean zeroVals) {
+		BinnedPeak[] data = new BinnedPeak[size];
+		
+		int key;
+		float val;
+		for (int i = 0; i < data.length; ++i) {
+			do {
+				key = ((int) (Math.random() * keyMag * 2)) - keyMag;
+				val = ((float) (Math.random() * valMag * 2)) - valMag;
+			} 
+			while (key == 0 && val == 0f); //highly unlikely, but just to be sure.
+			
+			data[i] = new BinnedPeak(key, val);
+		}
+		
+		//stick in a few zero keys, zero values, and a combination thereof
+		int sprinkle = Math.max(1, size / 10);
+		
+		if (zeroKeys) {
+			for (int i = 0; i < sprinkle; ++i) {
+				data[(int) (Math.random() * data.length)].key = 0;
+			}
+		}
+		
+		if (zeroVals) {
+			for (int i = 0; i < sprinkle; ++i) {
+				data[(int) (Math.random() * data.length)].value = 0;
+			}			
+		}
+		
+		if (zeroKeys && zeroVals) {
+			for (int i = 0; i < sprinkle; ++i) {
+				data[(int) (Math.random() * data.length)].key = 0;
+				data[(int) (Math.random() * data.length)].value = 0;
+			}				
+		}
+		
+		return data;
+	}
+	
+	/**
+	 * Ensure what we're testing with is what we think it is
+	 * @author shaferia
+	 */
+	public void testGetTestData() {
+		boolean zeroKeys = false;
+		boolean zeroVals = false;
+		boolean zeroBoth = false;
+		float maxKey = 0f, maxVal = 0f;
+		BinnedPeak[] data = getTestData(100, 10, 0.005f, true, true);
+		assertEquals(data.length, 100);
+		for (BinnedPeak b : data) {
+			zeroKeys |= b.key == 0;
+			zeroVals |= b.value == 0;
+			zeroBoth |= (b.key == 0) && (b.value == 0);
+			maxKey = Math.max(maxKey, b.key);
+			maxVal = Math.max(maxVal, b.value);
+		}
+		assertTrue(zeroKeys && zeroVals && zeroBoth);
+		assertTrue(maxKey <= 10);
+		assertTrue(maxVal <= 0.005f);
+		
+		maxKey = maxVal = 0f;
+		zeroKeys = zeroVals = zeroBoth = false;
+		data = getTestData(10, 10, 100f, true, false);
+		assertEquals(data.length, 10);
+		for (BinnedPeak b : data) {
+			zeroKeys |= b.key == 0;
+			zeroVals |= b.value == 0;
+			zeroBoth |= (b.key == 0) && (b.value == 0);
+			maxKey = Math.max(maxKey, b.key);
+			maxVal = Math.max(maxVal, b.value);
+		}
+		assertTrue(zeroKeys && !zeroVals && !zeroBoth);
+		assertTrue(maxKey <= 10);
+		assertTrue(maxVal <= 100f);
+		
+		maxKey = maxVal = 0f;
+		zeroKeys = zeroVals = zeroBoth = false;
+		data = getTestData(2345, 10, 100f, true, false);
+		assertEquals(data.length, 2345);
+		for (BinnedPeak b : data) {
+			zeroKeys |= b.key == 0;
+			zeroVals |= b.value == 0;
+			zeroBoth |= (b.key == 0) && (b.value == 0);
+			maxKey = Math.max(maxKey, b.key);
+			maxVal = Math.max(maxVal, b.value);
+		}
+		assertTrue(zeroKeys && !zeroVals && !zeroBoth);
+		assertTrue(maxKey <= 10);
+		assertTrue(maxVal <= 100f);
+		
+		maxKey = maxVal = 0f;
+		zeroKeys = zeroVals = zeroBoth = false;
+		data = getTestData(12, 10000, 100f, false, false);
+		assertEquals(data.length, 12);
+		for (BinnedPeak b : data) {
+			zeroKeys |= b.key == 0;
+			zeroVals |= b.value == 0;
+			zeroBoth |= (b.key == 0) && (b.value == 0);
+			maxKey = Math.max(maxKey, b.key);
+			maxVal = Math.max(maxVal, b.value);
+		}
+		assertTrue(!zeroKeys && !zeroVals && !zeroBoth);
+		assertTrue(maxKey <= 10000);
+		assertTrue(maxVal <= 100f);
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testCopyBinnedPeakList() {
+		BinnedPeakList one = new BinnedPeakList();
+		
+		BinnedPeak[] data = getTestData(1000, 200, 200f, true, true);
+		for (BinnedPeak b : data)
+			one.add(b);
+		
+		BinnedPeakList two = new BinnedPeakList();
+		two.copyBinnedPeakList(one);
+		
+		assertTrue(one.comparePeakLists(two));
+		
+		one.setNormalizer(new Normalizer());
+		assertTrue(one.comparePeakLists(two));
+		
+		one = new BinnedPeakList();
+		two.copyBinnedPeakList(one);
+		assertTrue(one.comparePeakLists(two));
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testContainsZeros() {
+		BinnedPeakList bpl = new BinnedPeakList();
+		
+		bpl.add(0, 2f);
+		bpl.add(1, 3f);
+		bpl.add(3, 4f);
+		assertFalse(bpl.containsZeros());
+		
+		bpl.add(4, 0f);
+		assertTrue(bpl.containsZeros());
+		
+		bpl.add(4.05f, 0f);
+		bpl.add(4.1f, 0f);
+		assertTrue(bpl.containsZeros());
+		
+		bpl.add(4, 1f);
+		assertFalse(bpl.containsZeros());
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetFilteredZerosList() {
+		BinnedPeakList one = new BinnedPeakList();
+		BinnedPeak[] data = getTestData(1000, 1000, 20f, true, true);
+		
+		int numZeroVals = 0;
+		for (BinnedPeak b : data)
+			one.add(b);
+		
+		for (BinnedPeak b : one)
+			if (b.value == 0)
+				++numZeroVals;
+		
+		BinnedPeakList nz = one.getFilteredZerosList();
+		assertFalse(nz.containsZeros());
+		
+		assertEquals(nz.getPeaks().size(), one.getPeaks().size() - numZeroVals);
+		assertTrue(numZeroVals > 0);
+		
+		data = new BinnedPeak[100];
+		for (int i = 0; i < data.length; ++i)
+			data[i] = new BinnedPeak(i, 0f);
+		
+		one = new BinnedPeakList();
+		for (BinnedPeak b : data)
+			one.add(b);
+		
+		nz = one.getFilteredZerosList();
+		assertFalse(nz.containsZeros());
+		assertEquals(nz.getPeaks().size(), 0);
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testIsNormalized() {
+		int[] sizes = {1, 20, 100, 1000};
+		float[] magnitudes = {1f, 10f, 100f, 1000f};
+		
+		int sumerrors = 0;
+		
+		for (int size : sizes)
+			for (float magnitude : magnitudes)
+				for (DistanceMetric metric : DistanceMetric.values()) {
+					BinnedPeakList bpl = new BinnedPeakList();
+					BinnedPeak[] data = getTestData(size, 100, magnitude, true, true);
+					
+					for (BinnedPeak b : data)
+						bpl.add(b);
+					
+					//in theory, there's a tiny chance the data already has zero magnitude.
+					if (bpl.isNormalized(metric));
+						bpl.add(new BinnedPeak(100, 3f));
+					
+					assertFalse(bpl.isNormalized(DistanceMetric.CITY_BLOCK));
+					assertFalse(bpl.isNormalized(DistanceMetric.EUCLIDEAN_SQUARED));
+					assertFalse(bpl.isNormalized(DistanceMetric.DOT_PRODUCT));
+					
+					bpl.normalize(metric);
+					
+					//System.out.printf("Normalized Magnitude: %s (%s, %d elements)\n",
+					//		bpl.getMagnitude(metric),
+					//		metric.name(),
+					//		size);
+					
+					assertTrue(bpl.isNormalized(metric));
+				}
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetMagnitude() {
+		int[] sizes = {1, 20, 100, 1000};
+		float[] magnitudes = {1f, 10f, 100f, 1000f};
+		
+		for (int size : sizes)
+			for (float magnitude : magnitudes) {
+				BinnedPeakList bpl = new BinnedPeakList();
+				BinnedPeak[] data = getTestData(size, 100, magnitude, true, true);
+				for (BinnedPeak b : data)
+					bpl.add(b);
+				
+				//calculate the sum and standard deviation of the data we made
+				float sum = 0f;
+				float stdDev = 0f;
+				for (BinnedPeak b : bpl) {
+					sum += b.value;
+					stdDev += b.value * b.value;
+				}
+				stdDev = (float) Math.sqrt(stdDev);
+				
+				assertEquals(bpl.getMagnitude(DistanceMetric.CITY_BLOCK), sum, 0.0001f);
+				assertEquals(bpl.getMagnitude(DistanceMetric.EUCLIDEAN_SQUARED), stdDev, 0.0001f);
+				assertEquals(bpl.getMagnitude(DistanceMetric.DOT_PRODUCT), stdDev, 0.0001f);
+			}
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testGetAreaAt() {
+		BinnedPeakList bpl = new BinnedPeakList();
+		BinnedPeak[] data = new BinnedPeak[50];
+		
+		for (int i = 0; i < data.length; ++i)
+			data[i] = new BinnedPeak(i + 1, (float) Math.random() * 100);
+		
+		for (BinnedPeak b : data)
+			bpl.add(b);
+		
+		for (BinnedPeak b : data)
+			assertEquals(bpl.getAreaAt(b.key), b.value, 0.0001f);
+		
+		//look for some values that shouldn't be there: area should be zero.
+		int[] vals = {200, 10000, -1000, -113, -1424, 42523, 233};
+		for (int i : vals)
+			assertEquals(bpl.getAreaAt(i), 0, 0.0001f);
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testLength() {
+		BinnedPeakList bpl = new BinnedPeakList();
+		bpl.add(1, 1f);
+		assertEquals(bpl.length(), 1);
+		
+		bpl.add(2, 1f);
+		assertEquals(bpl.length(), 2);
+		
+		bpl.add(1, 2f);
+		assertEquals(bpl.length(), 2);
+		
+		bpl.add(4, 3f);
+		assertEquals(bpl.length(), 3);
+		
+		bpl = new BinnedPeakList();
+		assertEquals(bpl.length(), 0);
+		
+		BinnedPeak[] data = getTestData(1000, 100, 100f, true, true);
+		
+		for (BinnedPeak b : data)
+			bpl.add(b);
+		
+		assertTrue(bpl.length() <= 1000);
+	}
+	
+	/**
+	 * @author shaferia
+	 */
+	public void testDivideAreasBy() {
+		int[] factors = {0, 1, 2, 3, 34, 467};
+		
+		for (int factor : factors) {
+			BinnedPeak[] data = getTestData(1000, 100, 100f, true, true);
+			BinnedPeakList bpl = new BinnedPeakList();
+			
+			for (BinnedPeak b : data)
+				bpl.add(b);
+			
+			BinnedPeakList divided = new BinnedPeakList();
+			
+			for (BinnedPeak b : bpl)
+				divided.add(b.key, b.value / factor);
+			
+			bpl.divideAreasBy(factor);
+			
+			assertTrue(bpl.comparePeakLists(divided));
+		}
+		
+		//make sure this doesn't explode
+		BinnedPeakList bpl = new BinnedPeakList();
+		bpl.divideAreasBy(2);
+	}
 	
 	private class OldBinnedPeakList {
 
