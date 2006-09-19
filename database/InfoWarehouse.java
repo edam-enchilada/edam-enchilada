@@ -350,4 +350,20 @@ public interface InfoWarehouse {
 	 * @return the name of the backing store this InfoWarehouse uses (SQLServer, MySQL, FlatFile, etc.)
 	 */
 	public String getName();
+	
+	/**
+	 * Return true if the collection contains the given atomID.
+	 * @param collectionID - the ID of the collection to check
+	 * @param atomID -		 the ID of the target atom
+	 * @return				 True if the collection contains the atom.
+	 */
+	public boolean collectionContainsAtom(int collectionID, int atomID);
+	
+	/**
+	 * Given a filename for an ATOFMS particle, returns the atomID associated 
+	 * with it.
+	 * @param ATOFMSFileName	The filename for the particle.
+	 * @return					The atomID for the desired particle.
+	 */
+	 public int getATOFMSAtomID(String ATOFMSFileName);
 }

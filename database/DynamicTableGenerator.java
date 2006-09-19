@@ -371,7 +371,6 @@ public class DynamicTableGenerator extends DefaultHandler {
 			 System.out.println(tableStr);
 			 stmt.execute(tableStr);	
 		
-	
 			 rs.close();
 	
 		 } catch (SQLException e) {

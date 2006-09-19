@@ -148,6 +148,16 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem aboutItem;
 	
 	private OutputWindow outputFrame;
+	private JTextField searchFileBox;
+	private JButton forwardButton;
+	private JButton backwardButton;
+	
+	private int currCollectionSize;
+	private int currHigh;
+	private int currLow;
+	private JLabel currentlyShowing;
+	private JButton searchButton;
+	private int currCollection;
 	
 	/**
 	 * Constructor.  Creates and shows the GUI.	 
@@ -480,8 +490,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		else if (source == pasteItem)
 		{
-			//if no collection selected, paste into root
-			//@author steinbel
+			//if no collection selected, paste into root - @author steinbel
 
 			if (copyID != 
 				getSelectedCollection().getCollectionID() && copyID>-1)
@@ -746,14 +755,92 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == dataFormatItem) {
 			new DataFormatViewer(this);
 		}
-		
-		else if (source == chooseParticleSet) {
+		/*
+		 * @author steinbel
+		 */
+		else if (source == forwardButton) {
+			currLow = currHigh + 1;
+			if ( (currHigh + 1000) >= currCollectionSize ){
+				currHigh = currCollectionSize;
+				forwardButton.setEnabled(false);
+				backwardButton.setEnabled(true);
+			} else
+				currHigh += 1000;
 			setTable();
+		}
+		/*
+		 * @author steinbel
+		 */
+		else if (source == backwardButton) {
+			currHigh = currLow - 1;
+			if ( (currLow - 1000) <= 1 ){
+				currLow = 1;
+				backwardButton.setEnabled(false);
+			} else
+				currLow -= 1000;
+			setTable();	
+		}
+		/*
+		 * @author steinbel
+		 */
+		else if (source == searchFileBox) {
+			//see if filename is valid and set table accordingly
+			String searchMe = searchFileBox.getText();
+			if (!searchMe.equals(" Enter a filename to search for a particle."))
+				searchOn(searchMe);
+			else 
+				ErrorLogger.displayException(this, "Please enter a filename.");
+		}
+		/*
+		 * @author steinbel
+		 */
+		else if (source == searchButton) {
+			//see if filename is valid and set table accordingly
+			String searchMe = searchFileBox.getText();
+			if (!searchMe.equals(" Enter a filename to search for a particle."))
+				searchOn(searchMe);
+			else 
+				ErrorLogger.displayException(this, "Please enter a filename.");
 		}
 		
 		ErrorLogger.flushLog(this);
 	}
 	
+	/**
+	 * @author steinbel
+	 * Searches the db for the filename and sets the particle pane to show that
+	 * filename and its surrounding 1000 particles if the particle is in the
+	 * database.  (If atom is in a different collection, pops it open.)
+	 * @param searchString - the file name desired (must include entire path)
+	 */
+	private void searchOn(String searchString) {
+		
+		//find out the atomid for future reference
+		int atomID = db.getATOFMSAtomID(searchString);
+		//if the atom actually exists
+		if (atomID >= 0){
+			//if already showing the correct section of the collection
+			if ((currLow <= atomID) && (atomID <= currHigh)){
+				//highlight particle
+				int particleRow;
+				if (atomID <= 1001)
+					particleRow = atomID - 1;
+				else
+					particleRow = atomID - 1001;
+				particlesTable.changeSelection(particleRow, 0, false, false);
+				
+			} else if (db.collectionContainsAtom(currCollection, atomID)){
+				//switch to correct high and low to show particle
+				
+			} else { //switch to correct collection
+				
+				
+			}
+				
+		} //else do nothing - error message is in the InfoWarehouse-level method
+		
+	}
+
 	public void exit(){
 		if (db.isDirty() && JOptionPane.showConfirmDialog(null,
 				"One or more Collections has been deleted." +
@@ -1046,6 +1133,7 @@ public class MainFrame extends JFrame implements ActionListener
 	}
 	
 	/**
+	 * @author steinbel
 	 * setupSplitPane() creates and adds a split pane to the frame. The 
 	 * left side of the split pane contains a collection and synchronization
 	 * trees the right side of the split pane contains a tabbed pane.  
@@ -1064,10 +1152,25 @@ public class MainFrame extends JFrame implements ActionListener
 		row.add("");
 		data.add(row);
 		
-		String[] blank = {"Click on a collection to see information."};
+
+		currentlyShowing = new JLabel("Currently showing 0 particles");
 		
-		chooseParticleSet = new JComboBox(blank);
-		chooseParticleSet.addActionListener(this);
+		forwardButton = new JButton("Next");
+		forwardButton.setEnabled(false);
+		forwardButton.addActionListener(this);
+		
+		backwardButton = new JButton("Previous");
+		backwardButton.setEnabled(false);
+		backwardButton.addActionListener(this);
+		
+		String initSearch = " Enter a filename to search for a particle.";
+		searchFileBox = new JTextField(initSearch);
+		searchFileBox.setEnabled(false);
+		searchFileBox.addActionListener(this);	
+		
+		searchButton = new JButton("Search");
+		searchButton.setEnabled(false);
+		searchButton.addActionListener(this);
 		
 		particlesTable = new JTable(data, columns);
 		
@@ -1075,14 +1178,26 @@ public class MainFrame extends JFrame implements ActionListener
 		analyzeParticleButton.setEnabled(false);
 		analyzeParticleButton.addActionListener(this);
 		
-		JPanel comboPane = new JPanel(new FlowLayout());
-		comboPane.add(chooseParticleSet, BorderLayout.CENTER);
+		JPanel comboPane = new JPanel(new BorderLayout());
+		comboPane.add(currentlyShowing, BorderLayout.NORTH);
+		comboPane.add(backwardButton, BorderLayout.WEST);
+		comboPane.add(forwardButton, BorderLayout.EAST);
+		
+		JPanel searchPane = new JPanel(new BorderLayout());
+		//put next two buttons on another line
+		searchPane.add(searchFileBox, BorderLayout.NORTH);
+		searchPane.add(searchButton, BorderLayout.SOUTH);
+		
+		JPanel buttonsPane = new JPanel(new BorderLayout());
+		buttonsPane.add(comboPane, BorderLayout.EAST);
+		buttonsPane.add(searchPane, BorderLayout.WEST);
+		
 		particlePanel = new JPanel(new BorderLayout());
 		particleTablePane = new JScrollPane(particlesTable);
 		JPanel partOpsPane = new JPanel(new FlowLayout());
 		partOpsPane.add(analyzeParticleButton, BorderLayout.CENTER);
 		
-		particlePanel.add(comboPane, BorderLayout.NORTH);
+		particlePanel.add(buttonsPane, BorderLayout.NORTH);
 		particlePanel.add(particleTablePane, BorderLayout.CENTER);
 		particlePanel.add(partOpsPane, BorderLayout.SOUTH);
 		
@@ -1175,23 +1290,27 @@ public class MainFrame extends JFrame implements ActionListener
 		String dataType = collection.getDatatype();
 		ArrayList<String> colnames = db.getColNames(dataType, DynamicTable.AtomInfoDense);
 		
-		// use combo box to display particles in chunks of 1000 particles.
-		int numParticles = db.getCollectionSize(collection.getCollectionID());
-		int numLines = numParticles/1000;
-		if (numParticles%1000 != 0)
-			numLines++;
-		int low = 1; 
-		int high = 1000;
-		int counter = 0;
-		chooseParticleSet.removeAllItems();
-		while (high < numParticles) {
-			chooseParticleSet.addItem("Particle Index: " + low + " - " + high);
-			counter++;
-			low += 1000;
-			high += 1000;
-		}
-		chooseParticleSet.addItem("Particle Index: " + low + " - " + numParticles);
+		/*
+		 * @author steinbel - changed to work with next/prev buttons
+		 */ 
+		currCollectionSize = db.getCollectionSize(collection.getCollectionID());
+		currCollection = collection.getCollectionID();
 		
+		currLow = 1;
+		backwardButton.setEnabled(false);
+		
+		if (currCollectionSize > 1000) {
+			forwardButton.setEnabled(true);
+			currHigh = 1000;
+		}
+		else{
+			currHigh = currCollectionSize;
+			forwardButton.setEnabled(false);
+		}
+		
+		//allow searching in this collection
+		searchButton.setEnabled(true);
+		searchFileBox.setEnabled(true);
 		
 		Vector<Object> columns = new Vector<Object>(colnames.size());
 		for (int i = 0; i < colnames.size(); i++) {
@@ -1529,8 +1648,8 @@ public class MainFrame extends JFrame implements ActionListener
 		collectionViewPanel.setComponentAt(0, particlePanel);
 		collectionViewPanel.repaint();
 		
-		chooseParticleSet.removeAllItems();
-		chooseParticleSet.addItem("Click on a collection to see information.");
+		searchFileBox.setEnabled(false);
+		searchButton.setEnabled(false);
 		
 		analyzeParticleButton.setEnabled(false);
 		
@@ -1539,31 +1658,26 @@ public class MainFrame extends JFrame implements ActionListener
 	}
 	
 	/**
-	 * This sets the particle table according to the particle
-	 * set seleced in the combo box above the table.
+	 * @author steinbel
+	 * This sets the particle table to show 1000 (or fewer) particles at a time.
 	 * 
 	 * It is called by the setupRightWindow method and by the actionlistener
-	 * when the combo box is chosen.
+	 * when the next or previous buttons are clicked.
 	 *
 	 */
 	public void setTable() {
-		String text = (String)chooseParticleSet.getSelectedItem();
-		if (text != null && !text.equals("Click on a collection to see information.")) {
-			// extract the two integers.
-			Scanner scan = new Scanner(text);
-			scan.next();
-			scan.next();
-			final int low = scan.nextInt();
-			scan.next();
-			final int high = scan.nextInt();
 			
+			System.out.println("low " + currLow + " high " + currHigh + " "
+					+ (currHigh - currLow));//TESTING
 			//clear data in table and repopulate it with appropriate 
 			// data.
+			currentlyShowing.setText("Currently showing particles " + currLow +
+					"-" + currHigh + " of " + currCollectionSize + ".");
 			data.clear();
-			db.updateParticleTable(getSelectedCollection(),data,low,high);
+			db.updateParticleTable(getSelectedCollection(),data,currLow,currHigh);
 			particlesTable.tableChanged(new TableModelEvent(particlesTable.getModel()));
 			particlesTable.doLayout();
-		}
+	
 	}
 	
 	/**

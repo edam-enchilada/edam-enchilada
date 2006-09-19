@@ -72,8 +72,8 @@ public abstract class Cluster extends CollectionDivider {
 	protected int numPasses,collectionID;
 	protected String parameterString;
 	protected ClusterInformation clusterInfo;
-	protected static double power = 1.0;	//the power to which the peak areas are raised
-											//during preprocessing.
+	protected static double power = 1.0;	//the power to which the peak areas
+											//are raised during preprocessing.
 	
 ///////////////////////////////////////////////////////////////////////////////
 	private static final int BOOST = 1000;		//EVIL HACK CONSTANT!!!!!
@@ -544,6 +544,7 @@ public abstract class Cluster extends CollectionDivider {
 			
 			//TODO: there's got to be a better way to do this - LES
 			//identify column names of types that not are appropriate to average
+
 			for (ArrayList<String> nameAndType : denseInfo){
 				colName = nameAndType.remove(0);
 				sqlType = nameAndType.remove(0);
@@ -632,7 +633,7 @@ public abstract class Cluster extends CollectionDivider {
 			//put the sparse info into appropriate format
 			Iterator<BinnedPeak> i = center.peaks.iterator();
 			BinnedPeak p;
-			//don't forget the rest of the info.  DUH.  Like PeakArea, Height, Rel.Area
+			//don't forget the rest of the info.  DUH.  Like Height, Rel.Area
 			//get the names of fields and their field types
 			ArrayList<ArrayList<String>> sparseNamesTypes = 
 				db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoSparse);

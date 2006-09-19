@@ -64,6 +64,7 @@ public class DynamicTableGeneratorTest extends TestCase {
 		String query;
 		ResultSet rs;
 		try {
+			//check MetaData to see if info is there
 			stmt = con.createStatement();
 			query = "USE TestDB2 SELECT COUNT(*) FROM MetaData WHERE "
 				+ "Datatype = 'SimpleParticle'";
@@ -96,6 +97,7 @@ public class DynamicTableGeneratorTest extends TestCase {
 			rs = stmt.executeQuery(query);
 			assertTrue("Problems getting result set", rs.next());
 			assertEquals("BadExample info still in MetaData", rs.getInt(1), 0);
+			stmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			fail("problem checking db.");

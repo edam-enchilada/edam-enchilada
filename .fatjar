@@ -1,8 +1,9 @@
 #Fat Jar Configuration File
-#Wed Jul 27 14:32:56 CDT 2005
-onejar.license.required=true
+#Fri Aug 18 08:42:12 CDT 2006
+onejar.license.required=false
 manifest.classpath=
-onejar.checkbox=false
+manifest.removesigners=true
+onejar.checkbox=true
 jarname=edam-enchilada.jar
 manifest.mergeall=true
 manifest.mainclass=gui.MainFrame

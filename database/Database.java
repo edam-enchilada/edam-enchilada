@@ -4976,6 +4976,65 @@ public abstract class Database implements InfoWarehouse {
 		return fileName;
 	}
 	
+	/**
+	 * @author steinbel
+	 * Given a filename for an ATOFMS particle, returns the atomID associated 
+	 * with it.
+	 * @param ATOFMSFileName	The filename for the particle.
+	 * @return					The atomID for the desired particle.
+	 */
+	public int getATOFMSAtomID(String ATOFMSFileName){
+		int atomID = -99;
+		boolean exists = false;
+		Statement stmt;
+		try{
+			stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT AtomID FROM ATOFMSAtomInfoDense"
+					+ " WHERE OrigFilename = '" + ATOFMSFileName + "'");
+			if (rs.next()){
+				exists = true;
+				atomID = rs.getInt(1);
+			} else {
+				ErrorLogger.displayException(null, ATOFMSFileName + " was"
+						+ " not found in your database.");
+			}
+			stmt.close();
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog(getName(), "SQL Exception getting atomID"
+					+ " from filename.  Check for illegal characters like apostrophes.");
+			e.printStackTrace();
+		}
+		return atomID;
+	}
+	
+	/**
+	 * @author steinbel
+	 * Return true if the collection contains the given atomID.
+	 * @param collectionID - the ID of the collection to check
+	 * @param atomID -		 the ID of the target atom
+	 * @return				 True if the collection contains the atom.
+	 */
+	public boolean collectionContainsAtom(int collectionID, int atomID){
+		boolean contains = false;
+		Statement stmt;
+		try {
+			stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * from InternalAtomOrder"
+					+ " WHERE CollectionID = " + collectionID + " AND AtomID = "
+					+ atomID);
+			
+			if (rs.next())
+				contains = true;
+			
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog(getName(), "SQL Exception checking"
+					+ " atom membership.");
+			e.printStackTrace();
+		}
+		
+		return contains;
+	}
+	
 	/** 
 	 * Gets first atom for top-level particles in collection.
 	 */
@@ -5309,6 +5368,8 @@ public abstract class Database implements InfoWarehouse {
 				ON (C.ChildID = InternalAtomOrder.CollectionID)
 				ORDER BY InternalAtomOrder.AtomID
 			*/
+			
+			//where's our union with atomids from the current collection (atommembership)?
 			String query = "SELECT DISTINCT IAO.AtomID as AtomID\n " +
 					"FROM InternalAtomOrder IAO\n " +
 				"JOIN ( SELECT R.ChildID as ChildID\n" +
@@ -5368,6 +5429,7 @@ public abstract class Database implements InfoWarehouse {
 			int order = 1;
 			Statement st2 = con.createStatement();
 			
+			//possible bulk insert to speed up?
 			while (rs.next()) {
 				//System.out.println("inserting...");
 				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
