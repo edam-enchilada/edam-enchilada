@@ -306,10 +306,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			origPButton.setActionCommand("orig");
 			origPButton.addActionListener(this);
 			origParticles.add(origPButton);
-			bottomPanel = new JPanel(new GridLayout(1,3));
-			bottomPanel.add(buttonPanel);
+			bottomPanel = new JPanel(new GridLayout(3,1));
 			bottomPanel.add(peakButtonPanel);
 			bottomPanel.add(origParticles);
+			bottomPanel.add(new JLabel("NOTE: If anything other than peak area was used as a clustering parameter, these numbers are inaccurrate.  This is a known bug we are working to fix."));
 		} else{
 			bottomPanel = new JPanel (new GridLayout(1, 2));
 			bottomPanel.add(buttonPanel);

@@ -763,9 +763,9 @@ public class MainFrame extends JFrame implements ActionListener
 			if ( (currHigh + 1000) >= currCollectionSize ){
 				currHigh = currCollectionSize;
 				forwardButton.setEnabled(false);
-				backwardButton.setEnabled(true);
 			} else
 				currHigh += 1000;
+			backwardButton.setEnabled(true);
 			setTable();
 		}
 		/*
@@ -778,6 +778,8 @@ public class MainFrame extends JFrame implements ActionListener
 				backwardButton.setEnabled(false);
 			} else
 				currLow -= 1000;
+
+			forwardButton.setEnabled(true);
 			setTable();	
 		}
 		/*

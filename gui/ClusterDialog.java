@@ -311,7 +311,17 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		// add cards to final panel
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel topPanel = new JPanel();
-		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
+//		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
+
+		
+//////////////////// HACK until bug is fixed - steinbel - then cut below and
+		//uncomment line above setting layout to BoxLayout
+		topPanel.setLayout(new BorderLayout());
+		topPanel.add(new JLabel("NOTE: Clustering on anything other than peak area \n"
+				+" renders the cluster centers meaningless.  This is a known bug we are working to fix."),
+				BorderLayout.NORTH);
+//////////////////// end HACK	
+		
 		topPanel.add(new JLabel("Choose Type of Particle Information to Cluster on: "), BorderLayout.WEST);
 		topPanel.add(infoTypeDropdown, BorderLayout.CENTER);
 		panel.add(topPanel, BorderLayout.NORTH);
