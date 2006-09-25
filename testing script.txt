@@ -36,6 +36,13 @@ __Should pop up a window warning of database incompatibility and let the user
 		__2. quit without touching current database (so old version of Enchilada
 		can run with the db)
 
+**Try installing with an old version of Java present.
+__Should get appropriate error message.
+
+**Try installing with Java completely uninstalled.
+__Should get appropriate error message.
+ 
+
 ***** Uninstall test:
 
 **Try uninstalling.
