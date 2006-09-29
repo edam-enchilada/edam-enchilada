@@ -306,10 +306,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			origPButton.setActionCommand("orig");
 			origPButton.addActionListener(this);
 			origParticles.add(origPButton);
-			bottomPanel = new JPanel(new GridLayout(3,1));
+			bottomPanel = new JPanel(new GridLayout(3,1));//change this line after bug fix
 			bottomPanel.add(peakButtonPanel);
 			bottomPanel.add(origParticles);
+//////////////////// HACK warning below - when bug is fixed, remove the below
+			//line and reset the marked line above to make the GridLayout 2,1
 			bottomPanel.add(new JLabel("NOTE: If anything other than peak area was used as a clustering parameter, these numbers are inaccurrate.  This is a known bug we are working to fix."));
+//////////////////// end HACK		
 		} else{
 			bottomPanel = new JPanel (new GridLayout(1, 2));
 			bottomPanel.add(buttonPanel);
@@ -564,14 +567,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 	
 	/**
-	 * Shows the previous particle when the current particle is not in the selected
+	 * Shows the adjacent particle when the current particle is not in the selected
 	 * collection.
 	 * @param next	The particle to display.
 	 * 					next[0] = atomID
 	 * 					next[1] = curRow
 	 */
 	private void showAdjacentParticle(int[] next){
-		curRow = next[1] - 1;
+		curRow = next[1];
 		showGraph(next[0]);
 		unZoom();
 	}
@@ -585,18 +588,23 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	
 	/**
+	 * @author steinbel
 	 * Helper method grabs necessary info from table and database and sets up
 	 * window to show the next particle.
 	 * @param atomID	The atomID of the particle to show.
 	 */
 	private void showGraph(int atomID){
-		if(curRow==0){
+		//if there is no such atom, just don't do anything.
+		//if (atomID <= 0)
+		//	return;
+		
+		if(curRow<=0){
 			prevButton.setEnabled(false);
 		}else{
 			prevButton.setEnabled(true);
 		}
 		//need to check if it's bigger than its own collection
-		if(curRow==totRows){
+		if(curRow>=totRows){
 			nextButton.setEnabled(false);
 		}else{
 			nextButton.setEnabled(true);
@@ -605,8 +613,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
 		//need to get this from the correct collection, not always the current table
-		//String filename = (String)particlesTable.getValueAt(curRow, 5);
-		//however, this must be slower - going to db . . .
+		//however, this must be slower because going to db . . . - steinbel
 		String filename = db.getATOFMSFileName(atomID);
 		String peakString = "Peaks:\n";
 		

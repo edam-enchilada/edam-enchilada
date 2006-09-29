@@ -587,18 +587,42 @@ public abstract class Database implements InfoWarehouse {
 	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
 		int nextID = -99;
 		int pos = -77;
-		String query = "SELECT AtomID, OrderNumber FROM InternalAtomOrder " +  
+		String query = "";/* = "SELECT AtomID, OrderNumber FROM InternalAtomOrder " +  
 		"WHERE (CollectionID = " + collection + ") AND (OrderNumber = " +
 		                   "(SELECT OrderNumber FROM InternalAtomOrder " +
 		                    "WHERE CollectionID = " + collection +
-		                    " AND AtomID = " + currentID + ") + " + position + ")";
+                    " AND AtomID = " + currentID + ") + " + position + ")";
+*/		//above commented out in transition away from OrderNumber - steinbel 9.19.06
+		
+		//have to deal with which window ("page" of collection) we're starting in
+		int startingID = getFirstAtomInCollection(getCollection(collection));
+		
+		//we want the starting id of the window in which this atom lives
+		int i = currentID / 1000;
+		for (int j = 0; j<i; j++)
+			if ( !((startingID + 1000) >= currentID) )
+				startingID +=1000;
+			
+		//if looking for previous atom
+		if (position <0){
+			query = "SELECT MAX(AtomID) FROM InternalAtomOrder " +
+			"WHERE (CollectionID = " + collection + ") AND (AtomID < " + 
+			currentID + ")";
+		} else if (position >0){	//if looking for next atom
+			query = "SELECT MIN(AtomID)FROM InternalAtomOrder " +
+			"WHERE (CollectionID = " + collection + ") AND (AtomID > " +
+			currentID + ")";
+		}
+		
 		Statement stmt;
 		try {
 			stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery(query);
 			rs.next();
-			nextID = rs.getInt(1);
-			pos = rs.getInt(2);
+			if (rs.getInt(1) > 0){
+				nextID = rs.getInt(1);
+				pos = (nextID - startingID); //calculate the row number 
+			}
 			stmt.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -2205,6 +2229,7 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			Statement stmt = con.createStatement();
+
 			ResultSet rs = stmt.executeQuery(
 					"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
 					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
@@ -2213,7 +2238,7 @@ public abstract class Database implements InfoWarehouse {
 					"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
 					" AND InternalAtomOrder.OrderNumber " +
 					"BETWEEN " + lowIndex + " AND " + highIndex + "\n" +
-			"ORDER BY InternalAtomOrder.OrderNumber");
+			"ORDER BY InternalAtomOrder.AtomID");//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
 			{
@@ -5036,6 +5061,7 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/** 
+	 * @author steinbel - changes to remove dependency on InteralAtomOrder.OrderNumber
 	 * Gets first atom for top-level particles in collection.
 	 */
 	public int getFirstAtomInCollection(Collection collection) {

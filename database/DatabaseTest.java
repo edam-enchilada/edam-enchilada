@@ -1412,8 +1412,8 @@ public class DatabaseTest extends TestCase {
 		assertEquals(adj[1], 1);
 		
 		adj = db.getAdjacentAtomInCollection(4, 12, 2);
-		assertEquals(adj[0], 14);
-		assertEquals(adj[1], 4);
+		assertEquals(adj[0], 13);
+		assertEquals(adj[1], 3);
 		
 		//The following two assertions should print SQLExceptions.
 		
