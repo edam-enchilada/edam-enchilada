@@ -36,6 +36,14 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		this.db = db;
 		this.collections = collections;
 		
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				cancel();
+				
+			}
+		});
+		
 		cachedCollectionPanels = new Hashtable<Collection, JPanel>();
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
@@ -67,6 +75,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		collectionsList.addListSelectionListener(this);
 		
 		collectionsList.setSelectedIndex(0);
+		
 	}
 	
 
@@ -403,15 +412,23 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			aggWorker.start();
 
 		} else if (source == cancel) {
-			// for all collections, set default Aggregation Options.
-			for (int i = 0; i < collections.length; i++) {
-				collections[i].getAggregationOptions().setDefaultOptions();
-			}
-			setVisible(false);
-			dispose();
+			cancel();
 		}
 	}
 	
+	public void cancel(){
+//		 for all collections, set default Aggregation Options.
+		for (int i = 0; i < collections.length; i++) {
+			if(collections[i]==null)
+				System.out.println("collections["+i+"] is null");
+			if(collections[i].getAggregationOptions()==null)
+				System.out.println("collections["+i+"].getAggregationOptions() is null");
+			if(collections[i].getAggregationOptions()!=null)
+				collections[i].getAggregationOptions().setDefaultOptions();
+		}
+		setVisible(false);
+		dispose();
+	}
 	public void valueChanged(ListSelectionEvent e) {
 		int index = collectionsList.getSelectedIndex();
 		
