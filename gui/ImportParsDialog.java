@@ -98,7 +98,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 	public ImportParsDialog(JFrame owner) throws HeadlessException {
 		// calls the constructor of the superclass (JDialog), sets the title and makes the
 		// dialog modal.  
-		super(owner, "Import MS-Analyze *.pars as Collections", true);
+		super(owner, "Import ATOFMS *.pars as Collections", true);
 		this.db = MainFrame.db;
 		parent = owner;
 		setSize(890,500);
