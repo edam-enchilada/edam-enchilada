@@ -99,6 +99,9 @@ public class FlatImportGUI {
 				e.printStackTrace();
 				System.err.println("Exception importing (generally)");
 				ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
+				JOptionPane.showMessageDialog(parent, "There was an error importing data.  Your data may not be" +
+						" in the correct format.  The first column must be a date.  All other columns must be" +
+						" data values.");
 			}
 			System.out.println("imported data");
 		}
