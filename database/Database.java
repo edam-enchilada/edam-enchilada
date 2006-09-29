@@ -587,13 +587,7 @@ public abstract class Database implements InfoWarehouse {
 	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
 		int nextID = -99;
 		int pos = -77;
-		String query = "";/* = "SELECT AtomID, OrderNumber FROM InternalAtomOrder " +  
-		"WHERE (CollectionID = " + collection + ") AND (OrderNumber = " +
-		                   "(SELECT OrderNumber FROM InternalAtomOrder " +
-		                    "WHERE CollectionID = " + collection +
-                    " AND AtomID = " + currentID + ") + " + position + ")";
-*/		//above commented out in transition away from OrderNumber - steinbel 9.19.06
-		
+		String query = "";
 		//have to deal with which window ("page" of collection) we're starting in
 		int startingID = getFirstAtomInCollection(getCollection(collection));
 		
@@ -621,7 +615,7 @@ public abstract class Database implements InfoWarehouse {
 			rs.next();
 			if (rs.getInt(1) > 0){
 				nextID = rs.getInt(1);
-				pos = (nextID - startingID); //calculate the row number 
+				pos = ((nextID - startingID)+1); //calculate the row number 
 			}
 			stmt.close();
 		} catch (SQLException e) {
@@ -634,6 +628,7 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * Updates InternalAtomOrder
+	 * note: making all order numbers equal to -99 in transition - steinbel 9.29.06
 	 * @param atomID
 	 * @param toParentID
 	 */	
@@ -647,8 +642,9 @@ public abstract class Database implements InfoWarehouse {
 					" InternalAtomOrder WHERE CollectionID = "+toParentID + " ORDER BY AtomID");
 			int order = 1;
 			boolean looking = true;
+			//if no atoms in this collection, simply insert
 			if (!rs.next())
-				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+",1)");
+				stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("+atomID+","+toParentID+",-99)");
 			else {
 				while (atomID > rs.getInt(1) && rs.next()) {
 					order++;
@@ -658,18 +654,18 @@ public abstract class Database implements InfoWarehouse {
 				if (rs.getRow() == 0)
 					//if we're at the end of the collection,
 					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
-							+atomID+","+toParentID+","+(order + 1)+")");
+							+atomID+","+toParentID+","+(-99)+")");
 				else if (atomID != rs.getInt(1)) {
 					stmt.addBatch("INSERT INTO InternalAtomOrder VALUES ("
-							+atomID+","+toParentID+","+order+")");
+							+atomID+","+toParentID+","+(-99)+")");
 					
 					do {
 						order++;
-						stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + order + 
+						stmt.addBatch("UPDATE InternalAtomOrder SET OrderNumber = " + -99 + 
 								" WHERE AtomID = "+rs.getInt(1) + 
 								" AND CollectionID = " +toParentID);
 					}
-					while (rs.next());
+					while (rs.next()); 
 				}
 			}
 
@@ -5068,7 +5064,9 @@ public abstract class Database implements InfoWarehouse {
 		int atom = -1;
 		try{
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
+			String string = "SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID();
+			ResultSet rs = stmt.executeQuery(string);
+			
 			if (rs.next())
 				atom = rs.getInt(1);
 			
@@ -5083,7 +5081,7 @@ public abstract class Database implements InfoWarehouse {
 		}
 		catch (SQLException e){
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception getting first atom in collection");
-			System.err.println("problems checking datatype from SQLServer.");
+			System.err.println("problems get first atom in collection from SQLServer.");
 		}
 		return atom;
 	}
@@ -5220,7 +5218,7 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			Statement stmt = con.createStatement();
 			
-			String query = "SELECT MAX(OrderNumber) AS MaxOrder " +
+			String query = "SELECT MAX(AtomID) AS MaxOrder " +
 							"FROM InternalAtomOrder " +
 							"WHERE CollectionID = " + collectionID;
 			//System.out.println(query);//debugging
@@ -5231,7 +5229,7 @@ public abstract class Database implements InfoWarehouse {
 			else	//if no entries yet, this is the first atom
 				order = 1;
 			query = "INSERT INTO InternalAtomOrder " +
-					"VALUES (" + atomID +", "+ collectionID +", "+ order +")";
+					"VALUES (" + atomID +", "+ collectionID +", "+ -99 +")";
 			//System.out.println(query);//debugging
 			stmt.execute(query);
 			stmt.close();
@@ -5411,7 +5409,7 @@ public abstract class Database implements InfoWarehouse {
 			while (rs.next()) {
 				//System.out.println("inserting..."+rs.getInt(1) + ","+cID+","+order);
 				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-						rs.getInt(1) + ","+cID+","+order+")");
+						rs.getInt(1) + ","+cID+","+(-99)+")");
 				order++;
 				if (order % 1000 == 0) st2.executeBatch();
 			}
@@ -5459,7 +5457,7 @@ public abstract class Database implements InfoWarehouse {
 			while (rs.next()) {
 				//System.out.println("inserting...");
 				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-						rs.getInt(1) + ","+cID+","+order+")");
+						rs.getInt(1) + ","+cID+","+(-99)+")");
 				order++;
 				if (order % 1000 == 0) st2.executeBatch();
 			}

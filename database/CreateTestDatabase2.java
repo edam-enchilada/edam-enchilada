@@ -515,28 +515,28 @@ public class CreateTestDatabase2 {
 			ResultSet rs = stmt.executeQuery("USE TestDB2 SELECT AtomID FROM AtomMembership WHERE CollectionID = 2 OR CollectionID = 3");
 			int order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",2,"+(order++)+")");
+				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",2,"+(-99)+")");
 			stmt.executeBatch();
 			
 			// updateInternalAtomOrderTable for CID=3
 			rs = stmt.executeQuery("USE TestDB2 SELECT AtomID FROM AtomMembership WHERE CollectionID = 3");
 			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",3,"+(order++)+")");
+				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",3,"+(-99)+")");
 			stmt.executeBatch();
 			
 			// updateInternalAtomOrderTable for CID=4
 			rs = stmt.executeQuery("USE TestDB2 SELECT AtomID FROM AtomMembership WHERE CollectionID = 4");
 			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",4,"+(order++)+")");
+				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",4,"+(-99)+")");
 			stmt.executeBatch();
 			
 			// updateInternalAtomOrderTable for CID=5
 			rs = stmt.executeQuery("USE TestDB2 SELECT AtomID FROM AtomMembership WHERE CollectionID = 5");
 			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",5,"+(order++)+")");
+				stmt.addBatch("USE TestDB2 INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",5,"+(-99)+")");
 			stmt.executeBatch();
 			
 			rs.close();

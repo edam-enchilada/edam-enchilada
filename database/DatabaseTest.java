@@ -1251,10 +1251,14 @@ public class DatabaseTest extends TestCase {
 			ResultSet rs = stmt.executeQuery(
 					"SELECT * FROM InternalAtomOrder WHERE AtomID = 6 ORDER BY CollectionID");
 			
+			//since ordernumber isn't relevant anymore, instead checking to make
+			//sure that each atomID = 6 got into the correct collection
 			rs.next();
-			assertEquals(rs.getInt(3), 6);
+			assertEquals(rs.getInt(3), -99);
+			assertEquals(rs.getInt(2), 2);
 			rs.next();
-			assertEquals(rs.getInt(3), 1);
+			assertEquals(rs.getInt(2), 3);
+			assertEquals(rs.getInt(3), -99);
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
@@ -1280,7 +1284,7 @@ public class DatabaseTest extends TestCase {
 					"SELECT * FROM InternalAtomOrder WHERE CollectionID = 2");
 			
 			for (int i = 0; rs.next(); ++i) {
-				assertEquals(rs.getInt(1), rs.getInt(3));
+				assertEquals(-99, rs.getInt(3));
 				assertEquals(rs.getInt(1), i + 1);
 			}
 			assertFalse(rs.next());

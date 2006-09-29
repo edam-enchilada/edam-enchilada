@@ -502,7 +502,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 					assertTrue(rs.next());
 					assertEquals(rs.getInt("AtomID"), x + 1);
 					assertEquals(rs.getInt("CollectionID"), 2);
-					//assertEquals(rs.getInt("OrderNumber"), -99);
+					assertEquals(rs.getInt("OrderNumber"), -99);
 						//-99 is dummy value used when easing out OrderNumber - steinbel
 				}
 				
