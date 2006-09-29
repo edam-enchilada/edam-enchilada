@@ -12,9 +12,13 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 
 import javax.swing.JFrame;
+
+import chartlib.GraphAxis.AxisLabeller;
 
 /**
  * @author olsonja
@@ -22,7 +26,8 @@ import javax.swing.JFrame;
  */
 public class CorrelationChartArea extends ChartArea {
 	protected AxisTitle at;
-
+	private static final int EXTRA_DATETIME_SPACE = 15;
+	
 	/**
 	 * 
 	 */
@@ -84,6 +89,46 @@ public class CorrelationChartArea extends ChartArea {
 
 	protected void drawPoint(Graphics2D g2d,double xCoord, double yCoord){
 		drawPointX(g2d,xCoord,yCoord);
+	}
+	
+	/**
+	 * updateAxes() tests for the axes not existing yet, so this method actually
+	 * just calls that one.
+	 *
+	 */
+	protected void createAxes() {
+		super.createAxes();
+		this.xAxis.setLabeller(
+				new AxisLabeller() {
+					private SimpleDateFormat dateFormat = 
+						new SimpleDateFormat("M/dd/yy");
+					private SimpleDateFormat timeFormat = 
+						new SimpleDateFormat("HH:mm:ss");
+					// a default labeller, which reports the value rounded to the 100s place.
+					public String[] label(double value) {
+						Date date = new Date();
+						date.setTime((long)value);
+						String[] label = new String[2];
+						label[0] = dateFormat.format(date);
+						label[1] = timeFormat.format(date);
+						return  label;
+					}
+				}
+		);
+		
+	}
+	
+	/**
+	 * Indicates the portion of the chart value in which data is displayed.
+	 * Creates special dimensions for displaying DateTimes on the x-axis
+	 * @return A rectangle containing the data display value.
+	 */
+	public Rectangle getDataAreaBounds()
+	{
+		Rectangle area = super.getDataAreaBounds();
+		area.setSize(area.height-EXTRA_DATETIME_SPACE,
+				area.width - EXTRA_DATETIME_SPACE);
+		return area;
 	}
 	
 	/**

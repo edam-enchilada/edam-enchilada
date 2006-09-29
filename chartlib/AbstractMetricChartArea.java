@@ -274,6 +274,10 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		xAxis.setRange(xmin, xmax);
 		repaint();
 	}
+	public void setYAxisBounds(double ymin, double ymax) {
+		yAxis.setRange(ymin, ymax);
+		repaint();
+	}
 	
 	public String yLabel(double value) {
 		String ret = "";

@@ -231,7 +231,6 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 //			} else 
 			if (chart.isInDataArea(e.getPoint())) {
 				glassPane.start = e.getPoint();
-				//glassPane.setOpaque(true);
 			} else glassPane.start = null;
 		} else glassPane.start = null;
 	}
@@ -272,6 +271,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 							glassPane.start.x + 20 - oldEnd.x,
 							10);
 			}
+		}else{
+			//The mouse click was invalid
+			//System.out.println("No glasspane.start!!");
 		}
 	}
 

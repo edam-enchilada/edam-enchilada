@@ -86,6 +86,7 @@ public class GraphAxis {
 	public enum Orientation {
 		HORIZONTAL, VERTICAL
 	}
+	private int seriesNumber = 1;
 	
 	// whether this axis is horizontal or vertical.
 	private Orientation orientation;
@@ -259,9 +260,16 @@ public class GraphAxis {
 		double length = position.getP1().distance(position.getP2());
 		Rectangle bounds = gVec.getOutline().getBounds();
 		if (orientation == Orientation.VERTICAL) {
-			return new Coord(
-				position.getX1() - 3 - bounds.width,
-				position.getY2() - length * tickRel + (bounds.height / 2));
+			if(seriesNumber==1)
+				return new Coord(
+						position.getX1() - 3 - bounds.width,
+						position.getY2() - length * tickRel + (bounds.height / 2));
+			if(seriesNumber==2)
+				return new Coord(
+						position.getX1() +3,
+						position.getY2() - length * tickRel + (bounds.height / 2));
+			System.err.println("Invalid Series Number for a ChartArea.");
+			return null;	
 		} else {
 			return new Coord(
 				position.getX1() + length * tickRel - (bounds.width / 2),
@@ -366,6 +374,14 @@ public class GraphAxis {
 		//for y axis
 		else
 		{
+			if(seriesNumber!=1){
+				if(seriesNumber==2){
+					tickSize = -tickSize;
+				}
+				else{
+					System.err.println("Invalid Series Number for a ChartArea.");
+				}
+			}
 			double xCoord = position.getX1();
 			double axisLen = position.getP1().distance(position.getP2());
 			double bottom = Math.max(position.getY1(), position.getY2());
@@ -690,6 +706,14 @@ public class GraphAxis {
 	 */
 	public void setThickness(float thickness) {
 		this.thickness = thickness;
+	}
+
+	public int getSeriesNumber() {
+		return seriesNumber;
+	}
+
+	public void setSeriesNumber(int seriesNumber) {
+		this.seriesNumber = seriesNumber;
 	}
 	
 

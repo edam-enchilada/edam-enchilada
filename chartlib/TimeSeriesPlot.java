@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Point;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -15,7 +17,7 @@ import javax.swing.JPanel;
 public class TimeSeriesPlot extends Chart {
 	private int numCharts;
 	private Dataset[] datasets;
-
+	JLayeredPane layeredPane;
 
 	public TimeSeriesPlot(Dataset[] datasets) {
 		numCharts = datasets.length;
@@ -35,6 +37,8 @@ public class TimeSeriesPlot extends Chart {
 		this.setBarWidth(3);
 		this.setPreferredSize(new Dimension(400, 400));
 		*/
+		//Overwrite the size 
+		
 	}
 	
 	
@@ -46,14 +50,14 @@ public class TimeSeriesPlot extends Chart {
 		
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
-		int height = 400, width = 400;
+		int height = 400, width = 500;
 		
 		//Layered pane for overlapping the graphs
-		JLayeredPane layeredPane = new JLayeredPane();
+		layeredPane = new JLayeredPane();
 		layeredPane.setOpaque(true);
 		layeredPane.setBackground(Color.WHITE);
 		//MUST SET SIZE or it won't work!
-		layeredPane.setPreferredSize(new Dimension(height,width));
+		layeredPane.setPreferredSize(new Dimension(width,height));
 		
 		chartAreas = new ArrayList<AbstractMetricChartArea>();
 		for (int count = 0; count < datasets.length; count++) {
@@ -64,12 +68,13 @@ public class TimeSeriesPlot extends Chart {
 					;
 				}
 			};
+			nextChart.setSeriesNumber(count+1);
 			//also need to setOpaque to false
 			nextChart.setOpaque(false);
 			nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 			//MUST SET SIZE or it won't work!
-			nextChart.setSize(new Dimension(height,width));
-			nextChart.setMinimumSize(new Dimension(height,width));
+			nextChart.setSize(new Dimension(width-50,height));
+			nextChart.setMinimumSize(new Dimension(width-50,height));
 			nextChart.setAxisBounds( 0, 1, 0, 1);
 			nextChart.setNumTicksX(5, 3);
 			
@@ -85,7 +90,31 @@ public class TimeSeriesPlot extends Chart {
 		return chartPanel;
 	}
 	
+	/**
+	 * Overrides the ChartArea.getChartLocation method because 
+	 * all ChartAreas are drawn on top of each other, so you don't
+	 *  want to add the height of the other ChartAreas 
+	 * @param index Which chart to locate.
+	 * @return A Point containing the key.
+	 */
+	protected Point getChartLocation(int index)
+	{
+		Point p = new Point();
+		p.x = 10;
+		p.y = titleLabel.getHeight();
+		return p;
+	}
+	
+	public void packData(){
+		coordinateChartAreas();
+		packData(false, true, true);
+	}
+	
 	public void packData(int index, boolean packX, boolean packY) {
+		coordinateChartAreas();
+		packData(false, true, true);
+	}
+	/*public void packData(boolean packX, boolean packY) {
 		double xmin = Double.POSITIVE_INFINITY, ymin = Double.POSITIVE_INFINITY, xmax = Double.NEGATIVE_INFINITY, ymax = Double.NEGATIVE_INFINITY;
 		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
 
@@ -142,19 +171,22 @@ public class TimeSeriesPlot extends Chart {
 				newXmin = xmin;
 				newXmax = xmax;
 			}
-			newYmin = ymin - ((ymax - ymin) / 10);
-			newYmax = ymax + ((ymax - ymin) / 10);
+			if(packY){
+				newYmin = ymin - ((ymax - ymin) / 10);
+				newYmax = ymax + ((ymax - ymin) / 10);
+			}
 		}
-		/*System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
+		System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
 				+ newYmin + "-" + newYmax);
-		*/
+		
 		for (int i = 0; i < datasets.length; i++) {
 			ChartArea chartArea = (ChartArea) chartAreas.get(i);
-			chartArea.setAxisBounds(newXmin, newXmax, newYmin, newYmax);
+			if(packX)chartArea.setXAxisBounds(newXmin, newXmax);
+			if(packY)chartArea.setYAxisBounds(newYmin, newYmax);
 			chartArea.createAxes();
 			chartArea.repaint();
 		}
-	}
+	}*/
 	
 	/**
 	 * Set the chart to draw the x-axis as a date instead
@@ -167,7 +199,86 @@ public class TimeSeriesPlot extends Chart {
 	
 	
 	public void coordinateChartAreas() {
-		packData(0,true,true);
+		double xmin = Double.POSITIVE_INFINITY, ymin = Double.POSITIVE_INFINITY, xmax = Double.NEGATIVE_INFINITY, ymax = Double.NEGATIVE_INFINITY;
+		double newXmin = 0, newXmax = 0, newYmin = 0, newYmax = 0;
+
+		for (int i = 0; i < datasets.length; i++) {
+			// we assume that all chart areas in this chart are controlled by this code,
+			// so that we can cast them to ChartArea.
+			ChartArea chartArea = (ChartArea) chartAreas.get(i);
+			Dataset dataset = datasets[i];
+
+			// empty dataset: do nothing
+			if (dataset == null || dataset.size() == 0)
+				return;
+
+				double[][] bounds = chartArea.findAllMinsMaxes(dataset);
+				if (xmin > bounds[0][0])
+					xmin = bounds[0][0];
+				if (xmax < bounds[0][1])
+					xmax = bounds[0][1];
+				if (ymin > bounds[1][0])
+					ymin = bounds[1][0];
+				if (ymax < bounds[1][1])
+					ymax = bounds[1][1];
+			
+		}
+
+		// one element:
+		if (xmin == xmax && ymin == ymax) {
+				newXmin = xmin - xmin / 2;
+				newXmax = xmax + xmax / 2;
+			
+		} else {
+			// adds some extra space on the edges
+				newXmin = xmin - ((xmax - xmin) / 10);
+				newXmax = xmax + ((xmax - xmin) / 10);
+			
+		}
+		System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
+				+ newYmin + "-" + newYmax);
+		
+		for (int i = 0; i < datasets.length; i++) {
+			ChartArea chartArea = (ChartArea) chartAreas.get(i);
+			chartArea.setXAxisBounds(newXmin, newXmax);
+			chartArea.createAxes();
+			chartArea.repaint();
+		}
+	}
+	
+	/*public void addMouseListener(MouseListener ml){
+		super.addMouseListener(ml);
+		layeredPane.addMouseListener(ml);
+		for(AbstractMetricChartArea chartArea : chartAreas){
+			chartArea.addMouseListener(ml);
+		}
+		
+	}
+	
+	public void addMouseMotionListener(MouseMotionListener ml){
+		super.addMouseMotionListener(ml);
+		layeredPane.addMouseMotionListener(ml);
+		for(AbstractMetricChartArea chartArea : chartAreas){
+			chartArea.addMouseMotionListener(ml);
+		}
+		
+	}*/
+	public static void main(String[] args){
+		Dataset d = new Dataset();
+		d.add(new DataPoint(1, 1));
+		d.add(new DataPoint(2, 2));
+		d.add(new DataPoint(3, 1));
+		Dataset[] datasets = new Dataset[1];
+		datasets[0] = d;
+		
+		TimeSeriesPlot plot = new TimeSeriesPlot(datasets);
+		
+		JFrame f = new JFrame("woopdy doo");
+		f.getContentPane().add(plot);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		//f.setPreferredSize(new Dimension(400, 400));
+		f.pack();
+		f.setVisible(true);
 	}
 
 }

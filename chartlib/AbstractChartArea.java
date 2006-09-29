@@ -37,6 +37,7 @@ public abstract class AbstractChartArea extends JComponent {
 	protected int V_TITLE_PADDING = 20;
 	protected int RIGHT_PADDING = 15;
 	protected int TOP_PADDING = 15;
+	protected int seriesNumber = 1;
 	private String title;
 	
 	public AbstractChartArea() {
@@ -89,8 +90,15 @@ public abstract class AbstractChartArea extends JComponent {
 		Point xAnch = getAxisTitlePointX(), yAnch = getAxisTitlePointY();
 		if (xAxisTitle == null)
 			xAxisTitle = new AxisTitle("", AxisPosition.BOTTOM, xAnch);
-		if (yAxisTitle == null)
-			yAxisTitle = new AxisTitle("", AxisPosition.LEFT, yAnch);
+		if (yAxisTitle == null){
+			if(seriesNumber==1){
+				yAxisTitle = new AxisTitle("", AxisPosition.LEFT, yAnch);
+			}else if(seriesNumber==2){
+				yAxisTitle = new AxisTitle("", AxisPosition.RIGHT, yAnch);
+			}else{
+				System.err.println("Invalid Series Number for a ChartArea.");
+			}
+		}
 		xAxisTitle.setAnchorPoint(xAnch);
 		yAxisTitle.setAnchorPoint(yAnch);
 	}
@@ -122,10 +130,15 @@ public abstract class AbstractChartArea extends JComponent {
 	 * @param dataArea
 	 */
 	protected Line2D.Double getYBaseLine(Rectangle dataArea) {
-		return new Line2D.Double(dataArea.x, dataArea.y,
+		if(seriesNumber==1)
+			return new Line2D.Double(dataArea.x, dataArea.y,
 				dataArea.x, dataArea.y + dataArea.height);
+		if(seriesNumber==2)
+			return new Line2D.Double(dataArea.x + dataArea.width, dataArea.y,
+			dataArea.x + dataArea.width, dataArea.y + dataArea.height);
+		System.err.println("Invalid Series Number for a ChartArea.");
+		return null;
 	}
-	
 
 	/**
 	 * Tells whether a point is in the data area of the
@@ -184,7 +197,8 @@ public abstract class AbstractChartArea extends JComponent {
 
 
 	protected void drawAxisTitles(Graphics2D g2d) {
-		xAxisTitle.draw(g2d);
+		//if(seriesNumber ==1)
+			xAxisTitle.draw(g2d);
 		yAxisTitle.draw(g2d);
 	}
 
@@ -214,7 +228,8 @@ public abstract class AbstractChartArea extends JComponent {
 	 * @param g2d
 	 */
 	protected void drawAxes(Graphics2D g2d) {
-		xAxis.draw(g2d);
+		//if(seriesNumber ==1)
+			xAxis.draw(g2d);
 		yAxis.draw(g2d);
 	}
 	
@@ -291,8 +306,14 @@ public abstract class AbstractChartArea extends JComponent {
 	 */
 	protected Point getAxisTitlePointY() {
 		Rectangle dataArea = getDataAreaBounds();
-		return new Point(dataArea.x - V_AXIS_PADDING,
+		if(seriesNumber==1)
+			return new Point(dataArea.x - V_AXIS_PADDING,
 				dataArea.y + (dataArea.height / 2));
+		if(seriesNumber==2)
+			return new Point(dataArea.x + dataArea.width + V_AXIS_PADDING,
+					dataArea.y + (dataArea.height / 2));
+		System.err.println("Invalid Series Number for a ChartArea.");
+		return null;
 	}
 	
 	/**
@@ -345,6 +366,19 @@ public abstract class AbstractChartArea extends JComponent {
 	public void setTitle(String string) {
 		title = string;
 		repaint();
+	}
+
+
+
+	public int getSeriesNumber() {
+		return seriesNumber;
+	}
+
+
+
+	public void setSeriesNumber(int seriesNumber) {
+		this.seriesNumber = seriesNumber;
+		this.yAxis.setSeriesNumber(seriesNumber);
 	}
 	
 }

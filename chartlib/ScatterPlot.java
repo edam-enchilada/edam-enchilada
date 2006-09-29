@@ -88,7 +88,7 @@ public class ScatterPlot extends Chart {
 		JFrame f = new JFrame("woopdy doo");
 		f.getContentPane().add(plot);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setPreferredSize(new Dimension(400, 400));
+		f.setPreferredSize(new Dimension(500, 400));
 		f.pack();
 		f.setVisible(true);
 

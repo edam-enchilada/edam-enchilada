@@ -268,6 +268,8 @@ public class ChartArea extends AbstractMetricChartArea {
 				
 			createAxes();
 			repaint();
+			//System.out.println("Size:\n"+this.getSize().height+"\t"+this.getSize().width);
+			
 	}
 	
 	public Dataset getDataset(int i){
@@ -420,6 +422,8 @@ public class ChartArea extends AbstractMetricChartArea {
 	
 	
 	public Double selectBar(Point p, int buf, Dataset peaks) {
+		//System.out.println("ChartArea Size:\n"+this.getSize().height+"\t"+this.getSize().width);
+		
 		Rectangle testbar;
 		Rectangle dataArea = getDataAreaBounds();
 		Iterator<DataPoint> iterator = peaks.iterator();

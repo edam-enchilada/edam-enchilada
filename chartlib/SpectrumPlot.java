@@ -1,6 +1,7 @@
 package chartlib;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.util.ArrayList;
@@ -43,6 +44,23 @@ public class SpectrumPlot extends Chart {
 		*///this.setColor(1,Color.blue);
 		
 		packData(false, true, true); //updates the Y axis scale.
+		
+	}
+	public void packData(boolean packX, boolean packY, boolean forceY){
+		for(AbstractMetricChartArea ca : chartAreas){
+			ca.setSize(300, 600);
+			ca.setSize(new Dimension(600,300));
+			//ca.setPreferredSize(new Dimension(300,600));
+		}
+		super.packData(packX, packY, forceY);
+		//this.setSize(new Dimension(700,700));
+		/*System.out.println("Chart Size:\n"+this.getSize().height+"\t"+this.getSize().width);
+		System.out.println("ChartAreas Size:");
+		for(AbstractMetricChartArea ca : chartAreas){
+			System.out.println(ca.getHeight()
+			+"\t"+ca.getWidth());	
+		}*/
+		
 	}
 	
 	public SpectrumPlot(Dataset pos, Dataset neg){
@@ -101,7 +119,8 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(chartPanel);
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
-//		packData(false, true, true); //updates the Y axis scale.
+		packData(false, true, true); //updates the Y axis scale.
+		
 	}
 	
 	public void displayPeaks(Dataset pos, Dataset neg) {
@@ -123,5 +142,6 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
 		packData(false, true, true); //updates the Y axis scale.
+		
 	}
 }

@@ -131,7 +131,7 @@ public class Chart extends JPanel implements Zoomable
 	/**
 	 * Returns the index of the chart value at point p in the Chart.
 	 * @param p The point to check.
-	 * @param p If true, only checks for charts' actual data value;
+	 * @param dataAreaOnly If true, only checks for charts' actual data value;
 	 * if the point is on an axis, the method will return -1.
 	 * @return The index of the chart found, or -1 if no chart's 
 	 * data value is found at the point.
@@ -151,10 +151,10 @@ public class Chart extends JPanel implements Zoomable
 			q.x = p.x - q.x;
 			q.y = p.y - q.y;
 			//System.out.println(q.x + ", "+ q.y);
-			if(!((AbstractChartArea) cp).isInDataArea(q))
+			if(!((AbstractChartArea) cp).isInDataArea(q)){
 				return -1;
+			}
 		}
-		
 		return result;
 	}
 	
@@ -626,6 +626,7 @@ public class Chart extends JPanel implements Zoomable
 		Point p = new Point();
 		p.x = 10;
 		p.y = titleLabel.getHeight();
+		//Add the height of all the ChartAreas that were drawn first
 		for(int count=0; count < index; count++)
 			p.y += chartAreas.get(count).getHeight();
 		return p;
