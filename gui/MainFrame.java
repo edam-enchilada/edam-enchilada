@@ -1101,7 +1101,7 @@ public class MainFrame extends JFrame implements ActionListener
 		buttonPanel = new JToolBar();
 		buttonPanel.setBorder(new EtchedBorder());
 		
-		importParsButton = new JButton("Import from MS-Analyze");
+		importParsButton = new JButton("Import ATOFMS Data");
 		importParsButton.setBorder(new EtchedBorder());
 		importParsButton.addActionListener(this);
 		
@@ -1109,7 +1109,7 @@ public class MainFrame extends JFrame implements ActionListener
 		importEnchiladaDataButton.setBorder(new EtchedBorder());
 		importEnchiladaDataButton.addActionListener(this);
 		
-		importAMSDataButton = new JButton("Import AMS Data Sets");
+		importAMSDataButton = new JButton("Import AMS Data");
 		importAMSDataButton.setBorder(new EtchedBorder());
 		importAMSDataButton.addActionListener(this);
 		
