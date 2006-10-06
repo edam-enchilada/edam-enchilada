@@ -1805,6 +1805,7 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * @author steinbel
 	 * Executes the current batch
 	 */
 	public void atomBatchExecute() {
@@ -1812,8 +1813,19 @@ public abstract class Database implements InfoWarehouse {
 			batchStatement.executeBatch();
 			for (int i = 0; i < alteredCollections.size(); i++)
 				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
-			for (int i = 0; i < alteredCollections.size(); i++) 
-				updateAncestors(getCollection(alteredCollections.get(i)).getParentCollection());
+			
+			//when the parents of all the altered collections are the same
+			//don't need to update the parent FOR EACH subcollection, just at end
+			ArrayList<Collection> parents = new ArrayList<Collection>();
+			Collection temp;
+			for (int i = 0; i < alteredCollections.size(); i++){ 
+				temp = getCollection(alteredCollections.get(i)).getParentCollection();
+				if (! parents.contains(temp))
+					parents.add(temp);
+			}
+			//only update each distinct parent once
+			for (int i=0; i<parents.size(); i++)
+				updateAncestors(parents.get(i));
 			batchStatement.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception executing batch atom adds and inserts.");
@@ -5406,6 +5418,7 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * @author steinbel - removed OrderNumber
+	 * TODO: still needs optimization
 	 */
 	public void updateAncestors(Collection collection) {
 		// if you try to update a null collection or one of the root collections,
@@ -5429,7 +5442,7 @@ public abstract class Database implements InfoWarehouse {
 			 * between the top level and AtomMembership, there would be no reason
 			 * to delete it unless there were differences - most often there
 			 * wouldn't be.  (Can we figure this out without iterating between 
-			 * both sets? -steinbel
+			 * both sets?) -steinbel 10.4.06
 			 */			
 			String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
 				"WHERE CollectionID = "+cID;
