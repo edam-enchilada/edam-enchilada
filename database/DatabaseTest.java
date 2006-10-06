@@ -228,6 +228,118 @@ public class DatabaseTest extends TestCase {
 		}
 		db.closeConnection();
 	}
+	
+	/**
+	 * @author steinbel
+	 * Tests updateInteralAtomOrder() by manually creating sub-collections
+	 * then calling the update method.
+	 * @throws SQLException 
+	 */
+	public void testUpdateInternalAtomOrder() throws SQLException{
+		String manual = "USE TestDB INSERT INTO Collections VALUES "+
+			"(7,'Seven', 'seven', 'sevendescrip', 'ATOFMS')";
+		db.openConnection();
+		Connection con = db.getCon();
+		Statement stmt = con.createStatement();
+		stmt.addBatch(manual);
+		manual = "USE TestDB DELETE FROM CollectionRelationships WHERE "
+			+ "ChildID = 2 OR ChildID = 3";
+		stmt.addBatch(manual);
+		manual = "USE TestDB INSERT INTO CollectionRelationships VALUES(7,2)"
+			+ "INSERT INTO CollectionRelationships VALUES(7,3)";
+		stmt.addBatch(manual);
+		stmt.executeBatch();
+		
+		//now update IAO
+		db.updateInternalAtomOrder(db.getCollection(7));
+		
+		//and assert correct insertion
+		ResultSet rs = stmt.executeQuery("SELECT * FROM InternalAtomOrder "
+				+ "WHERE CollectionID = 7");
+		for (int i=1; i<11; i++){
+			rs.next();
+			assertEquals(rs.getInt(1), i);
+		}
+		rs.close();
+		stmt.close();
+		db.closeConnection();
+				
+	}
+	
+	/**
+	 * @author steinbel
+	 * Manually give children to an existing collection, then test.
+	 * @throws SQLException 
+	 */
+	public void testUpdateAncestors() throws SQLException{
+		/*
+		 * setup collection 7 (atoms 22, 23, 24) and 8 (atoms 25, 26, 27)
+		 * as children of 2
+		 */
+		db.openConnection();
+		String sqlstring = "USE TestDB"
+			+ " INSERT INTO AtomMembership VALUES (7, 22)"
+			+ " INSERT INTO AtomMembership VALUES (7, 23)"
+			+ " INSERT INTO AtomMembership VALUES (7, 24)"
+			+ " INSERT INTO AtomMembership VALUES (8, 25)"
+			+ " INSERT INTO AtomMembership VALUES (8, 26)"
+			+ " INSERT INTO AtomMembership VALUES (8, 27)";
+		Connection con = db.getCon();
+		Statement stmt = con.createStatement();
+		stmt.executeUpdate(sqlstring);
+		
+		sqlstring = "USE TestDB"
+			+ " INSERT INTO InternalAtomOrder VALUES (22, 7)"
+			+ " INSERT INTO InternalAtomOrder VALUES (23, 7)"
+			+ " INSERT INTO InternalAtomOrder VALUES (24, 7)"
+			+ " INSERT INTO InternalAtomOrder VALUES (25, 8)"
+			+ " INSERT INTO InternalAtomOrder VALUES (26, 8)"
+			+ " INSERT INTO InternalAtomOrder VALUES (27, 8)";
+		stmt.executeUpdate(sqlstring);
+			
+		
+		sqlstring = "USE TestDB"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (22,'9/2/2003 5:30:38 PM',22,0.22,22,'tweTwo')"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (23,'9/2/2003 5:30:38 PM',23,0.23,23,'tweThree')"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (24,'9/2/2003 5:30:38 PM',24,0.24,24,'tweFour')"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (25,'9/2/2003 5:30:38 PM',25,0.25,25,'tweFive')"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (26,'9/2/2003 5:30:38 PM',26,0.26,26,'tweSix')"
+			+ " INSERT INTO ATOFMSAtomInfoDense VALUES (27,'9/2/2003 5:30:38 PM',27,0.27,27,'tweSeven')";
+		stmt.executeUpdate(sqlstring);
+		
+		sqlstring = "USE TestDB"
+			+ " INSERT INTO Collections VALUES (7,'Seven', 'seven', 'sevdescrip', 'ATOFMS')"
+			+ " INSERT INTO Collections VALUES (8,'Eight', 'eight', 'eightdescrip', 'ATOFMS')";
+		stmt.executeUpdate(sqlstring);
+		
+		sqlstring = "USE TestDB"
+			+ " INSERT INTO CollectionRelationships VALUES (2, 7)"
+			+ " INSERT INTO CollectionRelationships VALUES (2, 8)";
+		stmt.executeUpdate(sqlstring);
+		
+		/* Call updateAncestors and check results.*/
+		db.updateAncestors(db.getCollection(7));
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM InternalAtomOrder "
+				+ "WHERE CollectionID = 2 ORDER BY AtomID");
+		
+		//test for original particles in collection 2
+		for (int i=1; i<6; i++){
+			assertTrue(rs.next());
+			//System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
+			assertEquals(rs.getInt(1), i);
+		}
+			
+		//test for particles from children collections 7 and 8
+		for (int i=22; i<28; i++){
+			assertTrue(rs.next());
+			//System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
+			assertEquals(rs.getInt(1), i);
+		}
+			
+		
+		db.closeConnection();
+	}
 
 	/**
 	 * Copies CollectionID = 3 to CollectionID = 2
@@ -1225,7 +1337,7 @@ public class DatabaseTest extends TestCase {
 		}
 		
 		//this should print an exception message
-		assertFalse(db.addCenterAtom(3, 4));
+		assertFalse(db.addCenterAtom(3, 4));;
 		
 		//this should print an exception message
 		assertFalse(db.addCenterAtom(2, 5));
@@ -1237,32 +1349,39 @@ public class DatabaseTest extends TestCase {
 	}
 
 	/**
+	 * @author steinbel - got rid of IAO.OrderNumber
 	 * @author shaferia
+	 * @throws SQLException 
 	 */
-	public void testAddSingleInternalAtomToTable() {
+	public void testAddSingleInternalAtomToTable() throws SQLException {
 		db.openConnection();
 		
 		//test adding to end
 		db.addSingleInternalAtomToTable(6, 2);
 
-		try {
-			Connection con = db.getCon();
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(
-					"SELECT * FROM InternalAtomOrder WHERE AtomID = 6 ORDER BY CollectionID");
-			
-			//since ordernumber isn't relevant anymore, instead checking to make
-			//sure that each atomID = 6 got into the correct collection
-			rs.next();
-			assertEquals(rs.getInt(3), -99);
-			assertEquals(rs.getInt(2), 2);
-			rs.next();
-			assertEquals(rs.getInt(2), 3);
-			assertEquals(rs.getInt(3), -99);
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}	
+	
+		Connection con = db.getCon();
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery(
+				"SELECT * FROM InternalAtomOrder WHERE AtomID > 4 " +
+				"AND AtomID <8 ORDER BY CollectionID, AtomID");
+		
+		//since ordernumber isn't relevant anymore, instead checking to make
+		//sure that each atomID = 6 got into the correct collection
+		rs.next();
+		assertEquals(rs.getInt(2), 2);
+		assertEquals(rs.getInt(1), 5);
+		rs.next();
+		assertEquals(rs.getInt(2), 2);
+		assertEquals(rs.getInt(1), 6);
+		rs.next();
+		assertEquals(rs.getInt(2), 3);
+		assertEquals(rs.getInt(1), 6);
+		rs.next();
+		assertEquals(rs.getInt(2), 3);
+		assertEquals(rs.getInt(1), 7);
+	
+	
 		
 		
 		db.atomBatchInit();
@@ -1278,13 +1397,12 @@ public class DatabaseTest extends TestCase {
 		db.addSingleInternalAtomToTable(2, 2);
 
 		try {
-			Connection con = db.getCon();
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(
+			con = db.getCon();
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
 					"SELECT * FROM InternalAtomOrder WHERE CollectionID = 2");
 			
 			for (int i = 0; rs.next(); ++i) {
-				assertEquals(-99, rs.getInt(3));
 				assertEquals(rs.getInt(1), i + 1);
 			}
 			assertFalse(rs.next());

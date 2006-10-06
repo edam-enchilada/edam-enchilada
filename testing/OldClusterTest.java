@@ -144,16 +144,16 @@ public class OldClusterTest extends TestCase {
 			+ " VALUES (1,8)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (1,7,1)";
+			+ " VALUES (1,7)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (2,7,2)";
+			+ " VALUES (2,7)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (3,7,3)";
+			+ " VALUES (3,7)";
 		stmt.addBatch(update);
 		update = "INSERT INTO InternalAtomOrder \n"
-			+ " VALUES (4,8,1)";
+			+ " VALUES (4,8)";
 		stmt.addBatch(update);
 		stmt.executeBatch();
 		stmt.close();

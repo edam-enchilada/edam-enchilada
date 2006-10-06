@@ -490,43 +490,44 @@ public class CreateTestDatabase {
 		return files;
 	}
 	
+	/**
+	 * @author steinbel
+	 * Could still use some optimization - all I did was take out all references
+	 * to IAO.OrderNumber.
+	 *
+	 */
 	private void updateInternalAtomOrderTestTable() {
 		try {
 			Statement stmt = con.createStatement();
 			// updateInternalAtomOrderTable for CID=2
 			ResultSet rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
 					" CollectionID = 2");
-			int order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",2,"+(-99)+")");
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",2)");
 			stmt.executeBatch();
 			// updateInternalAtomOrderTable for CID=3
 			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
 					" CollectionID = 3");
-			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",3,"+(-99)+")");
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",3)");
 			stmt.executeBatch();
 			// updateInternalAtomOrderTable for CID=4
 			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
 					" CollectionID = 4");
-			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",4,"+(-99)+")");
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",4)");
 			stmt.executeBatch();
 			// updateInternalAtomOrderTable for CID=5
 			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
 					" CollectionID = 5 OR CollectionID = 6");
-			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",5,"+(-99)+")");
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",5)");
 			stmt.executeBatch();
 			// updateInternalAtomOrderTable for CID=6
 			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership WHERE" +
 					" CollectionID = 6");
-			order = 1;
 			while(rs.next())
-				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",6,"+(-99)+")");
+				stmt.addBatch("USE TestDB INSERT INTO InternalAtomOrder VALUES ("+rs.getInt(1)+",6)");
 			stmt.executeBatch();
 			rs.close();
 			stmt.close();
