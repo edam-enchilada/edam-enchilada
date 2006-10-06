@@ -71,7 +71,7 @@ public class Aggregator {
 	 */
 	public int createAggregateTimeSeries(String syncRootName,
 			Collection[] collections, final ProgressBarWrapper progressBar,
-			MainFrame mainFrame) throws InterruptedException{
+			MainFrame mainFrame) throws InterruptedException, AggregationException{
 		final int[][] mzValues = new int[collections.length][];
 		final int[] numSqlCalls = {1};
 		
@@ -107,7 +107,8 @@ public class Aggregator {
 				}
 				
 				long begin = new Date().getTime();
-				mzValues[i] = db.getValidSelectedMZValuesForCollection(curColl, startTime, endTime);	
+				mzValues[i] = db.getValidSelectedMZValuesForCollection(curColl, startTime, endTime);
+				if(mzValues[i].length==0)throw new AggregationException(curColl);
 				long end = new Date().getTime();
 				System.out.println("getValidMZValuesForCollection: "+(end-begin)/1000+" sec.");
 				if (mzValues[i] != null)

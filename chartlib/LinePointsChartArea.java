@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
@@ -92,6 +93,9 @@ public class LinePointsChartArea extends ChartArea {
 				area.width - EXTRA_DATETIME_SPACE);
 		return area;
 	}
+	
+	
+	
 	/**
 	 * @param args
 	 */

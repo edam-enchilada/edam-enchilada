@@ -295,52 +295,15 @@ public class SyncAnalyzePanel extends JPanel {
 
 			int dataSetIndex = numSequences;
 			
-			/*for (int i = 0; dataSetIndex < numSequences; i++) {
-				Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
-				Collection compareColl = (Collection) conditionSeq2[i].getSelectedItem();
-				
-				boolean compareAgainstValue = (conditionType[i].getSelectedIndex() == 0);
-				
-				double trueMax = maxValue[dataSetIndex];
-				Chart compChart;
-				if (compareAgainstValue) 
-					compChart = new Chart(1, false);
-				else {
-					compChart = new Chart(2, true);
-					trueMax = Math.max(trueMax, maxValue[dataSetIndex + 1]);
-				}
-
-				compChart.setHasKey(false);
-				compChart.setTitle("<html><b>Condition Series "	+ (i + 1) + "</b></html>");
-				compChart.setTitleX(0, "Time");
-				compChart.setTitleY(0, "Condition Series " + (i + 1) + " Value");
-				compChart.setColor(0, Color.green);
-				compChart.setAxisBounds(0, xMin, xMax, 0, trueMax);
-				compChart.setDataset(0, datasets[dataSetIndex]);
-				compChart.setDataDisplayType((datasets[dataSetIndex++].size() == 1), true);
-				compChart.setNumTicks(10, 10, 1, 1);
-				compChart.setBarWidth(3);
-				compChart.drawXAxisAsDateTime(0);
-				
-				if (!compareAgainstValue) {
-					compChart.setTitleY(1, "Condition Series " + (i + 1) + " Comparison Value");
-					compChart.setColor(1, Color.magenta);
-					compChart.setAxisBounds(1, xMin, xMax, 0, trueMax);
-					compChart.setDataset(1, datasets[dataSetIndex++]);
-				}
-
-				compChart.setPreferredSize(new Dimension(400, 400));
-				compChart.setBorder(new EmptyBorder(15, 0, 0, 0));
-
-				bottomPanel = addComponent(compChart, bottomPanel);
-			}*/
-
 			if (numSequences > 1) {
 				Chart scatterChart = new ScatterPlot(scatterplotData[0], scatterplotData[1]);
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
 				/*scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
 				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
 				*/
+				scatterChart.setPreferredSize(new Dimension(400,400));
+				scatterChart.repaint();
+				
 				bottomPanel = addComponent(scatterChart, bottomPanel);
 			}
 		} else {

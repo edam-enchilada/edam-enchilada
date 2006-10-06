@@ -18,6 +18,7 @@ public class TimeSeriesPlot extends Chart {
 	private int numCharts;
 	private Dataset[] datasets;
 	JLayeredPane layeredPane;
+	
 
 	public TimeSeriesPlot(Dataset[] datasets) {
 		numCharts = datasets.length;
@@ -50,7 +51,7 @@ public class TimeSeriesPlot extends Chart {
 		
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
-		int height = 400, width = 500;
+		int height = 405, width = 460;
 		
 		//Layered pane for overlapping the graphs
 		layeredPane = new JLayeredPane();
@@ -73,8 +74,8 @@ public class TimeSeriesPlot extends Chart {
 			nextChart.setOpaque(false);
 			nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 			//MUST SET SIZE or it won't work!
-			nextChart.setSize(new Dimension(width-50,height));
-			nextChart.setMinimumSize(new Dimension(width-50,height));
+			nextChart.setSize(new Dimension(width,height));
+			nextChart.setMinimumSize(new Dimension(width,height));
 			nextChart.setAxisBounds( 0, 1, 0, 1);
 			nextChart.setNumTicksX(5, 3);
 			
@@ -235,9 +236,9 @@ public class TimeSeriesPlot extends Chart {
 				newXmax = xmax + ((xmax - xmin) / 10);
 			
 		}
-		System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
+		/*System.out.println("newX: " + newXmin + "-" + newXmax + "\nnewY: "
 				+ newYmin + "-" + newYmax);
-		
+		*/
 		for (int i = 0; i < datasets.length; i++) {
 			ChartArea chartArea = (ChartArea) chartAreas.get(i);
 			chartArea.setXAxisBounds(newXmin, newXmax);

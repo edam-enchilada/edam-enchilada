@@ -30,7 +30,21 @@ public class ScatterPlot extends Chart {
 		datasets[1] = ds2;
 		
 		Dataset correlationData = new Dataset();
-		Iterator<DataPoint> iterator = ds1.iterator();
+		Iterator<DataPoint> iter1 = ds1.iterator();
+		Iterator<DataPoint> iter2 = ds2.iterator();
+		
+		while(iter1.hasNext())
+		{
+			DataPoint dpX = iter1.next();
+			DataPoint dpY = iter2.next();
+			
+			if (dpY != null) {
+				double x = dpX.y, y = dpY.y;
+				correlationData.add(new DataPoint(x,y));
+			}
+		}
+		
+		/*Iterator<DataPoint> iterator = ds1.iterator();
 		while(iterator.hasNext())
 		{
 			DataPoint dpX = iterator.next();
@@ -40,7 +54,7 @@ public class ScatterPlot extends Chart {
 				double x = dpX.y, y = dpY.y;
 				correlationData.add(new DataPoint(x,y));
 			}
-		}
+		}*/
 		
 		datasets[2] = correlationData;
 		
@@ -61,7 +75,7 @@ public class ScatterPlot extends Chart {
 	}
 	
 	protected ChartArea makeChartArea(){
-		ChartArea nextChart = new CorrelationChartArea(datasets[0]);
+		ChartArea nextChart = new CorrelationChartArea(datasets[2]);
 		// nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
 		nextChart.setAxisBounds(0, 1, 0, 1);
 
@@ -70,7 +84,7 @@ public class ScatterPlot extends Chart {
 	}
 	
 	public void setTitle(String title) {
-		Dataset.Statistics stats = getDataset(0).getCorrelationStats(getDataset(0));
+		Dataset.Statistics stats = getDataset(0).getCorrelationStats();
 		super.setTitle(String.format(title, stats.r2));
 	}
 	

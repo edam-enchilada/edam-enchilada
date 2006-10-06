@@ -5,6 +5,8 @@ import java.awt.geom.*;
 import static chartlib.AxisTitle.AxisPosition;
 
 import javax.swing.JComponent;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 
 /**
  * This class just handles the basic task of being a place where charts are drawn.
@@ -32,9 +34,9 @@ public abstract class AbstractChartArea extends JComponent {
 	protected Color backgroundColor = Color.WHITE;
 	
 	protected int H_AXIS_PADDING = 15;
-	protected int V_AXIS_PADDING = 50;
+	protected int V_AXIS_PADDING = 40;
 	protected int H_TITLE_PADDING = 20;
-	protected int V_TITLE_PADDING = 20;
+	protected int V_TITLE_PADDING = 25;
 	protected int RIGHT_PADDING = 15;
 	protected int TOP_PADDING = 15;
 	protected int seriesNumber = 1;
@@ -45,7 +47,7 @@ public abstract class AbstractChartArea extends JComponent {
 		createAxes();
 		xAxis.setRange(0, 1);
 		yAxis.setRange(0, 1);
-		this.setMinimumSize(new Dimension(10, 10));
+		
 	}
 
 
@@ -174,15 +176,14 @@ public abstract class AbstractChartArea extends JComponent {
 		drawBackground((Graphics2D) g2d.create());
 		updateAxes();
 		drawAxes((Graphics2D) g2d.create());
-		drawAxisTitles((Graphics2D) g2d.create());
 		drawTickLabels((Graphics2D) g2d.create());
+		drawAxisTitles((Graphics2D) g2d.create());
 		
 		Graphics2D dataG = (Graphics2D) g2d.create();
 		dataG.clip(getDataAreaBounds());
 		drawData(dataG);
 		drawTitle((Graphics2D) g2d.create());
 		
-		//Sun recommends cleanup of extra Graphics objects for efficiency
 		g2d.dispose();
 	}
 	
@@ -197,7 +198,7 @@ public abstract class AbstractChartArea extends JComponent {
 
 
 	protected void drawAxisTitles(Graphics2D g2d) {
-		//if(seriesNumber ==1)
+		if(seriesNumber ==1)
 			xAxisTitle.draw(g2d);
 		yAxisTitle.draw(g2d);
 	}
@@ -228,7 +229,7 @@ public abstract class AbstractChartArea extends JComponent {
 	 * @param g2d
 	 */
 	protected void drawAxes(Graphics2D g2d) {
-		//if(seriesNumber ==1)
+		if(seriesNumber ==1)
 			xAxis.draw(g2d);
 		yAxis.draw(g2d);
 	}
@@ -307,10 +308,10 @@ public abstract class AbstractChartArea extends JComponent {
 	protected Point getAxisTitlePointY() {
 		Rectangle dataArea = getDataAreaBounds();
 		if(seriesNumber==1)
-			return new Point(dataArea.x - V_AXIS_PADDING,
+			return new Point(dataArea.x - (int)(1.35*V_AXIS_PADDING),
 				dataArea.y + (dataArea.height / 2));
 		if(seriesNumber==2)
-			return new Point(dataArea.x + dataArea.width + V_AXIS_PADDING,
+			return new Point(dataArea.x + dataArea.width + (int)(1.35*V_AXIS_PADDING),
 					dataArea.y + (dataArea.height / 2));
 		System.err.println("Invalid Series Number for a ChartArea.");
 		return null;

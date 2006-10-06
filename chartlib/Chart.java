@@ -568,13 +568,14 @@ public class Chart extends JPanel implements Zoomable
 		//Border layout is good for having spacing on the sides
 		//and a dynamically resizing center value (the ChartArea)
 		setLayout(new BorderLayout());
-		
+		setBackground(Color.WHITE);
 		titleLabel = new ChartTitle(title);
 		
 		
 		
 		//	ChartArea and key layout
 		ckPanel = new JPanel(); //panel for chart and key
+		ckPanel.setBackground(Color.WHITE);
 		ckPanel.setLayout(new BoxLayout(ckPanel,BoxLayout.X_AXIS));
 		
 		

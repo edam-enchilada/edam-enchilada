@@ -66,7 +66,7 @@ public class CorrelationChartArea extends ChartArea {
 		this.drawDataPoints(g2d,correlationData);
 		
 		Dataset.Statistics stats = correlationData.getCorrelationStats();
-		
+		//System.out.println("b: "+stats.b+"\ta: "+stats.a+"\tr^2: "+stats.r2);
 		double leftSideY = stats.b * xAxis.getMin() + stats.a;
 		double rightSideY = stats.b * xAxis.getMax() + stats.a;
 		
@@ -95,7 +95,7 @@ public class CorrelationChartArea extends ChartArea {
 	 * updateAxes() tests for the axes not existing yet, so this method actually
 	 * just calls that one.
 	 *
-	 */
+	 *//*
 	protected void createAxes() {
 		super.createAxes();
 		this.xAxis.setLabeller(
@@ -118,18 +118,18 @@ public class CorrelationChartArea extends ChartArea {
 		
 	}
 	
-	/**
+	*//**
 	 * Indicates the portion of the chart value in which data is displayed.
 	 * Creates special dimensions for displaying DateTimes on the x-axis
 	 * @return A rectangle containing the data display value.
-	 */
+	 *//*
 	public Rectangle getDataAreaBounds()
 	{
 		Rectangle area = super.getDataAreaBounds();
 		area.setSize(area.height-EXTRA_DATETIME_SPACE,
 				area.width - EXTRA_DATETIME_SPACE);
 		return area;
-	}
+	}*/
 	
 	/**
 	 * @param args

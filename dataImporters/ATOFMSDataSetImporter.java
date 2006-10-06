@@ -63,6 +63,7 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Window;
+import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
 import java.util.zip.ZipException;
@@ -334,14 +335,14 @@ public class ATOFMSDataSetImporter {
 			String name = parent.getName();
 			name = parent.toString()+ File.separator + name + ".set";
 			if (new File(name).isFile()) {
-				BufferedReader countSet = new BufferedReader(
-						new FileReader(name));
-
+				Scanner countSet = new Scanner(name);
+				countSet.useDelimiter("\r\n");
+		        
 				int tParticles = 0;
 				int particleNum = 0;
-				while(countSet.ready())
+				while(countSet.hasNextLine())
 				{
-					countSet.readLine();
+					countSet.nextLine();
 					tParticles++;
 				}
 				countSet.close();
@@ -380,20 +381,21 @@ public class ATOFMSDataSetImporter {
 			Collection destination = db.getCollection(id[0]);
 			collections[collectionIndex] = destination;
 			ATOFMSParticle currentParticle;
-				BufferedReader readSet = new BufferedReader(new FileReader(name));
-
+				Scanner readSet = new Scanner(name);
+				readSet.useDelimiter("\r\n");
+		        
 					StringTokenizer token;
 					String particleFileName;
 					//int doDisplay = 4;
 					int nextID = db.getNextID();
 					Collection curCollection = db.getCollection(id[0]);
-					while (readSet.ready()) { // repeat until end of file.
+					while (readSet.hasNextLine()) { // repeat until end of file.
 
 						if(progressBar.wasTerminated()){
 							throw new InterruptedException();
 						}
 
-						token = new StringTokenizer(readSet.readLine(), ",");
+						token = new StringTokenizer(readSet.nextLine(), ",");
 
 						// .set files are sometimes made with really strange line delims,
 						// so we ignore empty lines.

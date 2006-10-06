@@ -393,6 +393,20 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 					} catch(InterruptedException e){
 						db.rollbackTransaction();
 						return null;
+					} catch(AggregationException f){
+						final String name = f.collection.getName();
+						SwingUtilities.invokeLater(new Runnable(){
+							public void run() {
+								JOptionPane.showMessageDialog(null,
+										"The start and stop dates which you selected resulted" +
+										" in the collection: "+name+" having " +
+										"no data points to aggregate.  Either remove the collection or try" +
+										"different dates.");
+							}
+							
+						});
+						db.rollbackTransaction();
+						return null;
 					}
 					return new Integer(collectionID);
 				}
@@ -403,7 +417,10 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 					System.out.println("Aggregation Time: " + (timingEnd-timingStart));
 					// for all collections, set default Aggregation Options.
 					for (int i = 0; i < collections.length; i++) {
-						collections[i].getAggregationOptions().setDefaultOptions();
+						AggregationOptions ao = new AggregationOptions();
+						ao.setDefaultOptions();
+						collections[i].setAggregationOptions(ao);
+						//collections[i].getAggregationOptions().setDefaultOptions();
 					}
 					
 					dispose();		
