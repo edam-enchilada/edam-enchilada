@@ -5266,7 +5266,8 @@ public abstract class Database implements InfoWarehouse {
 	
 	
 	/**
-	 * @author steinbel
+	 * @author steinbel - adapted to remove OrderNumber
+	 * 
 	 * internalAtomOrder updated by updating the collection itself,
 	 * recursing through subcollections.  This ONLY updates the specified
 	 * collection, and it works by traversing down to the leaves of the tree.
@@ -5401,7 +5402,7 @@ public abstract class Database implements InfoWarehouse {
 			while (rs.next()) {
 				//System.out.println("inserting..."+rs.getInt(1) + ","+cID+","+order);
 				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-						rs.getInt(1) + ","+cID+","+(-99)+")");
+						rs.getInt(1) + ","+cID+")");
 				order++;
 				if (order % 1000 == 0) st2.executeBatch();
 			}
