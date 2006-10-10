@@ -335,7 +335,7 @@ public class ATOFMSDataSetImporter {
 			String name = parent.getName();
 			name = parent.toString()+ File.separator + name + ".set";
 			if (new File(name).isFile()) {
-				Scanner countSet = new Scanner(name);
+				Scanner countSet = new Scanner(new File(name));
 				countSet.useDelimiter("\r\n");
 		        
 				int tParticles = 0;
@@ -381,7 +381,7 @@ public class ATOFMSDataSetImporter {
 			Collection destination = db.getCollection(id[0]);
 			collections[collectionIndex] = destination;
 			ATOFMSParticle currentParticle;
-				Scanner readSet = new Scanner(name);
+				Scanner readSet = new Scanner(new File(name));
 				readSet.useDelimiter("\r\n");
 		        
 					StringTokenizer token;
@@ -394,9 +394,8 @@ public class ATOFMSDataSetImporter {
 						if(progressBar.wasTerminated()){
 							throw new InterruptedException();
 						}
-
+						
 						token = new StringTokenizer(readSet.nextLine(), ",");
-
 						// .set files are sometimes made with really strange line delims,
 						// so we ignore empty lines.
 						if (! token.hasMoreTokens()) {
