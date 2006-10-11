@@ -795,8 +795,9 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		/*
 		 * @author steinbel
+		 * //commented out for fall 06 release - steinbel
 		 */
-		else if (source == searchButton) {
+/*		else if (source == searchButton) {
 			//see if filename is valid and set table accordingly
 			String searchMe = searchFileBox.getText();
 			if (!searchMe.equals(" Enter a filename to search for a particle."))
@@ -804,7 +805,7 @@ public class MainFrame extends JFrame implements ActionListener
 			else 
 				ErrorLogger.displayException(this, "Please enter a filename.");
 		}
-		
+*/		
 		ErrorLogger.flushLog(this);
 	}
 	
@@ -1187,8 +1188,8 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		JPanel searchPane = new JPanel(new BorderLayout());
 		//put next two buttons on another line
-		searchPane.add(searchFileBox, BorderLayout.NORTH);
-		searchPane.add(searchButton, BorderLayout.SOUTH);
+//		searchPane.add(searchFileBox, BorderLayout.NORTH);//commented out for fall 06 release - steinbel
+//		searchPane.add(searchButton, BorderLayout.SOUTH);
 		
 		JPanel buttonsPane = new JPanel(new BorderLayout());
 		buttonsPane.add(comboPane, BorderLayout.EAST);
@@ -1311,8 +1312,8 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		//allow searching in this collection
-		searchButton.setEnabled(true);
-		searchFileBox.setEnabled(true);
+//		searchButton.setEnabled(true);	//commented out for fall 06 release - steinbel
+//		searchFileBox.setEnabled(true);
 		
 		Vector<Object> columns = new Vector<Object>(colnames.size());
 		for (int i = 0; i < colnames.size(); i++) {
@@ -1650,8 +1651,8 @@ public class MainFrame extends JFrame implements ActionListener
 		collectionViewPanel.setComponentAt(0, particlePanel);
 		collectionViewPanel.repaint();
 		
-		searchFileBox.setEnabled(false);
-		searchButton.setEnabled(false);
+//		searchFileBox.setEnabled(false);	//commented out for fall 06 release - steinbel
+//		searchButton.setEnabled(false);
 		
 		analyzeParticleButton.setEnabled(false);
 		
@@ -1669,8 +1670,8 @@ public class MainFrame extends JFrame implements ActionListener
 	 */
 	public void setTable() {
 			
-			System.out.println("low " + currLow + " high " + currHigh + " "
-					+ (currHigh - currLow));//TESTING
+			//System.out.println("low " + currLow + " high " + currHigh + " "
+			//		+ ((currHigh - currLow)+1));//TESTING
 			//clear data in table and repopulate it with appropriate 
 			// data.
 			currentlyShowing.setText("Currently showing particles " + currLow +

@@ -1118,10 +1118,10 @@ public abstract class Database implements InfoWarehouse {
 			
 			// update InternalAtomOrder table.
 			// update toCollection from collection to leaves
-			updateInternalAtomOrder(toCollection);
+			updateInternalAtomOrder(toCollection);/*
 			// update collection and toCollection's parent up to root.
 			updateAncestors(collection);
-			updateAncestors(toCollection.getParentCollection());
+			updateAncestors(toCollection.getParentCollection());*/
 			stmt.close();
 		} catch (SQLException e){
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception moving the collection "+collection.getName());
@@ -2208,7 +2208,7 @@ public abstract class Database implements InfoWarehouse {
 	 * items are strings except for the atomID, which is used to produce 
 	 * graphs.
 	 * 
-	 * This will only return 1000 particles at a time.
+	 * This will only return 1000 particles at a time. - steinbel
 	 */
 	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo, int lowIndex, int highIndex) {
 		assert (highIndex - lowIndex < 1000) : "trying to collect over 1000 particles at a time!";
@@ -2220,14 +2220,16 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			Statement stmt = con.createStatement();
-
+			int starter = getFirstAtomInCollection(collection);
+			
 			ResultSet rs = stmt.executeQuery(
-					"SELECT " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
+					"SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
 					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
 					", InternalAtomOrder\n" +
 					"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
 					"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
-			"ORDER BY InternalAtomOrder.AtomID");//changed with IAO change - steinbel 9.19.06
+					" AND InternalAtomOrder.AtomID >= " + (starter) + 
+			" ORDER BY InternalAtomOrder.AtomID");//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
 			{
@@ -5287,6 +5289,9 @@ public abstract class Database implements InfoWarehouse {
 			return;
 		try {
 			Statement stmt = con.createStatement();
+
+			//again, want to compare with existing IAO table to see if there
+			//are any difference, if not, why delete? - steinbel
 			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 			
 			//get all the AtomIDs from AtomMembership if the corresponding CollectionID was
@@ -5312,7 +5317,7 @@ public abstract class Database implements InfoWarehouse {
 					e.printStackTrace();
 				}
 				while (rs.next()) {
-					//System.out.println(rs.getInt(1) + "," + cID + "," + order);
+					//System.out.println(rs.getInt(1) + "," + cID);//TESTING
 					bulkFile.println(rs.getInt(1) + "," + cID);
 				}
 				bulkFile.close();
@@ -5433,29 +5438,34 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			Statement stmt = con.createStatement();
 			
-			// Repopulate InternalAtomOrder table.
-			//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
-			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
 			/*
-			 * If we could compare just the top-level of the collection with its
-			 * members from AtomMembership (perhaps by intersecting with the 
-			 * IAO of its children?) and determine if there are any differences
-			 * between the top level and AtomMembership, there would be no reason
-			 * to delete it unless there were differences - most often there
-			 * wouldn't be.  (Can we figure this out without iterating between 
-			 * both sets?) -steinbel 10.4.06
+			 * Compare just the top-level of the collection with its
+			 * members from AtomMembership (by intersecting with the 
+			 * IAO of its children) and determine if there are any differences
+			 * between the top level and AtomMembership, if so, rectify them,
+			 * else, leave well enough alone. - steinbel
 			 */			
-			String query = "SELECT DISTINCT AtomID FROM AtomMembership " +
-				"WHERE CollectionID = "+cID;
-			ArrayList<Integer> children = collection.getSubCollectionIDs();
-			if (children.size() != 0) {
-				query += " UNION SELECT AtomID FROM InternalAtomOrder WHERE CollectionID = " + children.get(0);
-				for (int i = 1; i < children.size(); i++) 
-					query += " OR CollectionID = " + children.get(i);
-				
+			
+/*get atomIDs for collection in IAO and in AtomMembership.  if difference,
+ *rectify it
+ *
+ * then, loop through all children and repeat procedure
+ */
+			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = " + cID  +
+					" AND (AtomID NOT IN (SELECT AtomID from InternalAtomOrder" +
+					" WHERE CollectionID = " + cID + "))";
+			ArrayList<Integer> subCollections = collection.getSubCollectionIDs();
+
+			if (subCollections.size() > 0){
+				for (int i=0; i<subCollections.size(); i++)
+					query += " union (SELECT AtomID FROM AtomMembership WHERE " +
+							"CollectionID = " + subCollections.get(i) + ")";//" AND " +
+						//	"(AtomID NOT IN (SELECT AtomID FROM InternalAtomOrder " +
+						//	"WHERE CollectionID = " + subCollections.get(i) + ")))";
 			}
-			query += " ORDER BY AtomID";
-			System.out.println(query);//TESTING
+
+
+			//System.out.println(query);//TESTING
 			ResultSet rs = stmt.executeQuery(query);
 			int order = 1;
 			Statement st2 = con.createStatement();
@@ -5463,6 +5473,8 @@ public abstract class Database implements InfoWarehouse {
 			//possible bulk insert to speed up?
 			while (rs.next()) {
 				//System.out.println("inserting...");
+			//	System.out.println("INSERT INTO InternalAtomOrder VALUES ("+
+						//rs.getInt(1) + ","+cID+")");//TESTING
 				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
 						rs.getInt(1) + ","+cID+")");
 				order++;
