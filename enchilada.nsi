@@ -125,7 +125,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 
 	CreateDirectory "C:\MSDE-install-temp"
 	SetOutPath "C:\MSDE-install-temp"
-	File /r MSDERelA
+	File /r "C:\MSDERelA"
 	
 	; XXX - can't yet uninstall MSSQLSERVER.  maybe in uninstall page, do a 
 	; messagebox as a callback at the end?
@@ -133,6 +133,8 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	; YARR, ok, so, File and Print Sharing needs to be enabled for the install to work.
 	; XXX - password
 	ExecWait `"C:\MSDE-install-temp\MSDERelA\setup.exe" SAPWD="sa-account-password" DISABLENETWORKPROTOCOLS=0 SECURITYMODE=SQL` $0
+    IfErrors 0 +2
+		Abort "MSDE could not be installed. Contact the Enchilada team for assistance."
 	DetailPrint "setup.exe returned $0"
 	IntCmp $0 0 setup_success
     	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
@@ -143,6 +145,8 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
     setup_success:
 	
 	ExecWait "net start MSSQLSERVER" $0
+	IfErrors 0 +2
+		Abort "Could not invoke 'net start' to start SQL Server. 'net start' is a standard Windows command; something is wrong with your Windows installation."
 	IntCmp $0 0 netstart_success
         Abort "Failed to start SQL server---something must be wrong with its installation!"
 	netstart_success:
@@ -155,6 +159,12 @@ SectionEnd
 
 Section "-Check for Java 1.5"
     ExecWait "java -version:1.5.0 -version" $0
+    IfErrors 0 installedJava
+    	DetailPrint "Java is not installed or is not installed correctly."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "Enchilada was unable to find Java on your computer. Please go to http://java.com/ to download and install Java 1.5 or newer."
+		Abort "Java is not installed."
+
+	installedJava:
     IntCmp $0 0 rightjava
         DetailPrint "Insufficient Java version."
         MessageBox MB_OK|MB_ICONEXCLAMATION "A newer version of Java is needed to run Enchilada.  Please go to http://java.com/ and download Java 1.5 or newer."
@@ -175,9 +185,13 @@ Section "-Check DB and user existence"
   
   ; 2. is the SpASMS user installed?
   ExecWait '"$OSQL" -U SpASMS -P finally -Q ""' $0
+  IfErrors 0 +2
+  	Abort "OSQL refused to respond when testing to see if the Enchilada user was already installed."
   IntCmp $0 0 userexists
     DetailPrint "Enchilada's login not present, adding it."
     ExecWait `"$OSQL" -E -Q "EXEC sp_addlogin 'SpASMS','finally'"` $0
+    IfErrors 0 +2
+    	Abort "OSQL refused to respond when trying to install the Enchilada user."
     StrCmp $0 0 +3
         MessageBox MB_OK|MB_ICONEXCLAMATION "Couldn't install Enchilada's login on SQL Server.  Please do this manually, then try installing again.  The login name is 'SpASMS', the password is 'finally'.  SpASMS must be a 'System Administrator'.  You can do this using Enterprise Manager:  Add a login to the local installation of SQL Server."
         Abort "Please install the Enchilada user yourself, and try installing again.  User: SpASMS.  Pass: finally.  Must be sysadmin.  Must be accessible via TCP."
@@ -186,6 +200,8 @@ Section "-Check DB and user existence"
   ; so now the user is installed or the whole installation has been aborted.
   userexists:
   ExecWait `"$OSQL" -E  -Q "EXEC sp_addsrvrolemember 'SpASMS','sysadmin'"`
+  IfErrors 0 +2
+  	Abort "OSQL refused to respond when making user a system administrator."
   IntCmp $0 0 +3
     MessageBox MB_OK|MB_ICONEXCLAMATION "Couldn't make the SQL Server login 'SpASMS' a system administrator.  Giving up."
     Abort "Try making the SQL Server login SpASMS into a system administrator."
@@ -228,6 +244,9 @@ Section "un.Uninstall"
     Goto donewithuser
   
   ExecWait `"$OSQL" -E -Q "DROP DATABASE SpASMSdb EXEC sp_droplogin 'SpASMS'"` $0
+  IfErrors 0 +3
+  	DetailPrint "Can't find SQL Server when trying to drop database."
+  	Goto donewithuser
   IntCmp $0 0 donewithuser
     MessageBox MB_OK "Tried to remove Enchilada's login from SQL Server, 'SpASMS', but it didn't work.  You should try to do this manually."
 
