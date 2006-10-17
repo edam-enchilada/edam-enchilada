@@ -202,7 +202,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		for (LabelingIon ion : cachedNegIons)
 			negIons.add(new LabelingIon(ion));
 		
-		setSize(800, 600);
 		setLocation(10, 10);
 		
 	    this.db = db;
@@ -392,7 +391,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		peaksTable.setFocusable(false);
 		peaksTable.getColumnModel().getColumn(1).setPreferredWidth(50);
 		peaksTable.getColumnModel().getColumn(2).setPreferredWidth(50);
-		peaksTable.setPreferredScrollableViewportSize(new Dimension(300, 200));
 		peaksTable.setRowSelectionAllowed(true);
 		peaksTable.setColumnSelectionAllowed(false);
 		peaksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -417,7 +415,17 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		peaksPanel = new JPanel(new BorderLayout());
 		peaksPanel.add(new JLabel("Peaks", SwingConstants.CENTER), BorderLayout.NORTH);
-		peaksPanel.add(new JScrollPane(peaksTable), BorderLayout.CENTER);
+		JScrollPane scrollPane = new JScrollPane(peaksTable);
+
+		// We manually set the size of the scroll pane around the table.
+		// We used to this instead:
+		// peaksTable.setPreferredScrollableViewportSize(new Dimension(300, 200));
+		// The problem here is that as the scoll bar appears and disappears
+		// from the table (depending on how many peaks there are), Java doesn't
+		// estimate the size of the table quite right, and it keeps changing
+		// size. It's cleaner to just set the size of the table outright.
+		scrollPane.setPreferredSize(new Dimension(300,200));
+		peaksPanel.add(scrollPane, BorderLayout.CENTER);
 	}
 
 	/**
