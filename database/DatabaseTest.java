@@ -326,14 +326,14 @@ public class DatabaseTest extends TestCase {
 		//test for original particles in collection 2
 		for (int i=1; i<6; i++){
 			assertTrue(rs.next());
-			//System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
+			System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
 			assertEquals(rs.getInt(1), i);
 		}
 			
 		//test for particles from children collections 7 and 8
 		for (int i=22; i<28; i++){
 			assertTrue(rs.next());
-			//System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
+			System.out.println(i + " was i and atomid = " + rs.getInt(1));//TESTING
 			assertEquals(rs.getInt(1), i);
 		}
 			
@@ -421,6 +421,8 @@ public class DatabaseTest extends TestCase {
 		
 		//test to make sure that a collection can't be copied to itself
 		//this should print an exception message.
+		System.out.println("Two exceptions about copying a collection into itself" +
+				" should follow.");
 		assertEquals(-1, db.copyCollection(db.getCollection(0), db.getCollection(0)));
 		assertEquals(-1, db.copyCollection(db.getCollection(2), db.getCollection(2)));
 		
@@ -636,6 +638,7 @@ public class DatabaseTest extends TestCase {
 			e.printStackTrace();
 		}
 		
+		System.out.println("Error message to follow:");
 		// removed an assert false here - changed the code to give an error 
 		// if a collectionID is passed that isn't really a collection in the db.
 		assertFalse(db.orphanAndAdopt(db.getCollection(2))); //is not a subcollection (prints this)
@@ -1336,6 +1339,7 @@ public class DatabaseTest extends TestCase {
 			ex.printStackTrace();
 		}
 		
+		System.out.println("Three primary key constraint errors to follow.");
 		//this should print an exception message
 		assertFalse(db.addCenterAtom(3, 4));;
 		
@@ -1455,6 +1459,7 @@ public class DatabaseTest extends TestCase {
 		
 		assertTrue(db.createIndex("ATOFMS", "Size, LaserPower"));
 		assertTrue(db.createIndex("ATOFMS", "Size, Time"));
+		System.out.println("Two exceptions to follow - there are already indices.");
 		assertFalse(db.createIndex("ATOFMS", "Size, LaserPower"));
 		assertFalse(db.createIndex("ATOFMS", "size, time"));
 		
@@ -1558,6 +1563,7 @@ public class DatabaseTest extends TestCase {
 		assertEquals(db.getATOFMSFileName(11), "Eleven");
 		
 		//for non-ATOFMS data - these assertions should print SQLExceptions.
+		System.out.println("Three exceptions about being unable to find a filename follow.");
 		assertEquals(db.getATOFMSFileName(12), "");
 		assertEquals(db.getATOFMSFileName(15), "");
 		assertEquals(db.getATOFMSFileName(22), "");
@@ -1576,6 +1582,7 @@ public class DatabaseTest extends TestCase {
 			assertEquals(db.getCollectionDatatype(i + 2), expectedDatatypes[i]);
 		
 		//Should print an SQLException
+		System.out.println("Exception getting datatype follows.");
 		assertEquals(db.getCollectionDatatype(8), "");
 		
 		db.closeConnection();

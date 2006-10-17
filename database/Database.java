@@ -1019,6 +1019,7 @@ public abstract class Database implements InfoWarehouse {
 	/* Copy and Move Collections */
 	
 	/**
+	 * @author steinbel - altered method Oct. 2006
 	 * Similar to moveCollection, except instead of removing the 
 	 * collection and its unique children, the original collection 
 	 * remains with original parent and a duplicate with a new id is 
@@ -1073,10 +1074,6 @@ public abstract class Database implements InfoWarehouse {
 				copyCollection(getCollection(children.get(i)), newCollection);			
 			}
 			
-			//updates the internal atom order for each child collection.  
-			// this can be optimized.
-			updateInternalAtomOrder(newCollection);
-			
 			stmt.close();
 			
 			// update new collection's ancestors.
@@ -1091,6 +1088,8 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * @author steinbel - altered Oct. 2006
+	 * 
 	 * Moves a collection and all its children from one parent to 
 	 * another.  If the subcollection was the only child of the parent
 	 * containing a particular atom, that atom will be removed from 
@@ -1117,11 +1116,7 @@ public abstract class Database implements InfoWarehouse {
 					"WHERE ChildID = " + col);
 			
 			// update InternalAtomOrder table.
-			// update toCollection from collection to leaves
-			updateInternalAtomOrder(toCollection);/*
-			// update collection and toCollection's parent up to root.
 			updateAncestors(collection);
-			updateAncestors(toCollection.getParentCollection());*/
 			stmt.close();
 		} catch (SQLException e){
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception moving the collection "+collection.getName());
@@ -1805,7 +1800,7 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
-	 * @author steinbel
+	 * @author steinbel - altered Oct. 2006
 	 * Executes the current batch
 	 */
 	public void atomBatchExecute() {
@@ -5438,50 +5433,55 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			Statement stmt = con.createStatement();
 			
-			/*
-			 * Compare just the top-level of the collection with its
-			 * members from AtomMembership (by intersecting with the 
-			 * IAO of its children) and determine if there are any differences
-			 * between the top level and AtomMembership, if so, rectify them,
-			 * else, leave well enough alone. - steinbel
-			 */			
-			
-/*get atomIDs for collection in IAO and in AtomMembership.  if difference,
- *rectify it
- *
- * then, loop through all children and repeat procedure
- */
-			String query = "SELECT AtomID FROM AtomMembership WHERE CollectionID = " + cID  +
+			/*get atomIDs for collection in IAO and in AtomMembership.  
+			 * if difference, rectify it
+			 *
+			 * then, loop through all children and repeat procedure
+			 */
+
+			String query = "INSERT INTO InternalAtomOrder " +
+					"(AtomID, CollectionID)" +
+					"SELECT AtomID, COllectionID FROM AtomMembership " +
+					"WHERE CollectionID = " + cID  +
 					" AND (AtomID NOT IN (SELECT AtomID from InternalAtomOrder" +
 					" WHERE CollectionID = " + cID + "))";
 			ArrayList<Integer> subCollections = collection.getSubCollectionIDs();
-
+			System.out.println(query);//TESTING
+			stmt.executeUpdate(query);
+	
 			if (subCollections.size() > 0){
-				for (int i=0; i<subCollections.size(); i++)
-					query += " union (SELECT AtomID FROM AtomMembership WHERE " +
-							"CollectionID = " + subCollections.get(i) + ")";//" AND " +
-						//	"(AtomID NOT IN (SELECT AtomID FROM InternalAtomOrder " +
-						//	"WHERE CollectionID = " + subCollections.get(i) + ")))";
+
+				/*
+				 * Because of SQL syntax, cannot combine SELECT with a constant,
+				 * so we'll create a temp table and poplulate it with the AtomIDs
+				 * of the children collection and the CollectionID of the 
+				 * current collection.  Then we'll copy that info into IAO. - steinbel
+				 */
+				stmt.executeUpdate("IF (OBJECT_ID('#children') " +
+					"IS NOT NULL)\n" +
+					"	DROP TABLE #children\n");
+				stmt.executeUpdate("CREATE TABLE #children (AtomID int, CollectionID int)");
+				query = "INSERT INTO #children (AtomID)" +
+				" SELECT AtomID FROM AtomMembership WHERE (CollectionID = ";
+				for (int i=0; i<subCollections.size(); i++){
+					query += subCollections.get(i) + ")";
+					if (i<subCollections.size()-1)
+						query += "OR (CollectionID = ";
+
+				}
+				System.out.println(query);//TESTING
+				stmt.executeUpdate(query);
+				stmt.executeUpdate("UPDATE #children SET CollectionID = " + cID);
+				stmt.executeUpdate("INSERT INTO InternalAtomOrder " +
+						" (AtomID, CollectionID) SELECT * FROM #children " +
+						" WHERE NOT EXISTS (SELECT * FROM InternalAtomOrder" +
+						" WHERE InternalAtomOrder.CollectionID = " + cID +
+						" AND InternalAtomOrder.AtomID = #children.AtomID)");
+				System.out.println("Going to drop #children now");//TESTING
+				stmt.executeUpdate("DROP TABLE #children");
 			}
 
 
-			//System.out.println(query);//TESTING
-			ResultSet rs = stmt.executeQuery(query);
-			int order = 1;
-			Statement st2 = con.createStatement();
-			
-			//possible bulk insert to speed up?
-			while (rs.next()) {
-				//System.out.println("inserting...");
-			//	System.out.println("INSERT INTO InternalAtomOrder VALUES ("+
-						//rs.getInt(1) + ","+cID+")");//TESTING
-				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-						rs.getInt(1) + ","+cID+")");
-				order++;
-				if (order % 1000 == 0) st2.executeBatch();
-			}
-			st2.executeBatch();
-			st2.close();
 			stmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
