@@ -1078,7 +1078,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 			
 			// update new collection's ancestors.
-			updateAncestors(newCollection.getParentCollection());
+			updateAncestors(newCollection);
 			return newID;
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception copying collection "+collection.getName());
