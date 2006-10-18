@@ -1066,6 +1066,7 @@ public abstract class Database implements InfoWarehouse {
 						rs.getInt("AtomID") + 
 				")");
 			}
+
 			stmt.executeBatch();
 			rs.close();
 			// Get Children
@@ -2208,6 +2209,7 @@ public abstract class Database implements InfoWarehouse {
 	public Vector<Vector<Object>> updateParticleTable(Collection collection, Vector<Vector<Object>> particleInfo, int lowIndex, int highIndex) {
 		assert (highIndex - lowIndex < 1000) : "trying to collect over 1000 particles at a time!";
 		particleInfo.clear();
+		System.out.println("Low " + lowIndex + " high " + highIndex);//TESTING
 		int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
 		// This isn't a registered datatype... oops
 		if (numberColumns == 0)
@@ -2215,7 +2217,8 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			Statement stmt = con.createStatement();
-			int starter = getFirstAtomInCollection(collection);
+			int starter = getFirstAtomInCollection(collection) - 1;
+			System.out.println("starter " + starter);//TESTING
 			
 			ResultSet rs = stmt.executeQuery(
 					"SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
@@ -2223,7 +2226,7 @@ public abstract class Database implements InfoWarehouse {
 					", InternalAtomOrder\n" +
 					"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
 					"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
-					" AND InternalAtomOrder.AtomID >= " + (starter) + 
+					" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
 			" ORDER BY InternalAtomOrder.AtomID");//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
