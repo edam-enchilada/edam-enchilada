@@ -258,7 +258,6 @@ public class ChartArea extends AbstractMetricChartArea {
 				newYmin = forceY ? 0 : (ymin - ((ymax - ymin) / 10));
 				newYmax = ymax + ((ymax - ymin) / 10);
 			}
-			
 			if (packX) {
 				xAxis.setRange(newXmin, newXmax);
 			}

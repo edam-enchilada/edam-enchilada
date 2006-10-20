@@ -119,7 +119,6 @@ public class SpectrumPlot extends Chart {
 //		this.ckPanel.add(chartPanel);
 //		this.ckPanel.add(key);
 //		this.ckPanel.repaint();
-		packData(false, true, true); //updates the Y axis scale.
 		
 	}
 	
@@ -140,8 +139,6 @@ public class SpectrumPlot extends Chart {
 //		chartPanel = this.createChartPanel();
 //		this.ckPanel.add(chartPanel);
 //		this.ckPanel.add(key);
-//		this.ckPanel.repaint();
-		packData(false, true, true); //updates the Y axis scale.
-		
+//		this.ckPanel.repaint();		
 	}
 }

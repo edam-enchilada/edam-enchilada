@@ -519,8 +519,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		else if(specButton.isSelected())
 			displaySpectrum();
 		
-		//chart.setDataDisplayType(true, false);
-		
 		chart.packData(false, true, true); //updates the Y axis scale.
 		chart.setTitle("Particle from " + filename);
 		double xMax = chart.getXRange()[1];
@@ -831,6 +829,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			}
 		}
 		chart.displaySpectra(posSpecDS, negSpecDS, getPosDS(), getNegDS());
+		System.out.println("preparing to unzoom");
 		unZoom();
 	}
 	

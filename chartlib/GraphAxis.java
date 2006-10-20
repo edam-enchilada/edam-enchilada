@@ -442,7 +442,6 @@ public class GraphAxis {
 	 */
 	public void makeTicks()
 	{
-		
 		//int count = 0;
 		double bigTicksFactor = (max - min) / bigTicks;
 		

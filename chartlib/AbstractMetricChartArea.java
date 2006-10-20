@@ -197,8 +197,9 @@ public abstract class AbstractMetricChartArea extends AbstractChartArea {
 		//check for errors
 		if(xmin >= xmax) throw new IllegalArgumentException("Xmin >= Xmax.");
 		else if(ymin >= ymax) throw new IllegalArgumentException("Ymin >= Ymax.");
-		
+		System.out.println("setting x");
 		xAxis.setRange(xmin, xmax);
+		System.out.println("setting y");
 		yAxis.setRange(ymin, ymax);
 		
 		repaint();

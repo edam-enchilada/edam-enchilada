@@ -303,7 +303,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		double xmin = scrollToChart(scrollmin);
 		double xmax = scrollToChart(scrollmax);
-		
+		System.out.println("setXAxisBounds:"+xmin+"\t"+xmax);
 		try
 		{
 			chart.setXAxisBounds(xmin, xmax);
@@ -388,6 +388,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void zoom(double newXmin, double newXmax)
 	{
+		System.out.println("zooming:"+newXmin+"\t"+newXmax);
 		if (newXmax > cScrollMax) {
 			scrollBar.setEnabled(false);
 		} else {
