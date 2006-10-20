@@ -1612,7 +1612,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(sql.toString());
 			isDirty = true;
 			stmt.close();
-			updateAncestorsAfterDelete(parent);
+			
 		} catch (Exception e){
 			ErrorLogger.writeExceptionToLog(getName(),"Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
@@ -5337,88 +5337,6 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
-	
-	/**
-	 * updates a particular collection and its ancestors.  It does this
-	 * by using the InternalAtomOrder table - it assumes that everything
-	 * EXCEPT the collection and its parents is accurate in the 
-	 * InternalAtomOrder table.
-	 * 
-	 * WAY THIS WORKS:
-	 * This is a recursive algorithm.  It takes a collection, updates it, and
-	 * then calls the method on the collection's parent, moving up the tree until
-	 * it reaches the ROOT (0 or 1).  For each collection , it does the following:
-	 * 1. Deletes all the rows in InternalAtomOrder with the collection's ID.
-	 * 2. gets the union of the following two queries:
-	 * 	 a) Gets the atomIDS of the collection from AtomMembership
-	 *   b) Gets the atomIDs of the collection's children from InternalAtomOrder
-	 * 3. Inserts this result set into InternalAtomOrder table
-	 * 
-	 * @param collection
-	 */
-	public void updateAncestorsAfterDelete(Collection collection) {
-		// if you try to update a null collection or one of the root collections,
-		// return.
-		if (collection == null || 
-				collection.getCollectionID() == 0 || 
-				collection.getCollectionID() == 1) 
-			return;
-		int cID = collection.getCollectionID();
-		//System.out.println("updating InternalAtomOrder Table for: " + cID);
-		try {
-			Statement stmt = con.createStatement();
-			
-			// Repopulate InternalAtomOrder table.
-			//System.out.println("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
-			stmt.execute("DELETE FROM InternalAtomOrder WHERE CollectionID = " + cID);
-			
-			/*Query:
-				SELECT T.Time as Time, T.Value AS TsValue 
-				FROM TimeSeriesAtomInfoDense T 
-				JOIN (	SELECT M.AtomID as AtomID 
-						FROM AtomMembership M
-						WHERE M.CollectionID = 6) A ON (T.AtomID = A.AtomID) 
-						
-				Query: 
-				SELECT DISTINCT I.AtomID as AtomID
- 				FROM InternalAtomOrder I
- 				JOIN ( SELECT R.ChildID as ChildID
-					FROM CollectionRelationships R
-					WHERE R.ParentID = 89) C 
-				ON (C.ChildID = InternalAtomOrder.CollectionID)
-				ORDER BY InternalAtomOrder.AtomID
-			*/
-			
-			//where's our union with atomids from the current collection (atommembership)?
-			String query = "SELECT DISTINCT IAO.AtomID as AtomID\n " +
-					"FROM InternalAtomOrder IAO\n " +
-				"JOIN ( SELECT R.ChildID as ChildID\n" +
-				"\tFROM CollectionRelationships R\n" +
-				"\tWHERE R.ParentID = "+cID+") C \n\t" +
-						"ON (C.ChildID = IAO.CollectionID)\n" +
-						"ORDER BY IAO.AtomID";
-			System.out.println("Query: "+query);
-			ResultSet rs = stmt.executeQuery(query);
-			int order = 1;
-			Statement st2 = con.createStatement();
-			
-			while (rs.next()) {
-				//System.out.println("inserting..."+rs.getInt(1) + ","+cID+","+order);
-				st2.addBatch("INSERT INTO InternalAtomOrder VALUES ("+
-						rs.getInt(1) + ","+cID+")");
-				order++;
-				if (order % 1000 == 0) st2.executeBatch();
-			}
-			st2.executeBatch();
-			st2.close();
-			stmt.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		// maybe make this conditional?  how?  temp table and replace it?
-		updateAncestors(collection.getParentCollection());
-	}
 	
 	/**
 	 * @author steinbel - removed OrderNumber
