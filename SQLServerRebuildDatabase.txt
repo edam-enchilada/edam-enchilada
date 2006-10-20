@@ -38,7 +38,7 @@
 -- * ***** END LICENSE BLOCK ***** */
 CREATE TABLE DBInfo (Name VARCHAR(50) PRIMARY KEY, Value VARCHAR(7500))
 -- %version-next% Don't change the spacing of the version number, it gets parsed by the program as well as by SQL.  Also, don't put any lines between this one and the insertion of the version.  Versions are compared by STRING equality.
-INSERT INTO DBInfo VALUES ('Version','Aug2006.1')
+INSERT INTO DBInfo VALUES ('Version','Sept2006.1')
 CREATE TABLE Collections (CollectionID INT PRIMARY KEY, Name VARCHAR(8000), Comment VARCHAR(8000), Description TEXT, Datatype VARCHAR(8000))
 INSERT INTO Collections VALUES (0, 'ROOT', 'root for unsynchronized data','root', 'root')
 INSERT INTO Collections VALUES (1, 'ROOT-SYNCHRONIZED', 'root for synchronized data','root', 'root')
