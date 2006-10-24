@@ -51,7 +51,8 @@ public class TimeSeriesPlot extends Chart {
 		
 		JPanel chartPanel = new JPanel();
 		chartPanel.setLayout(new GridLayout(0, 1)); //one column of chart areas
-		int height = 405, width = 460;
+		int height = 405;
+		int width = 460;
 		
 		//Layered pane for overlapping the graphs
 		layeredPane = new JLayeredPane();
@@ -78,7 +79,7 @@ public class TimeSeriesPlot extends Chart {
 			nextChart.setMinimumSize(new Dimension(width,height));
 			nextChart.setAxisBounds( 0, 1, 0, 1);
 			nextChart.setNumTicksX(5, 3);
-			
+			System.out.println("size: "+nextChart.getSize().width+"\t"+nextChart.getSize().width);
 			nextChart.setForegroundColor(DATA_COLORS[count]);
 			chartAreas.add(nextChart);
 			//MUST ADD WITH AN INTEGER or it won't work
@@ -273,11 +274,11 @@ public class TimeSeriesPlot extends Chart {
 		datasets[0] = d;
 		
 		TimeSeriesPlot plot = new TimeSeriesPlot(datasets);
-		
+		plot.setPreferredSize(new Dimension(400,400));
 		JFrame f = new JFrame("woopdy doo");
 		f.getContentPane().add(plot);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		//f.setPreferredSize(new Dimension(400, 400));
+		f.setPreferredSize(new Dimension(400, 400));
 		f.pack();
 		f.setVisible(true);
 	}

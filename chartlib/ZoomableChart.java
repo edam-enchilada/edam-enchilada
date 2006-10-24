@@ -115,12 +115,13 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	{
 		this.chart = chart;
 		this.glassPane = new ChartZoomGlassPane();
-
+		// set the maximum and minimum x values for the chart
 		double[] xRange = chart.getVisibleXRange();
 		if (xRange != null) {
 			cScrollMin = xRange[0];
 			cScrollMax = xRange[1];
 			defaultCScrollMax = xRange[1];
+			defaultCScrollMin = xRange[0];
 		}
 		
 		//on an unzoomed chart, the bar fills the whole range.
@@ -135,6 +136,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		JPanel bottomPanel = new JPanel(new BorderLayout());
 		
+		// add this as a listener to the chart
+		// so that you hear the zooming clicks
 		if (chart instanceof Component) {
 			Component c = (Component) chart;
 			bottomPanel.add(c, BorderLayout.CENTER);
@@ -145,6 +148,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			// can force things to be Components.  Nor do I know if I should. -tom
 			throw new RuntimeException("Whoops!  Time to redesign chartlib!");
 		}
+		
 		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
 		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
@@ -152,10 +156,12 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		setFocusable(true);
 		// adding mouse listeners to the glass pane 
 		// makes the scroll bar inaccessible to the mouse.
-		addMouseListener(this);
-		addMouseMotionListener(this);
+//		addMouseListener(this);
+//		addMouseMotionListener(this);
 		addKeyListener(this);
 		
+		// give the curse it's special crosshairs
+		// This shouldn't include the scrollbar but it does!
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 	}
 	
@@ -203,36 +209,17 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void mousePressed(MouseEvent e) 
 	{
+		// if it's a right mouse click
+		// and inside the chart area
+		// draw the grey thing
 		if(e.getButton() == MouseEvent.BUTTON1 )
 		{
-//			if (chart instanceof JComponent) {
-//				Point p = e.getPoint();
-//				// Find the component that the click happened on.
-//				Component c = ((JComponent) chart).findComponentAt(e.getPoint());
-//				
-//				if (c instanceof Zoomable) {
-//					// put the point into the coordinates of the
-//					// destination component.
-//					Point startRef = this.getLocationOnScreen(), 
-//						endRef = c.getLocationOnScreen(); 
-//					p.translate(endRef.x - startRef.x, endRef.y - startRef.y);
-//					
-//					if (((Zoomable) c).isInDataArea(p)) {
-//						glassPane.start = e.getPoint();
-//						return;
-//					} else {
-//						// click is not in data area
-//						glassPane.start = null;
-//					}
-//				} else {
-//					// click is not on a graph at all.
-//					glassPane.start = null;
-//				}
-//			} else 
+			
 			if (chart.isInDataArea(e.getPoint())) {
 				glassPane.start = e.getPoint();
 			} else glassPane.start = null;
 		} else glassPane.start = null;
+		System.out.println("mouse clicked: "+glassPane.start);
 	}
 	
 
@@ -244,6 +231,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * Part of MouseListener
 	 */
 	public void mouseDragged(MouseEvent e) {
+		// keep drawing the gray thing
 		if(glassPane.start != null)
 		{
 			glassPane.drawLine = true;
@@ -281,15 +269,17 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * Lets the class know a drag has ended.
 	 */
 	public void mouseReleased(MouseEvent e) {
-		System.out.println("mouse release");
-		//glassPane.end = e.getPoint();  //mouseDragged provides this info already.
-										//and this may cause errors on chart edges.
+		// the mouse was released.
+		// do the zoom if you should
 		glassPane.drawLine = false;
 		if(glassPane.start != null && glassPane.end != null)
 		{
+			System.out.println("mouse released: "+glassPane.start+"\t"+glassPane.end);
 			performZoom();
 		}
-		//this.repaint();
+		// whether or not a zoom was made, clear glassPane's start and end!
+		glassPane.start=null;
+		glassPane.end = null;
 	}
 	
 	/**
@@ -297,18 +287,27 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * area of the chart to fit the values of the scroll bar.
 	 */
 	public void adjustmentValueChanged(AdjustmentEvent e) {
-		System.out.println("value changed");
+		
+		System.out.println("value changed: "+e.getValue());
+		// e.getValue is the new value of the scrollbar
+		// as passed in scrollbar.setValues(newXMin
 		int scrollmin = e.getValue();
+		//scrollbar.getVisibleAmount should be extent, or xMax-xMin
+		// as passed in scrollbar.setValues(newXMin
 		int scrollmax = scrollmin + scrollBar.getVisibleAmount();
+		System.out.println("extent: "+scrollBar.getVisibleAmount());
+		
 		if(scrollmin >= scrollmax){
 			System.out.println("scroll values bad: "+scrollmin+"\t"+scrollmax);
 			repaint();
 			return;
 		}
 		
-		
+		//convert back to chart coords
 		double xmin = scrollToChart(scrollmin);
 		double xmax = scrollToChart(scrollmax);
+		
+		System.out.println("reconverted chart coords: "+xmin+"\t"+xmax);
 		
 		try
 		{
@@ -320,6 +319,37 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		}
 	}
 	
+	public void test(int value, int extent){
+		System.out.println("value changed: "+value);
+		// e.getValue is the new value of the scrollbar
+		// as passed in scrollbar.setValues(newXMin
+		int scrollmin = value;
+		//scrollbar.getVisibleAmount should be extent, or xMax-xMin
+		// as passed in scrollbar.setValues(newXMin
+		int scrollmax = scrollmin + extent;
+		System.out.println("extent: "+extent);
+		
+		if(scrollmin >= scrollmax){
+			System.out.println("scroll values bad: "+scrollmin+"\t"+scrollmax);
+			repaint();
+			return;
+		}
+		
+		//convert back to chart coords
+		double xmin = scrollToChart(scrollmin);
+		double xmax = scrollToChart(scrollmax);
+		
+		System.out.println("reconverted chart coords: "+xmin+"\t"+xmax);
+		
+		try
+		{
+			chart.setXAxisBounds(xmin, xmax);
+			chart.packData(false, true, forceY);
+		}
+		catch (IllegalArgumentException ex){
+			System.out.println("Illegal Argument");
+		}
+	}
 	/**
 	 * Convert from a number given by the scroll bar to a number that
 	 * makes sense to the chart (like x-coordinates).
@@ -328,6 +358,18 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	private double scrollToChart(int scrollValue) {
 		double maxExtent = cScrollMax - cScrollMin;
+		if(((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent) 
+			+ cScrollMin<0){
+			if(((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent)<0){
+				if((((double) scrollValue) / Integer.MAX_VALUE)<0){
+					System.out.println("divide by big number < 0");
+				}else{
+					System.out.println("mult by maxExtent < 0");
+				}
+			}else{
+				System.out.println("plus scrollMin < 0");
+			}
+		}
 		return ((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent) 
 			+ cScrollMin;
 	}
@@ -339,12 +381,24 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	private int chartToScroll(double chartValue) {
 		double maxExtent = cScrollMax - cScrollMin;
+		if((((chartValue - cScrollMin) / maxExtent) * Integer.MAX_VALUE)<0){
+				if(((chartValue - cScrollMin) / maxExtent)<0){
+					if((chartValue - cScrollMin)<0){
+						System.out.println("minus scrollMin < 0");
+					}else{
+						System.out.println("divide by maxExtent < 0");
+					}
+				}else{
+					System.out.println("mult by big number < 0");
+				}
+			}
 		return (int) 
 			(((chartValue - cScrollMin) / maxExtent) * Integer.MAX_VALUE);
 	}
 	
 	/**
-	 * Zooms the graph using the x bounds from the last mouse drag.
+	 * Checks the glassPane coordinates to make sure they define
+	 * a valid zoom and converts the glassPane coordinates into chart area coordinates.
 	 *
 	 */
 	private void performZoom()
@@ -354,7 +408,6 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		Point maxPoint = new Point(glassPane.end);
 		double xmin, xmax;
 		
-		//This seems to be wrong
 		// find the relevant chart
 		//int chartIndex = ((Chart)chart).getChartIndexAt(minPoint);
 		// set the cScroll values to the max and min values of the relevant chartArea
@@ -366,18 +419,20 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			minPoint.x = maxPoint.x;
 			maxPoint.x = glassPane.start.x;
 		}
-		//don't zoom if someone just clicks
+		//don't zoom if the distance dragged (in pixels) is too small
+		System.out.println("zoom length: "+(maxPoint.x-minPoint.x));
 		if(maxPoint.x - minPoint.x < MIN_ZOOM)
 		{
 			repaint();	//get rid of grey dots
 			return; //zooms that are too small
 		}
-		// retrieve the data values(still in chart coords)
+		// retrieve the data values(in chart coords)
 		// represented at the max and min points
 		xmin = chart.getDataValueForPoint(minPoint).x;
 		xmax = chart.getDataValueForPoint(maxPoint).x;
 		// these are in chart coordinates.
 		
+		//don't zoom if the two points(in pixels) round to the same point(in chart units)
 		if(xmin >= xmax)
 		{
 			repaint();
@@ -385,8 +440,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		}
 		
 		zoom(xmin, xmax);
-		//chart.setAxisBounds(xmin, xmax, Chart.CURRENT_VALUE, Chart.CURRENT_VALUE);
-
+		
 	}
 	
 	/**
@@ -398,36 +452,44 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void zoom(double newXmin, double newXmax)
 	{
-		System.out.println("zooming");
-		// set the scroll values converted to chart units
-		if (newXmax > cScrollMax) {
-			// this might be wrong
-			cScrollMax = newXmax;
+		System.out.println("zooming from "+newXmin+" to "+newXmax);
+		
+		// disable the scrollbar if you've zoomed out enough
+		if (newXmax >= cScrollMax) {
 			scrollBar.setEnabled(false);
 		} else {
 			// this might be wrong
-			cScrollMax = defaultCScrollMax;
 			scrollBar.setEnabled(true);
 		}
+		System.out.println("chart max/min values: "+cScrollMin+"\t"+cScrollMax);
 		
-		//convert everything to 'scroll' units
+		//convert everything to 'scrollbar' units
 		int scrollMin = chartToScroll(newXmin);
 		int scrollMax = chartToScroll(newXmax);
+		
 		// changing the values on the scrollbars activates the adjustmentValueChanged method
 		// since ZoomableChart is an ActionListener
-		// Note: this may not actually change the values if the parameters don't meet a certain inequality
-		// this results in the zooming not actually happening
+		// Note: this may not actually change the values if for arguments:
+		//setValues(int newValue,
+        //int newExtent,
+        //int newMin,
+        //int newMax)
+		// minimum <= value <= value+extent <= maximum
+
 		//update the scroll bar
-		scrollBar.setValues(scrollMin + 1, scrollMax - scrollMin,
+		System.out.println("scrollBar.setValues: "+(scrollMin+1)+"\n"+(scrollMax-scrollMin-1)+"\n"
+				+S_SCROLL_MIN+"\t"+S_SCROLL_MAX);
+		scrollBar.setValues(scrollMin+1, scrollMax - scrollMin-1,
 				S_SCROLL_MIN, S_SCROLL_MAX);
-		scrollBar.setValues(scrollMin, scrollMax - scrollMin,
+		scrollBar.setValues(scrollMin+1, scrollMax - scrollMin-1,
 				S_SCROLL_MIN, S_SCROLL_MAX);
 		// XXX: why twice?  to force the scrollBar to realise that something has
 		// changed.  true, that's a dumb way to do it, but i'm not smart. -tom
-		
+		//this.test(scrollMin, scrollMax - scrollMin);
 		scrollBar.setBlockIncrement(scrollMax - scrollMin);
 		
 		scrollBar.updateUI();
+		System.out.println("zoomed");
 	}
 	
 	/**

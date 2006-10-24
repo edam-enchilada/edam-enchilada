@@ -19,16 +19,17 @@ import chartlib.GraphAxis.AxisLabeller;
 
 public class LinePointsChartArea extends ChartArea {
 	private static final int EXTRA_DATETIME_SPACE = 15;
-	
+	private int width = 400;
+	private int height = 400;
 	public LinePointsChartArea(Dataset dataset) {
 		super(dataset);
-		setPreferredSize(new Dimension(400, 400));
+		setPreferredSize(new Dimension(width, height));
 	}
 	
 	public LinePointsChartArea(Dataset dataset, Color color) {
 		this(dataset);
 		this.foregroundColor = color;
-		setPreferredSize(new Dimension(400, 400));
+		setPreferredSize(new Dimension(width, height));
 	}
 	
 	/**
@@ -107,6 +108,9 @@ public class LinePointsChartArea extends ChartArea {
 		
 		LinePointsChartArea lca = new LinePointsChartArea(d);
 		
+		lca.setSize(new Dimension(400,300));
+		lca.setSize(400,300);
+		System.out.println("size: "+lca.getSize().width+"\t"+lca.getSize().width);
 		lca.setAxisBounds(0, 4, 0, 4);
 		lca.setTitleX("Boogie");
 		lca.setTitleY("Groove");
@@ -115,7 +119,7 @@ public class LinePointsChartArea extends ChartArea {
 		JFrame f = new JFrame("woopdy doo");
 		f.getContentPane().add(lca);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setPreferredSize(new Dimension(400, 400));
+		f.setPreferredSize(new Dimension(400, 300));
 		f.pack();
 		f.setVisible(true);
 	}

@@ -333,7 +333,7 @@ public class Chart extends JPanel implements Zoomable
 	public void setAxisBounds(double xmin, double xmax, double ymin, double ymax )
 	throws IllegalArgumentException
 	{
-		System.out.println("settingChartAxisBounds:"+xmin+"\t"+xmax+" by, "+ymin+"\t"+ymax);
+		//System.out.println("settingChartAxisBounds:"+xmin+"\t"+xmax+" by, "+ymin+"\t"+ymax);
 		for(int count=0; count < chartAreas.size(); count++)
 			setAxisBounds(count,xmin,xmax,ymin,ymax);
 	}
