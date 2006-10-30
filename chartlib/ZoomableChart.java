@@ -73,6 +73,7 @@ import java.util.Scanner;
  * 
  * @author sulmanj
  * @author smitht
+ * @author olsonja
  * 
  */
 public class ZoomableChart extends JLayeredPane implements MouseInputListener,
@@ -87,7 +88,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	// these are the maximum and minimum indices, in chart coordinates,
 	// that are displayed.
 	private double cScrollMin = 0;
-	private double cScrollMax = 400;
+	private double cScrollMax = 300;
 	
 	// this is the value of cScrollMax that is returned to when you go to
 	// the default zoom level.
@@ -136,11 +137,13 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		JPanel bottomPanel = new JPanel(new BorderLayout());
 		
+		JPanel chartPanel = new JPanel(new BorderLayout());
 		// add this as a listener to the chart
 		// so that you hear the zooming clicks
 		if (chart instanceof Component) {
 			Component c = (Component) chart;
-			bottomPanel.add(c, BorderLayout.CENTER);
+			//bottomPanel.add(c, BorderLayout.CENTER);
+			chartPanel.add(c, BorderLayout.CENTER);
 			c.addMouseMotionListener(this);
 			c.addMouseListener(this);
 		} else {
@@ -148,20 +151,16 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			// can force things to be Components.  Nor do I know if I should. -tom
 			throw new RuntimeException("Whoops!  Time to redesign chartlib!");
 		}
-		
+		bottomPanel.add(chartPanel,BorderLayout.CENTER);
 		bottomPanel.add(scrollBar, BorderLayout.SOUTH);
 		add(bottomPanel, JLayeredPane.DEFAULT_LAYER);
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		
 		setFocusable(true);
-		// adding mouse listeners to the glass pane 
-		// makes the scroll bar inaccessible to the mouse.
-//		addMouseListener(this);
-//		addMouseMotionListener(this);
 		addKeyListener(this);
 		
-		// give the curse it's special crosshairs
-		// This shouldn't include the scrollbar but it does!
+		// give the cursor it's special crosshairs
+		// This may need to  include the scrollbar
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 	}
 	
@@ -297,6 +296,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		int scrollmax = scrollmin + scrollBar.getVisibleAmount();
 		System.out.println("extent: "+scrollBar.getVisibleAmount());
 		
+		// extent/visibleAmount should never be <=0
 		if(scrollmin >= scrollmax){
 			System.out.println("scroll values bad: "+scrollmin+"\t"+scrollmax);
 			repaint();
@@ -458,7 +458,6 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		if (newXmax >= cScrollMax) {
 			scrollBar.setEnabled(false);
 		} else {
-			// this might be wrong
 			scrollBar.setEnabled(true);
 		}
 		System.out.println("chart max/min values: "+cScrollMin+"\t"+cScrollMax);
@@ -469,7 +468,11 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		
 		// changing the values on the scrollbars activates the adjustmentValueChanged method
 		// since ZoomableChart is an ActionListener
-		// Note: this may not actually change the values if for arguments:
+		// This is better than having the code here, because the same things need to happen
+		// when you drag the scroll bar (ie. when other things call adjustmentValueChanged
+		
+		// Note: this may not actually call adjustmentValueChanged if
+		// the values if for arguments:
 		//setValues(int newValue,
         //int newExtent,
         //int newMin,

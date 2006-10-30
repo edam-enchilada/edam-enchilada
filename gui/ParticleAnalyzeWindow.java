@@ -129,7 +129,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	private static final int SPECTRUM_RESOLUTION = 1;
 	private static final int DEFAULT_XMIN = 0;
-	private static final int DEFAULT_XMAX = 400;
+	private static final int DEFAULT_XMAX = 300;
 	
 	private static double labelingThreshold = .5;
 	private static String labelingDir = "labeling";
@@ -523,8 +523,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		chart.setTitle("Particle from " + filename);
 		double xMax = chart.getXRange()[1];
 		zchart.setCScrollMax(DEFAULT_XMAX > xMax ? DEFAULT_XMAX : xMax);
-		zchart.zoom(DEFAULT_XMIN, DEFAULT_XMAX/2);
-		zchart.zoom(DEFAULT_XMIN, DEFAULT_XMAX);
+		unZoom();
 		// argh, just realized that getXRange is a horribly inefficient way
 		// of doing this.  could just keep track of it above, where we're
 		// iterating through the peaks anyway.  But it's written, and ... bleh.
@@ -557,6 +556,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 */
 	private void unZoom()
 	{
+		// Need to ensure that the zoom values are actually changed
+		// if previous zoom values were default values, you need to change to something else
+		// before you default zoom
+		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX/2);
 		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX);
 	}
 	
