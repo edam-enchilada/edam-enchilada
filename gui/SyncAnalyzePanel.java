@@ -64,7 +64,7 @@ public class SyncAnalyzePanel extends JPanel {
 		zoomOutButton = new JButton("Zoom Out");
 		zoomOutButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				zchart.zoom(xMin, xMax);
+				zchart.zoomOut();
 			}
 		});
 		

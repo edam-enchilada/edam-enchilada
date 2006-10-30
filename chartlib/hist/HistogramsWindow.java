@@ -101,7 +101,7 @@ public class HistogramsWindow extends JFrame {
 			zdef = new JButton("Zoom Default");
 			zdef.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					zPlot.zoom(defMin, defMax);
+					zPlot.zoomOut();
 				}
 			});
 			buttonPanel.add(zdef);

@@ -450,7 +450,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * @param newXmin
 	 * @param newXmax
 	 */
-	public void zoom(double newXmin, double newXmax)
+	protected void zoom(double newXmin, double newXmax)
 	{
 		System.out.println("zooming from "+newXmin+" to "+newXmax);
 		

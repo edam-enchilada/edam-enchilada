@@ -559,8 +559,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		// Need to ensure that the zoom values are actually changed
 		// if previous zoom values were default values, you need to change to something else
 		// before you default zoom
-		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX/2);
-		zchart.zoom(DEFAULT_XMIN,DEFAULT_XMAX);
+		zchart.zoomOut();
 	}
 	
 	private void zoomOut()
