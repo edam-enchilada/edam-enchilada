@@ -518,6 +518,11 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		zoom(xmin, xmax);
 	}
 	
+	public void zoomOut(){
+		zoom(cScrollMin,cScrollMax/2);
+		zoom(cScrollMin,cScrollMax);
+	}
+	
 //	/**
 //	 * For testing: outputs the chart point of the click.
 //	 */
