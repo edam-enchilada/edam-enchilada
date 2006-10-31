@@ -142,7 +142,6 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		// so that you hear the zooming clicks
 		if (chart instanceof Component) {
 			Component c = (Component) chart;
-			//bottomPanel.add(c, BorderLayout.CENTER);
 			chartPanel.add(c, BorderLayout.CENTER);
 			c.addMouseMotionListener(this);
 			c.addMouseListener(this);
@@ -157,11 +156,12 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		add(glassPane, JLayeredPane.DRAG_LAYER);
 		
 		setFocusable(true);
-		addKeyListener(this);
+		//addKeyListener(this);
 		
 		// give the cursor it's special crosshairs
 		// This may need to  include the scrollbar
 		glassPane.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+		scrollBar.updateUI();
 	}
 	
 	/**
@@ -208,6 +208,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void mousePressed(MouseEvent e) 
 	{
+		System.out.println("Chart size: "+(((Chart)chart).getSize().width)+"\t"+(((Chart)chart).getSize().height));
+		System.out.println("ChartArea size: "+(((Chart)chart).chartAreas.get(0).getSize().width)+"\t"+(((Chart)chart).chartAreas.get(0).getSize().height));
 		// if it's a right mouse click
 		// and inside the chart area
 		// draw the grey thing
@@ -217,10 +219,21 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			if (chart.isInDataArea(e.getPoint())) {
 				glassPane.start = e.getPoint();
 			} else glassPane.start = null;
-		} else glassPane.start = null;
+		} else {
+			glassPane.start = null;
+			glassPane.end = null;
+			glassPane.drawLine = false;
+			repaint();
+		}
 		System.out.println("mouse clicked: "+glassPane.start);
 	}
+	/*
+	Chart size: 634	575
+	ChartArea size: 614	273
 	
+	Chart size: 634	575
+	ChartArea size: 600	300
+	*/
 
 	/** 
 	 * If the drag is within one of the charts, (if the start point is non-null)
@@ -455,7 +468,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		System.out.println("zooming from "+newXmin+" to "+newXmax);
 		
 		// disable the scrollbar if you've zoomed out enough
-		if (newXmax >= cScrollMax) {
+		if (newXmin <= cScrollMin && newXmax >= cScrollMax) {
 			scrollBar.setEnabled(false);
 		} else {
 			scrollBar.setEnabled(true);

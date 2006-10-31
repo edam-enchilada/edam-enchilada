@@ -27,40 +27,14 @@ public class SpectrumPlot extends Chart {
 		makeChartAreas();
 		
 		setupLayout();
-		// in the middle of refactoring createChartPanel, etc
-		
-		//this should not all be here!
-		//It should go in createPanel
-		/*this.setHasKey(false);
-		this.setTitle("Positive and negative peak values");
-		this.setTitleX(0,"Positive mass-to-charge ratios");
-		this.setTitleY(0,"Area");
-		//this.setTitleY(1,"Area");
-		//this.setTitleX(1,"Negative mass-to-charge ratios");
-		this.setAxisBounds(0,400, CURRENT_VALUE, CURRENT_VALUE);
-		this.setNumTicks(10,10, 1,1);
-		this.setBarWidth(3);
-		this.setColor(0,Color.red);
-		*///this.setColor(1,Color.blue);
 		
 		packData(false, true, true); //updates the Y axis scale.
 		
 	}
 	public void packData(boolean packX, boolean packY, boolean forceY){
 		for(AbstractMetricChartArea ca : chartAreas){
-			ca.setSize(300, 600);
-			ca.setSize(new Dimension(600,300));
-			//ca.setPreferredSize(new Dimension(300,600));
 		}
 		super.packData(packX, packY, forceY);
-		//this.setSize(new Dimension(700,700));
-		/*System.out.println("Chart Size:\n"+this.getSize().height+"\t"+this.getSize().width);
-		System.out.println("ChartAreas Size:");
-		for(AbstractMetricChartArea ca : chartAreas){
-			System.out.println(ca.getHeight()
-			+"\t"+ca.getWidth());	
-		}*/
-		
 	}
 	
 	public SpectrumPlot(Dataset pos, Dataset neg){
@@ -113,13 +87,6 @@ public class SpectrumPlot extends Chart {
 		makeChartAreas();
 		setupLayout();
 		
-//		this.ckPanel.remove(this.chartPanel);
-//		this.ckPanel.remove(this.key);
-//		chartPanel = this.createChartPanel();
-//		this.ckPanel.add(chartPanel);
-//		this.ckPanel.add(key);
-//		this.ckPanel.repaint();
-		
 	}
 	
 	public void displayPeaks(Dataset pos, Dataset neg) {
@@ -133,12 +100,5 @@ public class SpectrumPlot extends Chart {
 		
 		makeChartAreas();
 		setupLayout();
-		
-//		this.ckPanel.remove(this.chartPanel);
-//		this.ckPanel.remove(this.key);
-//		chartPanel = this.createChartPanel();
-//		this.ckPanel.add(chartPanel);
-//		this.ckPanel.add(key);
-//		this.ckPanel.repaint();		
 	}
 }
