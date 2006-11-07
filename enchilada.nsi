@@ -88,6 +88,7 @@ Section "EDAM Enchilada (required)"
   File "MPL-1.1.txt"
   File "SQLServerRebuildDatabase.txt"
   File "icon.ico"
+  File "icon.gif"
   
   CreateDirectory $INSTDIR\errorframework
   CreateDirectory $INSTDIR\errorframework\ErrorLogs
