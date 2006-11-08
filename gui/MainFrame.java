@@ -254,8 +254,14 @@ public class MainFrame extends JFrame implements ActionListener
 			public void windowLostFocus(WindowEvent event) {
 				Window w = event.getOppositeWindow();
 				if (w != null) {
-					if (event.getWindow() instanceof MainFrame)
-						w.requestFocus();
+					/* Below code commented out for nov2006 release to prevent
+					 * output window from appearing on top of main window at 
+					 * startup. TEMPORARY hack because this is what fixes the
+					 * fast alt-tab bug.  - steinbel 11.8.06
+					 */
+					//if (event.getWindow() instanceof MainFrame)
+						//w.requestFocus();
+					/* end commenting by steinbel 11.8.06 */
 					if (w instanceof Frame) {
 						boolean found = false;
 						for (WindowFocusListener listen : w.getWindowFocusListeners()) {
