@@ -21,6 +21,7 @@ import javax.swing.border.EmptyBorder;
 public class ScatterPlot extends Chart {
 
 	private Dataset[] datasets;
+	private Dataset correlationData;
 
 	public ScatterPlot(Dataset ds1, Dataset ds2) {
 		title = "New Chart";
@@ -29,7 +30,7 @@ public class ScatterPlot extends Chart {
 		datasets[0] = ds1;
 		datasets[1] = ds2;
 		
-		Dataset correlationData = new Dataset();
+		correlationData = new Dataset();
 		Iterator<DataPoint> iter1 = ds1.iterator();
 		Iterator<DataPoint> iter2 = ds2.iterator();
 		
@@ -44,39 +45,16 @@ public class ScatterPlot extends Chart {
 			}
 		}
 		
-		/*Iterator<DataPoint> iterator = ds1.iterator();
-		while(iterator.hasNext())
-		{
-			DataPoint dpX = iterator.next();
-			DataPoint dpY = ds2.get(dpX.x,.50);
-			
-			if (dpY != null) {
-				double x = dpX.y, y = dpY.y;
-				correlationData.add(new DataPoint(x,y));
-			}
-		}*/
-		
 		datasets[2] = correlationData;
 		
 		chartAreas.add(makeChartArea());
 		
 		setupLayout();
 		packData();
-		//this should not all be here!
-		//It should go in createPanel
-		/*this.setHasKey(false);
-		this.setTitleY(0, "Sequence 1 Value");
-		this.setTitleY(1, "Sequence 2 Value");
-		this.setAxisBounds(0, 0, 1, 0, 1);
-		this.setAxisBounds(1, 0, 1, 0, 1);
-		this.setPreferredSize(new Dimension(400, 400));
-		this.setBorder(new EmptyBorder(15, 0, 0, 0));
-		*/
 	}
 	
 	protected ChartArea makeChartArea(){
-		ChartArea nextChart = new CorrelationChartArea(datasets[2]);
-		// nextChart.setTitleY( "Sequence " + (count + 1) + " Value");
+		ChartArea nextChart = new CorrelationChartArea(correlationData);
 		nextChart.setAxisBounds(0, 1, 0, 1);
 
 		nextChart.setForegroundColor(DATA_COLORS[0]);
@@ -84,7 +62,7 @@ public class ScatterPlot extends Chart {
 	}
 	
 	public void setTitle(String title) {
-		Dataset.Statistics stats = getDataset(0).getCorrelationStats();
+		Dataset.Statistics stats = correlationData.getCorrelationStats();
 		super.setTitle(String.format(title, stats.r2));
 	}
 	

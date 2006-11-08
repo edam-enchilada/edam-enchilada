@@ -280,9 +280,6 @@ public class SyncAnalyzePanel extends JPanel {
 			TimeSeriesPlot chart = new TimeSeriesPlot(datasets);
 			chart.setTitle("<html><b>Time Series Comparison</b></html>");
 			
-			/*for (int i = 0; i < numSequences; i++) {
-				chart.setAxisBounds(i, xMin, xMax, 0, maxValue[i]);
-			}*/
 			chart.repaint();
 
 			zchart = new ZoomableChart(chart);
@@ -298,9 +295,6 @@ public class SyncAnalyzePanel extends JPanel {
 			if (numSequences > 1) {
 				Chart scatterChart = new ScatterPlot(scatterplotData[0], scatterplotData[1]);
 				scatterChart.setTitle("<html><b>Time Series Scatter Plot -- R^2: %10.5f</b></html>");
-				/*scatterChart.setAxisBounds(0, xMin,	xMax, 0, maxValue[0]);
-				scatterChart.setAxisBounds(1, xMin,	xMax, 0, maxValue[1]);
-				*/
 				scatterChart.setPreferredSize(new Dimension(400,400));
 				scatterChart.repaint();
 				
