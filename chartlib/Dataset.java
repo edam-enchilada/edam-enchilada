@@ -63,6 +63,7 @@ public class Dataset extends TreeSet<DataPoint>
 	public Dataset()
 	{
 		super();
+		lastCorrelatedDataset = null;
 	}
 	
 	/**
@@ -168,8 +169,10 @@ public class Dataset extends TreeSet<DataPoint>
 	}
 	
 	public Statistics getCorrelationStats() {
-		if (lastCorrelatedDataset == this)
+		if (lastCorrelatedDataset == this){
+			//System.out.println("skipping calculation");
 			return cachedStats;
+		}
 		
 		double sumxx = 0, sumxy = 0, sumyy = 0, sumx = 0, sumy = 0;
 		int numValidPoints = 0;
@@ -177,9 +180,9 @@ public class Dataset extends TreeSet<DataPoint>
 		Iterator<DataPoint> iterator = iterator();
 		while(iterator.hasNext())
 		{
-			DataPoint dpX = iterator.next();
+			DataPoint point = iterator.next();
 				numValidPoints++;
-				double x = dpX.y, y = dpX.y;
+				double x = point.x, y = point.y;
 				
 				sumx += x;
 				sumy += y;
@@ -199,7 +202,7 @@ public class Dataset extends TreeSet<DataPoint>
 		
 		lastCorrelatedDataset = this;
 		cachedStats = ret;
-		
+		//System.out.println("b: "+ret.b+"\ta: "+ret.a+"\tr^2: "+ret.r2+"\tnum points: "+numValidPoints);
 		return ret;
 	}
 	
