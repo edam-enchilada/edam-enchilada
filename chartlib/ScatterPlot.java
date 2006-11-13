@@ -25,7 +25,8 @@ public class ScatterPlot extends Chart {
 
 	public ScatterPlot(Dataset ds1, Dataset ds2) {
 		title = "New Chart";
-		hasKey = true;
+		//do not draw a key
+		hasKey = false;
 		this.datasets = new Dataset[3];
 		datasets[0] = ds1;
 		datasets[1] = ds2;
