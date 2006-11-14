@@ -62,6 +62,7 @@ import collection.Collection;
 
 
 import ATOFMS.ATOFMSParticle;
+import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
@@ -1052,9 +1053,9 @@ public class DatabaseTest extends TestCase {
 	public void testGetPeaks() {
 		db.openConnection();
 		Peak peak = db.getPeaks("ATOFMS",2).get(0);
-		assertTrue(peak.area == 15);
-		assertTrue(peak.relArea == 0.006f);
-		assertTrue(peak.height == 12);
+		assertTrue(((ATOFMSPeak)peak).area == 15);
+		assertTrue(((ATOFMSPeak)peak).relArea == 0.006f);
+		assertTrue(((ATOFMSPeak)peak).height == 12);
 		db.closeConnection();
 	}
 

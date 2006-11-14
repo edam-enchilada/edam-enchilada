@@ -1333,7 +1333,7 @@ public class MainFrame extends JFrame implements ActionListener
 		particlesTable = new JTable(data, columns);
 		particlesTable.setDefaultEditor(Object.class, null);
 		
-		if (dataType.equals("ATOFMS")) {
+		if (dataType.equals("ATOFMS")||dataType.equals("AMS")) {
 			particleTablePane.setViewportView(particlesTable);
 			
 			particlesTable.setEnabled(true);

@@ -42,32 +42,70 @@
  */
 package gui;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.sql.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Scanner;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
-import javax.swing.text.html.*;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
 
+import ATOFMS.AMSPeak;
 import ATOFMS.ATOFMSParticle;
+import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
 import ATOFMS.Peak;
 import ATOFMS.ReadSpec;
-
-import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.SpectrumPlot;
 import chartlib.ZoomableChart;
-
 import collection.Collection;
-
-import database.InfoWarehouse;
 import database.Database;
+import database.InfoWarehouse;
 
 
 /**
@@ -620,10 +658,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		}
 		
 		setTitle("Analyze Particle - AtomID: " + atomID);
-		
+		String filename = "";
 		//need to get this from the correct collection, not always the current table
 		//however, this must be slower because going to db . . . - steinbel
-		String filename = db.getATOFMSFileName(atomID);
+		if(coll.getDatatype().equals("ATOFMS")){
+			filename = db.getATOFMSFileName(atomID);
+		}
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -802,7 +842,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
-			posDS.add(new DataPoint(p.massToCharge, p.area));
+			posDS.add(new DataPoint(p.massToCharge, p.value));
 		}
 		return posDS;
 	}
@@ -811,7 +851,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset negDS = new Dataset();
 		for(Peak p : negPeaks)
 		{
-			negDS.add(new DataPoint(-p.massToCharge, p.area));
+			negDS.add(new DataPoint(-p.massToCharge, p.value));
 		}
 		return negDS;
 	}
@@ -1100,7 +1140,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			PrintStream writer = new PrintStream(new File(spectrumFileName));
 			writer.println("1");
 			for (Peak p : peaks)
-				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.area);
+				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.value);
 			writer.print("-1");
 			writer.close();
 		}
@@ -1145,17 +1185,28 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				peak = negPeaks.get(row);
 			else
 				peak = posPeaks.get(row - negPeaks.size());
+			if(coll.getDatatype().equals("ATOFMS")){
 			switch(column)
 			{
 			// Putting these in wrapper classes, hope this
 			// helps 
 			// -Ben
-			case 0: return new Integer((int)peak.massToCharge);
-			case 1: return new Integer(peak.height);
-			case 2: return new Integer(peak.area);
-			case 3: return new Float(peak.relArea);
+			case 0: return new Integer((int)((ATOFMSPeak)peak).massToCharge);
+			case 1: return new Integer(((ATOFMSPeak)peak).height);
+			case 2: return new Integer(((ATOFMSPeak)peak).area);
+			case 3: return new Float(((ATOFMSPeak)peak).relArea);
 			default: return null;
 			}
+			}else if(coll.getDatatype().equals("AMS")){
+				switch(column)
+				{
+				case 0: return new Integer((int)((AMSPeak)peak).massToCharge);
+				case 1: return new Double(((AMSPeak)peak).height);
+				}
+				
+			}
+			
+			return null;
 		}
 		
 		public String getColumnName(int column)

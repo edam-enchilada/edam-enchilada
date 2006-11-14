@@ -81,6 +81,8 @@ import org.dbunit.dataset.filter.ITableFilter;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.ext.mssql.InsertIdentityOperation;
 
+import ATOFMS.AMSPeak;
+import ATOFMS.ATOFMSPeak;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import analysis.BinnedPeakList;
@@ -2736,21 +2738,36 @@ public abstract class Database implements InfoWarehouse {
 			e.printStackTrace();
 		}
 		ArrayList<Peak> returnThis = new ArrayList<Peak>();
-		float location = 0, relArea = 0;
-		int area = 0, height = 0;
 		try {
+			if(datatype.equals("ATOFMS")){
+				float location = 0, relArea = 0;
+				int area = 0, height = 0;
+				
 			while(rs.next())
 			{
-				location = rs.getFloat(2);
-				area = rs.getInt(3);
-				relArea = rs.getFloat(4);
-				height = rs.getInt(5);
-				returnThis.add(new Peak(
+				location = rs.getFloat("PeakLocation");
+				area = rs.getInt("PeakArea");
+				relArea = rs.getFloat("RelPeakArea");
+				height = rs.getInt("PeakHeight");
+				System.out.println("ATOFMS db, height: "+height);
+				returnThis.add(new ATOFMSPeak(
 						height,
 						area,
 						relArea,
 						location));
 			} 
+			}else if(datatype.equals("AMS")){
+				float location = 0, height = 0;
+				while(rs.next())
+				{
+					location = rs.getFloat("PeakLocation");
+					height = rs.getFloat("PeakHeight");
+					System.out.println("AMS db, height: "+height);
+					returnThis.add(new AMSPeak(
+							height,
+							location));
+				} 
+			}
 			
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving peaks.");
@@ -3236,7 +3253,7 @@ public abstract class Database implements InfoWarehouse {
 						"WHERE AtomID = " + pList.getAtomID());
 				while (peakRS.next())
 				{
-					aPeakList.add(new Peak(peakRS.getInt(1), peakRS.getInt(2), peakRS.getFloat(3),
+					aPeakList.add(new ATOFMSPeak(peakRS.getInt(1), peakRS.getInt(2), peakRS.getFloat(3),
 							peakRS.getFloat(4)));
 				}
 				pList.setPeakList(aPeakList);
@@ -3290,7 +3307,7 @@ public abstract class Database implements InfoWarehouse {
 			for(int i = 0; i < peakList.size(); i++)
 			{
 				temp = peakList.get(i);
-				bPList.add((float)temp.massToCharge, temp.area);
+				bPList.add((float)temp.massToCharge, (float)temp.value);
 			}
 			return bPList;
 		}
