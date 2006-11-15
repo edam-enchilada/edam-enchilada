@@ -467,10 +467,13 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	{
 		System.out.println("zooming from "+newXmin+" to "+newXmax);
 		
-		// disable the scrollBar if you've zoomed out past Xmin and Xmax
-		// enable the scrollBar otherwise
+		//You should never be able to zoom out past the scroll min and max
+		//You must change the min and max to scroll out further.
 		assert(!(cScrollMin>newXmin));
 		assert(!(cScrollMax>newXmax));
+		
+		// disable the scrollBar if you've zoomed out past Xmin and Xmax
+		// enable the scrollBar otherwise
 		if (newXmin <= cScrollMin && newXmax >= cScrollMax) {
 			scrollBar.setEnabled(false);
 		} else {
