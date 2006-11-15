@@ -106,6 +106,8 @@ check the next & prev buttons for
 		__highlighting peak with mouse causes labels to update when in peak view
 		__highlighting peak with mouse causes labels to update when in spectrum view
 		__Verify that the stuff ParticleAnalyzeWindow prints out appears in the "Output" window (should be hiding behind the main Enchilada window).
+		__window appears properly in different sizes, as well as maximized
+		__with a maximized window, click scroll bar and verify chart scrolls and refreshes appropriately
 		
 
 **Try zooming in on time-series of only one datapoint
