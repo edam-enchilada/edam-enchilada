@@ -16,7 +16,7 @@ import javax.swing.event.*;
 
 public class AggregateWindow extends JFrame implements ActionListener, ListSelectionListener {
 	private MainFrame parentFrame;
-	private JButton createSeries, cancel;
+	private JButton createSeries, cancel, calculateTimes;
 	private JTextField descriptionField;
 	private TimePanel startTime, endTime, intervalPeriod;
 	private JList collectionsList;
@@ -27,7 +27,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	private Hashtable<Collection, JPanel> cachedCollectionPanels;
 	private Collection[] collections;
 	
-	private JPanel centerPanel; 
+	private JPanel centerPanel,timesPanel; 
 
 	public AggregateWindow(MainFrame parentFrame, InfoWarehouse db, Collection[] collections) {
 		super("Aggregate Collections");
@@ -47,7 +47,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		cachedCollectionPanels = new Hashtable<Collection, JPanel>();
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
-		setSize(500, 580);
+		setPreferredSize(new Dimension(500, 580));
+		setSize(500,580);
 		setResizable(true);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -120,12 +121,13 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    
 	    Calendar startDate = new GregorianCalendar(), endDate = new GregorianCalendar();
 	    Calendar interval = new GregorianCalendar(0, 0, 0, 0, 0, 0);
-	    db.getMaxMinDateInCollections(collections, startDate, endDate);
-	    
-	    JPanel timesPanel = new JPanel(new GridLayout(3, 1, 0, 5));
-	    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false));
-	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false));
-	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true));
+	    // add things with indices so that you can remove them later!
+	    timesPanel = new JPanel(new GridLayout(4, 1, 0, 5));
+	    timesPanel.add(calculateTimes=new JButton("Calculate Time Interval"),0);
+	    calculateTimes.addActionListener(this);
+	    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false),1);
+	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false),2);
+	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true),3);
 	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
 	   
 		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
@@ -324,7 +326,33 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	public void actionPerformed(ActionEvent e)
 	{
 		Object source = e.getSource();
-		if (source == createSeries) {
+		if (source == calculateTimes){
+			final Calendar startDate = new GregorianCalendar(), endDate = new GregorianCalendar();
+		    final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, "Calculating Time Interval", collections.length);
+			progressBar.constructThis();
+			progressBar.setIndeterminate(true);
+			final AggregateWindow thisRef = this;
+			final SwingWorker aggWorker = new SwingWorker() {
+				private int collectionID;
+				public Object construct() {
+					db.getMaxMinDateInCollections(collections, startDate, endDate);
+					return new Integer(0);
+				}
+				public void finished() {
+					timesPanel.remove(1);
+				    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false),1);
+				    timesPanel.remove(2);
+				    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false),2);
+				    thisRef.pack();
+				    thisRef.repaint();
+					progressBar.disposeThis();
+				}
+			};
+			aggWorker.start();
+		    
+		    
+		}else if (source == createSeries) {
 			final long timingStart = new Date().getTime();
 			final String newSeriesName = descriptionField.getText().trim().replace("'", "''");			
 			if (newSeriesName.equals("")) {
@@ -478,9 +506,11 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	
 	public class TimePanel extends JPanel implements ActionListener {
 		private JComboBox day, month, year, hour, minute, second;
+		private boolean isInterval;
 		
-		public TimePanel(String name, Calendar initDate, boolean isInterval) {
+		public TimePanel(String name, Calendar initDate, boolean interval) {
 			setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
+			isInterval = interval;
 			
 			JLabel label = new JLabel(name);
 			hour   = getComboBox(initDate.get(Calendar.HOUR_OF_DAY), 0, isInterval ? 24 : 23, false);
