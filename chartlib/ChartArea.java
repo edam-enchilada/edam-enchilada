@@ -52,39 +52,52 @@ public class ChartArea extends AbstractMetricChartArea {
 	protected void drawDataLines(Graphics2D g2d,Dataset dataset){
 			if(dataset == null) return;
 			Rectangle dataArea = getDataAreaBounds();
-			
+			//setup
 			Shape oldClip = g2d.getClip();
 			Stroke oldStroke = g2d.getStroke();
 			g2d.setColor(foregroundColor);
 			g2d.clip(dataArea);	//constrains drawing to the data value
 			g2d.setStroke(new BasicStroke(1.5f));
 			
-			//	loops through all data points building array of points to draw
-			int lastX = 0;
-			double lastY = -999.0;
+			//Keep track of the last point, both in pixel units and in chart units
+			int lastXCoord = Integer.MIN_VALUE;
+			double lastXValue = Double.NEGATIVE_INFINITY;
+			double lastYCoord = -999.0;
 			int numPoints = 0;
+			//Iterate through the whole dataset because you need to draw lines 
+			// even if most of the line is off-screen (when you zoom in one one point
+			// there are still lines connecting it to its neighbors even if you can't
+			// see the neighbors)
 			Iterator<DataPoint> iterator 
-				= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
-								new DataPoint(xAxis.getMax(), 0)).iterator();
+				= dataset.iterator();
 			while(iterator.hasNext())
 			{
 				DataPoint curPoint = iterator.next();
 				
-				double x = curPoint.y, y = curPoint.y;
+				double x = curPoint.x, y = curPoint.y;
 				
-				int xCoord = (int) (dataArea.x+xAxis.relativePosition(curPoint.x) 
+				//if you've finished the drawable points, stop
+				if((x >xAxis.getMax())&&(lastXValue >xAxis.getMax()))break;
+				
+				int xCoord = (int) (dataArea.x+xAxis.relativePosition(x) 
 						* dataArea.width);
 				double yCoord = (dataArea.y + dataArea.height 
-						- (yAxis.relativePosition(curPoint.y) * dataArea.height));
+						- (yAxis.relativePosition(y) * dataArea.height));
 			
 				if(numPoints==0){
 					;
 				}else{
-					g2d.draw(new Line2D.Double((double) lastX, lastY, (double) xCoord, yCoord));
+					// draw the line if either the current point is within the bounds or the last point
+					// was within the bounds
+					// Note: for the last point you don't need to check the upper bounds because
+					// the loop should terminate.
+					if((x >= xAxis.getMin()&&x <=xAxis.getMax())||(lastXValue >= xAxis.getMin()))
+							g2d.draw(new Line2D.Double((double) lastXCoord, lastYCoord, (double) xCoord, yCoord));
 				}
 				numPoints++;
-				lastX = xCoord;
-				lastY = yCoord; // maybe get rid of
+				lastXCoord = xCoord;
+				lastYCoord = yCoord; // maybe get rid of
+				lastXValue= x;
 			}
 			
 			if (dataset.first().x < xAxis.getMin()) {
