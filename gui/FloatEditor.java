@@ -43,6 +43,7 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.JFormattedTextField;
 import javax.swing.JTable;
 import java.awt.Component;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import javax.swing.text.DefaultFormatterFactory;
@@ -65,6 +66,9 @@ public class FloatEditor extends DefaultCellEditor {
         textField = (JFormattedTextField)getComponent();
         textField.setBorder(new LineBorder(Color.black));
         floatFormat = NumberFormat.getInstance();
+        // Set the maximum decimal point precision
+        floatFormat.setMaximumIntegerDigits(1);
+        floatFormat.setMaximumFractionDigits(10);
         NumberFormatter floatFormatter = new NumberFormatter(floatFormat);
         floatFormatter.setFormat(floatFormat);
         textField.setFormatterFactory(
@@ -86,6 +90,7 @@ public class FloatEditor extends DefaultCellEditor {
      * Get the input and try to make it into a float
      */
     public Object getCellEditorValue() {
+    	System.out.println("FloatEditor.getCellEditorValue");
     	textField.setBorder(new LineBorder(Color.black));
         Object value = textField.getValue();
         if (value instanceof Float) 
