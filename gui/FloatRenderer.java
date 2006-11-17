@@ -21,8 +21,7 @@ public class FloatRenderer extends DefaultTableCellRenderer{
                             JTable table, Object value,
                             boolean isSelected, boolean hasFocus,
                             int row, int column) {
-    	this.setValue(floatFormat.format(value));
-    	Component result=super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+    	Component result=super.getTableCellRendererComponent(table, floatFormat.format(value), isSelected, hasFocus, row, column);
     	return result;
     }	
 }
