@@ -1712,8 +1712,8 @@ public class DatabaseTest extends TestCase {
 		db.openConnection();
 		
 		try {
-			//an empty database has version "Aug2006.1" currently
-			assertEquals(db.getVersion(), "Aug2006.1");
+			//an empty database has version "Sept2006.1" currently
+			assertEquals(db.getVersion(), "Sept2006.1");
 		}
 		catch (Exception ex) {
 			fail();
