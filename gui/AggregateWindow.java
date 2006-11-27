@@ -399,8 +399,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 							public void run() {
 								JOptionPane.showMessageDialog(null,
 										"The start and stop dates which you selected resulted" +
-										" in the collection: "+name+" having " +
-										"no data points to aggregate.  Either remove the collection or try" +
+										" in the collection '"+name+"' having " +
+										"no data points to aggregate.  Either remove the collection or try " +
 										"different dates.");
 							}
 							
