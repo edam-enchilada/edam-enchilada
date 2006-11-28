@@ -801,7 +801,7 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * Returns a hashmap representing the hierarchy of subcollections.
-	 * Each key is a parentID which hashes to an ArrayList<Integer> of it's ChildIDs ordered by ChildID 
+	 * Each key is a parentID which hashes to an ArrayList<Integer> of its ChildIDs ordered by ChildID 
 	 * @param collection
 	 * @return the subcollection hierarchy represented as a HashMap
 	 * @author Jamie Olson
@@ -5051,10 +5051,11 @@ public abstract class Database implements InfoWarehouse {
 	
 	/** 
 	 * @author steinbel
-	 * Gets first atom for top-level particles in collection.
+	 * Gets first atom in collection (recursively finds the first atom for
+	 * parent collections).
 	 */
 	public int getFirstAtomInCollection(Collection collection) {
-		int atom = -1;
+		int atom = -99;
 		try{
 			Statement stmt = con.createStatement();
 			String string = "SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID();
@@ -5065,16 +5066,38 @@ public abstract class Database implements InfoWarehouse {
 			
 			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
 			if (atom == 0) {
-				rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
-				if (!rs.next())
-					atom = -1;
+				//check for subcollections
+				HashMap<Integer, ArrayList<Integer>> heirarchy = 
+										getSubCollectionsHierarchy(collection);
+
+				java.util.Collection<ArrayList<Integer>> subColls = 
+					heirarchy.values();
+				if (heirarchy.isEmpty()){
+					rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
+					if (!rs.next())
+						atom = -99;
+				} else { //grab the min amongst all subcollections
+					rs = stmt.executeQuery("SELECT MAX(AtomID) FROM AtomMembership");
+					int min = -99;
+					if (rs.next())
+						min = rs.getInt(1);
+					int currMin;
+					for (ArrayList<Integer> sub : subColls){
+						for (Integer i : sub){
+							currMin = getFirstAtomInCollection(getCollection(i));
+							if (currMin<=min)
+								min = currMin;
+						}
+					}
+					atom = min;
+				}
 			}
 			
 			stmt.close();
 		}
 		catch (SQLException e){
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception getting first atom in collection");
-			System.err.println("problems get first atom in collection from SQLServer.");
+			System.err.println("problems getting first atom in collection from SQLServer.");
 		}
 		return atom;
 	}

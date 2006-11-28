@@ -209,7 +209,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.curRow = curRow;
 	    this.coll = collection;
 	    this.totRows = particlesTable.getRowCount()-1;
-	    
 	    labelLoader = new LabelLoader(this);
 		
 		peaks = new ArrayList<Peak>();
@@ -589,7 +588,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 	
 	private void showNextParticle() {
-		if (curRow < particlesTable.getRowCount() - 1)
+		if (curRow < particlesTable.getRowCount() - 1);
 			curRow++;
 		showGraph();
 		unZoom();
