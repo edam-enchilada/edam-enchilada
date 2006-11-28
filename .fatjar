@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Fri Aug 18 08:42:12 CDT 2006
+#Tue Nov 28 11:32:40 CST 2006
 onejar.license.required=false
 manifest.classpath=
 manifest.removesigners=true
@@ -10,5 +10,5 @@ manifest.mainclass=gui.MainFrame
 manifest.file=<createnew>
 jarname.isextern=false
 onejar.expand=
-excludes=
+excludes=<po|edam-enchilada>~edam-enchilada.jar
 includes=
