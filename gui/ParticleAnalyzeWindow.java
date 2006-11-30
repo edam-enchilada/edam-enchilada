@@ -80,6 +80,9 @@ import database.Database;
  */
 public class ParticleAnalyzeWindow extends JFrame 
 implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
+	
+	private final int CACHE_NUM = 1000;//see createCache() below
+	
 	//GUI elements
 	private SpectrumPlot chart;
 	private ZoomableChart zchart;
@@ -99,7 +102,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	//Data elements
 	private InfoWarehouse db;
-	private JTable particlesTable;
+	private Vector<Vector<Object>> particlesData;
 	private int curRow;
 	private int totRows;
 	private Collection coll;
@@ -205,10 +208,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setLocation(10, 10);
 		
 	    this.db = db;
-	    this.particlesTable = dt;
 	    this.curRow = curRow;
+	    this.particlesData = createCache(dt, curRow);
 	    this.coll = collection;
-	    this.totRows = particlesTable.getRowCount()-1;
+	    this.totRows = particlesData.size()-1;
 	    labelLoader = new LabelLoader(this);
 		
 		peaks = new ArrayList<Peak>();
@@ -268,6 +271,40 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 
 	/**
+	 * @author steinbel
+	 * Creates a deep copy of CACHE_NUM rows before the selected row and
+	 * after it.
+	 * @param orig - the original table from which the copy will be made
+	 * @param selected - the row selected in the original table
+	 * @return a copy of the data from the original table within range of
+	 * 			the selected row
+	 */
+	private Vector<Vector<Object>> createCache(JTable orig, int selected){
+		Vector<Vector<Object>> cache = new Vector<Vector<Object>>();
+		TableModel data = orig.getModel();
+		
+		//determine the range for data to cache
+		int cols = data.getColumnCount();
+		int rows = data.getRowCount();
+		int start = selected - CACHE_NUM;
+		if (start < 0)
+			start = 0;
+		int end = selected + CACHE_NUM;
+		if (end > rows)
+			end = rows;
+		
+		//copy data
+		for (int i=start; i<end; i++){
+			cache.add(i, new Vector<Object>());
+			for (int j=0; j<cols; j++){
+				cache.get(i).add(j, data.getValueAt(i, j));
+			}
+		}
+		
+		return cache;
+	}
+
+	/**
 	 * @param db
 	 * @param curRow
 	 * @param labelingControlPane
@@ -291,8 +328,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		buttonPanel.add(peakButton);
 		JPanel peakButtonPanel = new JPanel(new GridLayout(2,1));
 		
-		int aID = ((Integer) 
-				particlesTable.getValueAt(curRow, 0)).intValue();
+		int aID = ((Integer)
+				particlesData.get(curRow).get(0)).intValue();
 		
 		clusterID = db.getRepresentedCluster(aID);
 		
@@ -588,7 +625,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 	
 	private void showNextParticle() {
-		if (curRow < particlesTable.getRowCount() - 1);
+		if (curRow < particlesData.size() - 1);
 			curRow++;
 		showGraph();
 		unZoom();
@@ -602,8 +639,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * @param atomID	The atomID of the particle to show.
 	 */
 	private void showGraph(int atomID){
-		//if there is no such atom, just don't do anything.
-		//if (atomID <= 0)
 		//	return;
 		
 		if(curRow<=0){
@@ -620,9 +655,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
-		//need to get this from the correct collection, not always the current table
-		//however, this must be slower because going to db . . . - steinbel
+		//grab this from the table COPY
 		String filename = db.getATOFMSFileName(atomID);
+		
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -645,8 +680,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 *
 	 */
 	private void showGraph() {
-		int atomID = ((Integer) 
-				particlesTable.getValueAt(curRow, 0)).intValue();
+		int atomID = ((Integer)
+				particlesData.get(curRow).get(0)).intValue();
 		showGraph(atomID);
 
 	}
@@ -1168,5 +1203,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			default: return "";
 			}
 		}
+		
 	}
 }

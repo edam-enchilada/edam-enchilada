@@ -5054,6 +5054,8 @@ public abstract class Database implements InfoWarehouse {
 	 * Gets first atom in collection (recursively finds the first atom for
 	 * parent collections).
 	 */
+	//TODO: what if collection is a parent with smaller atomID than any of
+	//its children?  need to fix this case.
 	public int getFirstAtomInCollection(Collection collection) {
 		int atom = -99;
 		try{
@@ -5067,16 +5069,18 @@ public abstract class Database implements InfoWarehouse {
 			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
 			if (atom == 0) {
 				//check for subcollections
-				HashMap<Integer, ArrayList<Integer>> heirarchy = 
+				HashMap<Integer, ArrayList<Integer>> hierarchy = 
 										getSubCollectionsHierarchy(collection);
 
 				java.util.Collection<ArrayList<Integer>> subColls = 
-					heirarchy.values();
-				if (heirarchy.isEmpty()){
+					hierarchy.values();
+				if (hierarchy.isEmpty()){
+					//TODO: this query is useless
 					rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
 					if (!rs.next())
 						atom = -99;
 				} else { //grab the min amongst all subcollections
+					//TODO: simply initialize min to largest possible atomID
 					rs = stmt.executeQuery("SELECT MAX(AtomID) FROM AtomMembership");
 					int min = -99;
 					if (rs.next())

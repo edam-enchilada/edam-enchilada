@@ -1769,7 +1769,7 @@ public class DatabaseTest extends TestCase {
 			ex.printStackTrace();
 		}	
 		
-		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), -1);
+		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), -99);
 		
 		try {
 			//rebuild the bit deleted above

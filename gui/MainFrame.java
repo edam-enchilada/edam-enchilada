@@ -1204,6 +1204,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		particlePanel = new JPanel(new BorderLayout());
 		particleTablePane = new JScrollPane(particlesTable);
+		
 		JPanel partOpsPane = new JPanel(new FlowLayout());
 		partOpsPane.add(analyzeParticleButton, BorderLayout.CENTER);
 		
