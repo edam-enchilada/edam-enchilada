@@ -4,18 +4,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
-import ATOFMS.ATOFMSPeak;
 import ATOFMS.Peak;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
-import database.Database;
+
 import database.InfoWarehouse;
+import database.Database;
 
 /**
  * @author steinbel
@@ -149,7 +149,7 @@ public class PredictionAggregator {
 		ArrayList<Peak> peaks = db.getPeaks("ATOFMS", atomID);
 		//factor in the capture rate
 		for (Peak p: peaks)
-			peakList.add((float)p.massToCharge, (float)(((ATOFMSPeak)p).area*percent));
+			peakList.add((float)p.massToCharge, (float)(p.area*percent));
 
 		
 	}

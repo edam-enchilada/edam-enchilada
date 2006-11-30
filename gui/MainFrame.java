@@ -254,8 +254,14 @@ public class MainFrame extends JFrame implements ActionListener
 			public void windowLostFocus(WindowEvent event) {
 				Window w = event.getOppositeWindow();
 				if (w != null) {
-					if (event.getWindow() instanceof MainFrame)
-						w.requestFocus();
+					/* Below code commented out for nov2006 release to prevent
+					 * output window from appearing on top of main window at 
+					 * startup. TEMPORARY hack because this is what fixes the
+					 * fast alt-tab bug.  - steinbel 11.8.06
+					 */
+					//if (event.getWindow() instanceof MainFrame)
+						//w.requestFocus();
+					/* end commenting by steinbel 11.8.06 */
 					if (w instanceof Frame) {
 						boolean found = false;
 						for (WindowFocusListener listen : w.getWindowFocusListeners()) {
@@ -335,7 +341,7 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version nov-2006-3"
+					"Software Version nov-2006-4"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
@@ -1198,6 +1204,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		particlePanel = new JPanel(new BorderLayout());
 		particleTablePane = new JScrollPane(particlesTable);
+		
 		JPanel partOpsPane = new JPanel(new FlowLayout());
 		partOpsPane.add(analyzeParticleButton, BorderLayout.CENTER);
 		
@@ -1333,7 +1340,7 @@ public class MainFrame extends JFrame implements ActionListener
 		particlesTable = new JTable(data, columns);
 		particlesTable.setDefaultEditor(Object.class, null);
 		
-		if (dataType.equals("ATOFMS")||dataType.equals("AMS")) {
+		if (dataType.equals("ATOFMS")) {
 			particleTablePane.setViewportView(particlesTable);
 			
 			particlesTable.setEnabled(true);

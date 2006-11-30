@@ -42,70 +42,32 @@
  */
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.sql.*;
+import java.util.*;
 
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JTextPane;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import javax.swing.text.html.*;
 
-import ATOFMS.AMSPeak;
 import ATOFMS.ATOFMSParticle;
-import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
 import ATOFMS.Peak;
 import ATOFMS.ReadSpec;
+
+import chartlib.Chart;
 import chartlib.DataPoint;
 import chartlib.Dataset;
 import chartlib.SpectrumPlot;
 import chartlib.ZoomableChart;
+
 import collection.Collection;
-import database.Database;
+
 import database.InfoWarehouse;
+import database.Database;
 
 
 /**
@@ -118,6 +80,9 @@ import database.InfoWarehouse;
  */
 public class ParticleAnalyzeWindow extends JFrame 
 implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
+	
+	private final int CACHE_NUM = 1000;//see createCache() below
+	
 	//GUI elements
 	private SpectrumPlot chart;
 	private ZoomableChart zchart;
@@ -137,7 +102,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	//Data elements
 	private InfoWarehouse db;
-	private JTable particlesTable;
+	private Vector<Vector<Object>> particlesData;
 	private int curRow;
 	private int totRows;
 	private Collection coll;
@@ -243,11 +208,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setLocation(10, 10);
 		
 	    this.db = db;
-	    this.particlesTable = dt;
 	    this.curRow = curRow;
+	    this.particlesData = createCache(dt, curRow);
 	    this.coll = collection;
-	    this.totRows = particlesTable.getRowCount()-1;
-	    
+	    this.totRows = particlesData.size()-1;
 	    labelLoader = new LabelLoader(this);
 		
 		peaks = new ArrayList<Peak>();
@@ -307,6 +271,40 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 
 	/**
+	 * @author steinbel
+	 * Creates a deep copy of CACHE_NUM rows before the selected row and
+	 * after it.
+	 * @param orig - the original table from which the copy will be made
+	 * @param selected - the row selected in the original table
+	 * @return a copy of the data from the original table within range of
+	 * 			the selected row
+	 */
+	private Vector<Vector<Object>> createCache(JTable orig, int selected){
+		Vector<Vector<Object>> cache = new Vector<Vector<Object>>();
+		TableModel data = orig.getModel();
+		
+		//determine the range for data to cache
+		int cols = data.getColumnCount();
+		int rows = data.getRowCount();
+		int start = selected - CACHE_NUM;
+		if (start < 0)
+			start = 0;
+		int end = selected + CACHE_NUM;
+		if (end > rows)
+			end = rows;
+		
+		//copy data
+		for (int i=start; i<end; i++){
+			cache.add(i, new Vector<Object>());
+			for (int j=0; j<cols; j++){
+				cache.get(i).add(j, data.getValueAt(i, j));
+			}
+		}
+		
+		return cache;
+	}
+
+	/**
 	 * @param db
 	 * @param curRow
 	 * @param labelingControlPane
@@ -330,8 +328,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		buttonPanel.add(peakButton);
 		JPanel peakButtonPanel = new JPanel(new GridLayout(2,1));
 		
-		int aID = ((Integer) 
-				particlesTable.getValueAt(curRow, 0)).intValue();
+		int aID = ((Integer)
+				particlesData.get(curRow).get(0)).intValue();
 		
 		clusterID = db.getRepresentedCluster(aID);
 		
@@ -627,7 +625,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	}
 	
 	private void showNextParticle() {
-		if (curRow < particlesTable.getRowCount() - 1)
+		if (curRow < particlesData.size() - 1);
 			curRow++;
 		showGraph();
 		unZoom();
@@ -641,8 +639,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * @param atomID	The atomID of the particle to show.
 	 */
 	private void showGraph(int atomID){
-		//if there is no such atom, just don't do anything.
-		//if (atomID <= 0)
 		//	return;
 		
 		if(curRow<=0){
@@ -658,12 +654,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		}
 		
 		setTitle("Analyze Particle - AtomID: " + atomID);
-		String filename = "";
-		//need to get this from the correct collection, not always the current table
-		//however, this must be slower because going to db . . . - steinbel
-		if(coll.getDatatype().equals("ATOFMS")){
-			filename = db.getATOFMSFileName(atomID);
-		}
+		
+		//grab this from the table COPY
+		String filename = db.getATOFMSFileName(atomID);
+		
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -686,8 +680,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 *
 	 */
 	private void showGraph() {
-		int atomID = ((Integer) 
-				particlesTable.getValueAt(curRow, 0)).intValue();
+		int atomID = ((Integer)
+				particlesData.get(curRow).get(0)).intValue();
 		showGraph(atomID);
 
 	}
@@ -842,7 +836,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
-			posDS.add(new DataPoint(p.massToCharge, p.value));
+			posDS.add(new DataPoint(p.massToCharge, p.area));
 		}
 		return posDS;
 	}
@@ -851,7 +845,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset negDS = new Dataset();
 		for(Peak p : negPeaks)
 		{
-			negDS.add(new DataPoint(-p.massToCharge, p.value));
+			negDS.add(new DataPoint(-p.massToCharge, p.area));
 		}
 		return negDS;
 	}
@@ -1140,7 +1134,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			PrintStream writer = new PrintStream(new File(spectrumFileName));
 			writer.println("1");
 			for (Peak p : peaks)
-				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.value);
+				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.area);
 			writer.print("-1");
 			writer.close();
 		}
@@ -1185,28 +1179,17 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				peak = negPeaks.get(row);
 			else
 				peak = posPeaks.get(row - negPeaks.size());
-			if(coll.getDatatype().equals("ATOFMS")){
 			switch(column)
 			{
 			// Putting these in wrapper classes, hope this
 			// helps 
 			// -Ben
-			case 0: return new Integer((int)((ATOFMSPeak)peak).massToCharge);
-			case 1: return new Integer(((ATOFMSPeak)peak).height);
-			case 2: return new Integer(((ATOFMSPeak)peak).area);
-			case 3: return new Float(((ATOFMSPeak)peak).relArea);
+			case 0: return new Integer((int)peak.massToCharge);
+			case 1: return new Integer(peak.height);
+			case 2: return new Integer(peak.area);
+			case 3: return new Float(peak.relArea);
 			default: return null;
 			}
-			}else if(coll.getDatatype().equals("AMS")){
-				switch(column)
-				{
-				case 0: return new Integer((int)((AMSPeak)peak).massToCharge);
-				case 1: return new Double(((AMSPeak)peak).height);
-				}
-				
-			}
-			
-			return null;
 		}
 		
 		public String getColumnName(int column)
@@ -1220,5 +1203,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			default: return "";
 			}
 		}
+		
 	}
 }

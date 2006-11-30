@@ -7,11 +7,10 @@
 package experiments;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Random;
+import java.util.Date;
 
 import ATOFMS.ATOFMSParticle;
-import ATOFMS.ATOFMSPeak;
 import ATOFMS.Peak;
 
 
@@ -51,7 +50,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 		
 		// Add noise to peaks that are there
 		for (int i=0; i < peakList.size(); i++) {
-			ATOFMSPeak peak = (ATOFMSPeak)peakList.get(i);
+			Peak peak = peakList.get(i);
 			peak.area = peak.area + (int)Math.round(amplitude*randNum.nextGaussian());
 			if (peak.area < 1)
 				peak.area = 1;
@@ -84,7 +83,7 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 						duplicateLoc = true;
 				}
 			}
-			peakList.add(new ATOFMSPeak(heightAndArea,heightAndArea,peakLoc));
+			peakList.add(new Peak(heightAndArea,heightAndArea,peakLoc));
 
 			// add 8 larger peaks out of the locations -300, -275...25, 50, 75, 100, 125,
 			// 150, etc. up to 300 (24 possible locations).
@@ -107,18 +106,18 @@ public class ATOFMSParticleExp extends ATOFMSParticle {
 					heightAndArea = 1;
 				// If a peak exists at that key, add to it.
 				if (index == -1)
-					peakList.add(new ATOFMSPeak(heightAndArea, heightAndArea, peakLoc));
+					peakList.add(new Peak(heightAndArea, heightAndArea, peakLoc));
 				else {
-					heightAndArea = heightAndArea + (int)((ATOFMSPeak)peakList.get(index)).area;
-				peakList.set(index, new ATOFMSPeak(heightAndArea,heightAndArea,peakLoc));
+					heightAndArea = heightAndArea + (int)peakList.get(index).area;
+				peakList.set(index, new Peak(heightAndArea,heightAndArea,peakLoc));
 				}
 			}
 			
 		}
 		
 		for (int i = 0; i < peakList.size(); i++) {
-			assert ((ATOFMSPeak)peakList.get(i)).area > 0 : 
-				"Area is negative: " + ((ATOFMSPeak)peakList.get(i)).area + " @ " + i;	    	
+			assert peakList.get(i).area > 0 : 
+				"Area is negative: " + peakList.get(i).area + " @ " + i;	    	
 		}
 		
 		return peakList;

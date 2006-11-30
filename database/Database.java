@@ -81,8 +81,6 @@ import org.dbunit.dataset.filter.ITableFilter;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.ext.mssql.InsertIdentityOperation;
 
-import ATOFMS.AMSPeak;
-import ATOFMS.ATOFMSPeak;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import analysis.BinnedPeakList;
@@ -803,7 +801,7 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * Returns a hashmap representing the hierarchy of subcollections.
-	 * Each key is a parentID which hashes to an ArrayList<Integer> of it's ChildIDs ordered by ChildID 
+	 * Each key is a parentID which hashes to an ArrayList<Integer> of its ChildIDs ordered by ChildID 
 	 * @param collection
 	 * @return the subcollection hierarchy represented as a HashMap
 	 * @author Jamie Olson
@@ -2738,36 +2736,21 @@ public abstract class Database implements InfoWarehouse {
 			e.printStackTrace();
 		}
 		ArrayList<Peak> returnThis = new ArrayList<Peak>();
+		float location = 0, relArea = 0;
+		int area = 0, height = 0;
 		try {
-			if(datatype.equals("ATOFMS")){
-				float location = 0, relArea = 0;
-				int area = 0, height = 0;
-				
 			while(rs.next())
 			{
-				location = rs.getFloat("PeakLocation");
-				area = rs.getInt("PeakArea");
-				relArea = rs.getFloat("RelPeakArea");
-				height = rs.getInt("PeakHeight");
-				System.out.println("ATOFMS db, height: "+height);
-				returnThis.add(new ATOFMSPeak(
+				location = rs.getFloat(2);
+				area = rs.getInt(3);
+				relArea = rs.getFloat(4);
+				height = rs.getInt(5);
+				returnThis.add(new Peak(
 						height,
 						area,
 						relArea,
 						location));
 			} 
-			}else if(datatype.equals("AMS")){
-				float location = 0, height = 0;
-				while(rs.next())
-				{
-					location = rs.getFloat("PeakLocation");
-					height = rs.getFloat("PeakHeight");
-					System.out.println("AMS db, height: "+height);
-					returnThis.add(new AMSPeak(
-							height,
-							location));
-				} 
-			}
 			
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving peaks.");
@@ -3253,7 +3236,7 @@ public abstract class Database implements InfoWarehouse {
 						"WHERE AtomID = " + pList.getAtomID());
 				while (peakRS.next())
 				{
-					aPeakList.add(new ATOFMSPeak(peakRS.getInt(1), peakRS.getInt(2), peakRS.getFloat(3),
+					aPeakList.add(new Peak(peakRS.getInt(1), peakRS.getInt(2), peakRS.getFloat(3),
 							peakRS.getFloat(4)));
 				}
 				pList.setPeakList(aPeakList);
@@ -3307,7 +3290,7 @@ public abstract class Database implements InfoWarehouse {
 			for(int i = 0; i < peakList.size(); i++)
 			{
 				temp = peakList.get(i);
-				bPList.add((float)temp.massToCharge, (float)temp.value);
+				bPList.add((float)temp.massToCharge, temp.area);
 			}
 			return bPList;
 		}
@@ -5068,10 +5051,13 @@ public abstract class Database implements InfoWarehouse {
 	
 	/** 
 	 * @author steinbel
-	 * Gets first atom for top-level particles in collection.
+	 * Gets first atom in collection (recursively finds the first atom for
+	 * parent collections).
 	 */
+	//TODO: what if collection is a parent with smaller atomID than any of
+	//its children?  need to fix this case.
 	public int getFirstAtomInCollection(Collection collection) {
-		int atom = -1;
+		int atom = -99;
 		try{
 			Statement stmt = con.createStatement();
 			String string = "SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID();
@@ -5082,16 +5068,40 @@ public abstract class Database implements InfoWarehouse {
 			
 			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
 			if (atom == 0) {
-				rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
-				if (!rs.next())
-					atom = -1;
+				//check for subcollections
+				HashMap<Integer, ArrayList<Integer>> hierarchy = 
+										getSubCollectionsHierarchy(collection);
+
+				java.util.Collection<ArrayList<Integer>> subColls = 
+					hierarchy.values();
+				if (hierarchy.isEmpty()){
+					//TODO: this query is useless
+					rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
+					if (!rs.next())
+						atom = -99;
+				} else { //grab the min amongst all subcollections
+					//TODO: simply initialize min to largest possible atomID
+					rs = stmt.executeQuery("SELECT MAX(AtomID) FROM AtomMembership");
+					int min = -99;
+					if (rs.next())
+						min = rs.getInt(1);
+					int currMin;
+					for (ArrayList<Integer> sub : subColls){
+						for (Integer i : sub){
+							currMin = getFirstAtomInCollection(getCollection(i));
+							if (currMin<=min)
+								min = currMin;
+						}
+					}
+					atom = min;
+				}
 			}
 			
 			stmt.close();
 		}
 		catch (SQLException e){
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception getting first atom in collection");
-			System.err.println("problems get first atom in collection from SQLServer.");
+			System.err.println("problems getting first atom in collection from SQLServer.");
 		}
 		return atom;
 	}
