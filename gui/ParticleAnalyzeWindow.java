@@ -104,7 +104,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private InfoWarehouse db;
 	private Vector<Vector<Object>> particlesData;
 	private int curRow;
-	private int totRows;
 	private Collection coll;
 	
 	private LabelLoader labelLoader;
@@ -211,7 +210,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.curRow = curRow;
 	    this.particlesData = createCache(dt, curRow);
 	    this.coll = collection;
-	    this.totRows = particlesData.size()-1;
 	    labelLoader = new LabelLoader(this);
 		
 		peaks = new ArrayList<Peak>();
@@ -611,21 +609,8 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		unZoom();
 	}
 	
-	/**
-	 * Shows the adjacent particle when the current particle is not in the selected
-	 * collection.
-	 * @param next	The particle to display.
-	 * 					next[0] = atomID
-	 * 					next[1] = curRow
-	 */
-	private void showAdjacentParticle(int[] next){
-		curRow = next[1];
-		showGraph(next[0]);
-		unZoom();
-	}
-	
 	private void showNextParticle() {
-		if (curRow < particlesData.size() - 1);
+		if (curRow < (particlesData.size()-1));
 			curRow++;
 		showGraph();
 		unZoom();
@@ -634,20 +619,21 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	
 	/**
 	 * @author steinbel
-	 * Helper method grabs necessary info from table and database and sets up
-	 * window to show the next particle.
-	 * @param atomID	The atomID of the particle to show.
+	 * Grabs necessary info from table-copy and database and sets up window to 
+	 * show the selected particle.
 	 */
-	private void showGraph(int atomID){
-		//	return;
+	private void showGraph(){
 		
+		int atomID = ((Integer)
+				particlesData.get(curRow).get(0)).intValue();
+		
+		//enable and disable buttons according to data available
 		if(curRow<=0){
 			prevButton.setEnabled(false);
 		}else{
 			prevButton.setEnabled(true);
 		}
-		//need to check if it's bigger than its own collection
-		if(curRow>=totRows){
+		if(curRow>= (particlesData.size()-1)){
 			nextButton.setEnabled(false);
 		}else{
 			nextButton.setEnabled(true);
@@ -656,7 +642,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
 		//grab this from the table COPY
-		String filename = db.getATOFMSFileName(atomID);
+		String filename = (String)particlesData.get(curRow).get(5);
 		
 		String peakString = "Peaks:\n";
 		
@@ -673,17 +659,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setPeaks(peaks, atomID, filename);		
 		
 		db.buildAtomRemovedIons(atomID, posIons, negIons);
-	}
-	
-	/**
-	 * Grabs the atomID from the table of particles, then sets up graph for it.
-	 *
-	 */
-	private void showGraph() {
-		int atomID = ((Integer)
-				particlesData.get(curRow).get(0)).intValue();
-		showGraph(atomID);
-
 	}
 	
 	/**
@@ -779,25 +754,10 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			displaySpectrum();
 		else if (source == prevButton || source == nextButton) {
 			db.saveAtomRemovedIons(atomID, posIons, negIons);
-			//get the current collection the window is showing
-			Collection current = mf.getSelectedCollection();
-			if (current.getCollectionID() == coll.getCollectionID()){
-				if (source == prevButton)
-					showPreviousParticle();
-				else
-					showNextParticle();
-			} else{ //if the main window is not showing the collection of this
-					//atom, go to the db to find the next atom in its collection 
-				int[] nextAtom = new int[2];
-				if (source == prevButton)
-					nextAtom = ((Database)db).getAdjacentAtomInCollection(coll.getCollectionID(),
-							atomID, -1);
-				else
-					nextAtom = ((Database)db).getAdjacentAtomInCollection(coll.getCollectionID(),
-							atomID, 1);
-				
-				showAdjacentParticle(nextAtom);
-			}
+			if (source == prevButton)
+				showPreviousParticle();
+			else
+				showNextParticle();
 		}
 		else if (source == zoomDefaultButton)
 			unZoom();
