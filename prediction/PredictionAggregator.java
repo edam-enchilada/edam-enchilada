@@ -64,6 +64,7 @@ public class PredictionAggregator {
 			/*icky long section that parses the time and creates a time an hour
 			 * before for the start & end dates to give the database
 			 */
+			//TODO: doesn't deal well with switches from day to day
 			Date when = sdf.parse(piece);
 			long temp = when.getTime();
 			Timestamp ts = new Timestamp(temp);
@@ -81,19 +82,28 @@ public class PredictionAggregator {
 			String query = "SELECT * FROM ATOFMSAtomInfoDense WHERE Time > " + "'" +
 					before + "' AND Time <= '" + time + "'";
 			ResultSet rs = stmt.executeQuery(query);
-			
-			BinnedPeakList bpl = new BinnedPeakList();
+	
 			BinnedPeakList total = new BinnedPeakList();
+			BinnedPeakList bpl = new BinnedPeakList();
 
 			double mass = 0.0;
 			boolean isEmpty = true;
+			double factor;
+			double size;
 			while (rs.next()){
 				isEmpty = false;
 				System.out.println("atomID " + rs.getInt("AtomID")); //debugging
-				// send the size & id for processing
-				process(rs.getDouble("Size"), mass, bpl, rs.getInt("AtomID"));
-
-				// add the results to total spectra
+		
+				size = rs.getDouble("Size"); /* If size=0, then mass is NaN, and
+											  * we have problems for Weka
+											  * so what to do?
+											  */
+				factor = calculateDE(size);
+				//increment total mass seen by size^3 adjusted for capture rate
+				mass += size*size*size*factor;
+			
+				// add the adjusted peaklist for this particle to total spectra
+				bpl = producePeaks(factor, rs.getInt("AtomID"));
 				total.addAnotherParticle(bpl);
 			}
 			if (!isEmpty){
@@ -118,7 +128,7 @@ public class PredictionAggregator {
 					}
 				}
 				output += "} \n";
-				bpl.printPeakList();
+				total.printPeakList();
 			}
 			
 			
@@ -134,24 +144,21 @@ public class PredictionAggregator {
 	
 	/**
 	 * @author steinbel
-	 * Calculates mass, adjusts peaks to reflect particle capture rates.
-	 * 
-	 * @param s - size of the particle
-	 * @param m - the current total mass for this time bin (gets updated)
-	 * @param peakList - updated with the adjusted peaklist for the atom
-	 * @param atomID -	the atom to adjust
+	 * Produces a peaklist from an atom, factoring in the capture rate.
+	 * @param percent - the percentage of particles with this size caputered
+	 * @param atomID - the atom for which the peaklist needs to be adjusted
+	 * @return the adjusted peaklist
 	 */
-	public void process(double s, double m, BinnedPeakList peakList, int atomID){
-		//increment total mass seen by size^3 adjusted for capture rate
-		double percent = getPercent(s);
-		m += s*s*s*percent;
+	public BinnedPeakList producePeaks(double percent, int atomID){
+		BinnedPeakList bpl = new BinnedPeakList();
+		
 		//retrieve peaks from db
 		ArrayList<Peak> peaks = db.getPeaks("ATOFMS", atomID);
 		//factor in the capture rate
-		for (Peak p: peaks)
-			peakList.add((float)p.massToCharge, (float)(p.area*percent));
+		for (Peak pk: peaks)
+			bpl.add((float)pk.massToCharge, (float)(pk.area*percent));
 
-		
+		return bpl;
 	}
 	
 	/**
@@ -160,16 +167,17 @@ public class PredictionAggregator {
 	 * NOTE: this method is Gromit-specific!
 	 * 
 	 * @param size -	the size of the particle in question
-	 * @return double -	the detection efficiency for Gromit
+	 * @return double -	the number of particles a particle this size should 
+	 * 					represent
 	 */
-	public double getPercent(double size){
-		double percent = 1.0;
-		//our results in microseconds (10^-6).  but need nano(10^-9) - convert
+	public double calculateDE(double size){
+		double factor = 1.0;
+		//our results in micros (10^-6).  but need nano(10^-9) - convert
 		double nanos = size * (Math.pow(10., 3.0));
 		if (size > nanos)
 			System.err.println("micros: " + size + " nanos: " + nanos);
-		double m = 1.0;
-		double b = 1.0;
+		double m = 0.0;
+		double b = 0.0;
 		if ( nanos > 100 && nanos <= 750 ){
 			//fill in values
 			m = 2.8574;
@@ -182,15 +190,21 @@ public class PredictionAggregator {
 			b = 42.031;
 		} else{
 			//TODO: error!  size out of range!  What do we want here?
+			System.err.println("size out of range: " + nanos + " nanos");
+			/* For now, we're keeping m & b at 0, which will render the
+			 * factor value to be 1, so we'll only count this particle as
+			 * one particle.  
+			 * 
+			 */
 		}
-		//DE = (actual size)^(number given, depends on size)*e^(different given)
+		//DE = (actual size)^(number given, depends on size,m)*e^(given,b)
 		//from Deborah: DetectionEfficiency_Gromit.pdf
-		percent = Math.pow(nanos, m)*Math.exp(b);
+		factor = Math.pow(nanos, m)*Math.exp(b);
 		
 		//particle/DE = appropriately scaled particle factor
-		percent = 1/percent;
+		factor = 1/factor;
 		
-		return percent;
+		return factor;
 	}
 
 }

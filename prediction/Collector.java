@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 /**
  * @author steinbel
- * NOTE: currently hardcoded for BC. 7.31.06
+ * NOTE: currently filenames are hardcoded in
  */
 public class Collector {
 
@@ -18,8 +18,8 @@ public class Collector {
 		String line;
 		String result = "";
 		try {
-			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/BC.csv"));
-			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/My Documents/WorkSpace/edam-enchilada/prediction/BC.arff")); 
+			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/BC.csv"));
+			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/BC.arff")); 
 			
 			/*name the attributes - we need 603 to allow for time, mass, and EC/BC
 			 *along with 300 negative and 300 positive m/z values
