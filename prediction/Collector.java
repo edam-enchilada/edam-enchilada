@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Scanner;
 
 /**
@@ -14,36 +15,37 @@ public class Collector {
 
 	//take in file of ec/bc/whatever data in csv format
 	public static void main(String[] args){
+		Date start = new Date();
 		PredictionAggregator pa = new PredictionAggregator();
 		String line;
 		String result = "";
+		StringBuilder builder = new StringBuilder();
 		try {
-			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/BC.csv"));
-			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/BC.arff")); 
-			
-			/*name the attributes - we need 603 to allow for time, mass, and EC/BC
-			 *along with 300 negative and 300 positive m/z values
-			 */
-			out.write("@relation BC \n");
-			out.write("@attribute time date \"MM/d/yyyy hh:mm:ss a\" \n");
-			out.write("@attribute mass numeric \n");
-			out.write("@attribute bc numeric \n");
-			
-			for(int i=-300; i<=300; i++)
-				out.write("@attribute mz" + i + " numeric \n");			
-						
-			out.write("@data \n");
+			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/small.csv"));
+			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/small.arff")); 
 			
 			pa.open();
 			//aggregate data and format into .arff format, write to file
 			while (scan.hasNextLine()){
 
 				line = scan.nextLine();
-				out.write(pa.grab(line));
+				builder.append(pa.grab(line));
 			}
 			pa.close();
+			Date end1 = new Date();
+			System.out.println("start " + start.toString() + " end1 " + end1.toString());
+			System.out.println("time taken: " + (end1.getTime() - start.getTime()));
+			builder.insert(0, pa.assembleAttributes());
+			out.write(builder.toString());
 			out.close();
 			scan.close();
+			Date end = new Date();
+			System.out.println("time for printing indices:");
+			System.out.println("start " + end1.toString() + " end " + end.toString());
+			System.out.println("time taken: " + (end.getTime() - end1.getTime()));
+			System.out.println("total time:");
+			System.out.println("start " + start.toString() + " end " + end.toString());
+			System.out.println("time taken: " + (end.getTime() - start.getTime()));
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,11 +31,16 @@ import database.Database;
  */
 public class PredictionAggregator {
 
-	InfoWarehouse db;
-	Connection con;
+	private InfoWarehouse db;
+	private Connection con;
+	private int maxAtt;
+	private int offset = 2500;
 	
 	public PredictionAggregator(){
 		db = Database.getDatabase();
+		//assume the first three attributes (starting at zero) are taken by
+		//time, mass, and EC or BC
+		maxAtt = 3;
 	}
 	
 	public void open(){
@@ -61,26 +67,36 @@ public class PredictionAggregator {
 		SimpleDateFormat sdf = new SimpleDateFormat("M/d/yyyy hh:mm:ss a");
 		
 		try {
-			/*icky long section that parses the time and creates a time an hour
-			 * before for the start & end dates to give the database
+			/*icky long section that parses the time and creates a times half-
+			 * hour before and after the given time for the start & end dates to
+			 *  give the database
 			 */
-			//TODO: doesn't deal well with switches from day to day
 			Date when = sdf.parse(piece);
 			long temp = when.getTime();
 			Timestamp ts = new Timestamp(temp);
 			String time = ts.toString().substring(0, ts.toString().lastIndexOf('.'));
 			int hour = Integer.parseInt(time.substring(11, 13));
 			hour --;
-			if (hour<0)
+			if (hour<0){
 				hour+=24;
-			String before = time.substring(0,11) + hour + time.substring(13);
-			System.out.print("Orig " + time + " prev time "); //debugging
-			System.out.println(before); //debugging
+				//TODO: still doesn't deal with month/year changes
+				int day = Integer.parseInt(time.substring(8, 10));
+				day --;
+				if (day < 10)
+					time = time.substring(0,8) + 0 + day + time.substring(10);
+				else 
+					time = time.substring(0,8) + day + time.substring(10);
+			}
+			String before = time.substring(0,11) + hour + ":30" + time.substring(16);
+			String after = time.substring(0, 13) + ":30" + time.substring(16);
+			System.out.print("start time: " + before + " end time: " + after +
+					" orig: "); //debugging
+			System.out.println(time); //debugging
 			
 			//retrieve dense info from db
 			Statement stmt = con.createStatement();
 			String query = "SELECT * FROM ATOFMSAtomInfoDense WHERE Time > " + "'" +
-					before + "' AND Time <= '" + time + "'";
+					before + "' AND Time <= '" + after + "'";
 			ResultSet rs = stmt.executeQuery(query);
 	
 			BinnedPeakList total = new BinnedPeakList();
@@ -94,43 +110,43 @@ public class PredictionAggregator {
 				isEmpty = false;
 				System.out.println("atomID " + rs.getInt("AtomID")); //debugging
 		
-				size = rs.getDouble("Size"); /* If size=0, then mass is NaN, and
-											  * we have problems for Weka
-											  * so what to do?
-											  */
+				size = rs.getDouble("Size");
 				factor = calculateDE(size);
-				//increment total mass seen by size^3 adjusted for capture rate
-				mass += size*size*size*factor;
-			
-				// add the adjusted peaklist for this particle to total spectra
-				bpl = producePeaks(factor, rs.getInt("AtomID"));
-				total.addAnotherParticle(bpl);
+				if (factor != 0){
+					//increment total mass seen by size^3 adjusted for capture 
+					//rate
+					mass += size*size*size*factor;
+				
+					// add the adjusted peaklist for this particle to total 
+					// spectrum
+					bpl = producePeaks(factor, rs.getInt("AtomID"));
+					total.addAnotherParticle(bpl);
+				}
 			}
-			if (!isEmpty){
-				//echo the input info and add the aggregated mass
-				output += "{ " + "0 " +'"'+ piece + '"' + ",1 " + mass +", 2 " +
-					predictThis;
+			if (!isEmpty) {
+				// echo the input info and add the aggregated mass
+				output += "{ " + "0 " + '"' + piece + '"' + ",1 " + mass
+						+ ", 2 " + predictThis;
 				Iterator<BinnedPeak> iter = total.iterator();
 				BinnedPeak bp;
-				while(iter.hasNext()){
+				int att;
+				while (iter.hasNext()) {
 					bp = iter.next();
-					/*what do we want to do in this case?  ignore?  increase range?
-					 *issues here with Weka's ARFF format (indices all pos, in order)
-					 *this is why the indexing starts after 2 (up to then is used)
+					/*
+					 * Weka needs its indices in order and all positive, so 
+					 * we're giving all m/z values a boost of 2500.
 					 */
-					if (((bp.key+303) <= 2 ) || (bp.key+303) > 600){
-						System.out.println("bad indices");
-					} else{
-						output += ",";
-						//bump up peak location to avoid negative numbers.
-						output += (bp.key+303) + " ";
-						output += bp.value;
-					}
+					att = bp.key + offset;
+					if (att > maxAtt)
+						maxAtt = att;
+					
+					output += "," + att + " " + bp.value;
+
 				}
-				output += "} \n";
-				total.printPeakList();
+
 			}
-			
+			output += "} \n";
+			total.printPeakList();
 			
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
@@ -145,18 +161,19 @@ public class PredictionAggregator {
 	/**
 	 * @author steinbel
 	 * Produces a peaklist from an atom, factoring in the capture rate.
-	 * @param percent - the percentage of particles with this size caputered
+	 * @param numRepresented - the number of particles this particle should
+	 * 							represent
 	 * @param atomID - the atom for which the peaklist needs to be adjusted
 	 * @return the adjusted peaklist
 	 */
-	public BinnedPeakList producePeaks(double percent, int atomID){
+	public BinnedPeakList producePeaks(double numRepresented, int atomID){
 		BinnedPeakList bpl = new BinnedPeakList();
 		
 		//retrieve peaks from db
 		ArrayList<Peak> peaks = db.getPeaks("ATOFMS", atomID);
 		//factor in the capture rate
 		for (Peak pk: peaks)
-			bpl.add((float)pk.massToCharge, (float)(pk.area*percent));
+			bpl.add((float)pk.massToCharge, (float)(pk.area*numRepresented));
 
 		return bpl;
 	}
@@ -168,7 +185,7 @@ public class PredictionAggregator {
 	 * 
 	 * @param size -	the size of the particle in question
 	 * @return double -	the number of particles a particle this size should 
-	 * 					represent
+	 * 					represent, returns 0 if outside 100-2500nm size range
 	 */
 	public double calculateDE(double size){
 		double factor = 1.0;
@@ -178,8 +195,9 @@ public class PredictionAggregator {
 			System.err.println("micros: " + size + " nanos: " + nanos);
 		double m = 0.0;
 		double b = 0.0;
+
+		//fill in values
 		if ( nanos > 100 && nanos <= 750 ){
-			//fill in values
 			m = 2.8574;
 			b = -27.16;
 		} else if ( nanos > 750 && nanos <= 1000 ){
@@ -189,13 +207,8 @@ public class PredictionAggregator {
 			m = -7.52;
 			b = 42.031;
 		} else{
-			//TODO: error!  size out of range!  What do we want here?
-			System.err.println("size out of range: " + nanos + " nanos");
-			/* For now, we're keeping m & b at 0, which will render the
-			 * factor value to be 1, so we'll only count this particle as
-			 * one particle.  
-			 * 
-			 */
+			//System.err.println("size out of range: " + nanos + " nanos");
+			return 0;
 		}
 		//DE = (actual size)^(number given, depends on size,m)*e^(given,b)
 		//from Deborah: DetectionEfficiency_Gromit.pdf
@@ -205,6 +218,26 @@ public class PredictionAggregator {
 		factor = 1/factor;
 		
 		return factor;
+	}
+	
+	/**
+	 * Writes the .arff header info for this file, which includes naming
+	 * the m/z values as attributes so we can find them later. 
+	 * @return the header for the .arff file in the form of a string
+	 */
+	public String assembleAttributes(){
+		String attributeNames = "@relation BC \n "
+				+"@attribute time date \"MM/d/yyyy hh:mm:ss a\" \n"
+				+"@attribute mass numeric \n"
+				+"@attribute bc numeric \n";
+		
+		//start at 3 because of the attributes named above
+		for (int i=3; i<=maxAtt; i++){
+			attributeNames+="@attribute mz" + (i-offset) + " numeric \n";
+		}
+					
+		attributeNames+="@data \n";
+		return attributeNames;
 	}
 
 }
