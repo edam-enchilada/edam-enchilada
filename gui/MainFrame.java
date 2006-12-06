@@ -1121,7 +1121,7 @@ public class MainFrame extends JFrame implements ActionListener
 		importAMSDataButton.setBorder(new EtchedBorder());
 		importAMSDataButton.addActionListener(this);
 		
-		importFlatButton = new JButton("Import CSV");
+		importFlatButton = new JButton("Import Time Series");
 		importFlatButton.setBorder(new EtchedBorder());
 		importFlatButton.addActionListener(this);
 		
