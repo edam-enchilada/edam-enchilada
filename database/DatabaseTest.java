@@ -49,12 +49,16 @@ package database;
 import gui.ProgressBarWrapper;
 import junit.framework.TestCase;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Scanner;
+import java.util.StringTokenizer;
 
 import javax.swing.JDialog;
 
@@ -981,7 +985,6 @@ public class DatabaseTest extends TestCase {
 		db.closeConnection();
 	
 	}
-	
 	
 	
 	public void testMoveAtom() {
@@ -2132,8 +2135,7 @@ public class DatabaseTest extends TestCase {
 	 * @author shaferia
 	 */
 	public void testInserter() {
-		db.openConnection();
-		
+		db.openConnection();		
 		try {
 			Statement stmt = db.getCon().createStatement();
 			Database.BatchExecuter ex = db.getBatchExecuter(stmt);
@@ -2188,6 +2190,92 @@ public class DatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
+	// ***SLH
+	public void testgetATOFMSbulkBucket() {
+		
+		String tempdir = System.getenv("TEMP");
+		String tempFilename;
+		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse", "InternalAtomOrder"};
+		Database.ATOFMSbulkBucket ATOFMS_buckets = db.getATOFMSbulkBucket();
+		
+		for( int i = 0; i< tables.length; i++) {
+			assertEquals(ATOFMS_buckets.buckets[i].table, tables[i]);
+			tempFilename = tempdir + File.separator + ATOFMS_buckets.buckets[i].table + ".txt";
+			assertEquals(ATOFMS_buckets.buckets[i].sqlCmd(), "BULK INSERT " +  tables[i] + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n");
+		}	
+	}
+	// ***SLH
+	public void testsaveAtofmsParticle_BulkInsertAtofmsParticles() {
+		String dense_str = "12-30-06 10:59:49, 1.89E-4, 2.4032946, 4286,E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz";
+		String[] sparse_str = {"23.0, 56673, 0.60352063, 2625", "40.0, 5289, 0.05632348, 450", "-16.0, 17893, 0.06354161, 2607"};
+		int datasetid = 100;
+		int nextAtomID = 100;
+		Database.ATOFMSbulkBucket atofms_bkt = db.getATOFMSbulkBucket();
+		Scanner in;
+		ArrayList<String> sparse_arraylist = new ArrayList<String>();
+		
+		for(int i = 0; i<sparse_str.length; i++)
+			sparse_arraylist.add(sparse_str[i]);
+		
+		db.openConnection();
+		Collection c = db.getCollection(0);
+		
+		assertEquals(db.saveAtofmsParticle(dense_str, sparse_arraylist, c, datasetid, nextAtomID, atofms_bkt), nextAtomID);
+		
+		// atofms_bkt.close();
+		db.BulkInsertAtofmsParticles(atofms_bkt);
+		db.closeConnection();
+		
+		db.openConnection();
+		try {
+			
+			Statement stmt = db.getCon().createStatement();
+			
+			ResultSet rs = stmt.executeQuery("USE TestDB;\n" + "SELECT * FROM ATOFMSAtomInfoDense where AtomID = 100" );
+			assertTrue(rs.next());
+			assertEquals(rs.getInt(1), 100);
+			// Date are the same but different format. 
+			//assertEquals(rs.getDate(2), "12-30-06");
+			assertEquals(rs.getTime(2).toString(), "10:59:49");
+			assertEquals(rs.getFloat(3), (float)1.89E-4 );
+			assertEquals(rs.getFloat(4), (float)2.4032946);
+			assertEquals(rs.getFloat(5), (float)4286.0);
+			assertEquals(rs.getString(6), "E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz");
+		}
+		catch(SQLException e) {
+			fail("Problem with saveAtofmsParticle() or  BulkInsertAtofmsParticles");
+		}
+		db.closeConnection();
+		
+		
+		//Only checked the content of one file, others should work the same way.
+		String tempdir = System.getenv("TEMP");
+		File dense_file = new File(tempdir + "\\ATOFMSAtomInfoDense.txt");
+		assertTrue(dense_file.isFile());
+		assertTrue(dense_file.canRead());
+		
+		try {
+			String line = "";
+			String[] tokens;
+			in = new Scanner(dense_file);
+			while (in.hasNext()) {
+				line = in.nextLine();
+				tokens = line.split(",");
+				assertEquals(tokens[0], Integer.toString(nextAtomID));
+				assertEquals(tokens[1], "12-30-06 10:59:49");
+				assertEquals(tokens[2], " 1.89E-4");
+				assertEquals(tokens[3], " 2.4032946");
+				assertEquals(tokens[4], " 4286");
+				assertEquals(tokens[5], "E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz");
+				return;
+			}
+
+		} catch (IOException e) {
+			System.err.println("IOException occurs when checking the output file content");
+		}
+		
+	}
+
 	/**
 	 * @author shaferia
 	 */

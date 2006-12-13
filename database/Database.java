@@ -392,6 +392,142 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	   //	***SLH
+	public class BulkBucket
+	{
+		protected BufferedWriter file;
+		protected String table;
+		protected String tempFilename;
+
+	    public BulkBucket(String tableName) throws SQLException {
+
+			table = tableName;
+
+			tempFilename = tempdir + File.separator + table + ".txt";
+			try {
+				file = new BufferedWriter(new FileWriter(tempFilename));
+			}
+			catch (IOException ex) {
+				System.err.println("Couldn't create bulk file " + tempFilename +
+						" for table " + table);
+				ex.printStackTrace();
+			}
+
+		}
+
+		public void append(String values) throws SQLException {
+			try {
+				file.write(values);
+				file.newLine();
+			}
+			catch (IOException ex) {
+				throw new SQLException("Couldn't write to file: " + tempFilename);
+			}
+		}
+
+		public void close() {
+			try {
+				file.close();
+			}
+			catch (IOException ex) {
+				System.err.println("Couldn't close bulk file " + tempFilename +
+						" for table " + table);
+				ex.printStackTrace();
+			}
+		}
+
+		public String sqlCmd() {
+			return "BULK INSERT " + table + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n";
+		}
+
+	}
+	
+//	***SLH
+	public class ATOFMSbulkBucket
+	{
+		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
+		BulkBucket[] buckets;
+
+		public ATOFMSbulkBucket(){
+			
+			buckets = new BulkBucket[tables.length];
+			try {
+				for(int i = 0; i<tables.length; i++)
+					buckets[i] = new BulkBucket(tables[i]);
+			}
+			catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		public void close() {
+		  for(int i = 0; i<tables.length; i++)
+			  buckets[i].close();
+	  }
+
+		public String sqlCmd() {
+			 String querys = "";
+			 for(int i = 0; i<tables.length; i++)
+				 querys += buckets[i].sqlCmd();
+			 return querys;
+	  }
+	}
+
+	// ***SLH
+	public ATOFMSbulkBucket getATOFMSbulkBucket() {
+		return new ATOFMSbulkBucket();
+	}
+	
+
+    public void BulkInsertAtofmsParticles(ATOFMSbulkBucket bigBucket)
+	{
+    	try {
+    		bigBucket.close();
+
+    		Statement stmt = con.createStatement();
+
+    		stmt.addBatch(bigBucket.sqlCmd());
+
+    		stmt.executeBatch();
+
+    		stmt.close();
+
+    	} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			System.err.println("Exception inserting particle.");
+			e.printStackTrace();
+	
+		}
+	}
+
+	//***SLH
+	public int saveAtofmsParticle(String dense, ArrayList<String> sparse,
+			Collection collection,
+			int datasetID, int nextID, ATOFMSbulkBucket bigBucket)
+	{
+
+		try {
+			bigBucket.buckets[0].append(nextID + "," + dense );
+			bigBucket.buckets[1].append(collection.getCollectionID() + "," + nextID );
+			bigBucket.buckets[2].append(datasetID + "," + nextID );
+
+			for (int j = 0; j < sparse.size(); ++j) {
+				bigBucket.buckets[3].append(nextID + "," + sparse.get(j));
+			}
+
+			bigBucket.buckets[4].append( nextID + "," +collection.getCollectionID() );
+
+
+		} catch (SQLException e) {
+			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			System.err.println("Exception inserting particle.");
+			e.printStackTrace();
+
+			return -1;
+		}
+		return nextID;	// this is ignored.
+	}
+
 	/**
 	 * Executes bulk insert statements with a sequence of INSERTs.
 	 * @author shaferia

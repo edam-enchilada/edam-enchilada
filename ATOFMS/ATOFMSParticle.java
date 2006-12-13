@@ -437,6 +437,11 @@ public class ATOFMSParticle {
 		laserPower + ", " + size + ", " + scatDelay + ", '" + filename + "'";
 	}
 	
+	//***SLH
+	public String particleInfoDenseStr(DateFormat d) {
+		return  d.format(time) + ", " + laserPower + ", " + size + ", " + scatDelay + "," + filename.trim();
+	}
+	
 	public ArrayList<String> particleInfoSparseString() {
 		ArrayList<String> peaks = new ArrayList<String>();
 		getPeakList();

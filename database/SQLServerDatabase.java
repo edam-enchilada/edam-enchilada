@@ -89,11 +89,14 @@ public class SQLServerDatabase extends Database
 	 * TODO: change security model
 	 */
 	public boolean openConnection() {
+
 		return openConnectionImpl(
 				"net.sourceforge.jtds.jdbc.Driver",
 				"jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;",
 				"SpASMS",
 				"finally");
+		
+		
 	}
 	
 	/**

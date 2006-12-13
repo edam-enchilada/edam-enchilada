@@ -361,6 +361,8 @@ public class ATOFMSDataSetImporter {
 	 * the file's information, and creates the particle.
 	 * 
 	 */
+	
+	// ***SLH
 	public void readSpectraAndCreateParticle() 
 	throws IOException, NumberFormatException, InterruptedException{
 		//Read spectra & create particle.
@@ -370,6 +372,8 @@ public class ATOFMSDataSetImporter {
 		//System.out.println("Data set: " + parent.toString());
 		final ATOFMSDataSetImporter thisref = this;
 
+		//***SLH
+		Database.ATOFMSbulkBucket ATOFMS_buckets = ((Database)db).getATOFMSbulkBucket() ;
 		String name = parent.getName();
 		name = parent.toString()+ File.separator + name + ".set";
 		if (new File(name).isFile()) {
@@ -409,11 +413,19 @@ public class ATOFMSDataSetImporter {
 						ReadSpec read = new ReadSpec(particleFileName);
 						
 						currentParticle = read.getParticle();
-						((Database)db).insertParticle(
+						
+						/***SLH ((Database)db).insertParticle(
 								currentParticle.particleInfoDenseString(db.getDateFormat()),
 								currentParticle.particleInfoSparseString(),
 								destination,id[1],nextID, true);
-						
+						**/
+						//***SLH
+						((Database)db).saveAtofmsParticle(														// daves  do I need a try/catch around here?
+								currentParticle.particleInfoDenseStr(db.getDateFormat()),
+								currentParticle.particleInfoSparseString(),
+								destination,id[1],nextID, ATOFMS_buckets);
+						//***SLH
+					
 						nextID++;
 						particleNum++;
 						//doDisplay++;
@@ -423,8 +435,10 @@ public class ATOFMSDataSetImporter {
 							//progressBar.setValue((int)(100.0*particleNum/tParticles));
 							progressBar.setValue(particleNum);
 							progressBar.setText("Importing Particle # "+particleNum+" out of "+numParticles[collectionIndex]);
+							
 						}
-					}
+					} //***SLH
+					((Database)db).BulkInsertAtofmsParticles(ATOFMS_buckets);
 					db.updateAncestors(curCollection);
 					readSet.close();
 		} else {
