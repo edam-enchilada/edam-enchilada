@@ -443,14 +443,18 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 //	***SLH
-	public class ATOFMSbulkBucket
+	public class Data_bulkBucket
 	{
-		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
+		//String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
+		//String[] AMS_tables = {"AMSAtomInfoDense", "AtomMembership", "DataSetMembers", "AMSAtomInfoSparse", "InternalAtomOrder"};
+		String[] tables;
 		BulkBucket[] buckets;
 
-		public ATOFMSbulkBucket(){
-			
+		public Data_bulkBucket(String[] tables){
+
+			this.tables = tables;
 			buckets = new BulkBucket[tables.length];
+
 			try {
 				for(int i = 0; i<tables.length; i++)
 					buckets[i] = new BulkBucket(tables[i]);
@@ -459,7 +463,7 @@ public abstract class Database implements InfoWarehouse {
 				e.printStackTrace();
 			}
 		}
-
+		
 		public void close() {
 		  for(int i = 0; i<tables.length; i++)
 			  buckets[i].close();
@@ -474,12 +478,11 @@ public abstract class Database implements InfoWarehouse {
 	}
 
 	// ***SLH
-	public ATOFMSbulkBucket getATOFMSbulkBucket() {
-		return new ATOFMSbulkBucket();
+	public Data_bulkBucket getDatabulkBucket(String[] tables) {
+		return new Data_bulkBucket(tables);
 	}
-	
 
-    public void BulkInsertAtofmsParticles(ATOFMSbulkBucket bigBucket)
+    public void BulkInsertDataParticles(Data_bulkBucket bigBucket)
 	{
     	try {
     		bigBucket.close();
@@ -499,25 +502,32 @@ public abstract class Database implements InfoWarehouse {
 	
 		}
 	}
-
+    
 	//***SLH
-	public int saveAtofmsParticle(String dense, ArrayList<String> sparse,
+	public int saveDataParticle(String dense, ArrayList<String> sparse,
 			Collection collection,
-			int datasetID, int nextID, ATOFMSbulkBucket bigBucket)
+			int datasetID, int nextID, Data_bulkBucket bigBucket)
 	{
 
+		int num_tables = bigBucket.tables.length;
 		try {
-			bigBucket.buckets[0].append(nextID + "," + dense );
-			bigBucket.buckets[1].append(collection.getCollectionID() + "," + nextID );
-			bigBucket.buckets[2].append(datasetID + "," + nextID );
-
-			for (int j = 0; j < sparse.size(); ++j) {
-				bigBucket.buckets[3].append(nextID + "," + sparse.get(j));
+			if(bigBucket.tables.length >=1) {
+				bigBucket.buckets[0].append(nextID + "," + dense );
 			}
-
-			bigBucket.buckets[4].append( nextID + "," +collection.getCollectionID() );
-
-
+			if(bigBucket.tables.length >=2) {
+				bigBucket.buckets[1].append(collection.getCollectionID() + "," + nextID );
+			}
+			if(bigBucket.tables.length >=3) {
+				bigBucket.buckets[2].append(datasetID + "," + nextID );
+			}
+			if(bigBucket.tables.length >=4) {
+				for (int j = 0; j < sparse.size(); ++j) {
+					bigBucket.buckets[3].append(nextID + "," + sparse.get(j));
+				}
+			}
+			if(bigBucket.tables.length >=5) {
+				bigBucket.buckets[4].append( nextID + "," +collection.getCollectionID() );
+			}
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
@@ -527,7 +537,7 @@ public abstract class Database implements InfoWarehouse {
 		}
 		return nextID;	// this is ignored.
 	}
-
+	
 	/**
 	 * Executes bulk insert statements with a sequence of INSERTs.
 	 * @author shaferia
@@ -5373,18 +5383,8 @@ public abstract class Database implements InfoWarehouse {
 	private void addInternalAtom(int atomID, int collectionID){
 		try {
 			Statement stmt = con.createStatement();
-			
-			String query = "SELECT MAX(AtomID) AS MaxOrder " +
-							"FROM InternalAtomOrder " +
-							"WHERE CollectionID = " + collectionID;
-			//System.out.println(query);//debugging
-			ResultSet rs = stmt.executeQuery(query);
-			int order;
-			if (rs.next())
-				order = rs.getInt(1) + 1;
-			else	//if no entries yet, this is the first atom
-				order = 1;
-			query = "INSERT INTO InternalAtomOrder " +
+
+			String query = "INSERT INTO InternalAtomOrder " +
 					"VALUES (" + atomID +", "+ collectionID+ ")";
 			//System.out.println(query);//debugging
 			stmt.execute(query);

@@ -2191,51 +2191,54 @@ public class DatabaseTest extends TestCase {
 	}
 	
 	// ***SLH
-	public void testgetATOFMSbulkBucket() {
+	public void testgetDatabulkBucket() {
 		
 		String tempdir = System.getenv("TEMP");
 		String tempFilename;
 		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse", "InternalAtomOrder"};
-		Database.ATOFMSbulkBucket ATOFMS_buckets = db.getATOFMSbulkBucket();
+		Database.Data_bulkBucket buckets = db.getDatabulkBucket(tables);
 		
 		for( int i = 0; i< tables.length; i++) {
-			assertEquals(ATOFMS_buckets.buckets[i].table, tables[i]);
-			tempFilename = tempdir + File.separator + ATOFMS_buckets.buckets[i].table + ".txt";
-			assertEquals(ATOFMS_buckets.buckets[i].sqlCmd(), "BULK INSERT " +  tables[i] + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n");
+			assertEquals(buckets.buckets[i].table, tables[i]);
+			tempFilename = tempdir + File.separator + buckets.buckets[i].table + ".txt";
+			assertEquals(buckets.buckets[i].sqlCmd(), "BULK INSERT " +  tables[i] + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n");
 		}	
 	}
-	// ***SLH
+	// ***SLH  BulkInsertDataParticles saveDataParticle
 	public void testsaveAtofmsParticle_BulkInsertAtofmsParticles() {
-		String dense_str = "12-30-06 10:59:49, 1.89E-4, 2.4032946, 4286,E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz";
+		 String[] tables= {"ATOFMSAtomInfoDense"};
+		 String dense_str = "12-30-06 10:59:49, 1.89E-4, 2.4032946, 4286,E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz";
 		String[] sparse_str = {"23.0, 56673, 0.60352063, 2625", "40.0, 5289, 0.05632348, 450", "-16.0, 17893, 0.06354161, 2607"};
+		
 		int datasetid = 100;
 		int nextAtomID = 100;
-		Database.ATOFMSbulkBucket atofms_bkt = db.getATOFMSbulkBucket();
+		Database.Data_bulkBucket bkts = db.getDatabulkBucket(tables);
 		Scanner in;
 		ArrayList<String> sparse_arraylist = new ArrayList<String>();
 		
 		for(int i = 0; i<sparse_str.length; i++)
 			sparse_arraylist.add(sparse_str[i]);
 		
+		
+		// ATOFMS table insertion
 		db.openConnection();
 		Collection c = db.getCollection(0);
-		
-		assertEquals(db.saveAtofmsParticle(dense_str, sparse_arraylist, c, datasetid, nextAtomID, atofms_bkt), nextAtomID);
-		
+		assertEquals(db.saveDataParticle(dense_str, sparse_arraylist, c, datasetid, nextAtomID, bkts), nextAtomID);
 		// atofms_bkt.close();
-		db.BulkInsertAtofmsParticles(atofms_bkt);
+		db.BulkInsertDataParticles(bkts);
 		db.closeConnection();
 		
+		//check ATOFMS data
 		db.openConnection();
 		try {
 			
 			Statement stmt = db.getCon().createStatement();
-			
 			ResultSet rs = stmt.executeQuery("USE TestDB;\n" + "SELECT * FROM ATOFMSAtomInfoDense where AtomID = 100" );
 			assertTrue(rs.next());
 			assertEquals(rs.getInt(1), 100);
 			// Date are the same but different format. 
 			//assertEquals(rs.getDate(2), "12-30-06");
+			assertEquals(rs.getTime(2).toString(), "10:59:49");
 			assertEquals(rs.getTime(2).toString(), "10:59:49");
 			assertEquals(rs.getFloat(3), (float)1.89E-4 );
 			assertEquals(rs.getFloat(4), (float)2.4032946);
@@ -2243,14 +2246,12 @@ public class DatabaseTest extends TestCase {
 			assertEquals(rs.getString(6), "E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz");
 		}
 		catch(SQLException e) {
-			fail("Problem with saveAtofmsParticle() or  BulkInsertAtofmsParticles");
+			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
 		}
 		db.closeConnection();
 		
-		
 		//Only checked the content of one file, others should work the same way.
-		String tempdir = System.getenv("TEMP");
-		File dense_file = new File(tempdir + "\\ATOFMSAtomInfoDense.txt");
+		File dense_file = new File(System.getenv("TEMP") + "\\ATOFMSAtomInfoDense.txt");
 		assertTrue(dense_file.isFile());
 		assertTrue(dense_file.canRead());
 		
@@ -2275,6 +2276,70 @@ public class DatabaseTest extends TestCase {
 		}
 		
 	}
+	
+	public void testsaveAmsParticle_BulkInsertAmsParticles() {
+		
+		String[] tables= {"AMSAtomInfoDense"};
+		String ams_dense_str = "12-30-06 10:59:50";
+		String[] ams_sparse_str = {"13,14.0,0.0140019", "13,30.0,0.2438613", "13,31.0,9.876385E-4", "13,32.0,4.877227E-4"};
+		
+		int datasetid = 100;
+		int nextAtomID = 100;
+		Database.Data_bulkBucket bkts = db.getDatabulkBucket(tables);
+		Scanner in;
+		ArrayList<String> ams_sparse_arraylist = new ArrayList<String>();
+		
+		for(int i = 0; i<ams_sparse_str.length; i++) 
+			ams_sparse_arraylist.add(ams_sparse_str[i]);
+		
+		// AMS table insertion
+		db.openConnection();
+		Collection c = db.getCollection(0);
+		assertEquals(db.saveDataParticle(ams_dense_str, ams_sparse_arraylist, c, datasetid, nextAtomID, bkts), nextAtomID);
+		// atofms_bkt.close();
+		db.BulkInsertDataParticles(bkts);
+		db.closeConnection();
+		
+		//check AMS data
+		db.openConnection();
+		try {
+			
+			Statement stmt = db.getCon().createStatement();
+			ResultSet rs = stmt.executeQuery("USE TestDB;\n" + "SELECT * FROM AMSAtomInfoDense where AtomID = 100" );
+			assertTrue(rs.next());
+			assertEquals(rs.getInt(1), 100);
+			// Date are the same but different format. 
+			//assertEquals(rs.getDate(2), "12-30-06");
+			assertEquals(rs.getTime(2).toString(), "10:59:50");
+		}
+		catch(SQLException e) {
+			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
+		}
+		db.closeConnection();
+		
+		//Only checked the content of one file, others should work the same way.
+		File dense_file = new File(System.getenv("TEMP") + "\\AMSAtomInfoDense.txt");
+		assertTrue(dense_file.isFile());
+		assertTrue(dense_file.canRead());
+		
+		try {
+			String line = "";
+			String[] tokens;
+			in = new Scanner(dense_file);
+			while (in.hasNext()) {
+				line = in.nextLine();
+				tokens = line.split(",");
+				assertEquals(tokens[0], Integer.toString(nextAtomID));
+				assertEquals(tokens[1], "12-30-06 10:59:50");
+				return;
+			}
+
+		} catch (IOException e) {
+			System.err.println("IOException occurs when checking the output file content");
+		}
+		
+	}
+	
 
 	/**
 	 * @author shaferia

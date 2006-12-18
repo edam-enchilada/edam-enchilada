@@ -373,7 +373,8 @@ public class ATOFMSDataSetImporter {
 		final ATOFMSDataSetImporter thisref = this;
 
 		//***SLH
-		Database.ATOFMSbulkBucket ATOFMS_buckets = ((Database)db).getATOFMSbulkBucket() ;
+		final String[] ATOFMS_tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
+		Database.Data_bulkBucket ATOFMS_buckets = ((Database)db).getDatabulkBucket(ATOFMS_tables) ;
 		String name = parent.getName();
 		name = parent.toString()+ File.separator + name + ".set";
 		if (new File(name).isFile()) {
@@ -420,7 +421,7 @@ public class ATOFMSDataSetImporter {
 								destination,id[1],nextID, true);
 						**/
 						//***SLH
-						((Database)db).saveAtofmsParticle(														// daves  do I need a try/catch around here?
+						((Database)db).saveDataParticle(														// daves  do I need a try/catch around here?
 								currentParticle.particleInfoDenseStr(db.getDateFormat()),
 								currentParticle.particleInfoSparseString(),
 								destination,id[1],nextID, ATOFMS_buckets);
@@ -438,12 +439,12 @@ public class ATOFMSDataSetImporter {
 							
 						}
 					} //***SLH
-					((Database)db).BulkInsertAtofmsParticles(ATOFMS_buckets);
+					((Database)db).BulkInsertDataParticles(ATOFMS_buckets);
 					db.updateAncestors(curCollection);
 					readSet.close();
 		} else {
 			ErrorLogger.displayException(progressBar, 
-					"Dataset has no hits because "+name+" does not exist.");
+					"Dataset has no hits because " +name+" does not exist.");
 		}
 
 	}

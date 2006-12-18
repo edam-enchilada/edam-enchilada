@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import collection.Collection;
+import database.Database;
 import database.InfoWarehouse;
 import errorframework.*;
 import externalswing.SwingWorker;
@@ -124,6 +125,8 @@ public class AMSDataSetImporter {
 	 */
 	public void processDataSet(int index) throws DisplayException, WriteException {
 		boolean skipFile = false;
+		String[] AMS_tables = {"AMSAtomInfoDense", "AtomMembership", "DataSetMembers", "AMSAtomInfoSparse"};
+		final Database.Data_bulkBucket ams_buckets = ((Database)db).getDatabulkBucket(AMS_tables);
 		
 		//put time series file and mz file into an array, since they will
 		//be accessed in the same way for every atom.
@@ -227,11 +230,14 @@ public class AMSDataSetImporter {
 							progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
 						read(particleNum, nextID);
 						if (sparse != null && sparse.size() > 0) {
-							db.insertParticle(dense,sparse,destination,id[1],nextID);
+							//db.insertParticle(dense,sparse,destination,id[1],nextID);
+							((Database)db).saveDataParticle(dense,sparse,destination,id[1],nextID, ams_buckets);
 							nextID++;
 						}
 						particleNum++;
 					}
+					((Database)db).BulkInsertDataParticles(ams_buckets);
+					((Database)db).updateInternalAtomOrder(destination);
 					progressBar.increment("Updating Ancestors...");
 					db.updateAncestors(destination);
 					progressBar.disposeThis();
@@ -313,7 +319,8 @@ public class AMSDataSetImporter {
 	 */
 	public void read(int particleNum, int nextID) {
 		// populate dense string
-		dense = "'"+dateFormat.format(timeSeries.get(particleNum))+"'";
+		//dense = "'"+dateFormat.format(timeSeries.get(particleNum))+"'";
+		dense = dateFormat.format(timeSeries.get(particleNum));
 		sparse = new ArrayList<String>();
 		double tempNum;
 		for (int i = 0; i < massToCharge.size(); i++) {
