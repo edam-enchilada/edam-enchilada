@@ -106,7 +106,7 @@ public class ClusterFeatureTest extends TestCase {
 		assertEquals(testCF1.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	
-	public void testIsEqual() {
+	/*public void testIsEqual() {
 		
 		BinnedPeakList bp2 = new BinnedPeakList(new Normalizer());
 		bp2.add(-210, (float) 0.1);
@@ -167,6 +167,6 @@ public class ClusterFeatureTest extends TestCase {
 		array.add(2);
 		array.add(3);
 		assertEquals(array, testCF1.getAtomIDs());
-	}
+	}*/
 	
 }

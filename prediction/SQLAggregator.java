@@ -148,7 +148,7 @@ public class SQLAggregator {
 			 * (initially populated with the size of the particles) during the
 			 * hour-long timebin around the given time.
 			 */
-			stmt.executeUpdate("IF (OBJECT_ID('#hourbin') IS NOT NULL) DROP TABLE #hourbin;");
+			stmt.executeUpdate("IF (OBJECT_ID('tempdb..#hourbin') IS NOT NULL) DROP TABLE #hourbin;");
 			String order = "create table #hourbin (atom int, de real);" +
 			" insert into #hourbin(atom, de)" +
 			" select d.atomid, d.size" +
@@ -190,7 +190,7 @@ public class SQLAggregator {
 	private void dropTempTable(){
 		try {
 			Statement stmt = con.createStatement();
-			stmt.executeUpdate("IF (OBJECT_ID('#hourbin') " +
+			stmt.executeUpdate("IF (OBJECT_ID('tempdb..#hourbin') " +
 					"IS NOT NULL)\n" +
 					" DROP TABLE #hourbin\n");
 		} catch (SQLException e) {
@@ -232,8 +232,8 @@ public class SQLAggregator {
 		StringBuilder builder = new StringBuilder();
 		SQLAggregator sa = new SQLAggregator();
 		try {
-			Scanner scan = new Scanner(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/small.csv"));
-			FileWriter out = new FileWriter(new File("C:/Documents and Settings/steinbel/workspace/edam-enchilada/prediction/small.arff")); 
+			Scanner scan = new Scanner(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/small.csv"));
+			FileWriter out = new FileWriter(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/small.arff")); 
 			//write the .arff file headings
 			out.write(sa.assembleAttributes("small", "ec"));
 			sa.open();
