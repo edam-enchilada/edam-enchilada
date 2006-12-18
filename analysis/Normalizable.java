@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 public abstract class Normalizable {
-	public abstract void normalize(BinnedPeakList peakList, DistanceMetric dMetric);
+	public abstract float normalize(BinnedPeakList peakList, DistanceMetric dMetric);
 	public abstract float roundDistance(BinnedPeakList peakList, BinnedPeakList toList, DistanceMetric dMetric, float distance);
 	/**
 	 * @author steinbel
@@ -24,8 +24,5 @@ public abstract class Normalizable {
 			entry.setValue(newVal);
 		}
 	}
-	public void posNegNormalize(BinnedPeakList list, DistanceMetric metric) {
-		// overridden in subclass if actually used
-		
-	}
+	public abstract float posNegNormalize(BinnedPeakList list, DistanceMetric metric);
 }

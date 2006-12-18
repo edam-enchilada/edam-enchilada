@@ -34,7 +34,8 @@ public class CFNodeTest extends TestCase {
 		bp1.add(20, (float) 2);
 		bp1.add(90, (float) 2);
 		bp1.add(120, (float) 2);
-		childCF.updateCF(bp1, 1, false);
+		bp1.posNegNormalize(dMetric);
+		childCF.updateCF(bp1, 1, true);
 		
 		orphanNode = new CFNode(null, dMetric);
 		orphanCF = new ClusterFeature(orphanNode, dMetric);
@@ -45,7 +46,8 @@ public class CFNodeTest extends TestCase {
 		bp2.add(-160, (float) 1);
 		bp2.add(-100, (float) 1);
 		bp2.add(-30, (float) 1);
-		orphanCF.updateCF(bp2, 2, false);
+		bp2.posNegNormalize(dMetric);
+		orphanCF.updateCF(bp2, 2, true);
 		
 		farOffNode = new CFNode(null, dMetric);
 		farOffCF = new ClusterFeature(farOffNode, dMetric);
@@ -54,7 +56,8 @@ public class CFNodeTest extends TestCase {
 		bp3.add(500, 1);
 		bp3.add(501, 1);
 		bp3.add(502, 1);
-		farOffCF.updateCF(bp3, 3, false);
+		bp3.posNegNormalize(dMetric);
+		farOffCF.updateCF(bp3, 3, true);
 		
 	}
 	public void testSameContents() {

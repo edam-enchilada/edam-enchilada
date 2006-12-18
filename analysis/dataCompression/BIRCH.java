@@ -94,8 +94,11 @@ public class BIRCH extends CompressData{
 	 */
 	//ThinkPad claims it has 1GB RAM - 1073741824 bytes
 	//1000 for test data, 150118 for i
-	private final float MEM_THRESHOLD = 150000;
+	//private final float MEM_THRESHOLD = 150000;
+	private final float MEM_THRESHOLD = 850000;
 
+	public static long buildTime = 0;
+	
 	/*
 	 * Constructor.  Calls the CompressData Class's constructor.
 	 */
@@ -146,7 +149,6 @@ public class BIRCH extends CompressData{
 					!changedNode.equals(lastSplitNode)) {
 				curTree.refineMerge(lastSplitNode);
 			}	
-			
 			// if we have run out of memory, rebuild the tree.
 			if (curTree.getMemory()> MEM_THRESHOLD) {
 				
@@ -194,7 +196,7 @@ public class BIRCH extends CompressData{
 		realEnd = new Date().getTime();
 		buildTotal = buildTotal + (buildEnd-buildStart);
 		System.out.println("\nFINAL TREE:");
-//		curTree.printTree();
+		curTree.printTree();
 		
 		//make sure each particle was inserted, and that there are no duplicates
 		//just tester code
@@ -209,6 +211,9 @@ public class BIRCH extends CompressData{
 		System.out.println("buildTotal : " + buildTotal);
 		System.out.println("rebuildtotal : " + rebuildTotal);
 		System.out.println("rebuildCount : " + rebuildCount);
+
+		System.out.println("Build time = " + buildTime);
+
 	}
 	/**
 	 * Sorts an array of all the atom ids
@@ -285,7 +290,7 @@ public class BIRCH extends CompressData{
 		
 		CFTree newTree = new CFTree(curThreshold, branchingFactor, distanceMetric);
 		newTree = rebuildTreeRecurse(newTree, newTree.root, curTree.root, null);
-		
+		System.out.println("*** DONE REBUILDING ***");
 		newTree.assignLeaves();
 		
 		// remove all the nodes with count = 0;
@@ -345,7 +350,8 @@ public class BIRCH extends CompressData{
 					//make a new cluster feature and add it to newCurNode
 					ClusterFeature newLeaf = new ClusterFeature(
 							newCurNode, thisCF.getCount(), thisCF.getSums(), 
-							thisCF.getSumOfSquares(), thisCF.getAtomIDs());				
+							thisCF.getSumOfSquares(), thisCF.getAtomIDs(),
+							thisCF.getMagnitude());				
 					newCurNode.addCF(newLeaf);
 					//update everything
 					newTree.updateNonSplitPath(newLeaf.curNode);
@@ -396,8 +402,11 @@ public class BIRCH extends CompressData{
 	}
 
 	@Override
-	public void compress() {	
+	public void compress() {
+		long b = System.currentTimeMillis();
 		buildTree(0.0f);
+		System.out.println("Total time = " + (System.currentTimeMillis()-b));
+		System.out.println("Distance time = " + BinnedPeakList.distTime);
 		System.out.println();
 		curTree.countNodes();
 		System.out.println(curTree.getSize());
@@ -473,28 +482,29 @@ public class BIRCH extends CompressData{
 		//you use experimental data and you want to make sure each 
 		//clusterfeature contains only the particles derived from
 		//the same original particle
-		for (int i = 0; i<centroidList.size(); i++) {
-			
-			Integer j = new Integer(i);
-			System.out.println("Set: " + i);
-			for (int k = 0; k<centroidList.get(i).size(); k++) {
-				try {
-					Statement stmt = db.getCon().createStatement();
-					
+		try {
+			Statement stmt = db.getCon().createStatement();
+
+			for (int i = 0; i<centroidList.size(); i++) {
+				
+				Integer j = new Integer(i);
+				System.out.println("Set: " + i);
+				for (int k = 0; k<centroidList.get(i).size(); k++) {
 					String query = "SELECT *\n" +
 					" FROM ATOFMSAtomInfoDense" +
 					" WHERE AtomID = " + centroidList.get(i).get(k);
 					ResultSet rs = stmt.executeQuery(query);
 					rs.next();
 					System.out.println("AtomID: " + centroidList.get(i).get(k) + " file: " + rs.getString(6));
-					stmt.close();
-				} catch (SQLException e) {
-					System.err.println("Exception creating the dataset entries:");
-					e.printStackTrace();
+					
 				}
-				
 			}
+			stmt.close();
+		} catch (SQLException e) {
+			System.err.println("Exception creating the dataset entries:");
+			e.printStackTrace();
 		}
+
 		System.out.println("Done inserting BIRCH into DB.");
 	}
 }

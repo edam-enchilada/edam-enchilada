@@ -41,6 +41,8 @@ package analysis;
 
 import java.util.*;
 import java.util.Map.Entry;
+
+import analysis.dataCompression.BIRCH;
 import analysis.dataCompression.Pair;
 
 /**
@@ -57,6 +59,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	protected SortedMap<Integer, Float> peaks;
 
 	private Normalizable normalizable;
+	public static long distTime = 0;
 
 	/**
 	 * A constructor for the peaklist, initializes the underlying
@@ -67,7 +70,17 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		peaks = new TreeMap<Integer, Float>();
 		normalizable = norm;
 	}
-	
+
+	/**
+	 * A constructor for the peaklist, initializes the underlying
+	 * ArrayLists to a size of 20.
+	 */
+	public BinnedPeakList(Normalizable norm, Map<Integer,Float> m)
+	{
+		peaks = new TreeMap<Integer, Float>(m);
+		normalizable = norm;
+	}
+
 	/**
 	 * Creates a BinnedPeakList with a new Normalizer
 	 */
@@ -269,7 +282,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @return the distance between the lists.
 	 */
 	public float getDistance(BinnedPeakList other, DistanceMetric metric) {
-
+		long beginTime = System.currentTimeMillis();
 		/*
 		 * The following distance calculation algorithm is very similar to the
 		 * merge part of merge sort, where you riffle through both lists looking
@@ -347,9 +360,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		    distance = 1-distance; 
 		// dot product actually comes up with similarity, rather than distance,
 		// so we take 1- it to find "distance".
-		
-		return normalizable.roundDistance(this, other, metric, distance);
+
+		float rndDist = normalizable.roundDistance(this, other, metric, distance);
+		distTime += (System.currentTimeMillis()-beginTime);
+		return rndDist;
 	}
+	
 	
 	/**
 	 * Retrieve the value of the peaklist at a given key
@@ -366,6 +382,75 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			return area;
 		}
 	}
+
+	
+	
+	
+	/**
+	 * Find the distance between this peaklist and another one. By including
+	 * the magnitude of the other peak list, the method can be run faster.
+	 * @param other The peaklist to compare to
+	 * @param magnitude The magnitude of the other peak list
+	 * @param metric The distance metric to use
+	 * @return the distance between the lists.
+	 */
+	public float getDistance(BinnedPeakList other, float magnitude,
+							 DistanceMetric metric) {
+
+		/*
+		 * The following distance calculation algorithm is very similar to the
+		 * merge part of merge sort, where you riffle through both lists looking
+		 * for the lowest entry, and choosing that one.  The extra condition
+		 * is when we have an entry for the same dimension in each list,
+		 * in which case we don't choose one but calculate the distance between
+		 * them. 
+		 */
+		
+		float distance = magnitude;
+		
+		// loop over this peak list, accumulating magnitude as you go,
+		// but calculating distance if match with other (and subtracting off
+		// that portion from magnitude with other)
+		for (Map.Entry<Integer,Float> i : peaks.entrySet()) {
+			int iKey = i.getKey();
+			float iValue = i.getValue();
+			if (other.peaks.containsKey(iKey)) {
+				float otherValue = other.peaks.get(iKey);
+				distance = distance +
+					DistanceMetric.getDistance(iValue,otherValue,metric) -
+					DistanceMetric.getDistance(0,otherValue,metric);
+			}
+			else {
+				distance += DistanceMetric.getDistance(0, iValue, metric);
+			}
+		}
+		
+		if (metric == DistanceMetric.DOT_PRODUCT)
+		    distance = 1-distance; 
+		// dot product actually comes up with similarity, rather than distance,
+		// so we take 1- it to find "distance".
+		
+		return normalizable.roundDistance(this, other, metric, distance);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	/**
 	 * Add a regular peak to the peaklist.  This actually involves
@@ -528,18 +613,20 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 				peaks.put(temp.getKey(), temp.getValue() * factor);
 		}
 	}	
-	public HashMap<Integer, Float> addWeightedToHash(HashMap<Integer, Float> hash, int factor) {
+	public HashMap<Integer, Float> addWeightedToHash(HashMap<Integer, Float> hash, float factor) {
 		Iterator<Map.Entry<Integer, Float>> iter = peaks.entrySet().iterator();
 		Map.Entry<Integer,Float> temp;
 		while (iter.hasNext()) {
 			temp = iter.next();
 			Float value = hash.get(temp.getKey());
+			long beginTime = System.currentTimeMillis();
 			if(value!= null) {
 				hash.put(temp.getKey(), value+temp.getValue()*factor);
 			}
 			else {
 				hash.put(temp.getKey(), temp.getValue()*factor);
 			}
+			BIRCH.buildTime += (System.currentTimeMillis()-beginTime);
 		}	
 		return hash;
 	}
@@ -687,8 +774,15 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * and negative spectra separately and then together.
 	 * @param dMetric  the distance metric to use when normalizing
 	 */
-	public void posNegNormalize(DistanceMetric dMetric){
-		normalizable.posNegNormalize(this, dMetric);
+	public float posNegNormalize(DistanceMetric dMetric){
+		// [dmusican] I have commented out posNegNormalize here and replaced
+		// it with normalize for the BIRCH speed improvements I've made.
+		// It is not intended to be permanent. BIRCH needs to be updated
+		// to reverse the pos/neg normalization effect for purposes of
+		// incrementally adding new cluster features. Once that works, this
+		// can be changed back.
+		//return normalizable.posNegNormalize(this, dMetric);
+		return normalizable.normalize(this, dMetric);
 	}
 	
 	/**

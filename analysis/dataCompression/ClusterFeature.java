@@ -41,6 +41,7 @@
 package analysis.dataCompression;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -66,6 +67,7 @@ import analysis.Normalizer;
  */
 public class ClusterFeature {
 	private int count; //num particles represented
+	private float magnitude; // magnitude before being normalized
 	private BinnedPeakList sums;
 	private float squareSums;
 	public CFNode child = null;
@@ -96,31 +98,53 @@ public class ClusterFeature {
 	 * @param s2 - sum of sqaures
 	 * @param ids - atomids
 	 */
-	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2, ArrayList<Integer> ids) {
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2,
+			ArrayList<Integer> ids) {
 		curNode = cur;
 		dMetric = cur.dMetric;
 		count = c;
+		magnitude = s1.getMagnitude(dMetric);
 		sums = s1;
 		squareSums = s2;
 		atomIDs = ids;
 		memory=8*sums.length()+4*atomIDs.size();
 	}
-	
+
+	/**
+	 * Constructor
+	 * @param cur - current node
+	 * @param c - count
+	 * @param s1 - sums peaklist
+	 * @param s2 - sum of sqaures
+	 * @param ids - atomids
+	 * @param mag - magnitude
+	 */
+	public ClusterFeature(CFNode cur, int c, BinnedPeakList s1, float s2,
+			ArrayList<Integer> ids, float mag) {
+		curNode = cur;
+		dMetric = cur.dMetric;
+		count = c;
+		magnitude = mag;
+		sums = s1;
+		squareSums = s2;
+		atomIDs = ids;
+		memory=8*sums.length()+4*atomIDs.size();
+	}
+
 	/**
 	 * Updates the cf by adding a peaklist to it.
 	 * @param list - binnedPeakList
 	 * @param atomID - atomID
 	 */
 	public void updateCF(BinnedPeakList list, int atomID, boolean normalized) {
-		if(!normalized)
-			list.posNegNormalize(dMetric);
+		assert(normalized) : "BIRCH only tested for normalized data";
 		
 		int oldPeakListMem = 8*sums.length();
 		atomIDs.add(new Integer(atomID));
-		sums.multiply(count);
+		sums.multiply(magnitude);
 		sums.addAnotherParticle(list);
 		count++;
-		sums.posNegNormalize(dMetric);
+		magnitude = sums.posNegNormalize(dMetric);
 		// calculate the square sums.
 		Entry<Integer, Float> peak;
 		Iterator<Map.Entry<Integer, Float>> iterator = list.getPeaks().entrySet().iterator();
@@ -138,27 +162,34 @@ public class ClusterFeature {
 	 */
 	public boolean updateCF() {
 		if (child == null || child.getCFs().size() == 0) {
-			sums.posNegNormalize(dMetric);
+			float testMag;
+			// Yes, single equals below: I'm calculating the magnitude
+			// only once to save time (dmusican)
+			assert ((testMag=sums.getMagnitude(dMetric)) > .9999 &&
+					 testMag < 1.0001) :
+					 "Cluster feature not normalized like it should be:" +
+					 testMag;
 			return false;
 		}
 		atomIDs = new ArrayList<Integer>();
 		ArrayList<ClusterFeature> cfs = child.getCFs();
 		count = 0;
-		sums = new BinnedPeakList(new Normalizer());
 		squareSums = 0;
 		HashMap<Integer, Float> tempSums = new HashMap<Integer, Float>(1000);
 		for (int i = 0; i < cfs.size(); i++) {
-			tempSums = cfs.get(i).getSums().addWeightedToHash(tempSums, cfs.get(i).count);
+			tempSums = cfs.get(i).getSums().addWeightedToHash(tempSums, cfs.get(i).magnitude);
 			count += cfs.get(i).count;
 			squareSums += cfs.get(i).squareSums;
 			atomIDs.addAll(cfs.get(i).getAtomIDs());
 		}
-		Set<Entry<Integer, Float>> keys = tempSums.entrySet();
+		// sped up by dmusican
+		sums = new BinnedPeakList(new Normalizer(),tempSums);
+		/*Set<Entry<Integer, Float>> keys = tempSums.entrySet();
 		for(Entry<Integer, Float> x: keys) {
 			sums.addNoChecks(x.getKey(), x.getValue());
-		}
+		}*/
 
-		sums.posNegNormalize(dMetric);
+		magnitude = sums.posNegNormalize(dMetric);
 		memory= 8*sums.length()+4*atomIDs.size();
 		return true;
 	}
@@ -218,10 +249,15 @@ public class ClusterFeature {
 		//System.out.print(delimiter+ "CF : ");
 		//System.out.println(delimiter+"CF magnitude: "+sums.getMagnitude(dMetric));
 		//System.out.println(delimiter+"CF Count: " + count);
+		Object[] atoms = (atomIDs.toArray());
+		Arrays.sort(atoms);
 		System.out.print(delimiter + "CF::: " + count +" (");
-		for (int i = 0; i < atomIDs.size(); i++)
-			System.out.print(atomIDs.get(i) + " ");
+		for (int i = 0; i < atomIDs.size(); i++) {
+		//	System.out.print(atomIDs.get(i) + " ");
+			System.out.print(atoms[i] + " ");
+		}
 		System.out.println(")");
+		System.out.printf("Original magnitude = %10.3f\n",magnitude);
 		//sums.printPeakList();
 		//System.out.println(delimiter+"CF SS: " + squareSums);
 		//System.out.println(delimiter+"CF Magnitude: " + sums.getMagnitude(dMetric));
@@ -292,10 +328,10 @@ public class ClusterFeature {
 	}
 	
 	public void absorbCF(ClusterFeature absorbed) {
-		sums.multiply(count);
-		absorbed.sums.multiply(absorbed.count);
+		sums.multiply(magnitude);
+		absorbed.sums.multiply(absorbed.magnitude);
 		sums.addAnotherParticle(absorbed.getSums());
-		sums.posNegNormalize(dMetric);
+		magnitude = sums.posNegNormalize(dMetric);
 		squareSums+=absorbed.getSumOfSquares();
 		count+=absorbed.getCount();
 		atomIDs.addAll(absorbed.getAtomIDs());
@@ -321,5 +357,22 @@ public class ClusterFeature {
 			p = iter.next();
 			assert (p.value!=0) : "p.value!=0";
 		}
+	}
+	
+	/**
+	 * Accessor method for magnitude
+	 * @return magnitude
+	 */
+	public float getMagnitude() {
+		return magnitude;
+	}
+
+	/**
+	 * Mutator method for magnitude
+	 * @param magnitude - the original magnitude of this cf before normalizing
+	 * @author dmusican
+	 */
+	public void setMagnitude(float magnitude) {
+		this.magnitude = magnitude;
 	}
 }

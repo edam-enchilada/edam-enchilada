@@ -124,7 +124,8 @@ public class CFTree {
 			size++;
 		}
 		memory+=closestNode.getMemory();
-		updateNonSplitPath(closestNode);
+		updateNonSplitPath(closestNode,entry,atomID,true);
+		//updateNonSplitPath(closestNode);
 		return closestNode;
 		
 	}
@@ -225,7 +226,7 @@ public class CFTree {
 	 */
 	public CFNode splitNodeIfPossible(CFNode node) {
 		assert (node.isLeaf()) : "Split node is not a leaf";
-		if (node.getSize() > branchFactor) { 
+		if (node.getSize() > branchFactor) {
 			node = splitNodeRecurse(node);
 		}
 		assignLeaves();
@@ -339,6 +340,12 @@ public class CFTree {
 	 * Updates the path recursively starting from the node's PARENT and up.  
 	 * It is important to note that the first node passed won't be updated.
 	 * @param node - node to update.
+	 * *** dmusican ***: this can be sped up considerably, I think,
+	 * by making a version that does an incremental update (when applicable)
+	 * Don't rebuild the whole thing from scratch all the way up the tree if
+	 * just inserting a new point to a cf already present; instead, just
+	 * keep adding that point all the way and do a corresponding adjustment.
+	 * (version of updateCF exists that will do this
 	 */
 	public void updateNonSplitPath(CFNode node) {
 		if (node != null && node.parentCF != null) {
@@ -348,7 +355,17 @@ public class CFTree {
 			updateNonSplitPath(node.parentCF.curNode);
 		}
 	}
-	
+
+	public void updateNonSplitPath(CFNode node,BinnedPeakList entry, int atomID,
+			boolean normalized) {
+		if (node != null && node.parentCF != null) {
+			memory-=node.parentCF.getMemory();
+			node.parentCF.updateCF(entry,atomID,true);
+			memory+=node.parentCF.getMemory();
+			updateNonSplitPath(node.parentCF.curNode,entry,atomID,normalized);
+		}
+	}
+
 	/**
 	 * Recusively sets the first leaf variable for the tree.
 	 * @param node - current node in tree traversal.
@@ -437,14 +454,14 @@ public class CFTree {
 		BinnedPeakList combinedb = new BinnedPeakList(new Normalizer());
 		
 		BinnedPeakList b1 = entry.getSums();
-		b1.multiply(entry.getCount());
+		b1.multiply(entry.getMagnitude());
 		
 		BinnedPeakList b2 = entryToMerge.getSums();
-		b2.multiply(entryToMerge.getCount());
+		b2.multiply(entryToMerge.getMagnitude());
 		
 		combinedb.addAnotherParticle(b1);
 		combinedb.addAnotherParticle(b2);
-		combinedb.posNegNormalize(dMetric);
+		float magnitude = combinedb.posNegNormalize(dMetric);
 		
 		//new atomIDs for the new node
 		ArrayList<Integer> newAtomIds = new ArrayList<Integer>();
@@ -454,9 +471,9 @@ public class CFTree {
 		ClusterFeature returnThis = new ClusterFeature(
 				curNode,
 				entry.getCount()+entryToMerge.getCount(),
-				b1,
+				combinedb, // JANARA: This was b1, do I now have it right?
 				entry.getSumOfSquares() + entryToMerge.getSumOfSquares(),
-				newAtomIds);
+				newAtomIds, magnitude);
 		
 		returnThis.child = entry.child;
 		if (returnThis.child != null)

@@ -227,15 +227,26 @@ public class CFNode {
 		return new Pair<CFNode, CFNode>(nodeA, nodeB);
 	}
 	/**
-	 * Gets the closest CF in the node to the given entry.
-	 * @param entry - binnedPeakList to compare
+	 * Gets the closest CF in the node to the given entry. [dmusican: One
+	 * challenge with high dimensional data like ours is that it is easily
+	 * possible for all cluster features to be a distance of 2 away, which is
+	 * the maximum possible for normalized data such as ours. Similarly, due to
+	 * rounding issues when normalizing, one cf might appear to be slightly
+	 * closer than another (1.99996 vs 1.99999996) or so, which is irritating
+	 * because the code doesn't act consistently when optimizing other parts of
+	 * the program. Therefore, if the closest cf is greater than 1.999
+	 * (effectively 2, just rounding issues are at play), assign instead just to
+	 * the first cf.]
+	 * 
+	 * @param entry -
+	 *            binnedPeakList to compare
 	 * @return - closest CF
 	 */
 	public Pair<ClusterFeature, Float> getClosest(BinnedPeakList entry) {
 		float minDistance = Float.MAX_VALUE;
 		float thisDistance;
 		ClusterFeature minCF = null;
-		BinnedPeakList list; 
+		BinnedPeakList list;
 		for (int i = 0; i < cfs.size(); i++) {
 			if (cfs.get(i).getCount() != 0) {
 				list = cfs.get(i).getSums();
@@ -246,6 +257,19 @@ public class CFNode {
 				}
 			}
 		}
+		// See header comments above for more explanation about consistency.
+		if (minDistance > 1.999) {
+			minCF = null;
+			for (int i = 0; i < cfs.size(); i++) {
+				if (cfs.get(i).getCount() != 0) {
+					list = cfs.get(i).getSums();
+					minDistance = list.getDistance(entry,dMetric);
+					minCF = cfs.get(i);
+					return new Pair<ClusterFeature, Float>(minCF,minDistance);
+				}
+			}
+		}
+
 		return new Pair<ClusterFeature, Float>(minCF,minDistance);
 	}
 	

@@ -14,6 +14,7 @@ import junit.framework.TestCase;
 
 public class ClusterFeatureTest extends TestCase {
 	private BinnedPeakList bp1;
+	private float origMagnitude1;
 	private ClusterFeature testCF1;
 	private DistanceMetric dMetric;
 	
@@ -28,8 +29,10 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.add(20, (float) 2);
 		bp1.add(90, (float) 2);
 		bp1.add(120, (float) 2);
+		origMagnitude1 = bp1.posNegNormalize(dMetric);
 		testCF1 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		testCF1.updateCF(bp1, 1, false);
+		testCF1.updateCF(bp1, 1, true);
+		testCF1.setMagnitude(origMagnitude1);
 	}
 	public void testUpdateCF() {
 		DistanceMetric dMetric = DistanceMetric.EUCLIDEAN_SQUARED;
@@ -37,24 +40,29 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.add(-250, (float) 1);
 		bp1.add(-200, (float) 1);
 		bp1.add(-95, (float) 1);
+		bp1.posNegNormalize(dMetric);
 		ClusterFeature test = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		test.updateCF(bp1, 1, false);
+		test.updateCF(bp1, 1, true);
 		
 		BinnedPeakList bp2 = new BinnedPeakList(new Normalizer());
 		bp2.add(-25, (float) 1);
 		bp2.add(30, (float) 2);
 		bp2.add(100, (float) 2);
 		bp2.add(125, (float) 2);
-		test.updateCF(bp2, 2, false);
+		bp2.posNegNormalize(dMetric);
+		test.updateCF(bp2, 2, true);
 		
 		ArrayList<Integer> expected = new ArrayList<Integer>();
 		expected.add(1);
 		expected.add(2);
 		assertEquals(test.getAtomIDs(), expected);
 		assertEquals(test.getCount(), 2);
-		bp1.posNegNormalize(dMetric);
+		//bp1.posNegNormalize(dMetric);
 		bp1.addAnotherParticle(bp2);
 		bp1.posNegNormalize(dMetric);
+		// Might not be precisely the same due to rounding issues after
+		// additional normalization
+		System.out.println(test.getSums().getDistance(bp1,dMetric));
 		assertEquals(test.getSums().getDistance(bp1, dMetric), 0.0f);
 	}
 	
@@ -68,15 +76,17 @@ public class ClusterFeatureTest extends TestCase {
 		bp2.add(30, (float) 2);
 		bp2.add(100, (float) 2);
 		bp2.add(130, (float) 2);
-		testCF1.updateCF(bp2, 2, false);
+		float origMagnitude2 = bp2.posNegNormalize(dMetric);
+		testCF1.updateCF(bp2, 2, true);
 		
 		BinnedPeakList bp3 = new BinnedPeakList(new Normalizer());
 		bp3.add(-210, (float) 0.1);
 		bp3.add(-200, (float) 0.1);
 		bp3.add(-160, (float) 0.1);
 		bp3.add(-150, (float) 0.1);
+		float origMagnitude3 = bp3.posNegNormalize(dMetric);
 		ClusterFeature testCF2 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		testCF2.updateCF(bp3, 3, false);
+		testCF2.updateCF(bp3, 3, true);
 
 		testCF1.absorbCF(testCF2);
 
@@ -87,9 +97,10 @@ public class ClusterFeatureTest extends TestCase {
 		assertEquals(testCF1.getAtomIDs(), expected);
 		assertEquals(testCF1.getCount(), 3);
 
+		bp1.multiply(origMagnitude1);
 		bp1.addAnotherParticle(bp2);
-		bp1.posNegNormalize(dMetric);
-		bp1.multiply(2);
+		float origMagnitude12 = bp1.posNegNormalize(dMetric);
+		bp1.multiply(origMagnitude12);
 		bp1.addAnotherParticle(bp3);
 		bp1.posNegNormalize(dMetric);
 		assertEquals(testCF1.getSums().getDistance(bp1, dMetric), 0.0f);

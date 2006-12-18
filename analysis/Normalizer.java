@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import analysis.dataCompression.Pair;
 public class Normalizer extends Normalizable {
 
-	public void normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
+	public float normalize(BinnedPeakList peakList, DistanceMetric dMetric) {
 
 		//set up stuff
 		float magnitude;
@@ -19,6 +19,8 @@ public class Normalizer extends Normalizable {
 			entry = iterator.next();
 			entry.setValue(entry.getValue() / magnitude);
 		}
+		
+		return magnitude;
 	}
 	
 	/**
@@ -28,7 +30,7 @@ public class Normalizer extends Normalizable {
 	 * @param peakList	The peak list to normalize (note: values are changed).
 	 * @param dMetric	The distance metric to use.
 	 */
-	public void posNegNormalize(BinnedPeakList peakList, DistanceMetric dMetric){
+	public float posNegNormalize(BinnedPeakList peakList, DistanceMetric dMetric){
 		float posMag, negMag;
 		Map.Entry<Integer, Float> entry;
 		Iterator<Map.Entry<Integer, Float>> iterator;
@@ -46,7 +48,7 @@ public class Normalizer extends Normalizable {
 		}
 		
 		//normalize altogether
-		normalize(peakList, dMetric);
+		return normalize(peakList, dMetric);
 	}
 
 

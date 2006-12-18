@@ -19,31 +19,36 @@ public class CFTreeTest extends TestCase {
 		bp1 = new BinnedPeakList(new Normalizer());
 		bp1.add(-200, (float) 1);
 		bp1.add(-150, (float) 1);
+		bp1.posNegNormalize(dMetric);
 		cf1 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		cf1.updateCF(bp1, 1, false);
+		cf1.updateCF(bp1, 1, true);
 		
 		bp2 = new BinnedPeakList(new Normalizer());
 		bp2.add(-100, (float) 1);
 		bp2.add(-50, (float) 1);
+		bp2.posNegNormalize(dMetric);
 		cf2 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		cf2.updateCF(bp2, 2, false);
+		cf2.updateCF(bp2, 2, true);
 		
 		bp3 = new BinnedPeakList(new Normalizer());
 		bp3.add(-200, (float) 1);
 		bp3.add(-150, (float) 1);
+		bp3.posNegNormalize(dMetric);
 		cf3 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		cf3.updateCF(bp3, 3, false);
+		cf3.updateCF(bp3, 3, true);
 		
 		bp4 = new BinnedPeakList(new Normalizer());
 		bp4.add(150, (float) 1);
 		bp4.add(200, (float) 1);
+		bp4.posNegNormalize(dMetric);
 		cf4 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		cf4.updateCF(bp4, 4, false);
+		cf4.updateCF(bp4, 4, true);
 		
 		bp5 = new BinnedPeakList(new Normalizer());
 		bp5.add(-100, (float) 1);
+		bp5.posNegNormalize(dMetric);
 		cf5 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
-		cf5.updateCF(bp5, 5, false);
+		cf5.updateCF(bp5, 5, true);
 		
 		node1 = new CFNode(null, dMetric);
 		node1.addCF(cf1);
@@ -51,7 +56,7 @@ public class CFTreeTest extends TestCase {
 		node2 = new CFNode(null, dMetric);
 		node2.addCF(cf1);
 		node2.addCF(cf4);
-		tree1 = new CFTree(0, 2, dMetric);
+		tree1 = new CFTree((float)1e-8, 2, dMetric);
 		
 	}
 	public void testInsertEntry() {

@@ -103,9 +103,9 @@ public class NormalizerTest extends TestCase {
 		normalizeThis.posNegNormalize(DistanceMetric.DOT_PRODUCT);
 		
 		assertEquals(normalizeThis.getMagnitude(DistanceMetric.DOT_PRODUCT),1.0f);
-		assertEquals(normalizeThis.getAreaAt(-200),secondNorm3); 
+		assertTrue(Math.abs(normalizeThis.getAreaAt(-200)-secondNorm3)<1e-7); 
 		assertEquals(normalizeThis.getAreaAt(-100),secondNorm4);
-		assertEquals(normalizeThis.getAreaAt(0),secondNorm3);
+		assertTrue(Math.abs(normalizeThis.getAreaAt(0)-secondNorm3)<1e-7);
 		assertEquals(normalizeThis.getAreaAt(100),secondNorm4);
 	
 		normalizeThis = generateSquarePeaks(norm);
