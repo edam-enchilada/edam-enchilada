@@ -392,7 +392,10 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
-	   //	***SLH
+	/**
+	 * Basic BulkBucket class to construct a flat file and to prepare statement for Bulk Inserting.
+	 * @author SLH
+	 */
 	public class BulkBucket
 	{
 		protected BufferedWriter file;
@@ -412,7 +415,6 @@ public abstract class Database implements InfoWarehouse {
 						" for table " + table);
 				ex.printStackTrace();
 			}
-
 		}
 
 		public void append(String values) throws SQLException {
@@ -439,14 +441,15 @@ public abstract class Database implements InfoWarehouse {
 		public String sqlCmd() {
 			return "BULK INSERT " + table + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n";
 		}
-
 	}
 	
-//	***SLH
+	/**
+	 * Data_bulkBucket class constructs mutiple flat files for Bulk Inserting AMS/ATOFMS/Time Series particle data.
+	 * It extends BulkBucket class for mutiple data source insertion. 
+	 * @author SLH
+	 */
 	public class Data_bulkBucket
 	{
-		//String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
-		//String[] AMS_tables = {"AMSAtomInfoDense", "AtomMembership", "DataSetMembers", "AMSAtomInfoSparse", "InternalAtomOrder"};
 		String[] tables;
 		BulkBucket[] buckets;
 
@@ -477,11 +480,21 @@ public abstract class Database implements InfoWarehouse {
 	  }
 	}
 
-	// ***SLH
+	/**
+	 * @param the names of the database tables for different type of particle data
+	 * @return Data_bulkBucket 
+	 * @author SLH
+	 */
 	public Data_bulkBucket getDatabulkBucket(String[] tables) {
 		return new Data_bulkBucket(tables);
 	}
 
+	/**
+	 * BulkInsertDataParticles executes the particle data bulk insertion batch statements
+	 * @param bigBucket - Data_bulkBucket object holding different datatype of particle data
+	 * @return  
+	 * @author SLH
+	 */
     public void BulkInsertDataParticles(Data_bulkBucket bigBucket)
 	{
     	try {
@@ -503,7 +516,19 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
     
-	//***SLH
+	/**
+	 * saveDataParticle takes a string of dense info, a string of sparse info, 
+	 * the collection, the datasetID and the nextID and Prepare temporary files 
+	 * for bulk insertion into the dynamic tables based on the collection's datatype. 
+	 * @param dense - string of dense info
+	 * @param sparse - string of sparse info
+	 * @param collection - current collection
+	 * @param datasetID - current datasetID
+	 * @param nextID - next ID
+	 * @param importing - true if importing, false if inserting for other reason
+	 * @return nextID if successful 
+	 * @author SLH
+	 */
 	public int saveDataParticle(String dense, ArrayList<String> sparse,
 			Collection collection,
 			int datasetID, int nextID, Data_bulkBucket bigBucket)
@@ -511,23 +536,33 @@ public abstract class Database implements InfoWarehouse {
 
 		int num_tables = bigBucket.tables.length;
 		try {
-			if(bigBucket.tables.length >=1) {
-				bigBucket.buckets[0].append(nextID + "," + dense );
+			for(int i =0; i<num_tables; i++) {
+				if(bigBucket.tables[i].equals("AMSAtomInfoDense")) 
+					bigBucket.buckets[i].append(nextID + "," + dense );
+				
+				if(bigBucket.tables[i].equals("ATOFMSAtomInfoDense")) 
+					bigBucket.buckets[i].append(nextID + "," + dense );
+				
+				if(bigBucket.tables[i].equals("AMSAtomInfoSparse"))
+					for (int j = 0; j < sparse.size(); ++j) {
+						bigBucket.buckets[i].append(nextID + "," + sparse.get(j));
+					}
+				
+				if(bigBucket.tables[i].equals("ATOFMSAtomInfoSparse"))
+					for (int j = 0; j < sparse.size(); ++j) {
+						bigBucket.buckets[i].append(nextID + "," + sparse.get(j));
+					}
+				
+				if(bigBucket.tables[i].equals("AtomMembership"))
+					bigBucket.buckets[i].append(collection.getCollectionID() + "," + nextID );
+				
+				if(bigBucket.tables[i].equals("DataSetMembers"))
+					bigBucket.buckets[i].append(datasetID + "," + nextID );
+				
+				if(bigBucket.tables[i].equals("InternalAtomOrder"))
+					bigBucket.buckets[i].append(nextID + "," +collection.getCollectionID() );
 			}
-			if(bigBucket.tables.length >=2) {
-				bigBucket.buckets[1].append(collection.getCollectionID() + "," + nextID );
-			}
-			if(bigBucket.tables.length >=3) {
-				bigBucket.buckets[2].append(datasetID + "," + nextID );
-			}
-			if(bigBucket.tables.length >=4) {
-				for (int j = 0; j < sparse.size(); ++j) {
-					bigBucket.buckets[3].append(nextID + "," + sparse.get(j));
-				}
-			}
-			if(bigBucket.tables.length >=5) {
-				bigBucket.buckets[4].append( nextID + "," +collection.getCollectionID() );
-			}
+		
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
