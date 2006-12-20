@@ -10,7 +10,9 @@ import java.text.SimpleDateFormat;
 
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.SortedMap;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
@@ -61,11 +63,13 @@ public class SQLAggregator {
 			/* Sum together the sizes of the particles and the areas of the
 			 * peaks, both adjusted for detection efficiency. 
 			 */
-			ResultSet rs = stmt.executeQuery("select sum(d.size*d.size*d.size*" + density+ "*(1/h.de)) as mass," +
+			String query = "select sum(d.size*d.size*d.size*" + density+ "*(1/h.de)) as mass," +
 					" s.peaklocation, sum(s.peakarea/h.de) as adjustedpeak " +
 					"from atofmsatominfodense d, atofmsatominfosparse s, #hourbin h " +
 					"where h.atom = s.atomid and h.atom = d.atomid " +
-					"group by s.peaklocation;");
+					"group by s.peaklocation;";
+			System.out.println(query);
+			ResultSet rs = stmt.executeQuery(query);
 			while (rs.next()){
 				mass += rs.getDouble("mass");
 				bpl.add(rs.getFloat("peaklocation"), rs.getFloat("adjustedpeak"));
@@ -98,15 +102,15 @@ public class SQLAggregator {
 	private String format(BinnedPeakList list, double m){
 		String out = "";
 		out += "2 " + m;
-		Iterator<BinnedPeak> iter = list.iterator();
-		int location;
-		while (iter.hasNext()){
-			location = iter.next().key;
+		
+		for (BinnedPeak peak : list) {
+			int location = peak.key;
 			//this is where the limit on peak locations recorded takes effect
 			if ((location >= -300) && (location <= 300)){
-				out += "," + (location+303) + " " + iter.next().value;
+				out += "," + (location+303) + " " + peak.value;
 			}
 		}
+
 		return out;
 	}
 	
@@ -162,14 +166,18 @@ public class SQLAggregator {
 					" where de < .1 or de > 2.5;");
 			//calculate the Detection Efficiency for the three size bins
 			//as described in DetectionEfficiency_Gomit.pdf
+			// Note that the below code is technically not always right: if
+			// updating the de from one query puts in the range of the next one,
+			// will get updated multiple times. Not fixing for now because
+			// will rewrite this anyway.
 			stmt.executeUpdate("update #hourbin " +
-					"set de = (select power(de*100, 2.8574)*exp(-27.16)) " +
+					"set de = (select power(de*1000, 2.8574)*exp(-27.16)) " +
 					"where de > .1 and de <= .75;");
 			stmt.executeUpdate("update #hourbin " +
-					"set de = (select power(de*100, -.58272)*exp(-4.803)) " +
+					"set de = (select power(de*1000, -.58272)*exp(-4.803)) " +
 					"where de > .75	and de <= 1.;");
 			stmt.executeUpdate("update #hourbin " +
-					"set de = (select power(de*100, -7.52)*exp(42.031)) " +
+					"set de = (select power(de*1000, -7.52)*exp(42.031)) " +
 					"where de > 1. and de <= 2.5;");
 			stmt.close();
 		} catch (ParseException e) {
@@ -179,7 +187,6 @@ public class SQLAggregator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		
 	}
 	
@@ -209,7 +216,7 @@ public class SQLAggregator {
 	 * @return the header for the .arff file in the form of a string
 	 */
 	public String assembleAttributes(String relationName, String predictThis){
-		String attributeNames = "@relation " + relationName +" \n "
+		String attributeNames = "@relation " + relationName +"\n"
 				+"@attribute time date \"MM/d/yyyy hh:mm:ss a\" \n"
 				+"@attribute " + predictThis + " numeric \n"
 				+"@attribute mass numeric \n";
@@ -232,8 +239,8 @@ public class SQLAggregator {
 		StringBuilder builder = new StringBuilder();
 		SQLAggregator sa = new SQLAggregator();
 		try {
-			Scanner scan = new Scanner(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/small.csv"));
-			FileWriter out = new FileWriter(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/small.arff")); 
+			Scanner scan = new Scanner(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/verysmall.csv"));
+			FileWriter out = new FileWriter(new File("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/verysmall.arff")); 
 			//write the .arff file headings
 			out.write(sa.assembleAttributes("small", "ec"));
 			sa.open();
