@@ -61,8 +61,8 @@ public class SQLAggregator {
 			// Calculate total mass for each time bin, and connect it with
 			// EC data. Throw away any bins with too few particles
 			String denseQuery =
-				"SELECT roundedTime, mass, value FROM\n" +
-				"(SELECT roundedTime, COUNT(*) as cnt,\n" +
+				"SELECT roundedTime, mass, value, cnt FROM\n" +
+				"(SELECT roundedTime, SUM(1/de) as cnt,\n" +
 				"	SUM(size*size*size*" + density + "*(1/de)) as mass\n" +
 				"   FROM RoundedDense\n";
 			if (maxAtomId > 0)
@@ -129,17 +129,20 @@ public class SQLAggregator {
 				// is zero, this corresponds to missing data.
 				
 				float value = denseSet.getFloat("value");
+				int count = denseSet.getInt("cnt");
+				count = 1; // Ignore count for now
 				
 				// Starting new dense, write out the header. Chop off the ".0"
 				// at the end of the time that seems to give Weka trouble.
 				String wekaTime = (denseTime.toString().split("\\."))[0];
 
-				// Adjust the units of mass to put it on a smaller scale:
-				// this makes tools such as Weka happier.
+				// Adjust the units of mass to 	 it on a smaller scale:
+				// this makes tools such as Weka happier. Also divide by
+				// count to normalize for the number of particles seen.
 				float massScaleFactor = 1e8f;
 				out.print("{" + "0 " + '"' + wekaTime + '"' +
 						",1 " + denseSet.getFloat("value") +
-						",2 " + denseSet.getFloat("mass")/massScaleFactor);
+						",2 " + denseSet.getFloat("mass")/massScaleFactor/count);
 
 				// Loop over all sparse data with matching time
 				while (sparseRead && denseTime.equals(sparseTime)) {
@@ -152,7 +155,7 @@ public class SQLAggregator {
 					if ((location >= -300) && (location <= 300)){
 						out.print("," + (location+303) + " " +
 								sparseSet.getFloat("adjustedpeak") /
-								peakScaleFactor);
+								peakScaleFactor/count);
 					}
 
 					// Grab next sparse row
@@ -343,7 +346,7 @@ public class SQLAggregator {
 		SQLAggregator sa = new SQLAggregator();
 		sa.open();
 		try {
-			PrintWriter out = new PrintWriter("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC200.arff"); 
+			PrintWriter out = new PrintWriter("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC200confirm.arff"); 
 			//write the .arff file headings
 			out.print(sa.assembleAttributes("ecrelation", "ec"));
 
