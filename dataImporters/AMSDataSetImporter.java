@@ -202,9 +202,10 @@ public class AMSDataSetImporter {
 		}
 		readData.next();//skip name
 		int tParticles = 0;
-		while (readData.hasNext()) {
-			for (int i = 0; i < massToCharge.size(); i++)
-				readData.nextDouble();
+		while (readData.hasNextLine()) {
+			//Items are stored in matrix format: one line per item, with
+			//	massToCharge.size() number of space-separated values per line
+			readData.nextLine();
 			tParticles++;
 		}
 		readData.close();
