@@ -32,6 +32,7 @@ import javax.swing.table.TableColumn;
 import dataImporters.AMSDataSetImporter;
 import dataImporters.ATOFMSDataSetImporter;
 import errorframework.*;
+import externalswing.SwingWorker;
 
 public class ImportAMSDataDialog extends JDialog implements ActionListener{
 
@@ -42,7 +43,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	private AMSTableModel amsTableModel;
 	private JProgressBar progressBar;
 	private int dataSetCount;
-	private static Window parent = null;
+	private static JFrame parent = null;
 	private boolean importedTogether = false;
 	private int parentID = 0; //default parent collection is root
 	
@@ -55,7 +56,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	 * @throws java.awt.HeadlessException From the constructor of 
 	 * JDialog.  
 	 */
-	public ImportAMSDataDialog(Frame owner) throws HeadlessException {
+	public ImportAMSDataDialog(JFrame owner) throws HeadlessException {
 		// calls the constructor of the superclass (JDialog), sets the title and makes the
 		// dialog modal.  
 		super(owner, "Import AMS Datasets as Collections", true);
@@ -138,19 +139,45 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	{
 		Object source = e.getSource();
 		if (source == okButton) {
-				AMSDataSetImporter ams = 
-					new AMSDataSetImporter(
-							amsTableModel, parent, this);
-				// If a .par file or a .cal file is missing, don't start the process.
+			//set necessary values in the data importer
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(parent, AMSDataSetImporter.TITLE, 100);			
+			final AMSDataSetImporter ams = 
+					new AMSDataSetImporter(amsTableModel, parent, progressBar);
+			// If a .par file or a .cal file is missing, don't start the process.
+			try {
+				ams.errorCheck();
+			} catch (DisplayException e1) {
+				ErrorLogger.displayException(this,e1.toString());
+				return;
+			}
+			
+			//for collections imported into a parent collection
+			if (importedTogether)
+				ams.setParentID(parentID);
+			
+			//Create the progress bar and spin off a thread to do the work in
+			//Database transactions are not currently used.
+			progressBar.constructThis();
+			final SwingWorker worker = new SwingWorker() {
+				public Object construct() {
 					try {
-							ams.errorCheck();
-							ams.collectTableInfo();
-						} catch (DisplayException e1) {
-							ErrorLogger.displayException(this,e1.toString());
-						} catch (WriteException e2) {
-							ErrorLogger.writeExceptionToLog("Importing",e2.toString());
-						}
-						dispose();
+						ams.collectTableInfo();
+					}
+					catch (DisplayException e1) {
+						ErrorLogger.displayException(progressBar,e1.toString());
+					}
+					catch (WriteException e2) {
+						ErrorLogger.displayException(progressBar,e2.toString());
+					}
+					return null;
+				}
+				public void finished() {
+					progressBar.disposeThis();
+					dispose();
+				}
+			};
+			worker.start();
 		}
 		else if (source == parentButton){
 			if (parentButton.isSelected())

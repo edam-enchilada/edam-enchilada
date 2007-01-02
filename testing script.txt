@@ -166,8 +166,14 @@ Verify that:
 	__Time series imports successfully
 	
 **Import AMS data from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\ams
-Choose Nitrate_MS.txt, t_series.txt, amus.txt. Verify that:
+Choose Nitrate_MS.txt, t_series.txt, amus.txt for the first row, and
+	   Sulfate_MS.txt, t_series.txt, amus.txt for the second. Verify that:
 	__AMS data imports successfully
+	__Progress bar properly indicates progress and dataset number for each import
+Choose the same files as above, selecting "import into parent collection" in the import dialog.
+	Pick a name and description, and verify that:
+	__AMS data imports successfully
+	__All data is imported into the chosen parent collection
 	
 **Try to import an existing datatype in the metadata format.  Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
 (Note that this is not a complete .md file - just enough to catch the problem.)

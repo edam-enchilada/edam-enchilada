@@ -1,6 +1,5 @@
 package dataImporters;
 
-import java.awt.Container;
 import java.awt.Window;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,26 +11,18 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Scanner;
 
-
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import collection.Collection;
 import database.Database;
 import database.InfoWarehouse;
 import errorframework.*;
-import externalswing.SwingWorker;
 import gui.AMSTableModel;
-import gui.ImportAMSDataDialog;
 import gui.MainFrame;
 import gui.ProgressBarWrapper;
 
 public class AMSDataSetImporter {
 	private AMSTableModel table;
 	private Window mainFrame;
-	private ImportAMSDataDialog ams;
 	private boolean parent;
 	
 	//Table values - used repeatedly.
@@ -45,12 +36,10 @@ public class AMSDataSetImporter {
 	private ArrayList<String> sparse;
 	
 	// Progress Bar variables
-	protected JDialog waitBarDialog = null;
-	protected JProgressBar pBar = null;
-	protected JLabel pLabel = null;
+	public static final String TITLE = "Importing AMS Dataset";
+	protected ProgressBarWrapper progressBar;
 	protected int particleNum;
 	protected int totalParticles;
-	private Container parentContainer;
 	
 	/* contains the collectionID and particleID */
 	private int[] id;
@@ -69,17 +58,24 @@ public class AMSDataSetImporter {
 	private final float SEC_PER_YEAR  = 31556926;
 	
 	private Scanner readData; // for reading the dataset;
+	
+	//the parent collection to import into
+	private int parentID = 0;
 		
 	/**
 	 * 
 	 * Constructor.  Sets the particle table for the importer.
 	 * @param amsTableModel - particle table model.
 	 */
-	public AMSDataSetImporter(AMSTableModel t, Window mf, ImportAMSDataDialog dialog) {
+	public AMSDataSetImporter(AMSTableModel t, Window mf) {
 		table = t;
 		mainFrame = mf;
-		ams = dialog;
 		db = MainFrame.db;
+	}
+	
+	public AMSDataSetImporter(AMSTableModel t, Window mf, ProgressBarWrapper pbar) {
+		this(t, mf);
+		progressBar = pbar;
 	}
 	
 	/**
@@ -88,12 +84,16 @@ public class AMSDataSetImporter {
 	 * @throws WriteException 
 	 */
 	public void collectTableInfo() throws DisplayException, WriteException {
-		
+
 		rowCount = table.getRowCount()-1;
 		totalInBatch = rowCount;
 		//Loops through each dataset and creates each collection.
 		for (int i=0;i<rowCount;i++) {
 			try {
+				// Indicate progress for this dataset
+				progressBar.reset();
+				progressBar.setTitle(TITLE+": "+(i+1)+" of "+rowCount);
+				
 				// Table values for this row.
 				datasetName = (String)table.getValueAt(i,1);
 				timeSeriesFile = (String)table.getValueAt(i,2);
@@ -105,14 +105,14 @@ public class AMSDataSetImporter {
 				
 				positionInBatch = i + 1;
 				// Call relevant methods
-					processDataSet(i);
+				processDataSet(i);
 
 				// update the internal atom order table;
 				db.updateAncestors(db.getCollection(id[0]));
 			} catch (DisplayException e) {
-				throw new DisplayException(datasetName + " failed to import. Exception: "+e.toString());
+				throw new DisplayException(datasetName + " failed to import. Exception: " + e.toString());
 			} catch (WriteException e) {
-				throw new WriteException(datasetName + "failed to import.  Exception: " + e.toString());
+				throw new WriteException(datasetName + " failed to import.  Exception: " + e.toString());
 			}
 		}
 	}
@@ -128,6 +128,8 @@ public class AMSDataSetImporter {
 		String[] AMS_tables = {"AMSAtomInfoDense", "AtomMembership", "DataSetMembers", "AMSAtomInfoSparse"};
 		final Database.Data_bulkBucket ams_buckets = ((Database)db).getDatabulkBucket(AMS_tables);
 		
+		progressBar.setIndeterminate(true);
+		progressBar.setText("Reading time series file");
 		//put time series file and mz file into an array, since they will
 		//be accessed in the same way for every atom.
 		Scanner readTimeSeries;
@@ -171,6 +173,8 @@ public class AMSDataSetImporter {
 			timeSeries.add(convertedCalendar.getTime());
 		}
 		readTimeSeries.close();
+		
+		progressBar.setText("Reading m/z file");
 		Scanner readMZ;
 		try {
 			readMZ = new Scanner(new File(massToChargeFile));
@@ -186,7 +190,7 @@ public class AMSDataSetImporter {
 		
 		// create empty collection.
 		try {
-			id = db.createEmptyCollectionAndDataset("AMS",0,getName(),"AMS import",
+			id = db.createEmptyCollectionAndDataset("AMS",parentID,getName(),"AMS import",
 					"'"+datasetName+"','"+timeSeriesFile+"','"+massToChargeFile+"'");
 		} catch (FileNotFoundException e1) {
 			throw new WriteException("Attempt to get name for collection not" +
@@ -195,10 +199,11 @@ public class AMSDataSetImporter {
 	
 		
 		// get total number of particles for progress bar.
+		progressBar.setText("Finding number of items");
 		try {
 			readData = new Scanner(new File(datasetName));
 		} catch (FileNotFoundException e1) {
-			throw new WriteException(datasetName+"was not found.");
+			throw new WriteException(datasetName+" was not found.");
 		}
 		readData.next();//skip name
 		int tParticles = 0;
@@ -210,61 +215,52 @@ public class AMSDataSetImporter {
 		}
 		readData.close();
 		final int totalParticles = tParticles;
-		System.out.println("total particles: " + tParticles);
-
-		final ProgressBarWrapper progressBar = 
-			new ProgressBarWrapper((JFrame)mainFrame, "Importing AMS Datasets", (totalParticles/10)+1);
-
-		final SwingWorker worker = new SwingWorker() {
+		System.out.println("total items: " + tParticles);
+		progressBar.setMaximum((totalParticles/10)+1);
+		progressBar.setIndeterminate(false);
+		
+		try{
+			Collection destination = db.getCollection(id[0]);
 			
-			public Object construct() {
-				try{
-					Collection destination = db.getCollection(id[0]);
-					
-					readData = new Scanner(new File(datasetName));
-					readData.next(); // skip name
+			readData = new Scanner(new File(datasetName));
+			readData.next(); // skip name
 
-					particleNum = 0;
-					int nextID = db.getNextID();
-					while (readData.hasNext()) { // repeat until end of file.
-						if(particleNum % 10 == 0 && particleNum >= 10) 
-							progressBar.increment("Importing Particle # "+particleNum+" out of "+totalParticles);
-						read(particleNum, nextID);
-						if (sparse != null && sparse.size() > 0) {
-							//db.insertParticle(dense,sparse,destination,id[1],nextID);
-							((Database)db).saveDataParticle(dense,sparse,destination,id[1],nextID, ams_buckets);
-							nextID++;
-						}
-						particleNum++;
-					}
-					((Database)db).BulkInsertDataParticles(ams_buckets);
-					((Database)db).updateInternalAtomOrder(destination);
-					progressBar.increment("Updating Ancestors...");
-					db.updateAncestors(destination);
-					progressBar.disposeThis();
-				}catch (Exception e) {
-					try {
-						e.printStackTrace();
-						final String exception = e.toString();
-						SwingUtilities.invokeAndWait(new Runnable() {
-							public void run()
-							{
-								// don't throw an exception here because we want to keep going:
-								ErrorLogger.writeExceptionToLog("Importing","Corrupt datatset file or particle: "+ exception);
-							}
-						});
-					} catch (Exception e2) {
-						e2.printStackTrace();
-						// don't throw exception here because we want to keep going:
-						ErrorLogger.writeExceptionToLog("Importing","ParticleException: "+e2.toString());
-					}
+			particleNum = 0;
+			int nextID = db.getNextID();
+			while (readData.hasNext()) { // repeat until end of file.
+				if(particleNum % 10 == 0 && particleNum >= 10) 
+					progressBar.increment("Importing Item # "+particleNum+" out of "+totalParticles);
+				read(particleNum, nextID);
+				if (sparse != null && sparse.size() > 0) {
+					//db.insertParticle(dense,sparse,destination,id[1],nextID);
+					((Database)db).saveDataParticle(dense,sparse,destination,id[1],nextID, ams_buckets);
+					nextID++;
 				}
-				return null;
+				particleNum++;
 			}
-			
-		};
-		worker.start();	
-		progressBar.constructThis();
+			progressBar.setIndeterminate(true);
+			progressBar.setText("Inserting Items...");
+			((Database)db).BulkInsertDataParticles(ams_buckets);
+			((Database)db).updateInternalAtomOrder(destination);
+			progressBar.setText("Updating Ancestors...");
+			db.updateAncestors(destination);
+		}catch (Exception e) {
+			try {
+				e.printStackTrace();
+				final String exception = e.toString();
+				SwingUtilities.invokeAndWait(new Runnable() {
+					public void run()
+					{
+						// don't throw an exception here because we want to keep going:
+						ErrorLogger.writeExceptionToLog("Importing","Corrupt datatset file or particle: "+ exception);
+					}
+				});
+			} catch (Exception e2) {
+				e2.printStackTrace();
+				// don't throw exception here because we want to keep going:
+				ErrorLogger.writeExceptionToLog("Importing","ParticleException: "+e2.toString());
+			}
+		}
 	}
 	
 	/**
@@ -330,5 +326,14 @@ public class AMSDataSetImporter {
 			if (tempNum != 0.0 && tempNum != -999.0)
 				sparse.add(massToCharge.get(i)+","+tempNum);
 		}	
+	}
+	
+	/**
+	 * Change the parent collection for incoming datasets from its default of 0
+	 * @param id the parent collection ID
+	 * @author shaferia
+	 */
+	public void setParentID(int id) {
+		parentID = id;
 	}
 }
