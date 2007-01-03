@@ -177,6 +177,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		JTable pTable = new JTable(pTableModel);	
         pTable.setDefaultEditor(Float.class, new FloatEditor());
         pTable.setDefaultEditor(Integer.class, new IntegerEditor());
+        pTable.setDefaultRenderer(Float.class, new FloatRenderer());
         int numColumns = 7;
         if(showAdvancedOptions)numColumns = 8;
 		TableColumn[] tableColumns = new TableColumn[numColumns];
@@ -342,11 +343,12 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			}
 		}
 		else if (source == cancelButton) {
+			System.out.println("min relative area: "+((Float)basicTableModel.getValueAt(0,6)).floatValue());
 			if (importedTogether) {
 				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
 					System.err.println("Error deleting temporary collection");
 				parentLabel.setText("");
-				importedTogether = false;				
+				importedTogether = false;
 			}
 			dispose();
 		}
