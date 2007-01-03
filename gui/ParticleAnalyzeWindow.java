@@ -53,7 +53,9 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import javax.swing.text.html.*;
 
+import ATOFMS.AMSPeak;
 import ATOFMS.ATOFMSParticle;
+import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
 import ATOFMS.Peak;
 import ATOFMS.ReadSpec;
@@ -796,7 +798,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset posDS = new Dataset();
 		for(Peak p : posPeaks)
 		{
-			posDS.add(new DataPoint(p.massToCharge, p.area));
+			posDS.add(new DataPoint(p.massToCharge, p.value));
 		}
 		return posDS;
 	}
@@ -805,7 +807,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		Dataset negDS = new Dataset();
 		for(Peak p : negPeaks)
 		{
-			negDS.add(new DataPoint(-p.massToCharge, p.area));
+			negDS.add(new DataPoint(-p.massToCharge, p.value));
 		}
 		return negDS;
 	}
@@ -1094,7 +1096,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			PrintStream writer = new PrintStream(new File(spectrumFileName));
 			writer.println("1");
 			for (Peak p : peaks)
-				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.area);
+				writer.printf("%d %d ", (int) Math.round(Math.abs(p.massToCharge)), (int) p.value);
 			writer.print("-1");
 			writer.close();
 		}
@@ -1139,21 +1141,34 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				peak = negPeaks.get(row);
 			else
 				peak = posPeaks.get(row - negPeaks.size());
+			if(coll.getDatatype().equals("ATOFMS")){
 			switch(column)
 			{
 			// Putting these in wrapper classes, hope this
 			// helps 
 			// -Ben
-			case 0: return new Integer((int)peak.massToCharge);
-			case 1: return new Integer(peak.height);
-			case 2: return new Integer(peak.area);
-			case 3: return new Float(peak.relArea);
+			case 0: return new Integer((int)((ATOFMSPeak)peak).massToCharge);
+			case 1: return new Integer(((ATOFMSPeak)peak).height);
+			case 2: return new Integer(((ATOFMSPeak)peak).area);
+			case 3: return new Float(((ATOFMSPeak)peak).relArea);
 			default: return null;
 			}
+			}else if(coll.getDatatype().equals("AMS")){
+				switch(column)
+				{
+				case 0: return new Integer((int)((AMSPeak)peak).massToCharge);
+				case 1: return new Double(((AMSPeak)peak).height);
+				}
+				
+			}
+			
+			return null;
 		}
 		
 		public String getColumnName(int column)
 		{
+			if(coll.getDatatype().equals("ATOFMS")){
+				
 			switch(column)
 			{
 			case 0: return "Location";
@@ -1161,6 +1176,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			case 2: return "Area";
 			case 3: return "Relative Area";
 			default: return "";
+			}
+			}else{
+				switch(column)
+				{
+				case 0: return "Location";
+				case 1: return "Height";
+				default: return "";
+				}
 			}
 		}
 		

@@ -478,4 +478,8 @@ public class ATOFMSParticle {
 		}*/
 		return peaks;	
 	}
+//	***SLH 	 
+    public String particleInfoDenseStr(DateFormat d) { 	 
+            return  d.format(time) + ", " + laserPower + ", " + size + ", " + scatDelay + "," + filename.trim(); 	 
+    }
 }
