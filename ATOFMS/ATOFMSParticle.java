@@ -249,7 +249,7 @@ public class ATOFMSParticle {
 				peakArea = peakArea - baseline*(endLoc-startLoc+1);
 				totalArea += peakArea;
 				double peakLocation = getPosMZ(centerIndex);
-				peakList.add(new Peak(peakHeight, peakArea, peakLocation));
+				peakList.add(new ATOFMSPeak(peakHeight, peakArea, peakLocation));
 				
 				foundPeak = false;
 			} // if (foundPeak == true)
@@ -262,9 +262,9 @@ public class ATOFMSParticle {
 		while (k < peakList.size())
 		{
 			Peak peak = peakList.get(k);
-			peak.relArea = (float) peak.area/totalArea;
-			if(peak.relArea <= currPeakParams.minRelArea ||
-			   peak.area <= currPeakParams.minArea)
+			((ATOFMSPeak)peak).relArea = (float) ((ATOFMSPeak)peak).area/totalArea;
+			if(((ATOFMSPeak)peak).relArea <= currPeakParams.minRelArea ||
+					((ATOFMSPeak)peak).area <= currPeakParams.minArea)
 			{
 				peakList.remove(k);
 			}
@@ -341,7 +341,7 @@ public class ATOFMSParticle {
 				// cut it.  Nevermind.
 
 				double peakLocation = getNegMZ(centerIndex);
-				peakList.add(new Peak(peakHeight, peakArea, peakLocation));
+				peakList.add(new ATOFMSPeak(peakHeight, peakArea, peakLocation));
 				
 				peakHeight = 0;
 				foundPeak = false;
@@ -356,9 +356,9 @@ public class ATOFMSParticle {
 		while (k < peakList.size())
 		{
 			Peak peak = peakList.get(k);
-			peak.relArea = (float) peak.area/totalArea;
-			if(peak.relArea <= currPeakParams.minRelArea ||
-			   peak.area <= currPeakParams.minArea)
+			((ATOFMSPeak)peak).relArea = (float) ((ATOFMSPeak)peak).area/totalArea;
+			if(((ATOFMSPeak)peak).relArea <= currPeakParams.minRelArea ||
+					((ATOFMSPeak)peak).area <= currPeakParams.minArea)
 			{
 				peakList.remove(k);
 			}
@@ -370,7 +370,7 @@ public class ATOFMSParticle {
 		for (int l = startingListSize; l < peakList.size(); l++)
 		{
 			Peak peak = peakList.get(l);
-			peak.relArea = (float)peak.area/totalArea;
+			((ATOFMSPeak)peak).relArea = (float)((ATOFMSPeak)peak).area/totalArea;
 			peakList.set(l, peak);
 		}
 		return true;
@@ -437,11 +437,6 @@ public class ATOFMSParticle {
 		laserPower + ", " + size + ", " + scatDelay + ", '" + filename + "'";
 	}
 	
-	//***SLH
-	public String particleInfoDenseStr(DateFormat d) {
-		return  d.format(time) + ", " + laserPower + ", " + size + ", " + scatDelay + "," + filename.trim();
-	}
-	
 	public ArrayList<String> particleInfoSparseString() {
 		ArrayList<String> peaks = new ArrayList<String>();
 		getPeakList();
@@ -460,20 +455,20 @@ public class ATOFMSParticle {
 			//new Peak(int height, int area, double masstocharge)
 			if (map.containsKey(mzInt))
 			{
-				Peak soFar = map.get(mzInt);
+				ATOFMSPeak soFar = (ATOFMSPeak)map.get(mzInt);
 				map.put(mzInt, 
-						new Peak(soFar.height + p.height,
-								soFar.area + p.area,
-								soFar.relArea + p.relArea,
+						new ATOFMSPeak(soFar.height + ((ATOFMSPeak)p).height,
+								soFar.area + ((ATOFMSPeak)p).area,
+								soFar.relArea + ((ATOFMSPeak)p).relArea,
 								mzInt));
 			} else {
-				map.put(mzInt, new Peak(p.height, p.area, p.relArea, mzInt));
+				map.put(mzInt, new ATOFMSPeak(((ATOFMSPeak)p).height, ((ATOFMSPeak)p).area, ((ATOFMSPeak)p).relArea, mzInt));
 			}
 		}
 		for(Peak peak : map.values()){
-			peaks.add(peak.massToCharge + ", "
-					+ peak.area + ", " + peak.relArea
-					+ ", " + peak.height);
+			peaks.add(((ATOFMSPeak)peak).massToCharge + ", "
+					+ ((ATOFMSPeak)peak).area + ", " + ((ATOFMSPeak)peak).relArea
+					+ ", " + ((ATOFMSPeak)peak).height);
 		}
 		
 		/*for(Peak peak : peakList){

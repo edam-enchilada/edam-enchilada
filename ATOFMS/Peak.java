@@ -50,25 +50,13 @@ package ATOFMS;
  * value, and m/z.
  */
 public class Peak {
-	public int height;
-	public int area;
-	public float relArea;
 	public double massToCharge;
+	public double value;
 	
-	public Peak (int h, int a, float relA, double mz)
+	public Peak (double v, double mz)
 	{
-		height = h;
-		area = a;
-		relArea = relA;
 		massToCharge = mz;
-	}
-	
-	public Peak (int h, int a, double mz)
-	{
-		height = h;
-		area = a;
-		relArea = 0;
-		massToCharge = mz;
+		value = v;
 	}
 	
 	/**
@@ -78,9 +66,7 @@ public class Peak {
 	{
 		String returnThis =
 			"Location: " + massToCharge + 
-			" Height: " + height +
-			" Area: " + area + 
-			" Rel. Area: " + relArea;
+			" Value: " + value;
 		return returnThis;
 	}
 }
