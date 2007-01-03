@@ -216,9 +216,10 @@ public class ATOFMSDataSetImporter {
 	 * Sets the currCalInfo and currPeakParam fields of ATOFMSParticle,
 	 * creates an empty collection and fills that collection with the dataset's 
 	 * particles.
+	 * @throws DisplayException 
 	 */
 	public void processDataSet()
-	throws IOException, DataFormatException {
+	throws IOException, DataFormatException, DisplayException {
 		boolean skipFile = false;
 		
 		//Create CalInfo Object.
@@ -231,7 +232,8 @@ public class ATOFMSDataSetImporter {
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLog("Importing","Corrupt calibration file : " +
 					"\n\tMessage: "+e.getMessage());
-			skipFile = true;
+			ErrorLogger.error = false;
+			throw new IOException();
 		}
 		if (!skipFile) { // If we don't have to skip this row due to an error...
 			
@@ -240,7 +242,11 @@ public class ATOFMSDataSetImporter {
 			
 			//Read '.par' file and create collection to fill.
 			parFile = new File(name);
-			//if(parFile==null)throw new FileNotFoundException();
+			if(parFile==null){
+				ErrorLogger.writeExceptionToLog("Importing","Could not open file: "+name+".");
+				ErrorLogger.error = false;
+				throw new FileNotFoundException();
+			}
 			ATOFMSParticle.currCalInfo = calInfo;
 			ATOFMSParticle.currPeakParams = peakParams;
 			
@@ -543,7 +549,7 @@ public class ATOFMSDataSetImporter {
 	// tests for .par version (.ams,.amz)
 	// String[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {
-		if(parFile==null)throw new FileNotFoundException();
+		//if(parFile==null)throw new FileNotFoundException();
 		BufferedReader readPar = new BufferedReader(new FileReader(parFile));
 		String test = readPar.readLine();
 		String[] data = new String[3];
