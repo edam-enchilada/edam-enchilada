@@ -48,10 +48,9 @@ public class ATOFMSBatchImportGUI {
 				// they chose to cancel.
 				return false;
 			}
-			
+			File file = new File(fpick.getFileName());
 			// load the csv file
-			tab = new ATOFMSBatchTableModel(
-					new File(fpick.getFileName()));
+			tab = new ATOFMSBatchTableModel(file);
 			
 			// ask whether to use autocal
 			int selection = JOptionPane.showConfirmDialog(parent,

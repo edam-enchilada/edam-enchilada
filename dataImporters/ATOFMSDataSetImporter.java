@@ -240,6 +240,7 @@ public class ATOFMSDataSetImporter {
 			
 			//Read '.par' file and create collection to fill.
 			parFile = new File(name);
+			//if(parFile==null)throw new FileNotFoundException();
 			ATOFMSParticle.currCalInfo = calInfo;
 			ATOFMSParticle.currPeakParams = peakParams;
 			
@@ -542,6 +543,7 @@ public class ATOFMSDataSetImporter {
 	// tests for .par version (.ams,.amz)
 	// String[] returned is Name, Comment, and Description.
 	public String[] parVersion() throws IOException, DataFormatException {
+		if(parFile==null)throw new FileNotFoundException();
 		BufferedReader readPar = new BufferedReader(new FileReader(parFile));
 		String test = readPar.readLine();
 		String[] data = new String[3];
