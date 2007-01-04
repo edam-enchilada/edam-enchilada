@@ -26,11 +26,11 @@ public class AMSDataSetImporter {
 	private boolean parent;
 	
 	//Table values - used repeatedly.
-	private int rowCount;
-	private String datasetName = "";
-	private String timeSeriesFile, massToChargeFile;
-	private ArrayList<Date> timeSeries = null;
-	private ArrayList<Double> massToCharge = null;
+	protected int rowCount;
+	protected String datasetName = "";
+	protected String timeSeriesFile, massToChargeFile;
+	protected ArrayList<Date> timeSeries = null;
+	protected ArrayList<Double> massToCharge = null;
 	
 	private String dense;
 	private ArrayList<String> sparse;
@@ -67,14 +67,14 @@ public class AMSDataSetImporter {
 	 * Constructor.  Sets the particle table for the importer.
 	 * @param amsTableModel - particle table model.
 	 */
-	public AMSDataSetImporter(AMSTableModel t, Window mf) {
+	public AMSDataSetImporter(AMSTableModel t, Window mf, InfoWarehouse db) {
 		table = t;
 		mainFrame = mf;
-		db = MainFrame.db;
+		this.db = db;
 	}
 	
-	public AMSDataSetImporter(AMSTableModel t, Window mf, ProgressBarWrapper pbar) {
-		this(t, mf);
+	public AMSDataSetImporter(AMSTableModel t, Window mf, InfoWarehouse db, ProgressBarWrapper pbar) {
+		this(t, mf, db);
 		progressBar = pbar;
 	}
 	
@@ -214,8 +214,8 @@ public class AMSDataSetImporter {
 			tParticles++;
 		}
 		readData.close();
-		final int totalParticles = tParticles;
-		System.out.println("total items: " + tParticles);
+		final int totalParticles = tParticles - 1;
+		System.out.println("total items: " + totalParticles);
 		progressBar.setMaximum((totalParticles/10)+1);
 		progressBar.setIndeterminate(false);
 		
@@ -244,6 +244,7 @@ public class AMSDataSetImporter {
 			((Database)db).updateInternalAtomOrder(destination);
 			progressBar.setText("Updating Ancestors...");
 			db.updateAncestors(destination);
+			readData.close();
 		}catch (Exception e) {
 			try {
 				e.printStackTrace();

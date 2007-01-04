@@ -143,7 +143,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 			final ProgressBarWrapper progressBar = 
 				new ProgressBarWrapper(parent, AMSDataSetImporter.TITLE, 100);			
 			final AMSDataSetImporter ams = 
-					new AMSDataSetImporter(amsTableModel, parent, progressBar);
+					new AMSDataSetImporter(amsTableModel, parent, MainFrame.db, progressBar);
 			// If a .par file or a .cal file is missing, don't start the process.
 			try {
 				ams.errorCheck();
