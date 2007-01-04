@@ -1362,7 +1362,10 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 	}
 	
-	// this will be modified by janez
+	/**
+	 * Offers functionality for connecting different databases while maintaining
+	 * the connection to "SpASMSdb" in main method, refactored by @author xzhang9
+	 */
 	public static void main(String[] args) {
 		/* "If you are going to set the look and feel, you should do it as the 
 		 * very first step in your application. Otherwise you run the risk of 
@@ -1380,29 +1383,9 @@ public class MainFrame extends JFrame implements ActionListener
 			e.printStackTrace();
 		}
 		
-		// Verify that database exists, and give user opportunity to create
-		// if it does not.
-		if (!Database.getDatabase("SpASMSdb").isPresent()) {
-			if (JOptionPane.showConfirmDialog(null,
-					"No database found. Would you like to create one?\n" +
-					"Make sure to select yes only if there is no database already present,\n"
-					+ "since this will remove any pre-existing Enchilada database.") ==
-						JOptionPane.YES_OPTION) {
-				
-				try{
-					Database.rebuildDatabase("SpASMSdb");
-				}catch(SQLException s){
-					JOptionPane.showMessageDialog(null,
-							"Could not rebuild the database." +
-							"  Close any other programs that may be accessing the database and try again.");
-				}
-			} else {
-				return; // no database?  we shouldn't do anything at all.
-			}
-		}
-		
-		//Open database connection:
-		db = Database.getDatabase("SpASMSdb");
+		// @author xzhang9 
+		// Verify that production database exists, and give user opportunity to create if it does not.
+		if(!connectDB("SpASMSdb")) return;
 		db.openConnection();
 		
 
@@ -1440,6 +1423,38 @@ public class MainFrame extends JFrame implements ActionListener
 		//Schedule a job for the event-dispatching thread:
 		//creating and showing this application's GUI.
 		javax.swing.SwingUtilities.invokeLater(new MainFrameRun(args));
+	}
+
+	/**
+	 * Offers functionality for connecting different databases while maintaining
+	 * the connection to "SpASMSdb" in main method
+	 * @author xzhang9
+	 */
+	private static boolean connectDB(String dbName) {
+		// Verify that database exists, and give user opportunity to create
+		// if it does not.
+		if (!Database.getDatabase(dbName).isPresent()) {
+			if (JOptionPane.showConfirmDialog(null,
+					"No database found. Would you like to create one?\n" +
+					"Make sure to select yes only if there is no database already present,\n"
+					+ "since this will remove any pre-existing Enchilada database.") ==
+						JOptionPane.YES_OPTION) {
+				try{
+					Database.rebuildDatabase(dbName);
+				}catch(SQLException s){
+					JOptionPane.showMessageDialog(null,
+							"Could not rebuild the database." +
+							"  Close any other programs that may be accessing the database and try again.");
+					return false;
+				}
+			} else {
+				return false; // no database?  we shouldn't do anything at all.
+			}
+		}
+		
+		//Open database connection:
+		db = Database.getDatabase(dbName);
+		return true;
 	}
 	
 	/**
