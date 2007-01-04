@@ -80,7 +80,7 @@ public class ATOFMSBatchImportGUI {
 			
 			return true;
 		} catch (IOException ex) {
-			ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",ex.toString());
+			ErrorLogger.writeExceptionToLogAndPrompt("ATOFMSBatchImport",ex.toString());
 		}
 		return false;
 	}

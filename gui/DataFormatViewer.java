@@ -77,7 +77,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 			try {
 				indexedColumns = ((Database)MainFrame.db).getIndexedColumns(dataTypes[i]);
 			} catch (Exception e) {
-				ErrorLogger.writeExceptionToLog("DataFormatViewer","Error finding which columns are indexed!");
+				ErrorLogger.writeExceptionToLogAndPrompt("DataFormatViewer","Error finding which columns are indexed!");
 			}
 			
 			ArrayList<ArrayList<String>> namesAndTypes = 
@@ -155,7 +155,7 @@ public class DataFormatViewer extends JDialog implements ActionListener, ItemLis
 						this.setEnabled(false);
 						return;
 					} else {
-						ErrorLogger.writeExceptionToLog("DataFormatViewer","Somehow, we could not create an index!");
+						ErrorLogger.writeExceptionToLogAndPrompt("DataFormatViewer","Somehow, we could not create an index!");
 					}
 				}
 			}

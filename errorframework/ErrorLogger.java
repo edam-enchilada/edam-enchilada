@@ -53,11 +53,21 @@ public class ErrorLogger {
 					new OutputStreamWriter(new FileOutputStream(file, true)));
 			writer.write(constructTime()+" : "+type+" Error: "+message+"\n");
 			writer.close();
-			error = true;
 		} catch (IOException e) {
 			System.err.println("Error writing to "+file.toString());
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Writes the exception to the log timestamped with that particular day's 
+	 * date.  The logs are in errorframework/ErrorLogs directory.
+	 * @param type - type of error (SQLServer, Importing, etc.)
+	 * @param message - message to write to log.
+	 */
+	public static void writeExceptionToLogAndPrompt(String type, String message){
+		writeExceptionToLog(type,message);
+		error=true;
 	}
 
 	/**

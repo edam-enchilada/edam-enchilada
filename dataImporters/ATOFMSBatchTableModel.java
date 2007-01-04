@@ -121,7 +121,7 @@ public class ATOFMSBatchTableModel extends AbstractTableModel implements ParTabl
 						ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(aRef, frameRef, progressBar);
 						dsi.collectTableInfo();
 					} catch (Exception e) {
-						ErrorLogger.writeExceptionToLog("ATOFMSBatchImport",e.toString());
+						ErrorLogger.writeExceptionToLogAndPrompt("ATOFMSBatchImport",e.toString());
 					}
 					return null;
 				}

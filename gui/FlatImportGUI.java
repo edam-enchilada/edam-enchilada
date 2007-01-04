@@ -62,7 +62,7 @@ public class FlatImportGUI {
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
 			if (fileChooser.getFile() == null) {
 				return;
-				// should this throw an exception instead?  i think this is ok...
+				// the user selected cancel, cancel the operation
 			}
 			importer = new TSImport(db, parent);
 
@@ -74,7 +74,7 @@ public class FlatImportGUI {
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.err.println("Exception importing (generally)");
-				ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
+				ErrorLogger.writeExceptionToLogAndPrompt("FlatImport",e.toString());
 			}
 		}else if(n==1){
 			FileDialog fileChooser = new FileDialog(parent, 
@@ -98,7 +98,7 @@ public class FlatImportGUI {
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.err.println("Exception importing (generally)");
-				ErrorLogger.writeExceptionToLog("FlatImport",e.toString());
+				ErrorLogger.writeExceptionToLogAndPrompt("FlatImport",e.toString());
 				JOptionPane.showMessageDialog(parent, "There was an error importing data.  Your data may not be" +
 						" in the correct format.  The first column must be a date.  All other columns must be" +
 						" data values.");

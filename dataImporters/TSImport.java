@@ -105,7 +105,7 @@ public class TSImport{
     				System.err.println(e.toString());
     				System.err.println("Exception while converting data!");
     				e.printStackTrace();
-    				ErrorLogger.writeExceptionToLog("TSImport","Exception while converting data: " +e.toString());
+    				ErrorLogger.writeExceptionToLogAndPrompt("TSImport","Exception while converting data: " +e.toString());
     			}
     		}
     	};
@@ -139,6 +139,7 @@ public class TSImport{
     			} catch (ParseException e){
 //    				this message needs to get passed back to the gui, but run can't throw an Exception,
     				// so instead just set the status
+    				System.out.println("parse error caught");
     				status = TSImport.PARSEERROR;
     			} catch (InterruptedException e) {
     				status = TSImport.INTERRUPTED;
@@ -147,7 +148,7 @@ public class TSImport{
     				System.err.println(e.toString());
     				System.err.println("Exception while converting data!");
     				e.printStackTrace();
-    				ErrorLogger.writeExceptionToLog("TSImport","Exception while converting data: " +e.toString());
+    				ErrorLogger.writeExceptionToLogAndPrompt("TSImport","Exception while converting data: " +e.toString());
     			}
     		}
     	};
@@ -260,9 +261,11 @@ public class TSImport{
     		if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
     		float nextValue = 0;
     		try{
-    			if(!value.get(i).equals(""))
-    			nextValue = Float.parseFloat(value.get(i));
     			Date nextDate = dateformatter.parse(time.get(i));
+    			if(nextDate==null)throw new ParseException("Invalid Date",0);
+    			if(!value.get(i).equals("")){
+    				nextValue = Float.parseFloat(value.get(i));
+    			}
     			ins.addPoint(nextDate, nextValue);
     		}catch(NumberFormatException e){
     			System.err.println("Invalid Value: "+ value.get(i) +" was skipped at timestamp "+time.get(i));

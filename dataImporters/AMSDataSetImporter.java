@@ -252,13 +252,13 @@ public class AMSDataSetImporter {
 					public void run()
 					{
 						// don't throw an exception here because we want to keep going:
-						ErrorLogger.writeExceptionToLog("Importing","Corrupt datatset file or particle: "+ exception);
+						ErrorLogger.writeExceptionToLogAndPrompt("Importing","Corrupt datatset file or particle: "+ exception);
 					}
 				});
 			} catch (Exception e2) {
 				e2.printStackTrace();
 				// don't throw exception here because we want to keep going:
-				ErrorLogger.writeExceptionToLog("Importing","ParticleException: "+e2.toString());
+				ErrorLogger.writeExceptionToLogAndPrompt("Importing","ParticleException: "+e2.toString());
 			}
 		}
 	}

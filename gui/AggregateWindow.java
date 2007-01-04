@@ -22,6 +22,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	private JList collectionsList;
 	private CollectionListModel collectionListModel;
 	private JRadioButton selSeqRadio, timesRadio; 
+	private JComboBox matchingCombo;
 	
 	private InfoWarehouse db;
 	private Hashtable<Collection, JPanel> cachedCollectionPanels;
@@ -115,9 +116,15 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 
 		JLabel timeBasis = new JLabel("Time Basis:");
 	    ButtonGroup group = new ButtonGroup();
-	    group.add(selSeqRadio = new JRadioButton("Selected Collection"));
+	    group.add(selSeqRadio = new JRadioButton("Match to:"));
 	    group.add(timesRadio = new JRadioButton("Times"));
 	    selSeqRadio.setSelected(true);
+	    
+	    JPanel matchingPanel = new JPanel();
+	    matchingCombo = new JComboBox(collections);
+		matchingCombo .setEditable(false);
+		//matchingPanel.add(selSeqRadio);
+		//matchingPanel.add(matchingCombo);
 	    
 	    Calendar startDate = new GregorianCalendar(), endDate = new GregorianCalendar();
 	    Calendar interval = new GregorianCalendar(0, 0, 0, 0, 0, 0);
@@ -131,7 +138,10 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
 	   
 		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
+		//bottomHalf = addComponent(matchingPanel, bottomHalf);
 		bottomHalf = addComponent(selSeqRadio, bottomHalf);
+		bottomHalf = addComponent(matchingCombo, bottomHalf);
+		
 		bottomHalf = addComponent(timesRadio, bottomHalf);
 		bottomHalf = addComponent(timesPanel, bottomHalf);
 		

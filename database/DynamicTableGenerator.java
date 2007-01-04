@@ -152,7 +152,7 @@ public class DynamicTableGenerator extends DefaultHandler {
 		//their case variants  (abort import??)
 		for (int i=0; i<reservedNames.length; i++){
 			if (s.equalsIgnoreCase(reservedNames[i])){
-				ErrorLogger.writeExceptionToLog("Importing",
+				ErrorLogger.writeExceptionToLogAndPrompt("Importing",
 						"Use of '" + s + "' as a field name conflicts with "
 						+ "reserved field name '" + reservedNames[i] + "'.");
 				ErrorLogger.displayException(null, "Use of '" + s + "' as a "

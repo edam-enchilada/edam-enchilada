@@ -141,7 +141,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 			try {
 				read(eachFile);
 			} catch (WriteException e) {
-				ErrorLogger.writeExceptionToLog("EnchiladaImporting",e.getMessage());
+				ErrorLogger.writeExceptionToLogAndPrompt("EnchiladaImporting",e.getMessage());
 			}
 								pInc();
 							}
@@ -161,7 +161,7 @@ public class EnchiladaDataSetImporter extends DefaultHandler {
 				try {
 					read(in);
 				} catch (WriteException e) {
-					ErrorLogger.writeExceptionToLog("EnchiladaImporting",e.getMessage());
+					ErrorLogger.writeExceptionToLogAndPrompt("EnchiladaImporting",e.getMessage());
 				}
 			}
 		};

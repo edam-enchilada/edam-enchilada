@@ -223,7 +223,7 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			Class.forName(driver).newInstance();
 		} catch (Exception e) {
-			ErrorLogger.writeExceptionToLog("Database","Failed to load current driver for database " + database);
+			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to load current driver for database " + database);
 			System.err.println("Failed to load current driver.");
 			return false;
 		} // end catch
@@ -232,7 +232,7 @@ public abstract class Database implements InfoWarehouse {
 			con = DriverManager.getConnection(connectionstr, user, pass);
 			con.setAutoCommit(true);
 		} catch (Exception e) {
-			ErrorLogger.writeExceptionToLog("Database","Failed to establish a connection to " + database);
+			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to establish a connection to " + database);
 			System.err.println("Failed to establish a connection to database");
 			System.err.println(e);
 		}
@@ -250,7 +250,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				con.close();
 			} catch (Exception e) {
-				ErrorLogger.writeExceptionToLog("Database","Could not close the connection to " + database);
+				ErrorLogger.writeExceptionToLogAndPrompt("Database","Could not close the connection to " + database);
 				System.err.println("Could not close the connection: ");
 				System.err.println(e);
 				return false;
@@ -511,7 +511,7 @@ public abstract class Database implements InfoWarehouse {
     		stmt.close();
 
     	} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 	
@@ -566,7 +566,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 		
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 
@@ -615,7 +615,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeUpdate("create database " + dbName);
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(db.getName(),"Error rebuilding database.");
+			ErrorLogger.writeExceptionToLogAndPrompt(db.getName(),"Error rebuilding database.");
 			System.err.println("Error in rebuilding database.");
 			e.printStackTrace();
 			throw new SQLException();
@@ -655,7 +655,7 @@ public abstract class Database implements InfoWarehouse {
 			System.err.println("IOException occurred when rebuilding the database.");
 			return true;
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(db.getName(),"Error rebuilding database.");
+			ErrorLogger.writeExceptionToLogAndPrompt(db.getName(),"Error rebuilding database.");
 			System.err.println("Error in adding tables to database.");
 			e.printStackTrace();
 			return false;
@@ -693,7 +693,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt.close();
 			}
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(db.getName(),"Error dropping database.");
+			ErrorLogger.writeExceptionToLogAndPrompt(db.getName(),"Error dropping database.");
 			System.err.println("Error in dropping database.");
 			e.printStackTrace();
 			return false;
@@ -947,7 +947,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 			//updateAncestors(0);
 		} catch (Exception e){
-			ErrorLogger.writeExceptionToLog(getName(),"Exception deleting collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
 			e.printStackTrace();
 			return false;
@@ -1027,7 +1027,7 @@ public abstract class Database implements InfoWarehouse {
 			
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
 			System.err.println("Exception grabbing subchildren:");
 			System.err.println(e);
 		}
@@ -1049,7 +1049,7 @@ public abstract class Database implements InfoWarehouse {
 			name = rs.getString("Name");
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error retrieving the collection name for collectionID "+collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error retrieving the collection name for collectionID "+collectionID);
 			System.err.println("Exception grabbing the collection name:");
 			System.err.println(e);
 		}
@@ -1107,7 +1107,7 @@ public abstract class Database implements InfoWarehouse {
 			
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception creating empty collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception creating empty collection.");
 			System.err.println("Exception creating empty collection:");
 			e.printStackTrace();
 			return -1;
@@ -1160,7 +1160,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(sql.toString());	
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception creating the new dataset.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception creating the new dataset.");
 			System.err.println("Exception creating the dataset entries:");
 			e.printStackTrace();
 		}
@@ -1264,7 +1264,7 @@ public abstract class Database implements InfoWarehouse {
 			updateAncestors(newCollection);
 			return newID;
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception copying collection "+collection.getName());
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception copying collection "+collection.getName());
 			System.err.println("Exception copying collection: ");
 			e.printStackTrace();
 			return -1;
@@ -1303,7 +1303,7 @@ public abstract class Database implements InfoWarehouse {
 			updateAncestors(collection);
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception moving the collection "+collection.getName());
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception moving the collection "+collection.getName());
 			System.err.println("Error moving collection: ");
 			System.err.println(e);
 			return false;
@@ -1348,7 +1348,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception adding particles, please check the incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception adding particles, please check the incoming data for correct format.");
 			System.err.println("Exception adding particle memberships:");
 			System.err.println(e);
 			return false;
@@ -1392,7 +1392,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception creating items in AtomInfoDense table.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception creating items in AtomInfoDense table.  Please check incoming data for correct format.");
 			System.err.println("Error creating items in AtomInfo table:");
 			System.err.println(e);
 			return null;
@@ -1429,7 +1429,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt.executeBatch();
 				stmt.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting into AtomInfoSparse.  Please check the data for correct format.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting into AtomInfoSparse.  Please check the data for correct format.");
 				System.err.println("Exception inserting the " +
 				"peaklists");
 				System.err.println(e);
@@ -1507,7 +1507,7 @@ public abstract class Database implements InfoWarehouse {
 			
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 			
@@ -1556,7 +1556,7 @@ public abstract class Database implements InfoWarehouse {
 					"INSERT INTO AtomMembership \n" +
 					"VALUES(" + parentID + ", " + atomID + ")");
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception adding atom "+atomID+"to AtomMembership.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception adding atom "+atomID+"to AtomMembership.");
 			System.err.println("Exception adding atom to " +
 			"AtomMembership table");
 			e.printStackTrace();
@@ -1582,7 +1582,7 @@ public abstract class Database implements InfoWarehouse {
 					"INSERT INTO AtomMembership \n" +
 					"VALUES(" + parentID + ", " + atomID + ")");
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception adding atom "+atomID+" to AtomMembership.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception adding atom "+atomID+" to AtomMembership.");
 			System.err.println("Exception adding atom to " +
 			"AtomMembership table");
 			e.printStackTrace();
@@ -1637,7 +1637,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 		}
 		catch (SQLException ex) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error removing empty collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error removing empty collection.");
 			System.err.println("Error removing empty collection");
 			ex.printStackTrace();
 			return false;			
@@ -1661,7 +1661,7 @@ public abstract class Database implements InfoWarehouse {
 				return false;
 			else if (parentID < 2)
 			{
-				ErrorLogger.writeExceptionToLog(getName(),"Cannot perform the Orphan And Adopt operation on root level collections.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Cannot perform the Orphan And Adopt operation on root level collections.");
 				System.err.println("Cannot perform this operation " +
 				"on root level collections.");
 				return false;
@@ -1710,7 +1710,7 @@ public abstract class Database implements InfoWarehouse {
 			recursiveDelete(collection);
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error executing Orphan and Adopt.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error executing Orphan and Adopt.");
 			System.err.println("Error executing orphan and Adopt");
 			e.printStackTrace();
 			return false;
@@ -1722,7 +1722,8 @@ public abstract class Database implements InfoWarehouse {
 	/**
 	 * Deletes a collection and unlike orphanAndAdopt() also recursively
 	 * deletes all direct descendents.
-	 * This method merely selects the collections to be deleted and stores them in #deleteTemp
+	 * This method deletes all references to a collection in InternalAtomOrder, CollectionRelationships, CenterAtoms, and Collections.
+	 * Atom information is deleted seperately through compactDatabase
 	 * 
 	 * @param collectionID The id of the collection to delete
 	 * @return true on success. 
@@ -1797,7 +1798,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 			
 		} catch (Exception e){
-			ErrorLogger.writeExceptionToLog(getName(),"Exception deleting collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
 			e.printStackTrace();
 			return false;
@@ -1825,7 +1826,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
 			System.err.println("Exception grabbing subchildren:");
 			System.err.println(e);
 		}
@@ -1843,7 +1844,7 @@ public abstract class Database implements InfoWarehouse {
 					"WHERE CollectionID = " + collection.getCollectionID() + "\n" +
 					"AND AtomID IN (" + atomIDs + ")");
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception deleting atoms "+atomIDs);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception deleting atoms "+atomIDs);
 			System.err.println("Exception parents from " +
 			"parent membership table.");
 			e.printStackTrace();
@@ -1864,7 +1865,7 @@ public abstract class Database implements InfoWarehouse {
 					"WHERE CollectionID = " + collection.getCollectionID() + "\n" +
 					"AND AtomID = " + atomID);
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception deleting atom "+atomID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception deleting atom "+atomID);
 			System.err.println("Exception adding a batch statement to " +
 			"delete atoms from AtomMembership.");
 			e.printStackTrace();
@@ -1883,7 +1884,7 @@ public abstract class Database implements InfoWarehouse {
 	{
 		if (toParentID == 0)
 		{
-			ErrorLogger.writeExceptionToLog(getName(),"Cannot move atoms to the root collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Cannot move atoms to the root collection.");
 			System.err.println("Cannot move atoms to the root " +
 			"collection.");
 			return false;
@@ -1905,7 +1906,7 @@ public abstract class Database implements InfoWarehouse {
 			updateAncestors(getCollection(toParentID));
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception updating AtomMembership table.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception updating AtomMembership table.");
 			System.err.println("Exception updating membership table");
 			e.printStackTrace();
 		}
@@ -1978,7 +1979,7 @@ public abstract class Database implements InfoWarehouse {
 			batchStatement = con.createStatement();
 			alteredCollections = new ArrayList<Integer>();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception occurred initializing AtomBatch functionality.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception occurred initializing AtomBatch functionality.");
 			e.printStackTrace();
 		}
 	}
@@ -2007,7 +2008,7 @@ public abstract class Database implements InfoWarehouse {
 				updateAncestors(parents.get(i));
 			batchStatement.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception executing batch atom adds and inserts.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception executing batch atom adds and inserts.");
 			System.out.println("Exception executing batch atom adds " +
 			"and inserts");
 			e.printStackTrace();
@@ -2040,7 +2041,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception grabbing subchildren in GetImmediateSubCollections.");
 			System.err.println("Exception grabbing subchildren:");
 			System.err.println(e);
 		}
@@ -2071,14 +2072,14 @@ public abstract class Database implements InfoWarehouse {
 				datatype = rs.getString(1);
 			}
 			else {
-				ErrorLogger.writeExceptionToLog(getName(),"Error retrieving collection for collectionID "+collectionID);
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error retrieving collection for collectionID "+collectionID);
 				System.err.println("collectionID not created yet!!");
 				return null;
 			}
 			stmt.close();
 			
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving collection for collectionID "+collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving collection for collectionID "+collectionID);
 			System.err.println("error creating collection");
 			e.printStackTrace();
 			return null;
@@ -2101,7 +2102,7 @@ public abstract class Database implements InfoWarehouse {
 			comment = rs.getString("Comment");
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error retrieving the collection comment for collectionID "+collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error retrieving the collection comment for collectionID "+collectionID);
 			System.err.println("Exception grabbing the collection comment:");
 			System.err.println(e);
 		}
@@ -2123,7 +2124,7 @@ public abstract class Database implements InfoWarehouse {
 			datatype = rs.getString("Datatype");
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(), "Error retrieving the collection's datatype for collection " + collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "Error retrieving the collection's datatype for collection " + collectionID);
 			System.err.println("Error retrieving Collection Datatype.");
 			e.printStackTrace();
 		}
@@ -2145,7 +2146,7 @@ public abstract class Database implements InfoWarehouse {
 			descrip = rs.getString("Description");
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error retrieving the collection description for collectionID "+collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error retrieving the collection description for collectionID "+collectionID);
 			System.err.println("Error retrieving Collection " +
 			"Description.");
 			e.printStackTrace();
@@ -2167,7 +2168,7 @@ public abstract class Database implements InfoWarehouse {
 			returnThis = rs.getInt(1);
 			stmt.close();
 		} catch (SQLException e1) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error retrieving the collection size for collectionID "+collectionID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error retrieving the collection size for collectionID "+collectionID);
 			System.err.println("Error selecting the size of " +
 			"the table");
 			e1.printStackTrace();
@@ -2190,7 +2191,7 @@ public abstract class Database implements InfoWarehouse {
 				rs.close();
 				stmt.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving collections with atoms.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving collections with atoms.");
 				System.err.println("Error retrieving collections with atoms.");
 				e.printStackTrace();
 			}
@@ -2224,7 +2225,7 @@ public abstract class Database implements InfoWarehouse {
 			while(rs.next())
 				results.add(new Integer(rs.getInt(1)));
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving children of the collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving children of the collection.");
 			System.err.println("Error retrieving children.");
 			e.printStackTrace();
 		}
@@ -2251,7 +2252,7 @@ public abstract class Database implements InfoWarehouse {
 			rs.close();
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving parentID of the collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving parentID of the collection.");
 			System.err.println("Error retrieving parentID of the collection.");
 			e.printStackTrace();
 		}
@@ -2348,7 +2349,7 @@ public abstract class Database implements InfoWarehouse {
 			// only order when needed in each method. - AR
 			//stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving children of the collection.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving children of the collection.");
 			e.printStackTrace();
 		}
 		return returnThis;
@@ -2422,7 +2423,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception collecting particle information.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception collecting particle information.");
 			System.err.println("Error collecting particle " +
 			"information:");
 			e.printStackTrace();
@@ -2530,7 +2531,7 @@ public abstract class Database implements InfoWarehouse {
 			datatype = rs.getString(1);
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception getting the datatype for atom "+atomID);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting the datatype for atom "+atomID);
 			System.err.println("error getting atom's datatype");
 			e.printStackTrace();
 		}
@@ -2556,7 +2557,7 @@ public abstract class Database implements InfoWarehouse {
 					"WHERE CollectionID = " + collection.getCollectionID());
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception updating collection description.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception updating collection description.");
 			System.err.println("Error updating collection " +
 			"description:");
 			e.printStackTrace();
@@ -2586,7 +2587,7 @@ public abstract class Database implements InfoWarehouse {
 			return nextID;
 			
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception finding the maximum atomID.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception finding the maximum atomID.");
 			System.err.println("Exception finding max atom id.");
 			e.printStackTrace();
 		}
@@ -2615,7 +2616,7 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
 		} catch (ClassNotFoundException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"Error loading ODBC bridge driver.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error loading ODBC bridge driver.");
 			System.err.println("Error loading ODBC " +
 			"bridge driver");
 			e.printStackTrace();
@@ -2847,7 +2848,7 @@ public abstract class Database implements InfoWarehouse {
 			odbcCon.close();
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception exporting to MSAccess database.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception exporting to MSAccess database.");
 			System.err.println("SQL error exporting to " +
 			"Access database:");
 			e.printStackTrace();
@@ -2877,7 +2878,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception checking atom's parentage.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception checking atom's parentage.");
 			System.err.println("Error checking parentage:");
 			e.printStackTrace();
 		}
@@ -2951,7 +2952,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving peaks.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving peaks.");
 			System.err.println("Error using the result set");
 			e.printStackTrace();
 		}
@@ -2979,7 +2980,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				return rs.next();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a clustering cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error checking the " +
 						"bounds of " +
 				"the ResultSet.");
@@ -2995,7 +2996,7 @@ public abstract class Database implements InfoWarehouse {
 				particleInfo.setID(rs.getInt(1));
 				particleInfo.setBinnedList(getPeakListfromAtomID(rs.getInt(1)));
 			}catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a clustering cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -3008,7 +3009,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				rs.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a clustering cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a clustering cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3018,7 +3019,7 @@ public abstract class Database implements InfoWarehouse {
 				rs.close();
 				rs = getAllAtomsRS(collection);
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a clustering cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error resetting a " +
 						"resultset " +
 				"for that collection:");
@@ -3065,7 +3066,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt2.close();
 				listRS.close();
 			}catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a clustering cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a clustering cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -3253,7 +3254,7 @@ public abstract class Database implements InfoWarehouse {
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("SQL Error resetting " +
 				"cursor: ");
 				e.printStackTrace();
@@ -3264,7 +3265,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				return partInfRS.next();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error checking the " +
 						"bounds of " +
 				"the ResultSet.");
@@ -3290,7 +3291,7 @@ public abstract class Database implements InfoWarehouse {
 				particleInfo.setID(particleInfo.getATOFMSParticleInfo().getAtomID());
 				return particleInfo; 
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error retrieving the " +
 				"next row");
 				e.printStackTrace();
@@ -3303,7 +3304,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt.close();
 				partInfRS.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3329,7 +3330,7 @@ public abstract class Database implements InfoWarehouse {
 				rs.close();
 				return peakList;
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a AtomInfoOnly cursor.");
 				System.err.println("Error retrieving peak " +
 				"list.");
 				e.printStackTrace();
@@ -3363,7 +3364,7 @@ public abstract class Database implements InfoWarehouse {
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a SQL cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a SQL cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3373,7 +3374,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt.close();
 				super.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a SQL cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a SQL cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3388,7 +3389,7 @@ public abstract class Database implements InfoWarehouse {
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a SQL cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a SQL cursor.");
 				System.err.println("SQL Error resetting cursor: ");
 				e.printStackTrace();
 			}
@@ -3413,7 +3414,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt = con.createStatement();
 				
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Peak cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3442,7 +3443,7 @@ public abstract class Database implements InfoWarehouse {
 				pInfo.setID(pList.getAtomID());
 				peakRS.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Peak cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 			
@@ -3454,7 +3455,7 @@ public abstract class Database implements InfoWarehouse {
 				peakRS.close();
 				super.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Peak cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Peak cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3552,7 +3553,7 @@ public abstract class Database implements InfoWarehouse {
 				partInfRS = stmt.executeQuery(cursorQuery);
 				//System.out.println("got result set");
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Randomized cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Randomized cursor.");
 				System.err.println("Could not randomize atoms.");
 				e.printStackTrace();
 			}
@@ -3563,7 +3564,7 @@ public abstract class Database implements InfoWarehouse {
 				"DROP Table #TempRand");
 				super.close();
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Randomized cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Randomized cursor.");
 				e.printStackTrace();
 			}
 		}
@@ -3578,7 +3579,7 @@ public abstract class Database implements InfoWarehouse {
 				" ORDER BY RandNum";
 				partInfRS = stmt.executeQuery(cursorQuery);
 			} catch (SQLException e) {
-				ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving data through a Randomized cursor.");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving data through a Randomized cursor.");
 				System.err.println("SQL Error resetting cursor: ");
 				e.printStackTrace();
 			}
@@ -3724,7 +3725,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeQuery("SELECT RAND(" + seed + ")\n");
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception seeding the random number generator.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception seeding the random number generator.");
 			System.err.println("Error in seeding random number generator.");		
 			e.printStackTrace();
 		}
@@ -3743,7 +3744,7 @@ public abstract class Database implements InfoWarehouse {
 			System.out.println(num);
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception testing the random number seeding.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception testing the random number seeding.");
 			System.err.println("Error in generating single number.");
 			e.printStackTrace();
 		}
@@ -3774,7 +3775,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception retrieving column names.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception retrieving column names.");
 			System.err.println("Error retrieving column names");
 			e.printStackTrace();
 		}
@@ -3832,7 +3833,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting new value map range.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting new value map range.");
 			System.err.println("Error inserting new value map range");
 			e.printStackTrace();
 		}
@@ -3852,7 +3853,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 		}
 		catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving value maps");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving value maps");
 			System.err.println("Error getting value maps from database.");
 			e.printStackTrace();
 		}
@@ -3876,7 +3877,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 		}
 		catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving value map ranges");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving value map ranges");
 			System.err.println("Error getting value map ranges from database.");
 			e.printStackTrace();
 		}
@@ -3924,7 +3925,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(query);
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception creating new mapped collection");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception creating new mapped collection");
 			System.err.println("Error creating new mapped collection.");
 			e.printStackTrace();
 		}
@@ -3977,7 +3978,7 @@ public abstract class Database implements InfoWarehouse {
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving max time for collections.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving max time for collections.");
 			System.err.println("SQL exception retrieving max time for collections");
 			e.printStackTrace();
 		}
@@ -4227,7 +4228,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt1.close();
 			stmt.close();	
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception creating aggregate basis temp table");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception creating aggregate basis temp table");
 			System.err.println("SQL exception creating aggregate basis temp table");
 			e.printStackTrace();
 		}
@@ -4242,7 +4243,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute("DROP TABLE #TimeBins;\n");
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception deleting aggregate basis temp table");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception deleting aggregate basis temp table");
 			System.err.println("SQL exception deleting aggregate basis temp table");
 			e.printStackTrace();
 		}
@@ -4310,7 +4311,7 @@ public abstract class Database implements InfoWarehouse {
 		/* IF DATATYPE IS ATOFMS */
 		if (curColl.getDatatype().equals("ATOFMS")) {	
 			if (mzValues == null) {
-				ErrorLogger.writeExceptionToLog(getName(),"Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error! Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return false;
@@ -4318,7 +4319,7 @@ public abstract class Database implements InfoWarehouse {
 			int newCollectionID = createEmptyCollection("TimeSeries", rootCollectionID, collectionName, "", "");
 			if (mzValues.length == 0) {
 				// do nothing!  allow emptiness.
-//				ErrorLogger.writeExceptionToLog(getName(),"Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
+//				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Note: Collection: " + collectionName + " doesn't have any peak data to aggregate!");
 //				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate!");
 //				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
@@ -4437,12 +4438,12 @@ public abstract class Database implements InfoWarehouse {
 		/* IF DATATYPE IS AMS */
 		else if (curColl.getDatatype().equals("AMS")) {	
 			if (mzValues == null) {
-				ErrorLogger.writeExceptionToLog(getName(),"Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 				return false;
 			} else if (mzValues.length == 0) {
-				ErrorLogger.writeExceptionToLog(getName(),"Collection: " + collectionName + " doesn't have any peak data to aggregate");
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Collection: " + collectionName + " doesn't have any peak data to aggregate");
 				System.err.println("Collection: " + collectionID + "  doesn't have any peak data to aggregate");
 				System.err.println("Collections need to overlap times in order to be aggregated.");
 			} else {
@@ -4521,7 +4522,7 @@ public abstract class Database implements InfoWarehouse {
 				ex.printStackTrace();
 				System.exit(1);
 			}
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception aggregating collection: " + collectionName);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception aggregating collection: " + collectionName);
 			System.err.println("SQL exception aggregating collection: " + collectionName);
 			return false;
 		}
@@ -4616,7 +4617,7 @@ public abstract class Database implements InfoWarehouse {
 			
 			return ret;
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception creating finding M/Z values within collection");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception creating finding M/Z values within collection");
 			System.err.println("Error creating finding M/Z values within collection.");
 			e.printStackTrace();
 		}
@@ -4658,7 +4659,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		} catch (ParseException e) {
@@ -4740,7 +4741,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 			rs.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		} catch (ParseException e) {
@@ -4829,7 +4830,7 @@ public abstract class Database implements InfoWarehouse {
 			double minValue = rs.getDouble("Value");
 			plumes = createAndDetectPlumesFromValue(collection,minValue,minDuration);
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		} 
@@ -4913,7 +4914,7 @@ public abstract class Database implements InfoWarehouse {
 			minValue *= factor;
 			plumes = createAndDetectPlumesFromValue(collection,minValue,minDuration);
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		} 
@@ -4987,7 +4988,7 @@ public abstract class Database implements InfoWarehouse {
 				}
 			}
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving time series data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
 			System.err.println("Error retrieving time series data.");
 			e.printStackTrace();
 		} catch (ParseException e) {
@@ -5042,7 +5043,7 @@ public abstract class Database implements InfoWarehouse {
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving Ion data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving Ion data.");
 			System.err.println("Error retrieving Ion data.");
 			e.printStackTrace();
 		}
@@ -5070,7 +5071,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(sqlStr);
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception saving removed Ion data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception saving removed Ion data.");
 			System.err.println("Error saving removed Ion data.");
 			e.printStackTrace();
 		}	
@@ -5088,7 +5089,7 @@ public abstract class Database implements InfoWarehouse {
 			rs.close();
 			stmt.close();
 		} catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving removed Ion data.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving removed Ion data.");
 			System.err.println("Error retrieving removed Ion data.");
 			e.printStackTrace();
 		}
@@ -5121,7 +5122,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 		}
 		catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL exception retrieving known datatypes.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving known datatypes.");
 			System.err.println("Error getting the known datatypes.");
 			e.printStackTrace();
 		}
@@ -5154,7 +5155,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 		}
 		catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception checking for the existence of datatype "+type);
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception checking for the existence of datatype "+type);
 			System.err.println("problems checking datatype from SQLServer.");
 			return false;
 		}
@@ -5212,7 +5213,7 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(), "SQL Exception getting atomID"
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception getting atomID"
 					+ " from filename.  Check for illegal characters like apostrophes.");
 			e.printStackTrace();
 		}
@@ -5239,7 +5240,7 @@ public abstract class Database implements InfoWarehouse {
 				contains = true;
 			
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(), "SQL Exception checking"
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception checking"
 					+ " atom membership.");
 			e.printStackTrace();
 		}
@@ -5298,7 +5299,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 		}
 		catch (SQLException e){
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception getting first atom in collection");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting first atom in collection");
 			System.err.println("problems getting first atom in collection from SQLServer.");
 		}
 		return atom;
@@ -5443,7 +5444,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.close();
 			
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception adding atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception adding atom.  Please check incoming data for correct format.");
 			System.err.println("Exception adding particle to InternalAtomOrder.");
 			e.printStackTrace();
 		}
@@ -5546,7 +5547,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeBatch();
 			stmt.close();
 		} catch (SQLException e) {
-			ErrorLogger.writeExceptionToLog(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
 			e.printStackTrace();
 		}

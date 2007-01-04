@@ -583,102 +583,6 @@ public class MainFrame extends JFrame implements ActionListener
 			}
 		}
 		
-		/*
-		 * These capabilities work, but only with trivially small databases
-		else if (source == exportXmlDatabaseItem||source==exportXlsDatabaseItem||source==exportCsvDatabaseItem) {
-			int temp = -1;
-			String fileFilter = "";
-			if(source == exportXmlDatabaseItem){
-				fileFilter = "*.xml";
-				temp = 1;
-			}
-			else if (source == exportXlsDatabaseItem){
-				fileFilter = "*.xls";
-				temp = 2;
-			}
-			else{
-				fileFilter = "*.csv";
-				temp = 3;
-			}
-			final int fileType = temp;
-			FileDialog fileChooser = new FileDialog(this, 
-                    "Create a file to store the database:",
-                     FileDialog.LOAD);
-			fileChooser.setFile(fileFilter);
-			fileChooser.setVisible(true);
-			final String filename = fileChooser.getDirectory()+fileChooser.getFile();
-			System.out.println("File: "+filename);
-			
-			final ProgressBarWrapper progressBar = 
-				new ProgressBarWrapper(this, "Exporting Database",100);
-			progressBar.setIndeterminate(true);
-			SwingWorker worker = new SwingWorker(){
-				public Object construct(){
-					try {
-						System.out.println("exporting database");
-						db.exportDatabase(filename,fileType);
-						System.out.println("exported database");
-					} catch (FileNotFoundException e1) {
-						SwingUtilities.invokeLater(new Runnable(){
-							public void run(){
-								JOptionPane.showMessageDialog(null,"The file: "+ filename+" could not be created.");
-							}
-						});
-						
-					}
-					return null;
-				}
-				public void finished() {
-					progressBar.disposeThis();
-					//setVisible(false);
-					//dispose();		
-				}
-			};
-			worker.start();
-			progressBar.constructThis();
-			
-		}
-		
-		else if (source == importXmlDatabaseItem||source==importXlsDatabaseItem||source==importCsvDatabaseItem) {
-			int fileType = -1;
-			String fileFilter = "";
-			if(source == importXmlDatabaseItem){
-				fileFilter = "*.xml";
-				fileType = 1;
-			}
-			else if (source == importXlsDatabaseItem){
-				fileFilter = "*.xls";
-				fileType = 2;
-			}
-			else{
-				fileFilter = "*.csv";
-				fileType = 3;
-			}
-			FileDialog fileChooser = new FileDialog(this, 
-                    "Choose a database file to restore:",
-                     FileDialog.LOAD);
-			fileChooser.setFile(fileFilter);
-			fileChooser.setVisible(true);
-			String filename = fileChooser.getDirectory()+fileChooser.getFile();
-			System.out.println("File: "+filename);
-			if (fileChooser.getFile() != null && JOptionPane.showConfirmDialog(this,
-			"Are you sure? " +
-			"This will destroy all data in your database and restore it from the file:\n"+filename) ==
-				JOptionPane.YES_OPTION) {
-				try {
-					db.importDatabase(filename,fileType);
-				
-				JOptionPane.showMessageDialog(this,
-						"The program will now shut down to reset itself. " +
-				"Start it up again to continue.");
-				} catch (FileNotFoundException e1) {
-					JOptionPane.showMessageDialog(this,"The file: "+ filename+" could not be found.");
-				}
-				collectionPane.updateTree();
-				
-			}			
-		}
-		*/
 		else if (source == rebuildItem) {
 			if (JOptionPane.showConfirmDialog(this,
 			"Are you sure? This will destroy all data in your database.") ==
@@ -745,7 +649,6 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 
 			Collection[] selectedCollections = collectionPane.getSelectedCollections();
-
 			if (selectedCollections != null && selectedCollections.length > 0) {
 				AggregateWindow aw = new AggregateWindow(this, db, selectedCollections);
 				aw.setVisible(true);

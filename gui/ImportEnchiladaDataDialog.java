@@ -257,7 +257,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 					ArrayList<String> files = importer.collectTableInfo(eTableModel);
 					cID = importer.importFiles(files);
 				} catch (WriteException e1) {
-					ErrorLogger.writeExceptionToLog("EnchiladaImporting",e1.getMessage());
+					ErrorLogger.writeExceptionToLogAndPrompt("EnchiladaImporting",e1.getMessage());
 				} catch (DisplayException e1) {
 					ErrorLogger.displayException(this,e1.getMessage());
 				}
@@ -322,11 +322,11 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 						//if the scanner couldn't find anything, the file's not
 						//in the right format
 					} catch (NoSuchElementException e1){
-						ErrorLogger.writeExceptionToLog("EnchiladaImporting","Please check .md file " + fileName + 
+						ErrorLogger.writeExceptionToLogAndPrompt("EnchiladaImporting","Please check .md file " + fileName + 
 								" for correct format.");
 						
 					} catch (FileNotFoundException e1) {
-						ErrorLogger.writeExceptionToLog("EnchiladaImporting","Problems creating new datatype from " + fileName);
+						ErrorLogger.writeExceptionToLogAndPrompt("EnchiladaImporting","Problems creating new datatype from " + fileName);
 						//System.err.println("Problems creating new datatype.");
 						//e1.printStackTrace();
 					}					

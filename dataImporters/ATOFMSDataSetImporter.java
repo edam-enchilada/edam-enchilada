@@ -232,7 +232,6 @@ public class ATOFMSDataSetImporter {
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLog("Importing","Corrupt calibration file : " +
 					"\n\tMessage: "+e.getMessage());
-			ErrorLogger.error = false;
 			throw new IOException();
 		}
 		if (!skipFile) { // If we don't have to skip this row due to an error...
@@ -244,7 +243,6 @@ public class ATOFMSDataSetImporter {
 			parFile = new File(name);
 			if(parFile==null){
 				ErrorLogger.writeExceptionToLog("Importing","Could not open file: "+name+".");
-				ErrorLogger.error = false;
 				throw new FileNotFoundException();
 			}
 			ATOFMSParticle.currCalInfo = calInfo;
