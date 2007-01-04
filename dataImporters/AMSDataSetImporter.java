@@ -225,16 +225,26 @@ public class AMSDataSetImporter {
 			readData = new Scanner(new File(datasetName));
 			readData.next(); // skip name
 
+			//for skipped particles with no sparse information
+			java.util.Vector<Integer> nodataParticles = new java.util.Vector<Integer>();
 			particleNum = 0;
 			int nextID = db.getNextID();
 			while (readData.hasNext()) { // repeat until end of file.
-				if(particleNum % 10 == 0 && particleNum >= 10) 
-					progressBar.increment("Importing Item # "+particleNum+" out of "+totalParticles);
+				if(particleNum % 10 == 0 && particleNum >= 10) {
+					String barText = "Importing Item # " + particleNum + " out of " 
+						+ totalParticles;
+					if (nodataParticles.size() > 0)
+						barText += ", " + nodataParticles.size() + " have no data";
+					progressBar.increment(barText);
+				}
 				read(particleNum, nextID);
 				if (sparse != null && sparse.size() > 0) {
 					//db.insertParticle(dense,sparse,destination,id[1],nextID);
 					((Database)db).saveDataParticle(dense,sparse,destination,id[1],nextID, ams_buckets);
 					nextID++;
+				}
+				else {
+					nodataParticles.add(particleNum);
 				}
 				particleNum++;
 			}
@@ -242,6 +252,24 @@ public class AMSDataSetImporter {
 			progressBar.setText("Inserting Items...");
 			((Database)db).BulkInsertDataParticles(ams_buckets);
 			((Database)db).updateInternalAtomOrder(destination);
+			//write information on no-data particles to Collection Information tab
+			if (nodataParticles.size() > 0) {
+				StringBuffer desc = 
+					new StringBuffer(db.getCollectionDescription(destination.getCollectionID()));
+				desc.append("\n");
+				desc.append(nodataParticles.size());
+				desc.append(" items had no associated m/z spectrum data and were " +
+						"skipped during import. Their original indices are:\n");
+				Integer cur = null;
+				java.util.Iterator i = nodataParticles.iterator();
+				while (i.hasNext()) {
+					desc.append(((Integer)i.next()).intValue());					
+					if (i.hasNext())
+						desc.append(", ");
+				}
+				db.setCollectionDescription(destination, desc.toString());
+			}
+			
 			progressBar.setText("Updating Ancestors...");
 			db.updateAncestors(destination);
 			readData.close();
