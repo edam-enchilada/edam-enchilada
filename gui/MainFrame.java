@@ -1362,6 +1362,7 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 	}
 	
+	// this will be modified by janez
 	public static void main(String[] args) {
 		/* "If you are going to set the look and feel, you should do it as the 
 		 * very first step in your application. Otherwise you run the risk of 
