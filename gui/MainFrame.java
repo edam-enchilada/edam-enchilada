@@ -502,6 +502,13 @@ public class MainFrame extends JFrame implements ActionListener
 			if (copyID != 
 				getSelectedCollection().getCollectionID() && copyID>-1)
 			{
+				//Ensure that a collection is not being pasted into one of its children
+				//@author shaferia
+				if (getSelectedCollection().getParentCollection().getCollectionID() == copyID) {
+					JOptionPane.showMessageDialog(this, "A collection cannot be pasted into one of its children");
+					return;
+				}
+				
 				//check if the datatypes are the same
 				if(getSelectedCollection().getCollectionID() == 0
 						|| db.getCollection(copyID).getDatatype().equals
