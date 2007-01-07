@@ -107,6 +107,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private Vector<Vector<Object>> particlesData;
 	private int curRow;
 	private Collection coll;
+	private String datatype;
 	
 	private LabelLoader labelLoader;
 	private AbstractTableModel peaksDataModel;
@@ -212,6 +213,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	    this.curRow = curRow;
 	    this.particlesData = createCache(dt, curRow);
 	    this.coll = collection;
+	    this.datatype = collection.getDatatype();
 	    labelLoader = new LabelLoader(this);
 		
 		peaks = new ArrayList<Peak>();
@@ -315,17 +317,22 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		JPanel buttonPanel = new JPanel(new GridLayout(2,1));
 		ButtonGroup bg = new ButtonGroup();
 
-		specButton = new JRadioButton("Spectrum");
-		specButton.setActionCommand("spectrum");
-		specButton.addActionListener(this);
+		if (datatype.equals("ATOFMS")) {
+			specButton = new JRadioButton("Spectrum");
+			specButton.setActionCommand("spectrum");
+			specButton.addActionListener(this);
+			bg.add(specButton);
+			buttonPanel.add(specButton);
+		}
+		
 		peakButton = new JRadioButton("Peaks");
 		peakButton.setActionCommand("peaks");
 		peakButton.addActionListener(this);
-		bg.add(specButton);
 		bg.add(peakButton);
-		peakButton.setSelected(true);
-		buttonPanel.add(specButton);
 		buttonPanel.add(peakButton);
+		
+		peakButton.setSelected(true);
+		
 		JPanel peakButtonPanel = new JPanel(new GridLayout(2,1));
 		
 		int aID = ((Integer)
@@ -556,7 +563,12 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			displaySpectrum();
 		
 		chart.packData(false, true, true); //updates the Y axis scale.
-		chart.setTitle("Particle from " + filename);
+		
+		if (datatype.equals("ATOFMS"))
+			chart.setTitle("Particle from " + filename);
+		else
+			chart.setTitle(datatype + " item " + atomID);
+		
 		double xMax = chart.getXRange()[1];
 		zchart.setCScrollMax(DEFAULT_XMAX > xMax ? DEFAULT_XMAX : xMax);
 		unZoom();
@@ -644,7 +656,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		setTitle("Analyze Particle - AtomID: " + atomID);
 		
 		//grab this from the table COPY
-		String filename = (String)particlesData.get(curRow).get(5);
+		String filename = null;
+		if (datatype.equals("ATOFMS"))
+			filename = (String)particlesData.get(curRow).get(5);
 		
 		String peakString = "Peaks:\n";
 		

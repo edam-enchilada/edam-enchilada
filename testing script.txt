@@ -175,6 +175,14 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__AMS data imports successfully
 	__All data is imported into the chosen parent collection
 	
+**Try analyzing a particle from an AMS collection. Verify that
+	__"Next" and "Prev" buttons work and display the correct particles
+	__Correct peaks are present (at locations m/z 14, 30, 31, 32, 46, 47, 48, and 63 for items from Nitrate_MS.txt)
+	__Multiple analyze windows can be opened simultaneously on different collections
+	__Spectrum view button is not present
+	__Highlighting peaks selects peak in peak list, provides peak label information
+	__Zooming in and out works correctly
+	
 **Try to import an existing datatype in the metadata format.  Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
 (Note that this is not a complete .md file - just enough to catch the problem.)
 Enchilada should

@@ -1254,42 +1254,35 @@ public class MainFrame extends JFrame implements ActionListener
 		particlesTable = new JTable(data, columns);
 		particlesTable.setDefaultEditor(Object.class, null);
 		
-		if (dataType.equals("ATOFMS")) {
-			particleTablePane.setViewportView(particlesTable);
-			
-			particlesTable.setEnabled(true);
-			ListSelectionModel lModel = 
-				particlesTable.getSelectionModel();
-			
-			lModel.setSelectionMode(
-					ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-			lModel.addListSelectionListener(new ListSelectionListener() {
-				public void valueChanged(ListSelectionEvent arg0) {		
-					/*	// If collection isn't ATOFMS, don't display anything.
-					 if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
-					 return;
-					 */
-					int row = particlesTable.getSelectedRow();
-					
-					analyzeParticleButton.setEnabled(row != -1);
-				}
-			});		
-			
-			particlesTable.addMouseListener(new MouseAdapter() {
-				public void mouseClicked(MouseEvent e) {
-					if (e.getClickCount() > 1)
-						showAnalyzeParticleWindow();
-				}
-			});
-			
-			collectionViewPanel.setComponentAt(0, particlePanel);
-			collectionViewPanel.repaint();
-		} else {
-			particleTablePane.setViewportView(particlesTable);
-			particlesTable.setEnabled(false);
-			// TODO Change to just show table (no button)...
-			collectionViewPanel.setComponentAt(0, particlePanel);
-		}
+		particleTablePane.setViewportView(particlesTable);
+		
+		particlesTable.setEnabled(true);
+		ListSelectionModel lModel = 
+			particlesTable.getSelectionModel();
+		
+		lModel.setSelectionMode(
+				ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		lModel.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent arg0) {		
+				/*	// If collection isn't ATOFMS, don't display anything.
+				 if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
+				 return;
+				 */
+				int row = particlesTable.getSelectedRow();
+				
+				analyzeParticleButton.setEnabled(row != -1);
+			}
+		});		
+		
+		particlesTable.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				if (e.getClickCount() > 1)
+					showAnalyzeParticleWindow();
+			}
+		});
+		
+		collectionViewPanel.setComponentAt(0, particlePanel);
+		collectionViewPanel.repaint();
 		
 		//call setTable, which populates the table.
 		setTable();
