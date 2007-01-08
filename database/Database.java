@@ -52,6 +52,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -2491,6 +2492,174 @@ public abstract class Database implements InfoWarehouse {
 			e1.printStackTrace();
 		}
 		*/
+	}
+	
+	/**
+	 * Finds a list of data backup locations, those added by sp_addumpdevice
+	 * @return A list of maps which define the backup locations: each element of the list has K=>V
+	 * "name" => the name of the backup
+	 * "type" => the type of backup (Disk, Tape)
+	 * "path" => the pathname of the backup
+	 * @author shaferia
+	 */
+	public ArrayList<HashMap<String, String>> getBackupLocations() {
+		ArrayList<HashMap<String,String>> locations = new ArrayList<HashMap<String, String>>();
+		
+		try {
+			//SQL Server 2005
+			//ResultSet rs = con.createStatement().executeQuery("SELECT name,type,physical_name FROM sys.backup_devices");
+			
+			//SQL Server 2000
+			ResultSet rs = con.createStatement().executeQuery("SELECT name,cntrltype,phyname FROM master..sysdevices");
+			while (rs.next()) {
+				HashMap<String,String> loc = new HashMap<String,String>();
+				loc.put("name", rs.getString(1));
+				String type = null;
+				switch (rs.getInt(2)) {
+					case 2: type = "Disk"; break;
+					case 5: type = "Tape"; break;
+					default: type = "Other"; break;
+				}
+				loc.put("type", type);
+				loc.put("path", rs.getString(3));
+				if (type.equals("Disk")) {
+					locations.add(loc);
+					File f = new File(rs.getString(3));
+					if (f.exists())
+						loc.put("size", (f.length()/1024) + " KB");
+					else
+						loc.put("size", "Empty");
+				}
+			}
+		} catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "Could not retrieve backup device list");
+			System.err.println("Error getting backup device list");
+			ex.printStackTrace();
+		}
+		
+		return locations;
+	}
+	
+	/**
+	 * Add a database backup location as a file
+	 * @param name the name of the backup file to add (as referenced in the master database)
+	 * @param path the path of the backup file to add
+	 * @return true on success
+	 * @author shaferia
+	 */
+	public boolean addBackupFile(String name, String path) {
+		boolean success = false;
+		try {
+			name = removeReservedCharacters(name);
+			String query = "EXEC sp_addumpdevice \'disk\', \'" + name + "\', \'" + path + "\'";
+			con.createStatement().execute(query);
+			
+			success = true;
+		}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "Error adding backup file");
+			System.err.println("Error adding backup file - executing sp_adddumpdevice");
+			ex.printStackTrace();			
+		}
+
+		return success;
+	}
+	
+	/**
+	 * Remove a database backup location
+	 * @param name the name of the backup file to delete (as referenced in the master database)
+	 * @return true on success
+	 * @author shaferia
+	 */
+	public boolean removeBackupFile(String name) {
+		boolean success = false;
+		try {
+			name = removeReservedCharacters(name);
+			String query = "EXEC sp_dropdevice \'" + name + "\', \'DELFILE\'";
+			con.createStatement().execute(query);
+
+			success = true;
+		}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), "Error removing backup file");
+			System.err.println("Error removing backup file - executing sp_dropdevice");
+			ex.printStackTrace();			
+		}
+
+		return success;		
+	}
+	
+	/**
+	 * Backup the database to the backup location with the specified name
+	 * @param name the name of the backup location
+	 * @return output returned from the server, or "Failed" if failure
+	 */
+	public String backupDatabase(String name) {
+		String ret = "Failed";
+		
+		try {
+			String query = "BACKUP DATABASE " + database + " TO " + name + " WITH INIT";
+			Statement stmt = con.createStatement();
+			stmt.execute(query);
+			
+			SQLWarning output = stmt.getWarnings();
+			StringBuffer message = new StringBuffer(output.getMessage());
+			while ((output = output.getNextWarning()) != null) {
+				message.append("\n" + output.getMessage());
+			}
+			
+			ret = message.toString();
+		}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), 
+					"Error backing up database to " + name);
+			System.err.println("Error backing up database - executing BACKUP DATABASE");
+			ex.printStackTrace();
+			ret = ex.getMessage();
+		}
+		
+		return ret;
+	}
+
+	/**
+	 * Restore the database from the backup location with the specified name
+	 * @param name the name of the backup location
+	 * @return output returned from the server, or "Failed" if failure
+	 */
+	public String restoreDatabase(String name) {
+		String ret = "Failed";
+		
+		try {
+			//close the connection and use a non-database-specific one
+			closeConnection();
+			Database db = (Database) getDatabase("");
+			db.openConnection();
+			
+			String query = "RESTORE DATABASE " + database + " FROM " + name;
+			Statement stmt = db.getCon().createStatement();
+			stmt.execute(query);
+			
+			SQLWarning output = stmt.getWarnings();
+			StringBuffer message = new StringBuffer(output.getMessage());
+			while ((output = output.getNextWarning()) != null) {
+				message.append("\n" + output.getMessage());
+			}
+			
+			ret = message.toString();
+			
+			//return to using the original Cfonnection
+			db.closeConnection();
+			openConnection();
+		}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(), 
+					"Error restoring database from " + name);
+			System.err.println("Error restoring database - executing RESTORE DATABASE");
+			ex.printStackTrace();
+			ret = ex.getMessage();
+		}
+		
+		return ret;
 	}
 	
 	/**

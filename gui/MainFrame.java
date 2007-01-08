@@ -117,6 +117,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem rebuildItem;
 	private JMenuItem exitItem;
 	private JMenuItem compactDBItem;
+	private JMenuItem backupItem;
 	private JMenuItem cutItem;
 	private JMenuItem copyItem;
 	private JMenuItem pasteItem;
@@ -213,29 +214,10 @@ public class MainFrame extends JFrame implements ActionListener
 		 * collections tree and the browsing tabs.
 		 */	
 		setupSplitPane();
-		
 		/**
-		 * The Spring Layout is a flexible layout that places every panel in the
-		 * frame in relation to that panels surrounding it.
+		 * Use a SpringLayout to layout the components that have been added
 		 */
-		SpringLayout layout = new SpringLayout();
-		setLayout(layout);
-		
-		Container contentPane = getContentPane();
-		layout.putConstraint(SpringLayout.NORTH, buttonPanel, 5, 
-				SpringLayout.NORTH, contentPane);
-		layout.putConstraint(SpringLayout.WEST, buttonPanel, 5,
-				SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, mainSplitPane, 5,
-				SpringLayout.SOUTH, buttonPanel);
-		layout.putConstraint(SpringLayout.WEST, mainSplitPane, 5,
-				SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.EAST, contentPane, 5,
-				SpringLayout.EAST, buttonPanel);
-		layout.putConstraint(SpringLayout.EAST, contentPane, 5,
-				SpringLayout.EAST, mainSplitPane);
-		layout.putConstraint(SpringLayout.SOUTH, contentPane, 5,
-				SpringLayout.SOUTH, mainSplitPane);
+		performLayout();
 		
 		//Display the window.
 		setVisible(true);
@@ -281,6 +263,50 @@ public class MainFrame extends JFrame implements ActionListener
 			public void windowGainedFocus(WindowEvent e) {
 			}
 		});
+	}
+	
+	/**
+	 * Call when a complete change is performed to the database contents
+	 * (upon database rebuild or restore)
+	 * @author shaferia
+	 */
+	public void refreshData() {
+		remove(mainSplitPane);
+		
+		setupSplitPane();
+		add(mainSplitPane);
+		
+		performLayout();
+		
+		getContentPane().validate();
+	}
+	
+	/**
+	 * Layout the components on the frame with a SpringLayout
+	 */
+	private void performLayout() {
+		/**
+		 * The Spring Layout is a flexible layout that places every panel in the
+		 * frame in relation to that panels surrounding it.
+		 */
+		SpringLayout layout = new SpringLayout();
+		setLayout(layout);
+		
+		Container contentPane = getContentPane();
+		layout.putConstraint(SpringLayout.NORTH, buttonPanel, 5, 
+				SpringLayout.NORTH, contentPane);
+		layout.putConstraint(SpringLayout.WEST, buttonPanel, 5,
+				SpringLayout.WEST, contentPane);
+		layout.putConstraint(SpringLayout.NORTH, mainSplitPane, 5,
+				SpringLayout.SOUTH, buttonPanel);
+		layout.putConstraint(SpringLayout.WEST, mainSplitPane, 5,
+				SpringLayout.WEST, contentPane);
+		layout.putConstraint(SpringLayout.EAST, contentPane, 5,
+				SpringLayout.EAST, buttonPanel);
+		layout.putConstraint(SpringLayout.EAST, contentPane, 5,
+				SpringLayout.EAST, mainSplitPane);
+		layout.putConstraint(SpringLayout.SOUTH, contentPane, 5,
+				SpringLayout.SOUTH, mainSplitPane);		
 	}
 	
 	private void fixFonts(Font f) {
@@ -600,6 +626,11 @@ public class MainFrame extends JFrame implements ActionListener
 				JOptionPane.YES_OPTION) {
 				//db.rebuildDatabase();
 				final JFrame thisref = this;
+				final ProgressBarWrapper pbar = 
+					new ProgressBarWrapper(thisref, "Rebuilding Database", 100);
+				pbar.setIndeterminate(true);
+				pbar.setText("Rebuilding Database...");
+				
 				UIWorker worker = new UIWorker() {
 					public Object construct() {
 						db.closeConnection();
@@ -614,19 +645,28 @@ public class MainFrame extends JFrame implements ActionListener
 					public void finished() {
 						super.finished();
 						if ((Boolean) get()) {
+							//changed by shaferia, 1/8/06
+							//no restart on database rebuild
+							/*
 							JOptionPane.showMessageDialog(thisref,
 								"The program will now shut down to reset itself. " +
 								"Start it up again to continue.");
-							dispose();						
+							dispose();
+							*/
+							db.openConnection();
+							refreshData();
+							pbar.disposeThis();
 						}
 						else {
+							pbar.disposeThis();
 							JOptionPane.showMessageDialog(thisref,
 								"Could not rebuild the database." +
 								"  Close any other programs that may be accessing the database and try again.");
-							
 						}
 					}
 				};
+				
+				pbar.constructThis();
 				worker.start();
 			}			
 		}
@@ -648,7 +688,9 @@ public class MainFrame extends JFrame implements ActionListener
 			};
 			worker.start();
 		}
-		
+		else if (source == backupItem) {
+			new BackupDialog(this, db);
+		}
 		else if (source == exitItem) {
 			exit();
 		}
@@ -900,11 +942,14 @@ public class MainFrame extends JFrame implements ActionListener
 		exportDatabaseMenu.add(exportXlsDatabaseItem);
 		exportDatabaseMenu.add(exportCsvDatabaseItem);
 		*/
-		compactDBItem = new JMenuItem("Compact Database", KeyEvent.VK_R);
+		compactDBItem = new JMenuItem("Compact Database", KeyEvent.VK_C);
 		compactDBItem.addActionListener(this);
 		
 		rebuildItem = new JMenuItem("Rebuild Database", KeyEvent.VK_R);
 		rebuildItem.addActionListener(this);
+		
+		backupItem = new JMenuItem("Backup Database...", KeyEvent.VK_B);
+		backupItem.addActionListener(this);
 		
 		exitItem = new JMenuItem("Exit", KeyEvent.VK_X);
 		exitItem.addActionListener(this);
@@ -921,6 +966,7 @@ public class MainFrame extends JFrame implements ActionListener
 		*/
 		fileMenu.add(compactDBItem);
 		fileMenu.add(rebuildItem);
+		fileMenu.add(backupItem);
 		fileMenu.addSeparator();
 		fileMenu.add(exitItem);
 		
