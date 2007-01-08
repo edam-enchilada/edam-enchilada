@@ -380,9 +380,10 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			
 			final Aggregator aggregator;
 			if (baseSequenceOnCollection) {
-				Collection selectedCollection = collectionListModel.getCollectionAt(collectionsList.getSelectedIndex());
+				Collection selectedCollection = collections[matchingCombo.getSelectedIndex()];
 				aggregator = new Aggregator(this, db, selectedCollection);
-				System.out.println("selected Collection: "+selectedCollection.getCollectionID());
+				System.out.println("selected Collection: "+selectedCollection.getName()+
+						"\tID: "+ selectedCollection.getCollectionID());
 			} else {
 				Calendar start = startTime.getDate();
 				Calendar end = endTime.getDate();
