@@ -884,6 +884,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 						"An error occured retrieving the dataset ID from the database.",
 						"Spectrum Display Error",JOptionPane.ERROR_MESSAGE);
 				//peakButton.setSelected(true);
+				posSpecDS = new Dataset();
+				negSpecDS = new Dataset();
+				
 				throw e;
 			}	
 			
@@ -904,6 +907,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 						"An error occured while retrieving the calibration data from the database.",
 						"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 				//peakButton.setSelected(true);
+				posSpecDS = new Dataset();
+				negSpecDS = new Dataset();
+				
 				throw e;
 			}
 		
@@ -918,6 +924,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 					+ e.toString(),
 					"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 			//peakButton.setSelected(true);
+			posSpecDS = new Dataset();
+			negSpecDS = new Dataset();
+			
 			throw e;
 		}
 		
@@ -928,10 +937,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		{
 			//System.err.println("Exception opening atom file");
 			JOptionPane.showMessageDialog(null,
-					"An error occurred while opening the atom file.\n"
+					"An error occurred while opening the atom file.  Check to make sure the file exists.\n"
 					+ e.toString(),
 					"Spectrum Display Error", JOptionPane.ERROR_MESSAGE);
 			//peakButton.setSelected(true);
+			posSpecDS = new Dataset();
+			negSpecDS = new Dataset();
+			
 			throw e;
 		}
 		
