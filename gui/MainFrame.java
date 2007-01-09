@@ -132,6 +132,8 @@ public class MainFrame extends JFrame implements ActionListener
 	private CollectionTree selectedCollectionTree = null;
 	
 	private int copyID = -1;
+	private ArrayList<Integer> childrenIDs;
+	private String copyCollection;
 	private boolean cutBool = false;
 	
 	private JTable particlesTable = null;
@@ -496,6 +498,8 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 			copyID = 
 				getSelectedCollection().getCollectionID();
+			childrenIDs = getSelectedCollection().getSubCollectionIDs(); 
+			copyCollection = getSelectedCollection().getName();
 			if (copyID == 0) { //don't allow copying/pasting of root
 				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
@@ -510,6 +514,8 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 			copyID = 
 				getSelectedCollection().getCollectionID();
+			childrenIDs = getSelectedCollection().getSubCollectionIDs(); 
+			copyCollection = getSelectedCollection().getName();
 			if (copyID == 0) { //don't allow copying/pasting of root
 				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
@@ -529,15 +535,13 @@ public class MainFrame extends JFrame implements ActionListener
 				getSelectedCollection().getCollectionID() && copyID>-1)
 			{
 				//Ensure that a collection is not being pasted into one of its children
-				//@author shaferia
-				Collection curCollection = getSelectedCollection();
-				while (curCollection.getCollectionID() != 0) {
-					if (curCollection.getCollectionID() == copyID) {
-						JOptionPane.showMessageDialog(this, "A collection cannot be pasted into one of its children");
-						return;
-					}
-					curCollection = curCollection.getParentCollection();
+				// @author shaferia, @jane
+					
+				if (childrenIDs.contains(getSelectedCollection().getCollectionID())) {
+					JOptionPane.showMessageDialog(this, "Cannot paste "  +  copyCollection + ": " + " the destination is a subcollection of " + copyCollection + "." );
+					return;
 				}
+				//}
 				
 				//check if the datatypes are the same
 				if(getSelectedCollection().getCollectionID() == 0
