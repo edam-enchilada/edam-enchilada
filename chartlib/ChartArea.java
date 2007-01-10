@@ -120,6 +120,7 @@ public class ChartArea extends AbstractMetricChartArea {
 	 * @param g2d
 	 */
 	protected void drawDataPoints(Graphics2D g2d, Dataset dataset) {
+		if(dataset == null||dataset.isEmpty()) return;
 		Rectangle dataArea = getDataAreaBounds();
 		
 		boolean drawnMoreLeft = false, drawnMoreRight = false;

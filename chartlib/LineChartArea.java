@@ -49,7 +49,7 @@ public class LineChartArea extends ChartArea {
 	 * data point per horizontal pixel.
 	 */
 	protected void drawDataLines(Graphics2D g2d,Dataset dataset){
-		if(dataset == null) return;
+		if(dataset == null||dataset.isEmpty()) return;
 		Rectangle dataArea = getDataAreaBounds();
 		
 		Shape oldClip = g2d.getClip();
