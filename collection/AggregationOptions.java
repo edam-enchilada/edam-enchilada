@@ -19,6 +19,9 @@ public class AggregationOptions {
 	public CombiningMethod combMethod = CombiningMethod.SUM;
 	public ArrayList<Integer> mzValues;
 	public String mzString = "";
+	public AggregationOptions(){
+		this.setDefaultOptions();
+	}
 
 	/**
 	 * Produces a String representing the SQL embodiment of the chosen combination method
@@ -80,7 +83,7 @@ public class AggregationOptions {
 		treatDataAsContinuous = false;
 		combMethod = CombiningMethod.SUM;
 		mzValues = new ArrayList<Integer>();
-		allMZValues = false;
+		allMZValues = true;
 		mzString = "";
 	}
 }

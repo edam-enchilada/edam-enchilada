@@ -4775,7 +4775,10 @@ public abstract class Database implements InfoWarehouse {
 				}
 				stmt.execute("DROP TABLE #mz;\n");
 				rs.close();
-			} 
+			} else {
+				System.err.println("BAD AGGREGATION OPTIONS");
+				
+			}
 
 			stmt.close();
 			
