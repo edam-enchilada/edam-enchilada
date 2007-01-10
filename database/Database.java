@@ -2568,14 +2568,17 @@ public abstract class Database implements InfoWarehouse {
 	/**
 	 * Remove a database backup location
 	 * @param name the name of the backup file to delete (as referenced in the master database)
+	 * @param delfile delete the associated file?
 	 * @return true on success
 	 * @author shaferia
 	 */
-	public boolean removeBackupFile(String name) {
+	public boolean removeBackupFile(String name, boolean delfile) {
 		boolean success = false;
 		try {
 			name = removeReservedCharacters(name);
-			String query = "EXEC sp_dropdevice \'" + name + "\', \'DELFILE\'";
+			String query = "EXEC sp_dropdevice \'" + name + "\'";
+			if (delfile)
+				query += ", \'DELFILE\'";
 			con.createStatement().execute(query);
 
 			success = true;

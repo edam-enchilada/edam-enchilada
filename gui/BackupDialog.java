@@ -243,7 +243,7 @@ public class BackupDialog extends JDialog {
 	 * Show an error dialog if the backup location was not created properly.
 	 */
 	private void addBackupLocation() {
-		FileDialog dialog = new FileDialog(this, "Select a location...", FileDialog.SAVE);
+		FileDialog dialog = new FileDialog(this, "Select a location...", FileDialog.LOAD);
 		dialog.setFilenameFilter(filter);
 		dialog.setVisible(true);
 		
@@ -295,18 +295,35 @@ public class BackupDialog extends JDialog {
 	 * @param size the size of the location, or "Empty" if not yet written to
 	 */
 	private void removeBackupLocation(String name, String size) {
+		boolean delfile = false;
+		
 		if (!size.equals("Empty")) {
-			int sel = JOptionPane.showConfirmDialog(
+			String[] options = {"Delete Location", "Delete Location and File", "Cancel"};
+			int sel = JOptionPane.showOptionDialog(
 					this, 
-					"The backup location " + name + " is not empty - would you like to delete it?", 
+					"The backup location " + name + " is not empty - would you like to delete the file?", 
 					"Confirm deletion", 
-					JOptionPane.YES_NO_OPTION);
+					JOptionPane.DEFAULT_OPTION, 
+					JOptionPane.QUESTION_MESSAGE, 
+					null, 
+					options, 
+					2);
 			
-			if (sel == JOptionPane.NO_OPTION)
-				return;
+			switch (sel) {
+				case 0:
+					//simply proceed
+					delfile = false;
+					break;
+				case 1:
+					//remove the file
+					delfile = true;
+					break;
+				case 2:
+					return;
+			}
 		}
 		
-		boolean success = ((Database)db).removeBackupFile(name);
+		boolean success = ((Database)db).removeBackupFile(name, delfile);
 		
 		if (success) {
 			refreshLocations();
