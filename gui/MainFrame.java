@@ -438,7 +438,7 @@ public class MainFrame extends JFrame implements ActionListener
 		{
 			final Collection[] c = getSelectedCollections();
 			if(c == null) {
-				JOptionPane.showMessageDialog(this, "Please select a collection to delete",
+				JOptionPane.showMessageDialog(this, "Please select a collection to delete.",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
@@ -469,7 +469,7 @@ public class MainFrame extends JFrame implements ActionListener
 			final Collection[] c = getSelectedCollections();
 			final CollectionTree collTree = selectedCollectionTree;
 			if(c == null) {
-				JOptionPane.showMessageDialog(this, "Please select a collection to delete",
+				JOptionPane.showMessageDialog(this, "Please select a collection to delete.",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
@@ -501,7 +501,7 @@ public class MainFrame extends JFrame implements ActionListener
 			childrenIDs = getSelectedCollection().getSubCollectionIDs(); 
 			copyCollection = getSelectedCollection().getName();
 			if (copyID == 0) { //don't allow copying/pasting of root
-				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
+				JOptionPane.showMessageDialog(this, "Please select a collection to copy.",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 			}
 			else {
@@ -574,26 +574,26 @@ public class MainFrame extends JFrame implements ActionListener
 							" be of the same data type", "Invalid collection", JOptionPane.WARNING_MESSAGE);
 			} else
 				JOptionPane.showMessageDialog(this, "Cannot copy/paste to the same " +
-						"destination as the source", "Invalid collection", JOptionPane.WARNING_MESSAGE);
+						"destination as the source.", "Invalid collection", JOptionPane.WARNING_MESSAGE);
 		}
 		else if (source == queryItem) {
 			if (collectionPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection to query.", 
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else
 				new QueryDialog(this, collectionPane, db, getSelectedCollection());
 		}
 		else if (source == clusterItem) {
 			if (collectionPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection to cluster.", 
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else
 				new ClusterDialog(this, collectionPane, db);
 		}
 		else if (source == visualizeItem) {
 			if (getSelectedCollection().getCollectionID() == 0)
 				JOptionPane.showMessageDialog(this, "Please select a collection to visualize.", 
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else
 			try {
 				(new chartlib.hist.HistogramsWindow(
@@ -606,7 +606,7 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == detectPlumesItem){
 			if (synchronizedPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection which to detect plumes.", 
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else
 				new DetectPlumesDialog(this,synchronizedPane, db);
 		}
@@ -614,7 +614,7 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == compressItem) {
 			if (collectionPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection to compress.", 
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else {
 				//TODO: Provide a way to set the collection's name
 				//or give it better default
