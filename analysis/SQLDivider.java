@@ -94,11 +94,18 @@ public class SQLDivider extends CollectionDivider {
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
+		db.atomBatchInit();
+		
 		while (curs.next())
 		{
 			int temp = curs.getCurrent().getATOFMSParticleInfo().getAtomID();
-			putInHostSubCollection(temp);
+			//putInHostSubCollection(temp);
+			//Change to batch add atoms to the subcollection instead of moving them individually
+			//	@author shaferia 1-11-07
+			db.addAtomBatch(temp, newHostID);
 		}
+		
+		db.atomBatchExecute();
 		db.setCollectionDescription(db.getCollection(newHostID), "Divided on:\n" +
 				where);
 		return newHostID;

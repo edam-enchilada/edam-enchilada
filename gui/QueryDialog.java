@@ -53,6 +53,7 @@ import analysis.CollectionDivider;
 import analysis.SQLDivider;
 
 import database.InfoWarehouse;
+import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -82,11 +83,11 @@ import java.util.GregorianCalendar;
 public class QueryDialog extends JDialog 
 implements ActionListener, ItemListener
 {
+	private JFrame parent;
 	private CollectionTree cTree;
 	private InfoWarehouse db;
 	
 	private JButton okButton; //Default button
-	private JButton okButton2;
 	private JButton cancelButton;
 	
 	private JPanel timePanel;
@@ -122,8 +123,11 @@ implements ActionListener, ItemListener
 			InfoWarehouse db, Collection collection) 
 	{
 		super(frame, "Query", true);
-		//Make sure we have nice window decorations.
 		
+		Container cont = getContentPane();
+		cont.setLayout(new BorderLayout());
+		
+		this.parent = frame;
 		this.cTree = cTree;
 		this.db = db;
 		this.collection = collection;
@@ -131,18 +135,20 @@ implements ActionListener, ItemListener
 		// Create the two panels for the dialogue box.
 		JPanel basic = basicQuery();
 		JPanel advanced = advancedQuery();
-
+		commonInfo = setCommonInfo();		
 		
 		tabbedPane = new JTabbedPane();
 		tabbedPane.addTab("Basic",null,basic,null);
 		getRootPane().setDefaultButton(okButton);
-		//tabbedPane.addTab("Advanced",null,advanced,null);
+		tabbedPane.addTab("Advanced",null,advanced,null);
 		
-		add(tabbedPane); // Add the tabbed pane to the dialogue box.
+		cont.add(tabbedPane, BorderLayout.CENTER); // Add the tabbed pane to the dialogue box.
+		cont.add(commonInfo, BorderLayout.SOUTH);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
 		pack();
 
+		setResizable(false);
 		//Display the dialogue box.
 		setVisible(true);
 	}
@@ -154,8 +160,6 @@ implements ActionListener, ItemListener
 	 */
 	public JPanel basicQuery() 
 	{
-		JPanel p = new JPanel(new BorderLayout());
-		
 		JPanel opts = new JPanel();
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints c = new GridBagConstraints();
@@ -205,8 +209,6 @@ implements ActionListener, ItemListener
 		countPanel.add(new JLabel(" to "));
 		countPanel.add(toCount);
 		
-		commonInfo = setCommonInfo();
-		
 		c.anchor = GridBagConstraints.WEST;
 		
 		c.fill = GridBagConstraints.NONE;
@@ -234,58 +236,9 @@ implements ActionListener, ItemListener
 		opts.add(countButton);
 		opts.add(countPanel);
 		
-		// Add all of the components to the panel.
-		p.add(opts, BorderLayout.CENTER);
-		p.add(commonInfo, BorderLayout.SOUTH);
+		opts.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 18));
 		
-		/*
-		// Use Spring Layout to organize the panel:
-		SpringLayout layout = new SpringLayout();
-		p.setLayout(layout);
-		
-		layout.putConstraint(
-				SpringLayout.NORTH, timePanel, 15, 
-				SpringLayout.NORTH, p);
-		layout.putConstraint(
-				SpringLayout.NORTH, timeLabel, 0, 
-				SpringLayout.SOUTH, timePanel);
-		
-		layout.putConstraint(
-				SpringLayout.WEST, 
-				timeLabel, 
-				40, 
-				SpringLayout.WEST, 
-				p);
-		
-		layout.putConstraint(
-				SpringLayout.NORTH, 
-				sizePanel, 
-				15, 
-				SpringLayout.SOUTH, 
-				timeLabel);
-		
-		layout.putConstraint(
-				SpringLayout.NORTH, sizeLabel, 0, 
-				SpringLayout.SOUTH, 
-				sizePanel);
-		
-		layout.putConstraint(
-				SpringLayout.WEST, sizeLabel, 40, 
-				SpringLayout.WEST, 
-				p);
-		
-		layout.putConstraint(
-				SpringLayout.NORTH, countPanel, 15, 
-				SpringLayout.SOUTH, sizeLabel);
-		
-		layout.putConstraint(
-				SpringLayout.NORTH, commonInfo, 30, 
-				SpringLayout.SOUTH, countPanel);
-		*/
-		
-		p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 18));
-		
-		return p;
+		return opts;
 	}
 	
 	/**
@@ -298,26 +251,52 @@ implements ActionListener, ItemListener
 	public JPanel advancedQuery() 
 	{
 		JPanel p = new JPanel();
+		p.setLayout(new BorderLayout());
+
+		JTextArea sqlTextArea = new JTextArea(7, 30);
+		JPanel leftPanel = new JPanel(new BorderLayout());
+		JLabel sqlLabel = new JLabel("User-defined SQL Query:");
+		leftPanel.add(sqlLabel, BorderLayout.NORTH);
+		JScrollPane sqlText = new JScrollPane(sqlTextArea);
+		leftPanel.add(sqlText, BorderLayout.CENTER);
+		leftPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 8));
+		p.add(leftPanel, BorderLayout.CENTER);
+		
+		JPanel saveArea = new JPanel();
+		BoxLayout layout = new BoxLayout(saveArea, BoxLayout.Y_AXIS);
+		saveArea.setLayout(layout);
 		
 		JLabel savedLabel = new JLabel("Open Saved Query: ");
 		Object[] list = {"Query A", "Query B", "Query C"};
 		JComboBox savedQueries = new JComboBox(list);
-		JLabel sqlLabel = new JLabel("User-defined SQL Query:");
-		JTextArea sqlTextArea = new JTextArea(7, 30);
-		JScrollPane sqlText = new JScrollPane(sqlTextArea);
-		JCheckBox saveBox = new JCheckBox("Save query as:");
+		JButton execOpen = new JButton("Open");
+		
+		JLabel saveNewLabel = new JLabel("Save query as:");
 		JTextField saveField = new JTextField(20);
+		JButton execSave = new JButton("Save");
+		
+		saveArea.add(savedLabel);
+		saveArea.add(savedQueries);
+		saveArea.add(execOpen);
+
+		saveArea.add(Box.createVerticalStrut(10));
+		JSeparator divider = new JSeparator(JSeparator.HORIZONTAL);
+		divider.setBorder(BorderFactory.createRaisedBevelBorder());
+		saveArea.add(divider);
+		saveArea.add(Box.createVerticalStrut(10));
+		
+		saveArea.add(saveNewLabel);
+		saveArea.add(saveField);
+		saveArea.add(execSave);
 		
 		// Add all components to the panel.
-		p.add(savedLabel);
-		p.add(savedQueries);
-		p.add(sqlLabel);
-		p.add(sqlText);
-		p.add(saveBox);
-		p.add(saveField);
+		p.add(saveArea, BorderLayout.EAST);
+		p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 18));
+		
 		//p.add(commonInfo);
 		
 		// Use Spring Layout to organize the panel.
+		/*
 		SpringLayout layout = new SpringLayout();
 		p.setLayout(layout);
 		
@@ -347,6 +326,7 @@ implements ActionListener, ItemListener
 				SpringLayout.EAST, saveBox);
 		//layout.putConstraint(SpringLayout.NORTH, commonInfo, 30, 
 		//SpringLayout.SOUTH, saveBox);
+		*/
 		
 		return p;
 	}
@@ -375,30 +355,21 @@ implements ActionListener, ItemListener
 		
 		// Create the OK and CANCEL buttons
 		JPanel buttons = new JPanel();
-		JButton thisOkButton;
-		//if (okButton == null)
-		//{
-			okButton = new JButton("OK");
-			thisOkButton = okButton;
-		//}
-		//else
-		//{
-		//	okButton2 = new JButton("OK");
-		//	thisOkButton = okButton2;
-		//}
-		thisOkButton.addActionListener(this);
+		okButton = new JButton("OK");
+		okButton.addActionListener(this);
 		cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(this);
-		buttons.add(thisOkButton);
+		buttons.add(okButton);
 		buttons.add(cancelButton);
 
-		JSeparator divider = new JSeparator(JSeparator.HORIZONTAL);
-		divider.setBorder(BorderFactory.createRaisedBevelBorder());
+		//no more divider
+		//JSeparator divider = new JSeparator(JSeparator.HORIZONTAL);
+		//divider.setBorder(BorderFactory.createRaisedBevelBorder());
 		
 		//Add info to panel and lay out.
-		commonInfo.add(Box.createVerticalStrut(15));
-		commonInfo.add(divider);
-		commonInfo.add(Box.createVerticalStrut(15));
+		//commonInfo.add(Box.createVerticalStrut(15));
+		//commonInfo.add(divider);
+		//commonInfo.add(Box.createVerticalStrut(15));
 		commonInfo.add(namePanel);
 		commonInfo.add(commentPanel);
 		commonInfo.add(buttons);
@@ -463,7 +434,7 @@ implements ActionListener, ItemListener
 		if (tabbedPane.getSelectedIndex() == 0)
 		{
 			String where = "";
-			if (source == okButton || source == okButton2) {
+			if (source == okButton) {
 				//TODO: once "Advanced" tab is implemented, add criteria here
 				if (!(sizeSelected || timeSelected || countSelected)) {
 					JOptionPane.showMessageDialog(
@@ -505,12 +476,30 @@ implements ActionListener, ItemListener
 				System.out.println(where);
 				String name = nameField.getText();
 				String comment = commentField.getText();
-				SQLDivider sqld = new SQLDivider(collectionID, db,
+				
+				//Run the query outside the EDT
+				final SQLDivider sqld = new SQLDivider(collectionID, db,
 						name, comment, where);
-				sqld.setCursorType(CollectionDivider.DISK_BASED);
-				sqld.divide();
-				cTree.updateTree();
-				dispose();
+				final ProgressBarWrapper pbar = 
+					new ProgressBarWrapper(parent, "Executing Query", 100);
+				pbar.setIndeterminate(true);
+				pbar.constructThis();
+				pbar.setText("Executing Query...");
+				
+				SwingWorker sw = new SwingWorker() {
+					public Object construct() {
+						sqld.setCursorType(CollectionDivider.DISK_BASED);
+						sqld.divide();
+						return null;
+					}
+					
+					public void finished() {
+						cTree.updateTree();
+						pbar.disposeThis();
+						dispose();
+					}
+				};
+				sw.start();
 			}			
 			else  
 			{
