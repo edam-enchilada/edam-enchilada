@@ -869,6 +869,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		if(!spectrumLoaded) {
 			try{
 				getSpectrum();
+				chart.displaySpectra(posSpecDS, negSpecDS, getPosDS(), getNegDS());
 			}
 			catch (Exception e)
 			{
@@ -876,10 +877,9 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 				e.printStackTrace();
 				posSpecDS = new Dataset();
 				negSpecDS = new Dataset();
-				//peakButton.setSelected(true);
+				peakButton.setSelected(true);
 			}
 		}
-		chart.displaySpectra(posSpecDS, negSpecDS, getPosDS(), getNegDS());
 		System.out.println("preparing to unzoom");
 		unZoom();
 	}
