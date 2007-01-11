@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.regex.MatchResult;
 
 import javax.swing.JDialog;
 
@@ -1715,8 +1716,18 @@ public class DatabaseTest extends TestCase {
 		db.openConnection();
 		
 		try {
-			//an empty database has version "Sept2006.1" currently
-			assertEquals(db.getVersion(), "Sept2006.1");
+			//Read version information from the database rebuild file
+			Scanner scan = new Scanner(new File("SQLServerRebuildDatabase.txt"));
+			scan.findWithinHorizon("INSERT INTO DBInfo VALUES \\('Version','(.*)'\\)", 0);
+			MatchResult res = scan.match();
+			if (res.groupCount() != 1)
+				fail("There should only be one version string in SQLServerRebuildDatabase.txt");
+			else {
+				String filev = res.group(1);
+				assertEquals(db.getVersion(), filev);
+			}
+				
+			scan.close();
 		}
 		catch (Exception ex) {
 			fail();
