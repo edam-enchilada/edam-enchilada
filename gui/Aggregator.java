@@ -159,7 +159,9 @@ public class Aggregator {
 			System.out.println("createAggregateTimeSeries: "+(end-begin)/1000+" sec.");
 			db.deleteTempAggregateBasis();
 		}
-		mainFrame.updateSynchronizedTree(rootCollectionID);
+		
+		if (mainFrame != null)
+			mainFrame.updateSynchronizedTree(rootCollectionID);
 		
 		
 		return rootCollectionID;
