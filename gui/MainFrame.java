@@ -952,7 +952,7 @@ public class MainFrame extends JFrame implements ActionListener
 		rebuildItem = new JMenuItem("Rebuild Database", KeyEvent.VK_R);
 		rebuildItem.addActionListener(this);
 		
-		backupItem = new JMenuItem("Backup Database...", KeyEvent.VK_B);
+		backupItem = new JMenuItem("Backup/Restore...", KeyEvent.VK_B);
 		backupItem.addActionListener(this);
 		
 		exitItem = new JMenuItem("Exit", KeyEvent.VK_X);
