@@ -141,7 +141,9 @@ implements ActionListener, ItemListener
 		tabbedPane = new JTabbedPane();
 		tabbedPane.addTab("Basic",null,basic,null);
 		getRootPane().setDefaultButton(okButton);
-		tabbedPane.addTab("Advanced",null,advanced,null);
+		//Advanced tab hidden for now - uncomment to enable
+		//@author shaferia 1/12/07
+		//tabbedPane.addTab("Advanced",null,advanced,null);
 		
 		cont.add(tabbedPane, BorderLayout.CENTER); // Add the tabbed pane to the dialogue box.
 		cont.add(commonInfo, BorderLayout.SOUTH);
