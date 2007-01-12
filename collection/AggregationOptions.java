@@ -83,6 +83,9 @@ public class AggregationOptions {
 		treatDataAsContinuous = false;
 		combMethod = CombiningMethod.SUM;
 		mzValues = new ArrayList<Integer>();
+		
+		// These two initializations go together: an empty mzString means that
+		// all mzValues should be used.
 		allMZValues = true;
 		mzString = "";
 	}
