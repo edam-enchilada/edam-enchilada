@@ -1137,6 +1137,8 @@ public abstract class Database implements InfoWarehouse {
 	{
 		int[] returnVals = new int[2];
 		
+		datasetName = removeReservedCharacters(datasetName);
+		
 		// What do we want to put as the description?
 		returnVals[0] = createEmptyCollection(datatype, parent, datasetName, comment, datasetName + ": " + comment);
 		try {
@@ -1155,7 +1157,10 @@ public abstract class Database implements InfoWarehouse {
 			StringBuilder sql = new StringBuilder();
 			sql.append("INSERT INTO " + getDynamicTableName(DynamicTable.DataSetInfo,datatype) 
 					+ " VALUES(" + returnVals[1] + ",'" + datasetName + "'");
-			if(params.length()>0)sql.append(","+ params + ")");
+			if(params.length()>0)
+				sql.append(","+ params + ")");
+			else
+				sql.append(")");
 			
 			//System.out.println(sql.toString); //debugging
 			stmt.execute(sql.toString());	
@@ -3512,6 +3517,98 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * A cursor that only returns AtomID for a given collection and SQL query string.
+	 * Similar to SQLCursor, but retrieves no associated particle information.
+	 * @author shaferia
+	 */
+	private class SQLAtomIDCursor implements CollectionCursor {
+		private final String query;
+		private Statement stmt;
+		private ResultSet rs;
+		
+		/**
+		 * @param collection The collection to retrieve AtomIDs from
+		 * @param where the SQL clause that specifies which AtomIDs to retrieve
+		 */
+		public SQLAtomIDCursor(Collection collection, String where) {
+			System.out.println("Datatype = " + collection.getDatatype());
+			String densename = getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype());
+			query = "SELECT " + densename + ".AtomID " + 
+			" FROM " + densename + ", InternalAtomOrder WHERE" +
+			" InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
+			" AND " + densename + ".AtomID = InternalAtomOrder.AtomID" +
+			" AND " + where;	
+			
+			try {
+				stmt = getCon().createStatement();
+				rs = stmt.executeQuery(query);
+			}
+			catch (SQLException ex) {
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception creating SQLAtomIDCursor.");
+				ex.printStackTrace();
+			}
+		}
+
+		public void close() {
+			try {
+				stmt.close();
+				rs.close();
+			}
+			catch (SQLException ex) {
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception closing SQLAtomIDCursor.");
+				ex.printStackTrace();
+			}
+		}
+
+		public ParticleInfo get(int i) throws NoSuchMethodException {
+			throw new NoSuchMethodException(
+					"SQLAtomIDCursor does not implement get(int)");
+		}
+
+		public ParticleInfo getCurrent() {
+			ParticleInfo p = new ParticleInfo();
+			try {
+				p.setID(rs.getInt(1));
+				return p;
+			}
+			catch (SQLException ex) {
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception retrieving AtomID with SQLAtomIDCursor.");
+				ex.printStackTrace();
+				return null;
+			}
+		}
+
+		/**
+		 * Not implemented for an AtomIDCursor - the datatype could theoretically
+		 * not have any spectrum information.
+		 */
+		public BinnedPeakList getPeakListfromAtomID(int id) {
+			return null;
+		}
+
+		public boolean next() {
+			try {
+				return rs.next();
+			}
+			catch (SQLException ex) {
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(), "Could not advance to next AtomID with SQLAtomIDCursor");
+				return false;
+			}
+		}
+
+		public void reset() {
+			try {
+				stmt = getCon().createStatement();
+				rs = stmt.executeQuery(query);
+			}
+			catch (SQLException ex) {
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(), "SQL Exception resetting SQLAtomIDCursor.");
+				ex.printStackTrace();
+			}			
+		}
+	}
+	
+	/**
 	 * SQL Cursor.  Returns atom info with a given "where" clause.
 	 */
 	private class SQLCursor extends AtomInfoOnlyCursor
@@ -3830,6 +3927,15 @@ public abstract class Database implements InfoWarehouse {
 	public CollectionCursor getAtomInfoOnlyCursor(Collection collection)
 	{
 		return new AtomInfoOnlyCursor(collection);
+	}
+
+	/**
+	 * get method for SQLCursor.
+	 */
+	public CollectionCursor getSQLAtomIDCursor(Collection collection, 
+			String where)
+	{
+		return new SQLAtomIDCursor(collection, where);
 	}
 	
 	/**

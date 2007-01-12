@@ -616,11 +616,45 @@ public class MainFrame extends JFrame implements ActionListener
 				JOptionPane.showMessageDialog(this, "Please select a collection to compress.", 
 						"No collection selected.", JOptionPane.WARNING_MESSAGE);
 			else {
-				//TODO: Provide a way to set the collection's name
-				//or give it better default
-				BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,"name","comment",DistanceMetric.EUCLIDEAN_SQUARED);
-				b.compress();
-				collectionPane.updateTree();
+				//Added input box for a collection name as indicated.
+				//This could still be made more elegant - adding a comment field, choosing a distance metric,
+				//and giving more feedback on the stage of compression might be nice.
+				//@author shaferia
+				final String name = JOptionPane.showInputDialog(
+						this, 
+						"Enter a name for the compressed collection:", 
+						"Input name", 
+						JOptionPane.QUESTION_MESSAGE);
+				if (name == null)
+					return;
+				
+				final MainFrame thisref = this;
+				final ProgressBarWrapper pbar = new ProgressBarWrapper(this, "Compress", 100);
+				pbar.setIndeterminate(true);
+				pbar.setText("Compressing collection " + collectionPane.getSelectedCollection().getName() + "...");
+				
+				UIWorker worker = new UIWorker() {
+					public Object construct() {
+						try {
+							BIRCH b = new BIRCH(collectionPane.getSelectedCollection(),db,name,"comment",DistanceMetric.EUCLIDEAN_SQUARED);
+							b.compress();
+						}
+						catch (Exception ex) {
+							ErrorLogger.writeExceptionToLogAndPrompt("Compression", ex.getMessage());
+							ErrorLogger.flushLog(thisref);
+							ex.printStackTrace();
+							finished();
+						}
+						return null;
+					}
+					public void finished() {
+						collectionPane.updateTree();
+						pbar.disposeThis();
+						super.finished();
+					}
+				};
+				pbar.constructThis();
+				worker.start();
 			}
 		}
 		

@@ -258,10 +258,9 @@ public interface InfoWarehouse {
 	public Collection getCollection(int collectionID);
 	
 	public CollectionCursor getAtomInfoOnlyCursor(Collection collection);
-	
-	public CollectionCursor getSQLCursor(Collection collection, 
-									     String where);
-	
+	public CollectionCursor getSQLAtomIDCursor(Collection collection,  String where);	
+	public CollectionCursor getSQLCursor(Collection collection, String where);
+
 	public CollectionCursor getPeakCursor(Collection collection);
 	
 	public CollectionCursor getBinnedCursor(Collection collection);

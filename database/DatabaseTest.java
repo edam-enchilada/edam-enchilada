@@ -1119,6 +1119,13 @@ public class DatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
+	public void testGetSQLAtomIDCursor() {
+		db.openConnection();
+		CollectionCursor curs = db.getSQLCursor(db.getCollection(2), "ATOFMSAtomInfoDense.AtomID != 50");
+		testCursor(curs);
+		db.closeConnection();
+	}
+	
 	public void testGetSQLCursor() {
 		db.openConnection();
 		CollectionCursor curs = db.getSQLCursor(db.getCollection(2), "ATOFMSAtomInfoDense.AtomID != 20");

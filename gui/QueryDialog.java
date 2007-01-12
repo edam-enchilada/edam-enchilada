@@ -52,6 +52,7 @@ import collection.Collection;
 import analysis.CollectionDivider;
 import analysis.SQLDivider;
 
+import database.DynamicTable;
 import database.InfoWarehouse;
 import externalswing.SwingWorker;
 
@@ -146,8 +147,14 @@ implements ActionListener, ItemListener
 		cont.add(commonInfo, BorderLayout.SOUTH);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
+		//AMS particles have no size information
+		if (collection.getDatatype().equals("AMS")) {
+			sizeButton.setEnabled(false);
+			setEnabledChildren(sizePanel, false);
+		}
+		
 		pack();
-
+		
 		setResizable(false);
 		//Display the dialogue box.
 		setVisible(true);
@@ -469,8 +476,9 @@ implements ActionListener, ItemListener
 					to += startAtom;
 					if (sizeSelected || timeSelected)
 						where += " AND";
-					where += " ATOFMSAtomInfoDense.AtomID <= " + to +
-					" AND ATOFMSAtomInfoDense.AtomID >= " + from; 
+					String densename = db.getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype());
+					where += " " + densename + ".AtomID <= " + to +
+					" AND " + densename + ".AtomID >= " + from; 
 				}
 				System.out.println("Dividing now:");
 				System.out.println(where);

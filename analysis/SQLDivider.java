@@ -83,7 +83,7 @@ public class SQLDivider extends CollectionDivider {
 	public boolean setCursorType(int type) {
 		if (type == DISK_BASED)
 		{
-			curs = db.getSQLCursor(collection, where);
+			curs = db.getSQLAtomIDCursor(collection, where);
 			return true;
 		}
 		else
@@ -98,7 +98,7 @@ public class SQLDivider extends CollectionDivider {
 		
 		while (curs.next())
 		{
-			int temp = curs.getCurrent().getATOFMSParticleInfo().getAtomID();
+			int temp = curs.getCurrent().getID();
 			//putInHostSubCollection(temp);
 			//Change to batch add atoms to the subcollection instead of moving them individually
 			//	@author shaferia 1-11-07
