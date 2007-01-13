@@ -178,6 +178,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
         pTable.setDefaultEditor(Float.class, new FloatEditor());
         pTable.setDefaultEditor(Integer.class, new IntegerEditor());
         pTable.setDefaultRenderer(Float.class, new FloatRenderer());
+        pTable.setDefaultRenderer(Integer.class, new IntegerRenderer());
         int numColumns = 7;
         if(showAdvancedOptions)numColumns = 8;
 		TableColumn[] tableColumns = new TableColumn[numColumns];

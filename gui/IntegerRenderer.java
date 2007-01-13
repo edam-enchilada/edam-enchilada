@@ -7,21 +7,19 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-public class FloatRenderer extends DefaultTableCellRenderer{
-	NumberFormat floatFormat;
+public class IntegerRenderer extends DefaultTableCellRenderer{
+	NumberFormat integerFormat;
 	
-    public FloatRenderer() {
-    	floatFormat = NumberFormat.getInstance();
+    public IntegerRenderer() {
+    	integerFormat = NumberFormat.getInstance();
         // Set the maximum decimal point precision
-        floatFormat.setMaximumIntegerDigits(1);
-        floatFormat.setMaximumFractionDigits(10);
     }
 
     public Component getTableCellRendererComponent(
                             JTable table, Object value,
                             boolean isSelected, boolean hasFocus,
                             int row, int column) {
-    	String formatted = floatFormat.format(value);
+    	String formatted = integerFormat.format(value);
     	Component result=super.getTableCellRendererComponent(table, formatted, isSelected, hasFocus, row, column);
     	return result;
     }	
