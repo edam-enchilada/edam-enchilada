@@ -2,11 +2,14 @@ package dataImporters;
 
 import java.awt.Frame;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.text.*;
 import java.util.*;
 
+import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitorInputStream;
+import javax.swing.SwingUtilities;
 
 import collection.Collection;
 
@@ -39,6 +42,7 @@ public class TSImport{
 	public static final int FAILED = 2;
 	public static final int PARSEERROR = 3;
 	private int status = TSImport.NORMAL;
+	public int choice;
 	
 	private InfoWarehouse db;
 	
@@ -46,8 +50,14 @@ public class TSImport{
 	
 	private ProgressTask convTask;
 	
-	public static final String dfString = "yyyy-MM-dd HH:mm:ss";
-    private static final SimpleDateFormat dateformatter = new SimpleDateFormat(dfString);
+	public static final String defaultDFString = "yyyy-MM-dd HH:mm:ss";
+    private static final SimpleDateFormat defaultDateFormatter = new SimpleDateFormat(defaultDFString);
+    
+    public static final String excelDFString = "MM/dd/yyyy HH:mm";
+    private static final SimpleDateFormat excelDateFormatter = new SimpleDateFormat(excelDFString);
+    private SimpleDateFormat dateFormatter = null;
+    
+    private static final SimpleDateFormat humanFormatter = new SimpleDateFormat("MMM d, yyyy, hh:mm a");
 
     public TSImport(InfoWarehouse db, Frame parent) {
     	super();
@@ -208,6 +218,18 @@ public class TSImport{
         } catch (IOException i) {
         	System.out.println(i.getMessage());
         }
+        
+//      Check date formatting
+        final String testString = (String)values[0].get(0);
+        verifyDate(testString);
+        //If they say it's wrong, it's wrong so throw an exception
+        if(choice == 1){
+        	throw new ParseException("Invalid Date",0);
+        }else if(choice == 2){ //if they cancel, cancel the whole process
+        	throw new InterruptedException("Date Confirmation cancelled");
+        }
+        
+        
         for(int i=2; i<values.length; i++){
         	if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
             putDataset(args[i],values[1],values[i]);
@@ -242,10 +264,57 @@ public class TSImport{
         } catch (IOException i) {
         	System.out.println(i.getMessage());
         }
+        
+        //Check date formatting
+        final String testString = (String)values[0].get(0);
+        verifyDate(testString);
+        //If they say it's wrong, it's wrong so throw an exception
+        if(choice == 1){
+        	throw new ParseException("Invalid Date",0);
+        }else if(choice == 2){ //if they cancel, cancel the whole process
+        	throw new InterruptedException("Date Confirmation cancelled");
+        }
+        
         for(int i=1; i<values.length; i++){
         	if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
             putDataset(column[i],values[0],values[i]);
         }
+    }
+    
+    private void verifyDate(final String testString) throws ParseException{
+    	Date testDate=null;
+    	try{
+       	testDate = defaultDateFormatter.parse(testString);
+    	dateFormatter = defaultDateFormatter;
+		}catch(ParseException e){
+		try{
+			testDate = excelDateFormatter.parse(testString);
+			dateFormatter = excelDateFormatter;
+		}catch(ParseException f){
+			dateFormatter = null;
+		}
+		}
+		if(testDate!=null){
+			final String output = humanFormatter.format(testDate);
+			final TSImport thisref = this;
+			try {
+				SwingUtilities.invokeAndWait(new Runnable(){
+					public void run(){
+						thisref.choice = JOptionPane.showConfirmDialog(parent,"The date "+testString+" was interpreted as "+
+							output+".  Is this correct?","Verify Date Format",JOptionPane.YES_NO_CANCEL_OPTION);
+					}
+				});
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else{
+			throw new ParseException("Invalid Date",0);
+		}
+		
     }
 
     private void putDataset(String name, ArrayList<String> time, ArrayList<String> value)
@@ -261,7 +330,7 @@ public class TSImport{
     		if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
     		float nextValue = 0;
     		try{
-    			Date nextDate = dateformatter.parse(time.get(i));
+    			Date nextDate = dateFormatter.parse(time.get(i));
     			if(nextDate==null)throw new ParseException("Invalid Date",0);
     			if(!value.get(i).equals("")){
     				nextValue = Float.parseFloat(value.get(i));
