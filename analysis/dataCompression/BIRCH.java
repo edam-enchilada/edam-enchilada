@@ -95,7 +95,7 @@ public class BIRCH extends CompressData{
 	//ThinkPad claims it has 1GB RAM - 1073741824 bytes
 	//1000 for test data, 150118 for i
 	//private final float MEM_THRESHOLD = 150000;
-	private final float MEM_THRESHOLD = 850000;
+	private final float MEM_THRESHOLD = 150000;
 
 	public static long buildTime = 0;
 	
@@ -137,8 +137,8 @@ public class BIRCH extends CompressData{
 			tuple = curs.next();
 			peakList = tuple.getValue();
 			atomID = tuple.getKey();
-			peakList.posNegNormalize(distanceMetric);
-		//	System.out.println("inserting particle " + particle.getID());
+			peakList.posNegNormalize(distanceMetric);//necessary?
+			System.out.println("inserting particle " + atomID);
 			assert!peakList.containsZeros():"zero present";
 			// insert the entry
 			changedNode = curTree.insertEntry(peakList, atomID);
@@ -341,6 +341,24 @@ public class BIRCH extends CompressData{
 				lastLeaf.nextLeaf = newCurNode;
 			
 			boolean reinserted;
+			/*for (int i = 0; i < oldCurNode.getSize(); i++) {
+				ClusterFeature thisCF = oldCurNode.getCFs().get(i);
+				//try to reinsert the cf
+				reinserted = newTree.reinsertEntry(thisCF);
+				//if reinserting it would have resulted in too many cfs for that node
+				if (!reinserted) {
+					//make a new cluster feature and add it to newCurNode
+					ClusterFeature newLeaf = new ClusterFeature(
+							newCurNode, thisCF.getCount(), thisCF.getSums(), 
+							thisCF.getSumOfSquares(), thisCF.getAtomIDs(),
+							thisCF.getMagnitude());				
+					newCurNode.addCF(newLeaf);
+					//update everything
+					newTree.updateNonSplitPath(newLeaf.curNode);
+					for (int j = 0; j < newLeaf.curNode.getCFs().size(); j++){
+						newLeaf.curNode.getCFs().get(j).updateCF();
+					}
+				}*/
 			for (int i = 0; i < oldCurNode.getSize(); i++) {
 				ClusterFeature thisCF = oldCurNode.getCFs().get(i);
 				//try to reinsert the cf
@@ -350,6 +368,7 @@ public class BIRCH extends CompressData{
 					//make a new cluster feature and add it to newCurNode
 					ClusterFeature newLeaf = new ClusterFeature(
 							newCurNode, thisCF.getCount(), thisCF.getSums(), 
+							thisCF.getNonNormalizedSums(),
 							thisCF.getSumOfSquares(), thisCF.getAtomIDs(),
 							thisCF.getMagnitude());				
 					newCurNode.addCF(newLeaf);

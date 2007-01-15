@@ -29,11 +29,20 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.add(20, (float) 2);
 		bp1.add(90, (float) 2);
 		bp1.add(120, (float) 2);
+		BinnedPeakList nonNormalized = new BinnedPeakList(new Normalizer());
+		nonNormalized.copyBinnedPeakList(bp1);
 		origMagnitude1 = bp1.posNegNormalize(dMetric);
 		testCF1 = new ClusterFeature(new CFNode(null, dMetric), dMetric);
 		testCF1.updateCF(bp1, 1, true);
 		testCF1.setMagnitude(origMagnitude1);
+		testCF1.setNonNormalizedSums(nonNormalized);
 	}
+	public void testMagnitude() {
+		testCF1.getSums().multiply(testCF1.getMagnitude());
+		testCF1.getNonNormalizedSums().printPeakList();
+		assert(testCF1.getNonNormalizedSums().comparePeakLists(testCF1.getSums()));
+	}
+	
 	public void testUpdateCF() {
 		DistanceMetric dMetric = DistanceMetric.EUCLIDEAN_SQUARED;
 		BinnedPeakList bp1 = new BinnedPeakList(new Normalizer());
@@ -63,7 +72,7 @@ public class ClusterFeatureTest extends TestCase {
 		// Might not be precisely the same due to rounding issues after
 		// additional normalization
 		System.out.println(test.getSums().getDistance(bp1,dMetric));
-		assertEquals(test.getSums().getDistance(bp1, dMetric), 0.0f);
+		assert(test.getSums().getDistance(bp1, dMetric)<0.00001f);
 	}
 	
 	public void testAbsorbCF() {
@@ -103,7 +112,7 @@ public class ClusterFeatureTest extends TestCase {
 		bp1.multiply(origMagnitude12);
 		bp1.addAnotherParticle(bp3);
 		bp1.posNegNormalize(dMetric);
-		assertEquals(testCF1.getSums().getDistance(bp1, dMetric), 0.0f);
+		assert(testCF1.getSums().getDistance(bp1, dMetric)<0.00001f);
 	}
 	
 	/*public void testIsEqual() {

@@ -441,7 +441,7 @@ public class CFTree {
 	 * @param entryToMerge - entry 2
 	 * @return - merged entry (entry 2 will be merged into entry 1).
 	 */
-	public ClusterFeature mergeEntries(ClusterFeature entry, 
+	/*public ClusterFeature mergeEntries(ClusterFeature entry, 
 			ClusterFeature entryToMerge) {
 		assert (entry.curNode.equals(entryToMerge.curNode)) : 
 			"entries aren't in same node!";		
@@ -472,6 +472,59 @@ public class CFTree {
 				curNode,
 				entry.getCount()+entryToMerge.getCount(),
 				combinedb, // JANARA: This was b1, do I now have it right?
+				entry.getSumOfSquares() + entryToMerge.getSumOfSquares(),
+				newAtomIds, magnitude);
+		
+		returnThis.child = entry.child;
+		if (returnThis.child != null)
+			returnThis.child.parentCF = returnThis;
+			
+		if (!curNode.isLeaf()) {
+			for (int i = 0; i < entryToMerge.child.getSize(); i++) {
+				returnThis.child.addCF(entryToMerge.child.getCFs().get(i));
+			}
+		}
+		
+		curNode.removeCF(entry);
+		curNode.removeCF(entryToMerge);
+		
+		curNode.addCF(returnThis);
+		returnThis.updateCF();
+		
+		memory+=curNode.getMemory();
+		return returnThis;
+	}*/
+	public ClusterFeature mergeEntries(ClusterFeature entry, 
+			ClusterFeature entryToMerge) {
+		assert (entry.curNode.equals(entryToMerge.curNode)) : 
+			"entries aren't in same node!";		
+			
+		CFNode curNode = entry.curNode;
+		
+		memory-=curNode.getMemory();
+		
+		//new binnedPeakList for the new node
+		BinnedPeakList combinedb = new BinnedPeakList(new Normalizer());
+		
+		BinnedPeakList b1 = entry.getNonNormalizedSums();
+		
+		BinnedPeakList b2 = entryToMerge.getNonNormalizedSums();
+		
+		combinedb.addAnotherParticle(b1);
+		combinedb.addAnotherParticle(b2);
+		BinnedPeakList nonNormalizedCB = new BinnedPeakList(new Normalizer());
+		nonNormalizedCB.copyBinnedPeakList(combinedb);
+		float magnitude = combinedb.posNegNormalize(dMetric);
+		
+		//new atomIDs for the new node
+		ArrayList<Integer> newAtomIds = new ArrayList<Integer>();
+		newAtomIds.addAll(entry.getAtomIDs());
+		newAtomIds.addAll(entryToMerge.getAtomIDs());
+		
+		ClusterFeature returnThis = new ClusterFeature(
+				curNode,
+				entry.getCount()+entryToMerge.getCount(),
+				combinedb, nonNormalizedCB, // JANARA: This was b1, do I now have it right?
 				entry.getSumOfSquares() + entryToMerge.getSumOfSquares(),
 				newAtomIds, magnitude);
 		
