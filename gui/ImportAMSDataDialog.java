@@ -31,6 +31,7 @@ import javax.swing.table.TableColumn;
 
 import dataImporters.AMSDataSetImporter;
 import dataImporters.ATOFMSDataSetImporter;
+import database.InfoWarehouse;
 import errorframework.*;
 import externalswing.SwingWorker;
 
@@ -46,6 +47,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	private static JFrame parent = null;
 	private boolean importedTogether = false;
 	private int parentID = 0; //default parent collection is root
+	private InfoWarehouse db;
 	
 	/**
 	 * Extends JDialog to form a modal dialogue box for importing 
@@ -56,11 +58,12 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 	 * @throws java.awt.HeadlessException From the constructor of 
 	 * JDialog.  
 	 */
-	public ImportAMSDataDialog(JFrame owner) throws HeadlessException {
+	public ImportAMSDataDialog(JFrame owner, InfoWarehouse db) throws HeadlessException {
 		// calls the constructor of the superclass (JDialog), sets the title and makes the
 		// dialog modal.  
 		super(owner, "Import AMS Datasets as Collections", true);
 		parent = owner;
+		this.db = db;
 		setSize(1000,600);
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -143,7 +146,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 			final ProgressBarWrapper progressBar = 
 				new ProgressBarWrapper(parent, AMSDataSetImporter.TITLE, 100);			
 			final AMSDataSetImporter ams = 
-					new AMSDataSetImporter(amsTableModel, parent, MainFrame.db, progressBar);
+					new AMSDataSetImporter(amsTableModel, parent, db, progressBar);
 			// If a .par file or a .cal file is missing, don't start the process.
 			try {
 				ams.errorCheck();
@@ -185,7 +188,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 				//pop up a "create new collections" dialog box & keep number of new
 				//collection
 				EmptyCollectionDialog ecd = 
-					new EmptyCollectionDialog((JFrame)parent, "AMS", false);
+					new EmptyCollectionDialog((JFrame)parent, "AMS", false, db);
 				parentID = ecd.getCollectionID();
 				
 				if (parentID == -1) {
@@ -196,7 +199,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 				}
 			}
 			else {
-				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+				if(!EmptyCollectionDialog.removeEmptyCollection(db, parentID))
 					System.err.println("Error deleting temporary collection");
 				parentLabel.setText("");
 				importedTogether = false;				
@@ -204,7 +207,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 		}
 		else if (source == cancelButton) {
 			if (importedTogether) {
-				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+				if(!EmptyCollectionDialog.removeEmptyCollection(db, parentID))
 					System.err.println("Error deleting temporary collection");
 				parentLabel.setText("");
 				importedTogether = false;				

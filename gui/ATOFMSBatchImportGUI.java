@@ -68,7 +68,7 @@ public class ATOFMSBatchImportGUI {
 					JOptionPane.YES_NO_OPTION);
 			if (selection == JOptionPane.YES_OPTION) {
 				EmptyCollectionDialog ecd = 
-					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false, MainFrame.db);
 				parentID = ecd.getCollectionID();
 				if (parentID == -1) {
 					return false;

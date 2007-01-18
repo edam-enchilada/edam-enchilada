@@ -118,10 +118,11 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 		 * @throws java.awt.HeadlessException From the constructor of 
 		 * JDialog.  
 		 */
-		public ImportEnchiladaDataDialog(Frame owner) throws HeadlessException {
+		public ImportEnchiladaDataDialog(Frame owner, InfoWarehouse db) throws HeadlessException {
 			// calls the constructor of the superclass (JDialog), sets the title and makes the
 			// dialog modal.  
 			super(owner, "Import Enchilada Data Sets as Collections", true);
+			this.db = db;
 			parent = owner;
 			setSize(500,600);
 			
@@ -229,7 +230,6 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			setVisible(true);	
 		}
 		
-	
 		private JTable getEnchiladaDataTable(){
 			
 			eTableModel = new EnchiladaDataTableModel();
@@ -266,7 +266,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			}
 			else if (source == cancelButton) {
 				if (importedTogether) {
-					if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					if(!EmptyCollectionDialog.removeEmptyCollection(MainFrame.db, parentID))
 						System.err.println("Error deleting temporary collection");
 					importedTogether = false;				
 				}
@@ -337,7 +337,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 				//pop up a "create new collections" dialog box & keep number of new collection
 				if (parentButton.isSelected()) {
 					EmptyCollectionDialog ecd = 
-						new EmptyCollectionDialog((JFrame)parent, "ATOFMS", true);
+						new EmptyCollectionDialog((JFrame)parent, "ATOFMS", true, MainFrame.db);
 					parentID = ecd.getCollectionID();
 					
 					if (parentID == -1) {
@@ -348,7 +348,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 					}
 				}
 				else {
-					if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+					if(!EmptyCollectionDialog.removeEmptyCollection(MainFrame.db, parentID))
 						System.err.println("Error deleting temporary collection");
 					parentButton.setText("Create a parent collection for all incoming datasets");
 					importedTogether = false;

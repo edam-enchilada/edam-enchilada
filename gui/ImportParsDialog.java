@@ -296,7 +296,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			//pop up a "create new collections" dialog box & keep number of new collection
 			if (parentButton.isSelected()) {
 				EmptyCollectionDialog ecd = 
-					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false);
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false, db);
 				parentID = ecd.getCollectionID();
 				
 				if (parentID == -1) {
@@ -307,7 +307,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				}
 			}
 			else {
-				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+				if(!EmptyCollectionDialog.removeEmptyCollection(db, parentID))
 					System.err.println("Error deleting temporary collection");
 				parentLabel.setText("");
 				importedTogether = false;
@@ -346,7 +346,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 		else if (source == cancelButton) {
 			System.out.println("min relative area: "+((Float)basicTableModel.getValueAt(0,6)).floatValue());
 			if (importedTogether) {
-				if(!EmptyCollectionDialog.removeEmptyCollection(parentID))
+				if(!EmptyCollectionDialog.removeEmptyCollection(db, parentID))
 					System.err.println("Error deleting temporary collection");
 				parentLabel.setText("");
 				importedTogether = false;

@@ -63,15 +63,17 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	private JComboBox datatypeBox;
 	private int collectionID = -1;
 	private String collectionName = "";
+	private InfoWarehouse db;
 	
-	public EmptyCollectionDialog(JFrame parent) {
-		this(parent, "", true);
+	public EmptyCollectionDialog(JFrame parent, InfoWarehouse db) {
+		this(parent, "", true, db);
 	}
 	
 	public EmptyCollectionDialog (JFrame parent, String datatype,
-			boolean datatypeEditable)
+			boolean datatypeEditable, InfoWarehouse db)
 	{
 		super (parent,"Empty Collection", true);
+		this.db = db;
 		setSize(400,200);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
@@ -174,11 +176,8 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 	 * @return true on success
 	 * @author shaferia
 	 */
-	public static boolean removeEmptyCollection(int id) {
-		InfoWarehouse db = Database.getDatabase();
-		db.openConnection();
+	public static boolean removeEmptyCollection(InfoWarehouse db, int id) {
 		boolean success = db.removeEmptyCollection(db.getCollection(id));
-		db.closeConnection();
 		return success;
 	}
 	
@@ -187,11 +186,8 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 		if (source == okButton) {
 			if(!nameField.getText().equals("")) {
 				if(datatypeBox.getSelectedIndex()!= -1) {
-					InfoWarehouse db = Database.getDatabase();
-					db.openConnection();
 					collectionID = db.createEmptyCollection((String)datatypeBox.getSelectedItem(), 0,nameField.getText(),commentField.getText(),"");
 					collectionName = nameField.getText();
-					db.closeConnection();
 					System.out.println("Empty Collection ID: " + collectionID);
 					dispose();
 				}

@@ -390,7 +390,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		if (source == importEnchiladaDataButton ||
 				source == loadEnchiladaDataItem) {
-			new ImportEnchiladaDataDialog(this);
+			new ImportEnchiladaDataDialog(this, db);
 			collectionPane.updateTree();
 			validate();
 		}
@@ -411,7 +411,7 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		if (source == importAMSDataButton || source == loadAMSDataItem) {
-				new ImportAMSDataDialog(this);
+				new ImportAMSDataDialog(this, db);
 				collectionPane.updateTree();
 				validate();
 		}
@@ -424,7 +424,7 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		
 		else if (source == emptyCollButton || source == emptyCollection) {
-			new EmptyCollectionDialog(this);
+			new EmptyCollectionDialog(this, db);
 			collectionPane.updateTree();
 			validate();
 		}
