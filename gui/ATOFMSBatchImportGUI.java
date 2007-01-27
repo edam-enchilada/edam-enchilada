@@ -101,6 +101,7 @@ public class ATOFMSBatchImportGUI {
 			public Object construct(){
 					ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent, progressBar);
 					dsi.collectTableInfo();
+					dsi.setParentID(parentID);
 					for(int i=0;i<dsi.getNumCollections();i++){
 						dbRef.beginTransaction();
 						try{
