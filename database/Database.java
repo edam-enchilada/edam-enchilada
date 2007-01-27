@@ -5888,11 +5888,6 @@ public abstract class Database implements InfoWarehouse {
 	 * TODO: still needs optimization
 	 */
 	public void updateAncestors(Collection collection) {
-		if(true){
-			System.out.println("Updating: "+collection.getCollectionID());
-			this.propagateNewCollection(collection);
-			return;
-		}
 		// if you try to update a null collection or one of the root collections,
 		// return.
 		if (collection == null || 
