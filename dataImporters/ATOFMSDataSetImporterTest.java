@@ -175,6 +175,9 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 		importer.checkNullRows();
 
 		importer.collectTableInfo();
+		for(int i=0;i<importer.getNumCollections();i++){
+			importer.collectRowInfo();
+		}
 
 		
 		Statement stmt = db.getCon().createStatement();
