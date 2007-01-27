@@ -220,7 +220,7 @@ public class TSImport{
         }
         
 //      Check date formatting
-        final String testString = (String)values[0].get(0);
+        final String testString = (String)values[1].get(0);
         verifyDate(testString);
         //If they say it's wrong, it's wrong so throw an exception
         if(choice == 1){
