@@ -166,6 +166,15 @@ public interface InfoWarehouse {
 	public boolean orphanAndAdopt(Collection collection);
 	
 	/**
+	 * Percolate all atoms in the given collection up the collection hierarchy.
+	 * This should be called whenever a new collection is created.  If it has one or more
+	 * parent, it will cause the parent to contain all of the new collection's atoms
+	 * 
+	 * @param newCollection
+	 */
+	public void propagateNewCollection(Collection newCollection);
+	
+	/**
 	 * Deletes a collection and unlike orphanAndAdopt() also recursively
 	 * deletes all direct descendents. 
 	 * 

@@ -5834,12 +5834,65 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	/**
+	 * Percolate all atoms in the given collection up the collection hierarchy.
+	 * This should be called whenever a new collection is created.  If it has one or more
+	 * parent, it will cause the parent to contain all of the new collection's atoms
+	 * 
+	 * @param newCollection
+	 */
+	public void propagateNewCollection(Collection newCollection){
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("IF (OBJECT_ID('#children') " +
+				"IS NOT NULL)\n" +
+				"	DROP TABLE #newCollection\n");
+			stmt.executeUpdate("CREATE TABLE #newCollection (AtomID int, CollectionID int)");
+			String query = "INSERT INTO #newCollection (AtomID)" +
+			" SELECT AtomID FROM InternalAtomOrder WHERE (CollectionID = "+newCollection.getCollectionID()+");";
+			stmt.execute(query);
+			propagateNewCollection(newCollection,newCollection.getParentCollection());
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void propagateNewCollection(Collection newCollection, Collection parentCollection){
+		if (parentCollection == null || 
+				parentCollection.getCollectionID() == 0 || 
+				parentCollection.getCollectionID() == 1){
+			try {
+				Statement stmt = con.createStatement();
+				String query = "DROP TABLE #newCollection;";
+				stmt.execute(query);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+		try {
+			Statement stmt = con.createStatement();
+			stmt.execute("UPDATE #newCollection SET CollectionID = " + parentCollection.getCollectionID());
+			stmt.execute("INSERT INTO InternalAtomOrder (AtomID, CollectionID) SELECT * FROM #newCollection;");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		propagateNewCollection(newCollection,parentCollection.getParentCollection());
+		
+		
+	}
 	
 	/**
 	 * @author steinbel - removed OrderNumber
 	 * TODO: still needs optimization
 	 */
 	public void updateAncestors(Collection collection) {
+		if(true){
+			System.out.println("Updating: "+collection.getCollectionID());
+			this.propagateNewCollection(collection);
+			return;
+		}
 		// if you try to update a null collection or one of the root collections,
 		// return.
 		if (collection == null || 

@@ -273,15 +273,20 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				
 				final SwingWorker worker = new SwingWorker(){
 					public Object construct(){
-						dbRef.beginTransaction();
-						try{
-							dsi.collectTableInfo();
-							dbRef.commitTransaction();
-						} catch (InterruptedException e2){
-							dbRef.rollbackTransaction();
-						}catch (DisplayException e1) {
-							ErrorLogger.displayException(progressBar,e1.toString());
-						} 
+						dsi.collectTableInfo();
+						for(int i=0;i<dsi.getNumCollections();i++){
+							dbRef.beginTransaction();
+							try{
+								dsi.collectRowInfo();
+								dbRef.commitTransaction();
+							} catch (InterruptedException e2){
+								dbRef.rollbackTransaction();
+							}catch (DisplayException e1) {
+								ErrorLogger.displayException(progressBar,e1.toString());
+								dbRef.rollbackTransaction();
+							} 
+							
+						}
 						return null;
 					}
 					public void finished(){

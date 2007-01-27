@@ -140,7 +140,7 @@ public class TSBulkInserter {
 		interimCommit();
 		started = false;
 		
-		db.updateAncestors(db.getCollection(collectionID));
+		db.propagateNewCollection(db.getCollection(collectionID));
 		
 		int ret = collectionID;
 		

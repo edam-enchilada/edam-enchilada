@@ -261,7 +261,10 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 				} catch (DisplayException e1) {
 					ErrorLogger.displayException(this,e1.getMessage());
 				}
-				db.updateAncestors(db.getCollection(cID));
+				// changed to from updateAncestors to this
+				// update ancestors is painfully slow
+				// propagateNewCollection is much much faster.
+				db.propagateNewCollection(db.getCollection(cID));
 				dispose();
 			}
 			else if (source == cancelButton) {

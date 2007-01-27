@@ -182,6 +182,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	public void setCScrollMax(double defaultXmax) {
 		this.cScrollMax = defaultXmax;
 		this.defaultCScrollMax = defaultXmax;
+		//zoom out to ensure correctness of new values
+		zoomOut();
+		
 	}
 	/**
 	 * Find the minimum accessible value on the chart.
@@ -196,6 +199,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void setCScrollMin(double defaultXmin) {
 		this.cScrollMin = defaultXmin;
+		//zoom out to ensure correctness of new values
+		zoomOut();
 	}
 	
 	
@@ -208,8 +213,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 */
 	public void mousePressed(MouseEvent e) 
 	{
-		System.out.println("Chart size: "+(((Chart)chart).getSize().width)+"\t"+(((Chart)chart).getSize().height));
-		System.out.println("ChartArea size: "+(((Chart)chart).chartAreas.get(0).getSize().width)+"\t"+(((Chart)chart).chartAreas.get(0).getSize().height));
+		//System.out.println("Chart size: "+(((Chart)chart).getSize().width)+"\t"+(((Chart)chart).getSize().height));
+		//System.out.println("ChartArea size: "+(((Chart)chart).chartAreas.get(0).getSize().width)+"\t"+(((Chart)chart).chartAreas.get(0).getSize().height));
 		// if it's a right mouse click
 		// and inside the chart area
 		// draw the grey thing
@@ -225,7 +230,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			glassPane.drawLine = false;
 			repaint();
 		}
-		System.out.println("mouse clicked: "+glassPane.start);
+		//System.out.println("mouse clicked: "+glassPane.start);
 	}
 	/*
 	Chart size: 634	575
@@ -286,7 +291,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		glassPane.drawLine = false;
 		if(glassPane.start != null && glassPane.end != null)
 		{
-			System.out.println("mouse released: "+glassPane.start+"\t"+glassPane.end);
+			//System.out.println("mouse released: "+glassPane.start+"\t"+glassPane.end);
 			performZoom();
 		}
 		// whether or not a zoom was made, clear glassPane's start and end!
@@ -320,15 +325,14 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		double xmin = scrollToChart(scrollmin);
 		double xmax = scrollToChart(scrollmax);
 		
-		System.out.println("reconverted chart coords: "+xmin+"\t"+xmax);
-		
 		try
 		{
 			chart.setXAxisBounds(xmin, xmax);
 			chart.packData(false, true, forceY);
 		}
 		catch (IllegalArgumentException ex){
-			System.out.println("Illegal Argument");
+			System.out.println("Illegal Argument: "+e.getValue());
+			//ex.printStackTrace();
 		}
 	}
 	
@@ -375,12 +379,12 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			+ cScrollMin<0){
 			if(((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent)<0){
 				if((((double) scrollValue) / Integer.MAX_VALUE)<0){
-					System.out.println("divide by big number < 0");
+					System.err.println("divide by big number < 0");
 				}else{
-					System.out.println("mult by maxExtent < 0");
+					System.err.println("mult by maxExtent < 0");
 				}
 			}else{
-				System.out.println("plus scrollMin < 0");
+				System.err.println("plus scrollMin < 0");
 			}
 		}
 		return ((((double) scrollValue) / Integer.MAX_VALUE) * maxExtent) 
@@ -397,12 +401,12 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		if((((chartValue - cScrollMin) / maxExtent) * Integer.MAX_VALUE)<0){
 				if(((chartValue - cScrollMin) / maxExtent)<0){
 					if((chartValue - cScrollMin)<0){
-						System.out.println("minus scrollMin < 0");
+						System.err.println("chartValue < cScrollMin!");
 					}else{
-						System.out.println("divide by maxExtent < 0");
+						System.err.println("divide by maxExtent < 0");
 					}
 				}else{
-					System.out.println("mult by big number < 0");
+					System.err.println("mult by big number < 0");
 				}
 			}
 		return (int) 
@@ -421,6 +425,8 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		Point maxPoint = new Point(glassPane.end);
 		double xmin, xmax;
 		
+		repaint();	//get rid of grey dots
+		
 		// find the relevant chart
 		//int chartIndex = ((Chart)chart).getChartIndexAt(minPoint);
 		// set the cScroll values to the max and min values of the relevant chartArea
@@ -433,10 +439,9 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			maxPoint.x = glassPane.start.x;
 		}
 		//don't zoom if the distance dragged (in pixels) is too small
-		System.out.println("zoom length: "+(maxPoint.x-minPoint.x));
 		if(maxPoint.x - minPoint.x < MIN_ZOOM)
 		{
-			repaint();	//get rid of grey dots
+			System.out.println("Zoom length too small: "+(maxPoint.x-minPoint.x));
 			return; //zooms that are too small
 		}
 		// retrieve the data values(in chart coords)
@@ -448,7 +453,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		//don't zoom if the two points(in pixels) round to the same point(in chart units)
 		if(xmin >= xmax)
 		{
-			repaint();
+			System.out.println("Same point(in chart units)");
 			return; //another case of zooms that are too small
 		}
 		
@@ -502,7 +507,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		//update the scroll bar
 		System.out.println("scrollBar.setValues: "+(scrollMin+1)+"\n"+(scrollMax-scrollMin-1)+"\n"
 				+S_SCROLL_MIN+"\t"+S_SCROLL_MAX);
-		scrollBar.setValues(scrollMin+1, scrollMax - scrollMin-1,
+		scrollBar.setValues(S_SCROLL_MIN, S_SCROLL_MAX,
 				S_SCROLL_MIN, S_SCROLL_MAX);
 		scrollBar.setValues(scrollMin+1, scrollMax - scrollMin-1,
 				S_SCROLL_MIN, S_SCROLL_MAX);

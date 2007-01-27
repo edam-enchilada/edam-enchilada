@@ -284,9 +284,8 @@ public class SyncAnalyzePanel extends JPanel {
 
 			zchart = new ZoomableChart(chart);
 			zchart.setFocusable(true);
-			zchart.setCScrollMin(xMin);
-			zchart.setCScrollMax(xMax);
-			
+			//zchart.setCScrollMin(xMin);
+			//zchart.setCScrollMax(xMax);
 			// Set up comparison charts
 			JPanel bottomPanel = addComponent(zchart, panePanel);
 

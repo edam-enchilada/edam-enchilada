@@ -63,6 +63,7 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Window;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
@@ -116,7 +117,6 @@ public class ATOFMSDataSetImporter {
 	protected int[] numParticles;
 	protected Collection[] collections;
 	private final ATOFMSDataSetImporter thisRef;
-	
 	/* Database object */
 	InfoWarehouse db;
 	
@@ -147,10 +147,10 @@ public class ATOFMSDataSetImporter {
 	}
 	
 	
-	/**
+/*	*//**
 	 * Loops through each row, collects the information, and processes the
 	 * datasets row by row.
-	 */
+	 *//*
 	public void collectTableInfo() throws InterruptedException, DisplayException{
 		
 		numCollections = table.getRowCount()-1;
@@ -193,6 +193,60 @@ public class ATOFMSDataSetImporter {
 		
 		
 	}
+*/	
+	
+	/**
+	 * Collects table-wide information
+	 */
+	public void collectTableInfo(){
+		
+		numCollections = table.getRowCount()-1;
+		collections = new Collection[numCollections];
+		try {
+			numParticles = getNumParticles();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		progressBar.setMaximum(numParticles[numCollections]);
+		collectionIndex = 0;	
+	}
+	
+	/**
+	 * Loops through each row, collects the information, and processes the
+	 * datasets row by row.
+	 */
+	public void collectRowInfo() throws InterruptedException, DisplayException{
+		
+		//Loops through each dataset and creates each collection.
+		if(this.collectionIndex<numCollections){
+			if(progressBar.wasTerminated()){
+				throw new InterruptedException();
+			}
+			progressBar.setTitle(title+": "+(collectionIndex+1)+" of "+numCollections);
+			// Table values for this row.
+			setVariablesFromTable(collectionIndex);
+			// Call relevant methods
+			try {
+				processDataSet();
+				readParFileAndCreateEmptyCollection();
+				readSpectraAndCreateParticle();
+				
+			} catch (IOException e) {
+				//e.printStackTrace();
+				ErrorLogger.writeExceptionToLog("Importing","File "+name+
+						" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
+				throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
+			}catch (DataFormatException e) {
+				//e.printStackTrace();
+				ErrorLogger.writeExceptionToLog("Importing","File "+name+
+						" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace())); 
+				throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
+			}
+			collectionIndex++;
+		}
+	}
+	
 	
 	public void setVariablesFromTable(int i){
 		int nextCol = 1;
@@ -231,7 +285,7 @@ public class ATOFMSDataSetImporter {
 				calInfo = new CalInfo(massCalFile,sizeCalFile, autoCal);
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLog("Importing","Corrupt calibration file : " +
-					"\n\tMessage: "+e.getMessage());
+					"\n\tMessage: "+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
 			throw new IOException();
 		}
 		if (!skipFile) { // If we don't have to skip this row due to an error...
@@ -445,7 +499,8 @@ public class ATOFMSDataSetImporter {
 						}
 					} //***SLH
 					((Database)db).BulkInsertDataParticles(ATOFMS_buckets);
-					db.updateAncestors(curCollection);
+					//Percolate new atoms upward
+					db.propagateNewCollection(curCollection);
 					readSet.close();
 		} else {
 			ErrorLogger.displayException(progressBar, 
@@ -592,5 +647,9 @@ public class ATOFMSDataSetImporter {
 	}
 	public void setParentID(int parentID) {
 		this.parentID = parentID;
+	}
+
+	public int getNumCollections() {
+		return numCollections;
 	}
 }

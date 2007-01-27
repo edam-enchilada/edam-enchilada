@@ -100,24 +100,25 @@ public class ATOFMSBatchImportGUI {
 		final SwingWorker worker = new SwingWorker(){
 			public Object construct(){
 					ATOFMSDataSetImporter dsi = new ATOFMSDataSetImporter(tab, parent, progressBar);
-					dbRef.beginTransaction();
-					try {
-						dsi.setParentID(parentID);
-						dsi.checkNullRows();
-						dsi.collectTableInfo();
-						dbRef.commitTransaction();
-					} catch (InterruptedException e2){
-						dbRef.rollbackTransaction();
-					}catch (DisplayException e1) {
-//						 Exceptions here mostly have to do with mis-entered data.
-						// Those that don't should probably be handled differently,
-						// but I'm just reworking this so that it uses exceptions
-						// in a way that's less silly, so I'm not worrying about that
-						// for now.  -Thomas
-						ErrorLogger.displayException(progressBar,e1.toString());
-						dbRef.rollbackTransaction();
-						return null;
-					} 
+					dsi.collectTableInfo();
+					for(int i=0;i<dsi.getNumCollections();i++){
+						dbRef.beginTransaction();
+						try{
+							dsi.collectRowInfo();
+							dbRef.commitTransaction();
+						} catch (InterruptedException e2){
+							dbRef.rollbackTransaction();
+						}catch (DisplayException e1) {
+//							 Exceptions here mostly have to do with mis-entered data.
+							// Those that don't should probably be handled differently,
+							// but I'm just reworking this so that it uses exceptions
+							// in a way that's less silly, so I'm not worrying about that
+							// for now.  -Thomas
+							ErrorLogger.displayException(progressBar,e1.toString());
+							dbRef.rollbackTransaction();
+						} 
+						
+					}
 					return null;
 			}
 			public void finished(){

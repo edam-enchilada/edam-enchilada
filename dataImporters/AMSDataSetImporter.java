@@ -107,8 +107,6 @@ public class AMSDataSetImporter {
 				// Call relevant methods
 				processDataSet(i);
 
-				// update the internal atom order table;
-				db.updateAncestors(db.getCollection(id[0]));
 			} catch (DisplayException e) {
 				throw new DisplayException(datasetName + " failed to import. Exception: " + e.toString());
 			} catch (WriteException e) {
@@ -270,8 +268,9 @@ public class AMSDataSetImporter {
 				db.setCollectionDescription(destination, desc.toString());
 			}
 			
+			//percolate possession of new atoms up the hierarchy
 			progressBar.setText("Updating Ancestors...");
-			db.updateAncestors(destination);
+			db.propagateNewCollection(destination);
 			readData.close();
 		}catch (Exception e) {
 			try {
