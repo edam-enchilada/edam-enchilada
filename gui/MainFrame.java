@@ -1343,27 +1343,25 @@ public class MainFrame extends JFrame implements ActionListener
 		particlesTable.setEnabled(true);
 		ListSelectionModel lModel = 
 			particlesTable.getSelectionModel();
-		
+		final boolean analyzeable = dataType.equals("ATOFMS")||dataType.equals("AMS");
 		lModel.setSelectionMode(
 				ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		lModel.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent arg0) {		
-				/*	// If collection isn't ATOFMS, don't display anything.
-				 if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
-				 return;
-				 */
 				int row = particlesTable.getSelectedRow();
 				
-				analyzeParticleButton.setEnabled(row != -1);
+				analyzeParticleButton.setEnabled(row != -1&&analyzeable);
 			}
 		});		
-		
+		if(analyzeable){
 		particlesTable.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() > 1)
 					showAnalyzeParticleWindow();
 			}
 		});
+		}
+		analyzeParticleButton.setEnabled(false);
 		
 		collectionViewPanel.setComponentAt(0, particlePanel);
 		collectionViewPanel.repaint();
@@ -1634,18 +1632,7 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.clearSelection();
 	}
 		
-	/* (non-Javadoc)
-	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
-	 */
-	/**
-	 * Updates with peaklist information for the selected 
-	 * atom
-	 */
-	public void valueChanged(ListSelectionEvent arg0) {
-		int row = particlesTable.getSelectedRow();
-		
-		analyzeParticleButton.setEnabled(row != -1);
-	}	
+	
 	
 	/** 
 	 * This clears the particle table when a collection is deleted.  
