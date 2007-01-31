@@ -1182,7 +1182,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		particlesTable = new JTable(data, columns);
 		
-		analyzeParticleButton = new JButton("Analyze Particle");
+		analyzeParticleButton = new JButton("Analyze Item");
 		analyzeParticleButton.setEnabled(false);
 		analyzeParticleButton.addActionListener(this);
 		
