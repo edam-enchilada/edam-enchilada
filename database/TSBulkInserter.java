@@ -94,6 +94,10 @@ public class TSBulkInserter {
 				"(CollectionID, AtomID)" +
 				"VALUES (" + collectionID + "," +
 				nextID + ")");
+		membership.append("INSERT INTO InternalAtomOrder" +
+				"(CollectionID, AtomID)" +
+				"VALUES (" + collectionID + "," +
+				nextID + ")");
 		dataset.append("INSERT INTO DataSetMembers" +
 			"(OrigDataSetID, AtomID)" +
 			" VALUES (" + datasetID + "," + nextID + ")");
@@ -140,7 +144,7 @@ public class TSBulkInserter {
 		interimCommit();
 		started = false;
 		
-		db.updateAncestors(db.getCollection(collectionID));
+		db.propagateNewCollection(db.getCollection(collectionID));
 		
 		int ret = collectionID;
 		
