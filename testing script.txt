@@ -175,6 +175,10 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__AMS data imports successfully
 	__All data is imported into the chosen parent collection
 	
+**Test Analyze->Query
+	__ATOFMS data works on everything
+	__AMS data won't let you query size
+	
 **Try analyzing a particle from an AMS collection. Verify that
 	__"Next" and "Prev" buttons work and display the correct particles
 	__Correct peaks are present (at locations m/z 14, 30, 31, 32, 46, 47, 48, and 63 for items from Nitrate_MS.txt)
@@ -183,10 +187,14 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__Highlighting peaks selects peak in peak list, provides peak label information
 	__Zooming in and out works correctly
 	
-**Try to import an existing datatype in the metadata format.  Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
+**Try to import an existing datatype in the metadata format.  
+	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
 (Note that this is not a complete .md file - just enough to catch the problem.)
-Enchilada should
-	__Pop up a message informing the user that the datatype name is already in use.
+Enchilada should pop up a message informing the user that the datatype name is already in use.
+	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\Presentation data\SimpleParticle.md
+	and simpleData.ed
+		__Creating new metadata works
+		__Importing data works
 	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
