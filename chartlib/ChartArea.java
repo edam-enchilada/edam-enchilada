@@ -68,8 +68,17 @@ public class ChartArea extends AbstractMetricChartArea {
 			// even if most of the line is off-screen (when you zoom in one one point
 			// there are still lines connecting it to its neighbors even if you can't
 			// see the neighbors)
-			Iterator<DataPoint> iterator 
-				= dataset.iterator();
+			
+			SortedSet<DataPoint> drawable = dataset.tailSet(new DataPoint(xAxis.getMin(), 0));
+			if(drawable.size()>0){
+				Iterator<DataPoint> iterator 
+				= drawable.iterator();
+			SortedSet<DataPoint> headSet = dataset.headSet(drawable.first());
+			DataPoint head = null;
+			if(headSet.size()> 0 ){
+				head = headSet.last();
+			}
+			
 			while(iterator.hasNext())
 			{
 				DataPoint curPoint = iterator.next();
@@ -85,13 +94,22 @@ public class ChartArea extends AbstractMetricChartArea {
 						- (yAxis.relativePosition(y) * dataArea.height));
 			
 				if(numPoints==0){
+					if(head!=null){
+					int headxCoord = (int) (dataArea.x+xAxis.relativePosition(head.x) 
+							* dataArea.width);
+					double headyCoord = (dataArea.y + dataArea.height 
+							- (yAxis.relativePosition(head.y) * dataArea.height));
+					g2d.draw(new Line2D.Double((double) headxCoord, headyCoord, (double) xCoord, yCoord));
+					}
+				}else
+				if(lastXCoord == xCoord){// &&lastYCoord == yCoord){
 					;
 				}else{
 					// draw the line if either the current point is within the bounds or the last point
 					// was within the bounds
 					// Note: for the last point you don't need to check the upper bounds because
 					// the loop should terminate.
-					if((x >= xAxis.getMin()&&x <=xAxis.getMax())||(lastXValue >= xAxis.getMin()))
+					//if((x >= xAxis.getMin()&&x <=xAxis.getMax())||(lastXValue >= xAxis.getMin()))
 							g2d.draw(new Line2D.Double((double) lastXCoord, lastYCoord, (double) xCoord, yCoord));
 				}
 				numPoints++;
@@ -99,7 +117,7 @@ public class ChartArea extends AbstractMetricChartArea {
 				lastYCoord = yCoord; // maybe get rid of
 				lastXValue= x;
 			}
-			
+			}
 			if (dataset.first().x < xAxis.getMin()) {
 				drawMorePointsIndicator(0, g2d);
 			}
@@ -353,9 +371,9 @@ public class ChartArea extends AbstractMetricChartArea {
 	 * @return
 	 */
 	public double[] findYMinMax(Dataset dataset) {
-		double xmin, ymin, xmax, ymax;	
-		xmin = ymin = Double.MAX_VALUE;
-		xmax = ymax = Double.MIN_VALUE;
+		double xmin, ymin, xmax, lastXValue, ymax;	
+		xmin = ymin = Double.POSITIVE_INFINITY;
+		lastXValue = xmax = ymax = Double.NEGATIVE_INFINITY;
 		DataPoint dp;
 		
 		double[] ret = new double[2];
@@ -366,20 +384,27 @@ public class ChartArea extends AbstractMetricChartArea {
 		}
 		
 		int size = 0;
+		SortedSet<DataPoint> drawable = dataset.tailSet(new DataPoint(xAxis.getMin(), 0));
+		if(drawable.size()>0){
+		Iterator<DataPoint> iterator 
+			= drawable.iterator();
+		SortedSet<DataPoint> headSet = dataset.headSet(drawable.first());
+		DataPoint head = null;
+		if(headSet.size()> 0 ){
+			head = headSet.last();
+			ymax = ymin = head.y;
+			lastXValue = head.x;
+		}
 		
-		SortedSet<DataPoint> visible 
-			= dataset.subSet(new DataPoint(xAxis.getMin(), 0),
-					         new DataPoint(xAxis.getMax(), 0));
-		
-		java.util.Iterator iterator = visible.iterator();
 		
 		while(iterator.hasNext())
 		{
-			dp = (DataPoint)(iterator.next());
-		
+			dp = iterator.next();
+			if((dp.x >xAxis.getMax())&&(lastXValue >xAxis.getMax()))break;
 			if(dp.y < ymin) ymin = dp.y;
 			if(dp.y > ymax) ymax = dp.y;
 			size++;
+		}
 		}
 		if (size == 0) return null;
 		
