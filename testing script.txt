@@ -127,6 +127,9 @@ check the next & prev buttons for
 	__zooming in twice works.
 	__zooming out works. (doesn't work for aug 2006 release) :-(
 
+**Try zooming in on time-series of lots of points
+	__zooming in between two peaks shows a line between the two peaks even though you don't see the peaks
+
 **Try clustering a small collection. Check that
 	__clustering works with these parameters:
 		__By a column from sparse info (eg. Peak Area)
