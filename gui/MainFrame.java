@@ -66,10 +66,13 @@ import java.util.Date;
 import java.util.Scanner;
 import java.util.Vector;
 
+import dataImporters.ATOFMSDataSetImporter;
+import dataImporters.FlatFileATOFMSDataSetImporter;
 import database.InfoWarehouse;
 import database.Database;
 import database.VersionChecker;
 import database.DynamicTable;
+import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
@@ -98,6 +101,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
+	private JMenuItem txtLoadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
 	/*
@@ -400,6 +404,56 @@ public class MainFrame extends JFrame implements ActionListener
 			if (abig.init()) abig.go(collectionPane);
 			// tree update and validate is being done in method go,
 			// when 'finished' method runs --- DRM
+		}
+		if (source == txtLoadATOFMSItem){
+			FileDialog fileChooser = new FileDialog(this, 
+					"Locate a SPASS File:",
+					FileDialog.LOAD);
+			fileChooser.setFile("*.*");
+			fileChooser.setVisible(true);
+			final String filename = fileChooser.getDirectory()+fileChooser.getFile();
+			if (fileChooser.getFile() == null) {
+				return;
+				// the user selected cancel, cancel the operation
+			}
+			
+			
+			final JFrame thisRef = this;
+			final Database dbRef = (Database)db;
+			//construct everything
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, ATOFMSDataSetImporter.title, 100);
+			final FlatFileATOFMSDataSetImporter dsi = 
+					new FlatFileATOFMSDataSetImporter(
+							this, dbRef,progressBar);
+			
+			progressBar.constructThis();
+			
+			
+			final SwingWorker worker = new SwingWorker(){
+				public Object construct(){
+						dbRef.beginTransaction();
+						try{
+							dsi.processFile(filename);
+							dbRef.commitTransaction();
+						} catch (InterruptedException e2){
+							dbRef.rollbackTransaction();
+						}catch (DisplayException e1) {
+							ErrorLogger.displayException(progressBar,e1.toString());
+							dbRef.rollbackTransaction();
+						} 
+						
+					
+					return null;
+				}
+				public void finished(){
+					progressBar.disposeThis();
+					collectionPane.updateTree();
+					thisRef.validate();
+					//progressBar.dispose();
+				}
+			};
+			worker.start();
 		}
 		
 		if (source == importParsButton || source == loadATOFMSItem) 
@@ -944,9 +998,12 @@ public class MainFrame extends JFrame implements ActionListener
 		loadAMSDataItem.addActionListener(this); 
 		batchLoadATOFMSItem = new JMenuItem("from ATOFMS data (with bulk file). . .");
 		batchLoadATOFMSItem.addActionListener(this);
+		txtLoadATOFMSItem = new JMenuItem("from txt data file . . .");
+		txtLoadATOFMSItem.addActionListener(this);
 		importCollectionMenu.setMnemonic(KeyEvent.VK_I);
 		importCollectionMenu.add(loadATOFMSItem);
 		importCollectionMenu.add(batchLoadATOFMSItem);
+		importCollectionMenu.add(txtLoadATOFMSItem);
 		importCollectionMenu.add(loadEnchiladaDataItem);
 		importCollectionMenu.add(loadAMSDataItem);
 		
@@ -1182,7 +1239,7 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		particlesTable = new JTable(data, columns);
 		
-		analyzeParticleButton = new JButton("Analyze Item");
+		analyzeParticleButton = new JButton("Analyze Particle");
 		analyzeParticleButton.setEnabled(false);
 		analyzeParticleButton.addActionListener(this);
 		
@@ -1343,25 +1400,27 @@ public class MainFrame extends JFrame implements ActionListener
 		particlesTable.setEnabled(true);
 		ListSelectionModel lModel = 
 			particlesTable.getSelectionModel();
-		final boolean analyzeable = dataType.equals("ATOFMS")||dataType.equals("AMS");
+		
 		lModel.setSelectionMode(
 				ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		lModel.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent arg0) {		
+				/*	// If collection isn't ATOFMS, don't display anything.
+				 if (!db.getAtomDatatype(atomID).equals("ATOFMS"))
+				 return;
+				 */
 				int row = particlesTable.getSelectedRow();
 				
-				analyzeParticleButton.setEnabled(row != -1&&analyzeable);
+				analyzeParticleButton.setEnabled(row != -1);
 			}
 		});		
-		if(analyzeable){
+		
 		particlesTable.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() > 1)
 					showAnalyzeParticleWindow();
 			}
 		});
-		}
-		analyzeParticleButton.setEnabled(false);
 		
 		collectionViewPanel.setComponentAt(0, particlePanel);
 		collectionViewPanel.repaint();
@@ -1632,7 +1691,18 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.clearSelection();
 	}
 		
-	
+	/* (non-Javadoc)
+	 * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
+	 */
+	/**
+	 * Updates with peaklist information for the selected 
+	 * atom
+	 */
+	public void valueChanged(ListSelectionEvent arg0) {
+		int row = particlesTable.getSelectedRow();
+		
+		analyzeParticleButton.setEnabled(row != -1);
+	}	
 	
 	/** 
 	 * This clears the particle table when a collection is deleted.  
