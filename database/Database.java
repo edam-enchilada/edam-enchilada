@@ -2643,7 +2643,7 @@ public abstract class Database implements InfoWarehouse {
 			Database db = (Database) getDatabase("");
 			db.openConnection();
 			
-			String query = "RESTORE DATABASE " + database + " FROM " + name;
+			String query = "RESTORE DATABASE " + database + " FROM " + name + " WITH REPLACE";
 			Statement stmt = db.getCon().createStatement();
 			stmt.execute(query);
 			
