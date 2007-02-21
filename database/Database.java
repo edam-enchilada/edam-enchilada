@@ -614,6 +614,8 @@ public abstract class Database implements InfoWarehouse {
 			db.openConnection();
 			Statement stmt = db.getCon().createStatement();
 			stmt.executeUpdate("create database " + dbName);
+			String sql = "ALTER DATABASE "+dbName+" SET RECOVERY SIMPLE";
+			stmt.executeUpdate(sql);
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(db.getName(),"Error rebuilding database.");
