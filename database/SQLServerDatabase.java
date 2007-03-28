@@ -92,7 +92,10 @@ public class SQLServerDatabase extends Database
 
 		return openConnectionImpl(
 				"net.sourceforge.jtds.jdbc.Driver",
-				"jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;",
+				//Use this string to connect to the default SQL Server 2005 instance
+				"jdbc:jtds:sqlserver://localhost;databaseName=SpASMSdb;SelectMethod=cursor;",
+				//Use this string to connect to a SQL Server Express instance
+				//"jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;databaseName=SpASMSdb;SelectMethod=cursor;",
 				"SpASMS",
 				"finally");
 		
