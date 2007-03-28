@@ -81,6 +81,14 @@ public interface InfoWarehouse {
 	 * @return true on success
 	 */
 	public boolean openConnection();
+	
+	/**
+	 * Opens a connection to the database, flat file, memory structure,
+	 * or whatever you're working with.  
+	 * @return true on success
+	 */
+	public boolean openConnectionNoDB();
+	
 	/**
 	 * Closes existing connection
 	 * @return true on success.

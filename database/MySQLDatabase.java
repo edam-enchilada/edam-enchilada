@@ -88,6 +88,19 @@ public class MySQLDatabase extends Database {
 	}
 	
 	/**
+	 * Open a connection to a MySQL database:
+	 * uses the jdbc driver from mysql-connector-java-*-bin.jar
+	 * TODO: change security model
+	 */
+	public boolean openConnectionNoDB() {
+		return openConnectionImpl(
+				"com.mysql.jdbc.Driver",
+				"jdbc:mysql://" + url + ":" + port,
+				"root",
+				"sa-account-password");
+	}
+	
+	/**
 	 * @return the MySQL native DATETIME format
 	 */
 	public DateFormat getDateFormat() {

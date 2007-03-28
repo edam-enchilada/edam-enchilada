@@ -187,7 +187,7 @@ public abstract class Database implements InfoWarehouse {
 		String testdb = database;
 		try {
 			database = "";
-			openConnection();
+			openConnectionNoDB();
 			Connection con = getCon();
 			Statement stmt = con.createStatement();
 			
@@ -236,6 +236,7 @@ public abstract class Database implements InfoWarehouse {
 			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to establish a connection to " + database);
 			System.err.println("Failed to establish a connection to database");
 			System.err.println(e);
+			return false;
 		}
 		return true;
 	}
@@ -611,7 +612,7 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			dropDatabase(dbName);
 			db = Database.getDatabase("");
-			db.openConnection();
+			db.openConnectionNoDB();
 			Statement stmt = db.getCon().createStatement();
 			stmt.executeUpdate("create database " + dbName);
 			String sql = "ALTER DATABASE "+dbName+" SET RECOVERY SIMPLE";
