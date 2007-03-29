@@ -46,6 +46,8 @@
  */
 package database;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -65,6 +67,22 @@ public class SQLServerDatabase extends Database
 	 */
 	public SQLServerDatabase()
 	{
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+			tempdir = tempdir +File.separator+"TEMP";
+			File tempdirFile = new File(tempdir);
+			if(!tempdirFile.exists()){
+				tempdirFile.mkdir();
+			}
+			
+			if(!tempdirFile.isDirectory()){
+				tempdirFile.delete();
+				tempdirFile.mkdir();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";

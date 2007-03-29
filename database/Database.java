@@ -117,7 +117,7 @@ public abstract class Database implements InfoWarehouse {
 	protected String port;
 	protected String database;
 	
-	protected String tempdir = System.getenv("TEMP");
+	protected String tempdir;
 	
 	//the name of this database, for debugging and error reporting purposes
 	private String dbType;
