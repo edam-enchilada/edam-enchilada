@@ -8,8 +8,8 @@
 ;;; the compiler for this file, which makes an installer executable, is
 ;;; available from http://nsis.sourceforge.net/
 
-; To build a copy of the installer with MSDE, uncomment this line:
-!define WITH_MSDE
+; To build a copy of the installer with EXPRESS, uncomment this line:
+!define WITH_EXPRESS
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line: (engages slow but effective compression)
@@ -22,14 +22,14 @@
 Name "EDAM-Enchilada Installer"
 
 
-!ifdef WITH_MSDE
+!ifdef WITH_EXPRESS
 
 !ifdef RELEASE
-; MSDE is huge, so use special compression when building with it.
+; EXPRESS is huge, so use special compression when building with it.
 SetCompressor /solid lzma
 !endif
 
-Outfile "EDAM-Enchilada-MSDE-install.exe"
+Outfile "EDAM-Enchilada-EXPRESS-install.exe"
 !else
 OutFile "EDAM-Enchilada-install.exe"
 !endif
@@ -42,7 +42,7 @@ InstallDir $PROGRAMFILES\EDAM-Enchilada
 InstallDirRegKey HKLM "Software\EDAM_Enchilada" "Install_Dir"
 
 ; License text to display
-!ifdef WITH_MSDE
+!ifdef WITH_EXPRESS
 LicenseData "MSDE-EULA.txt"
 !else
 LicenseData "MPL-1.1.txt"
@@ -77,11 +77,11 @@ Section "EDAM Enchilada (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
-!ifdef WITH_MSDE
+!ifdef WITH_EXPRESS
   File MSDE-EULA.txt
 !endif
   File "MPL-1.1.txt"
-  File "edam-enchilada2.jar"
+  File "edam-enchilada.jar"
   File "Enchilada.bat"
   File "gpl.txt"
   File "library.txt"
@@ -121,7 +121,7 @@ Section "EDAM Enchilada (required)"
 
 SectionEnd
 
-!ifdef WITH_MSDE
+!ifdef WITH_EXPRESS
 Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	
 	ExecWait "net stop $\"sql server (sqlexpress)$\"" $0
@@ -129,24 +129,24 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	ExecWait "net start $\"sql server (sqlexpress)$\"" $0
 	IntCmp $0 0 netstart_success
 
-	CreateDirectory "C:\MSDEE-install-temp"
-	SetOutPath "C:\MSDEE-install-temp"
-	File /r "C:\J"
+	CreateDirectory "C:\EXPRESS-install-temp"
+	SetOutPath "C:\EXPRESS-install-temp"
+	File /r "C:\SQLEXPRESS"
 	
 	; XXX - can't yet uninstall MSSQLSERVER.  maybe in uninstall page, do a 
 	; messagebox as a callback at the end?
 	
 	; YARR, ok, so, File and Print Sharing needs to be enabled for the install to work.
 	; XXX - password
-	ExecWait `"C:\MSDEE-install-temp\J\SQLEXPR.EXE" SAPWD="sa-account-password" DISABLENETWORKPROTOCOLS=2 SECURITYMODE=SQL` $0
+	ExecWait `"C:\EXPRESS-install-temp\SQLEXPRESS\SQLEXPR.EXE" SAPWD="sa-account-password" DISABLENETWORKPROTOCOLS=2 SECURITYMODE=SQL` $0
     IfErrors 0 +2 
-		Abort "MSDE could not be installed. Contact the Enchilada team for assistance."
+		Abort "SQLEXPRESS could not be installed. Contact the Enchilada team for assistance."
 	DetailPrint "setup.exe returned $0"
 	IntCmp $0 0 setup_success
     	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
         SetOutPath "$INSTDIR"
-        RMDir /r "C:\MSDEE-install-temp"
-	RMDir "C:\MSDEE-install-temp"
+        RMDir /r "C:\EXPRESS-install-temp"
+	RMDir "C:\EXPRESS-install-temp"
         Abort 'MSSQL failed to install.'
     setup_success:
 
@@ -165,7 +165,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 
 	netstart_success:
 	SetOutPath "$INSTDIR"
-	RMDir /r "C:\MSDEE-install-temp"
+	RMDir /r "C:\EXPRESS-install-temp"
 
 
   	ExecWait '"$OSQL" -S \SQLEXPRESS -U SpASMS -P finally -Q ""' $0
@@ -182,7 +182,13 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
     	DetailPrint "Enchilada's login successfully added to SQL Server."
     
     userexists1:
-    	DetailPrint "Moving on"
+    ExecWait `"$OSQL" -S \SQLEXPRESS -E -Q "EXEC sp_addsrvrolemember 'SpASMS','sysadmin'"`
+  	IfErrors 0 +2
+  	  Abort "OSQL refused to respond when making user a system administrator."
+    IntCmp $0 0 +3
+      MessageBox MB_OK|MB_ICONEXCLAMATION "Couldn't make the SQL Server login 'SpASMS' a system administrator.  Giving up."
+      Abort "Try making the SQL Server login SpASMS into a system administrator."
+ 
 
 SectionEnd
 !endif
@@ -204,7 +210,7 @@ Section "-Check for Java 1.5"
     DetailPrint "Found current version of Java"
 SectionEnd
 
-!ifndef WITH_MSDE
+!ifndef WITH_EXPRESS
 Section "-Check DB and user existence"
   ; See if the SQL Server that theoretically exists, actually does.
   ExecWait '"$OSQL" -?' $0
@@ -267,7 +273,7 @@ SectionEnd
 
 Section "un.Uninstall"
   
-!ifdef WITH_MSDE
+!ifdef WITH_EXPRESS
   MessageBox MB_OK "Since you are uninstalling Enchilada, it is likely that you should also uninstall SQL Server.  You can do this from the Add/Remove Programs dialog in the Control Panel."
 !endif
 
