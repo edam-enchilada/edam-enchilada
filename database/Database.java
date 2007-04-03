@@ -2644,7 +2644,7 @@ public abstract class Database implements InfoWarehouse {
 			//close the connection and use a non-database-specific one
 			closeConnection();
 			Database db = (Database) getDatabase("");
-			db.openConnection();
+			db.openConnectionNoDB();
 			
 			String query = "RESTORE DATABASE " + database + " FROM " + name + " WITH REPLACE";
 			Statement stmt = db.getCon().createStatement();
