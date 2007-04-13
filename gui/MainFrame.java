@@ -373,7 +373,7 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version nov-2006-4"
+					"Software Version feb-2007-1"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
@@ -1097,8 +1097,8 @@ public class MainFrame extends JFrame implements ActionListener
 //				KeyEvent.VK_F);
 		queryItem = new JMenuItem("Query. . . ", KeyEvent.VK_Q);
 		queryItem.addActionListener(this);
-		compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
-		compressItem.addActionListener(this);
+	//	compressItem = new JMenuItem("Compress. . . ", KeyEvent.VK_P);
+	//	compressItem.addActionListener(this);
 		visualizeItem = new JMenuItem("Visualize. . .", KeyEvent.VK_V);
 		visualizeItem.addActionListener(this);
 		detectPlumesItem = new JMenuItem("Detect Plumes. . .", KeyEvent.VK_W);
@@ -1108,7 +1108,7 @@ public class MainFrame extends JFrame implements ActionListener
 //		analysisMenu.add(labelItem);
 //		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
-		analysisMenu.add(compressItem);
+//		analysisMenu.add(compressItem);
 		analysisMenu.add(visualizeItem);
 		//analysisMenu.add(detectPlumesItem);
 		
@@ -1553,9 +1553,18 @@ public class MainFrame extends JFrame implements ActionListener
 						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
 						null, options, options[1]);
 				if (action == 0){
-					db.closeConnection();
-					Database.rebuildDatabase("SpASMSdb");
-					db.openConnection();
+					try{
+						db.closeConnection();
+						Database.rebuildDatabase("SpASMSdb");
+						db.openConnection();
+					}
+					catch(SQLException e){
+						JOptionPane.showMessageDialog(null, 
+								"Your database is an old version", 
+								"Error: Could not connect",
+								JOptionPane.PLAIN_MESSAGE);
+						System.exit(0);
+					}
 				} else
 					System.exit(0);
 				
