@@ -382,4 +382,6 @@ public interface InfoWarehouse {
 	 * @return					The atomID for the desired particle.
 	 */
 	 public int getATOFMSAtomID(String ATOFMSFileName);
+
+	public boolean openConnection(String dbName);
 }

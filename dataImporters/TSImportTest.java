@@ -20,7 +20,7 @@ public class TSImportTest extends TestCase {
 		
 		new database.CreateTestDatabase();
 		db = Database.getDatabase("TestDB");
-		if (! db.openConnection()) {
+		if (! db.openConnection("TestDB")) {
 			throw new Exception("Couldn't open DB con");
 		}
 		

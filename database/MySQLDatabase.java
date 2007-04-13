@@ -163,5 +163,10 @@ public class MySQLDatabase extends Database {
 		System.err.println(message);
 	}
 
+	public boolean openConnection(String dbName) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	
 }

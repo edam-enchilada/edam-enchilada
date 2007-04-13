@@ -631,7 +631,7 @@ public abstract class Database implements InfoWarehouse {
 		// inserts all of the necessary tables.
 		try {
 			db = Database.getDatabase(dbName);
-			db.openConnection();
+			db.openConnection(dbName);
 			con = db.getCon();
 			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
 			String query = "";
@@ -2515,10 +2515,10 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			//SQL Server 2005
-			//ResultSet rs = con.createStatement().executeQuery("SELECT name,type,physical_name FROM sys.backup_devices");
+			ResultSet rs = con.createStatement().executeQuery("SELECT name,type,physical_name FROM sys.backup_devices");
 			
 			//SQL Server 2000
-			ResultSet rs = con.createStatement().executeQuery("SELECT name,cntrltype,phyname FROM master..sysdevices");
+			//ResultSet rs = con.createStatement().executeQuery("SELECT name,cntrltype,phyname FROM master..sysdevices");
 			while (rs.next()) {
 				HashMap<String,String> loc = new HashMap<String,String>();
 				loc.put("name", rs.getString(1));

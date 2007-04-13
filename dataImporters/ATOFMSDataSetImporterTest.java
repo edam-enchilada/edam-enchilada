@@ -105,7 +105,7 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 					"  Close any other programs that may be accessing the database and try again.");
 		}
 		db = Database.getDatabase("TestDB");
-		assertEquals(true, db.openConnection());
+		assertEquals(true, db.openConnection("TestDB"));
 		
 		// create table with one entry.
 		table = new ParTableModel(true);

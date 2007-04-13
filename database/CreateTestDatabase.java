@@ -66,7 +66,6 @@ public class CreateTestDatabase {
         tempDB = Database.getDatabase();
         tempDB.openConnection();
         con = tempDB.getCon();
-        
         try {
 			Database.rebuildDatabase("TestDB");
 		} catch (SQLException e2) {

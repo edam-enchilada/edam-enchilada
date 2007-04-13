@@ -32,7 +32,7 @@ public class DynamicTableGeneratorTest extends TestCase {
 		ctd = new CreateTestDatabase2();
 		metaFiles = ctd.createMetaFiles();
 		db = Database.getDatabase("TestDB2");
-		db.openConnection();
+		db.openConnection("TestDB2");
 		con = db.getCon();
 		dtg  = new DynamicTableGenerator(con);
 		super.setUp();
