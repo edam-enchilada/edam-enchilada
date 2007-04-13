@@ -28,7 +28,7 @@ public class OldClusterTest extends TestCase {
 	protected void setUp() throws Exception {
 		new CreateTestDatabase2();
 		db = Database.getDatabase("TestDB2");
-		db.openConnection();
+		db.openConnection("TestDB2");
 		con = db.getCon();
 		//TODO: make this work with differnt types of clusters
 		cluster = new KMeans(2, db, 2, "blah", "blah", false, new ClusterInformation());

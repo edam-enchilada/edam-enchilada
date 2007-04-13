@@ -46,7 +46,7 @@ public class GUItest extends UISpecTestCase {
 		
 		db = Database.getDatabase("TestDB");
 		MainFrame.db = db;
-		db.openConnection();
+		db.openConnection("TestDB");
 		WindowInterceptor.run(new Trigger() {
 			public void run() {
 				mf = new MainFrame();
