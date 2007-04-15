@@ -94,20 +94,29 @@ public class SQLDivider extends CollectionDivider {
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
-		db.atomBatchInit();
-		
-		while (curs.next())
-		{
-			int temp = curs.getCurrent().getID();
-			//putInHostSubCollection(temp);
-			//Change to batch add atoms to the subcollection instead of moving them individually
-			//	@author shaferia 1-11-07
-			db.addAtomBatch(temp, newHostID);
+		try {
+			//db.atomBatchInit();
+			db.bulkInsertInit();
+			System.out.println("Begin divide");
+			while (curs.next())
+			{
+				int temp = curs.getCurrent().getID();
+				//putInHostSubCollection(temp);
+				//Change to batch add atoms to the subcollection instead of moving them individually
+				//	@author shaferia 1-11-07
+				//db.addAtomBatch(temp, newHostID);
+				db.bulkInsertAtom(temp,newHostID);
+			}
+			System.out.println("Begin execute");
+			//db.atomBatchExecute();
+			db.bulkInsertExecute();
+			db.setCollectionDescription(db.getCollection(newHostID), "Divided on:\n" +
+				where);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		db.atomBatchExecute();
-		db.setCollectionDescription(db.getCollection(newHostID), "Divided on:\n" +
-				where);
 		return newHostID;
 	}
 }

@@ -125,6 +125,8 @@ public abstract class Database implements InfoWarehouse {
 	// for batch stuff
 	private Statement batchStatement;
 	private ArrayList<Integer> alteredCollections;
+	private PrintWriter bulkInsertFile;
+	private String bulkInsertFileName;
 	
 	protected boolean isDirty = false;
 	public boolean isDirty(){
@@ -1602,6 +1604,8 @@ public abstract class Database implements InfoWarehouse {
 		return true;
 	}
 	
+	
+	
 	/* Delete Atoms */
 	
 	/**
@@ -1994,6 +1998,26 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * initializes atom batches for moving atoms and adding atoms.
+	 * @throws Exception 
+	 */
+	public void bulkInsertInit() throws Exception {
+		if (url.equals("localhost")) {
+			bulkInsertFileName = tempdir + File.separator + "bulkfile.txt";
+			bulkInsertFile = null;
+			alteredCollections = new ArrayList<Integer>();
+			try {
+				bulkInsertFile = new PrintWriter(new FileWriter(bulkInsertFileName));
+			} catch (IOException e) {
+				System.err.println("Trouble creating " + bulkInsertFileName);
+				e.printStackTrace();
+			}
+		}else{
+			throw new Exception("This operation can only be done with a localhost connection");
+		}
+	}
+	
+	/**
 	 * @author steinbel - altered Oct. 2006
 	 * Executes the current batch
 	 */
@@ -2024,6 +2048,59 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	public void bulkInsertExecute() throws Exception{
+		if(bulkInsertFile==null || bulkInsertFileName==null){
+			throw new Exception("Must initialize bulk insert first!");
+		}
+		bulkInsertFile.close();
+		
+		try {
+			Statement stmt = con.createStatement();
+			StringBuilder sql = new StringBuilder();
+			String tempFilename = tempdir + File.separator + "bulkfile.txt";
+			sql.append("CREATE TABLE #temp (CollectionID INT, AtomID INT);\n");
+			sql.append("BULK INSERT #temp" +
+					" FROM 'C:\\Program Files\\workspace\\edam-enchilada\\TEMP\\bulkfile.txt' " +
+					"WITH (FIELDTERMINATOR=',');\n");
+				
+			sql.append("INSERT INTO AtomMembership (CollectionID, AtomID)" +
+					" SELECT CollectionID, AtomID " +
+					"FROM #temp;\n");
+			sql.append("INSERT INTO InternalAtomOrder (CollectionID, AtomID)" +
+					" SELECT CollectionID, AtomID " +
+					"FROM #temp;\n");
+			System.out.println(sql.toString());
+			stmt.execute(sql.toString());
+			/*stmt.close();
+			for (int i = 0; i < alteredCollections.size(); i++)
+				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
+			
+			//when the parents of all the altered collections are the same
+			//don't need to update the parent FOR EACH subcollection, just at end
+			ArrayList<Collection> parents = new ArrayList<Collection>();
+			Collection temp;
+			for (int i = 0; i < alteredCollections.size(); i++){ 
+				temp = getCollection(alteredCollections.get(i)).getParentCollection();
+				if (! parents.contains(temp))
+					parents.add(temp);
+			}
+			//only update each distinct parent once
+			for (int i=0; i<parents.size(); i++)
+				updateAncestors(parents.get(i));*/
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public void bulkInsertAtom(int atomID,int parentID) throws Exception{
+		if(bulkInsertFile==null || bulkInsertFileName==null){
+			throw new Exception("Must initialize bulk insert first!");
+		}
+		alteredCollections.add(parentID);
+		bulkInsertFile.println(parentID+","+atomID);	
+	}
 	/* Get functions for collections and table names */
 	
 	/**

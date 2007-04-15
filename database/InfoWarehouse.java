@@ -382,6 +382,8 @@ public interface InfoWarehouse {
 	 * @return					The atomID for the desired particle.
 	 */
 	 public int getATOFMSAtomID(String ATOFMSFileName);
-
 	public boolean openConnection(String dbName);
+	public void bulkInsertInit() throws Exception;
+	public void bulkInsertAtom(int newChildID, int newHostID) throws Exception;
+	public void bulkInsertExecute() throws Exception;
 }
