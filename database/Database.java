@@ -234,6 +234,10 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			con = DriverManager.getConnection(connectionstr, user, pass);
 			con.setAutoCommit(true);
+			//ResultSet rs = con.createStatement().executeQuery("SELECT db_name()");
+			//rs.next();
+			//System.out.println("use database: "+rs.getString(1));
+			
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to establish a connection to " + database);
 			System.err.println("Failed to establish a connection to database");
@@ -2060,7 +2064,7 @@ public abstract class Database implements InfoWarehouse {
 			String tempFilename = tempdir + File.separator + "bulkfile.txt";
 			sql.append("CREATE TABLE #temp (CollectionID INT, AtomID INT);\n");
 			sql.append("BULK INSERT #temp" +
-					" FROM 'C:\\Program Files\\workspace\\edam-enchilada\\TEMP\\bulkfile.txt' " +
+					" FROM '"+bulkInsertFileName+"' " +
 					"WITH (FIELDTERMINATOR=',');\n");
 				
 			sql.append("INSERT INTO AtomMembership (CollectionID, AtomID)" +
