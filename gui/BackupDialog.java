@@ -492,7 +492,7 @@ public class BackupDialog extends JDialog {
 		 * @param text the more detailed text to output
 		 */
 		public void setDone(String majortext, String text) {
-			setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
+			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			majorDoneText.setText(majortext);
 			doneText.setText(text);
 			layout.show(getContentPane(), "done");
