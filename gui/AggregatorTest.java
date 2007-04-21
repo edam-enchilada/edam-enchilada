@@ -67,7 +67,7 @@ public class AggregatorTest extends TestCase {
 	 */
 	private void testAggregation(final Aggregator aggregator, final Collection[] collections, 
 			final Test test) {
-		db.openConnection();
+		db.openConnection("TestDB2");
 		final ProgressBarWrapper progressBar =
 			aggregator.createAggregateTimeSeriesPrepare(collections);
 		
