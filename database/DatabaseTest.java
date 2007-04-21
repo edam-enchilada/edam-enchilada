@@ -2211,8 +2211,14 @@ public class DatabaseTest extends TestCase {
 	
 	// ***SLH
 	public void testgetDatabulkBucket() {
-		
-		String tempdir = System.getenv("TEMP");
+		String tempdir = "";
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		tempdir = tempdir +File.separator+"TEMP";
 		String tempFilename;
 		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse", "InternalAtomOrder"};
 		Database.Data_bulkBucket buckets = db.getDatabulkBucket(tables);
@@ -2268,9 +2274,16 @@ public class DatabaseTest extends TestCase {
 			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
 		}
 		db.closeConnection();
-		
+		String tempdir = "";
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		tempdir = tempdir +File.separator+"TEMP";
 		//Only checked the content of one file, others should work the same way.
-		File dense_file = new File(System.getenv("TEMP") + "\\ATOFMSAtomInfoDense.txt");
+		File dense_file = new File(tempdir + "\\ATOFMSAtomInfoDense.txt");
 		assertTrue(dense_file.isFile());
 		assertTrue(dense_file.canRead());
 		
@@ -2335,9 +2348,16 @@ public class DatabaseTest extends TestCase {
 			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
 		}
 		db.closeConnection();
-		
+		String tempdir = "";
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		tempdir = tempdir +File.separator+"TEMP";
 		//Only checked the content of one file, others should work the same way.
-		File dense_file = new File(System.getenv("TEMP") + "\\AMSAtomInfoDense.txt");
+		File dense_file = new File(tempdir + "\\AMSAtomInfoDense.txt");
 		assertTrue(dense_file.isFile());
 		assertTrue(dense_file.canRead());
 		
