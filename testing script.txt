@@ -190,3 +190,5 @@ Enchilada should
 	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
+
+**Import Switzerland. Verify that imports in less than a couple of days.
