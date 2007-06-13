@@ -124,7 +124,11 @@ check the next & prev buttons for
 
 **Try zooming in on time-series of only one datapoint
 	__zooming in works.
+	__zooming in twice works.
 	__zooming out works. (doesn't work for aug 2006 release) :-(
+
+**Try zooming in on time-series of lots of points
+	__zooming in between two peaks shows a line between the two peaks even though you don't see the peaks
 
 **Try clustering a small collection. Check that
 	__clustering works with these parameters:
@@ -161,9 +165,17 @@ check the next & prev buttons for
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
 	
-**Import the small.task time series file \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries
-Verify that:
-	__Time series imports successfully
+**Import time series data:
+	__import a task file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries) that works
+		__works
+	__import a task file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries) that doesn't work
+		__no hard crashes
+		__useful error messages
+	__import a csv file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries\\CSV) that works
+		__works
+	__import a csv file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries\\CSV) that doesn't work
+		__no hard crashes
+		__useful error messages
 	
 **Import AMS data from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\ams
 Choose Nitrate_MS.txt, t_series.txt, amus.txt for the first row, and
@@ -175,6 +187,10 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__AMS data imports successfully
 	__All data is imported into the chosen parent collection
 	
+**Test Analyze->Query
+	__ATOFMS data works on everything
+	__AMS data won't let you query size
+	
 **Try analyzing a particle from an AMS collection. Verify that
 	__"Next" and "Prev" buttons work and display the correct particles
 	__Correct peaks are present (at locations m/z 14, 30, 31, 32, 46, 47, 48, and 63 for items from Nitrate_MS.txt)
@@ -183,10 +199,14 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__Highlighting peaks selects peak in peak list, provides peak label information
 	__Zooming in and out works correctly
 	
-**Try to import an existing datatype in the metadata format.  Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
+**Try to import an existing datatype in the metadata format.  
+	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
 (Note that this is not a complete .md file - just enough to catch the problem.)
-Enchilada should
-	__Pop up a message informing the user that the datatype name is already in use.
+Enchilada should pop up a message informing the user that the datatype name is already in use.
+	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\Presentation data\SimpleParticle.md
+	and simpleData.ed
+		__Creating new metadata works
+		__Importing data works
 	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.

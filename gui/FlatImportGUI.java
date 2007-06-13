@@ -64,7 +64,7 @@ public class FlatImportGUI {
 				return;
 				// the user selected cancel, cancel the operation
 			}
-			importer = new TSImport(db, parent);
+			importer = new TSImport(db, parent, true);
 
 			try {
 				importer.readTaskFile(filename);
@@ -87,7 +87,7 @@ public class FlatImportGUI {
 			}
 			String filename = fileChooser.getDirectory()+fileChooser.getFile();
 
-			importer = new TSImport(db, parent);
+			importer = new TSImport(db, parent, true);
 
 			try {
 				importer.readCSVFile(filename);

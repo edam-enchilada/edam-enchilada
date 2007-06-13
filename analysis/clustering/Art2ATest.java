@@ -29,7 +29,7 @@ public class Art2ATest extends TestCase{
 	        
 			new CreateTestDatabase();
 			db = Database.getDatabase("TestDB");
-			db.openConnection();
+			db.openConnection("TestDB");
 			
 	        int cID = 2;
 	        String name = "Test clustering";

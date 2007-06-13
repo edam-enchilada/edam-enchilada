@@ -477,9 +477,9 @@ public class ChartArea extends AbstractMetricChartArea {
 			
 			testbar = new Rectangle(
 					(int)( xCoord - barWidth / 2), //centers the bar on the value
-					(int)( yCoord),
+					(int)(dataArea.y),
 					(int)(barWidth),
-					(int)(-1*yCoord)+ (dataArea.y + dataArea.height) );
+					(int)( dataArea.height ));
 			if (testbar.contains(p)){
 				return new Double(x);
 			}

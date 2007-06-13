@@ -28,7 +28,7 @@ public class KMediansTest extends TestCase {
 	        super.setUp();
 	        new CreateTestDatabase();
 			db = Database.getDatabase("TestDB");
-			db.openConnection();
+			db.openConnection("TestDB");
 			
 	        int cID = 2;
 	        int k = 2;
@@ -73,7 +73,7 @@ public class KMediansTest extends TestCase {
 	    public void testKMedians() {
 	    
 	    	kmedians.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
-	    	int collectionID = kmedians.cluster();
+	    	int collectionID = kmedians.cluster(false);
 	    	
 	    	assertTrue(collectionID == 7);
 	    	

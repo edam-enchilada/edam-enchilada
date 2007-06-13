@@ -81,7 +81,7 @@ public class KMeansTest extends TestCase {
         
 		new CreateTestDatabase();
 		db = Database.getDatabase("TestDB");
-		db.openConnection();
+		db.openConnection("TestDB");
 		
         int cID = 2;
         int k = 2;
@@ -91,7 +91,7 @@ public class KMeansTest extends TestCase {
         ArrayList<String> list = new ArrayList<String>();
         list.add("ATOFMSAtomInfoSparse.PeakArea");
     	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-        kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
     }
 
     /*
@@ -125,7 +125,7 @@ public class KMeansTest extends TestCase {
     
     public void testKMeans() {
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
-    	int collectionID = kmeans.cluster();
+    	int collectionID = kmeans.cluster(false);
     	
     	assertTrue(collectionID == 7);
     	

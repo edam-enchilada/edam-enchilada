@@ -67,8 +67,11 @@ public class KMedians extends ClusterK {
 				name.concat("KMedians"), comment, refine, c);
 	}
 
-	public int cluster() {
-		return divide();
+	public int cluster(boolean interactive) {
+		if(interactive)
+			return divide();
+		else
+			return innerDivide(interactive);
 	}
 
 	public Centroid averageCluster(

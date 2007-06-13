@@ -20,7 +20,7 @@ public class TSImportTest extends TestCase {
 		
 		new database.CreateTestDatabase();
 		db = Database.getDatabase("TestDB");
-		if (! db.openConnection()) {
+		if (! db.openConnection("TestDB")) {
 			throw new Exception("Couldn't open DB con");
 		}
 		
@@ -61,7 +61,7 @@ public class TSImportTest extends TestCase {
 	 * Test method for 'dataImporters.TSImport.read(String)'
 	 */
 	public void testRead() {
-		TSImport imp = new TSImport(db, null);
+		TSImport imp = new TSImport(db, null, false);
 		
 		System.out.println("Inserting " + NUM_PARTICLES + " particles.");
 		System.out.println("Started at " + new Date());

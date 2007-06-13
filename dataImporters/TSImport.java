@@ -59,12 +59,59 @@ public class TSImport{
     
     private static final SimpleDateFormat humanFormatter = new SimpleDateFormat("MMM d, yyyy, hh:mm a");
 
-    public TSImport(InfoWarehouse db, Frame parent) {
+    public boolean interactive;
+    public File task;
+	public String prefix;
+	public BufferedReader in;
+	//the task file
+	public String tf;
+    
+    public TSImport(InfoWarehouse db, Frame parent, boolean interactive) {
     	super();
     	this.parent = parent;
     	this.db = db;
+    	this.interactive = interactive;
 	}
     
+	/*
+	* this is the non gui version of readTaskFile()
+	* it's used for testing purposes
+	* @author christej
+	*/
+    public void readTaskFileNonGui(BufferedReader in){
+    	int line_no = 0;
+		String line;
+		try {
+			// Made it so if a "" is encountered, while loop ends 
+			// (i.e. lines at the end of the 
+			System.out.println(in);
+			while((line = in.readLine()) != null){
+				line = line.trim();
+				if (line.equals("")) continue;
+				if(line.charAt(0) == '#') continue;
+				line_no++;
+				String[] args = line.split("\\s*,\\s*");
+				System.out.println("args " + args);
+				System.out.println("tf " + tf);
+				System.out.println("line_no " + line_no);
+				System.out.println("prefix " + prefix);
+				process(args, tf, line_no, prefix);
+			}
+		} catch (ParseException e){
+			//this message needs to get passed back to the gui, but run can't throw an Exception,
+			// so instead just set the status
+			status = TSImport.PARSEERROR;
+		} catch (InterruptedException e) {
+			status = TSImport.INTERRUPTED;
+		} catch (Exception e) {
+			status = TSImport.FAILED;
+			System.err.println(e.toString());
+			System.err.println("Exception while converting data!");
+			e.printStackTrace();
+			ErrorLogger.writeExceptionToLogAndPrompt("TSImport","Exception while converting data: " +e.toString());
+		}
+    	
+    }
     public boolean readTaskFile(String task_file) throws DisplayException, WriteException,  
     UnsupportedFormatException{
     	final String tf = task_file;
@@ -76,54 +123,36 @@ public class TSImport{
     				"directory.");
     	}
     	
-    	final File task = new File(task_file);
-    	final String prefix = task.getParent();
+    	task = new File(task_file);
+    	prefix = task.getParent();
     	final BufferedReader in;
 		try {
 			in = new BufferedReader(new FileReader(task_file));
 		} catch (FileNotFoundException e1) {
 			throw new WriteException(task_file+" is not found.  Please check the file name");
 		}
-    	convTask = new ProgressTask(parent, 
-    			"Importing CSV Files", true) {
-    		public void run() {  			
-    			pSetInd(true);
-    			this.pack();
-    			int line_no = 0;
-    			String line;
-    			try {
-    				// Made it so if a "" is encountered, while loop ends 
-    				// (i.e. lines at the end of the 
-    				while((line = in.readLine()) != null){
-    					line = line.trim();
-    					if (line.equals("")) continue;
-    					if(line.charAt(0) == '#') continue;
-    					line_no++;
-    					setStatus(("CSV "+line_no+": "+line+"                          ")  // 26 spaces
-    							.substring(0,25)+"...");
-    					String[] args = line.split("\\s*,\\s*");
-    					process(args, tf, line_no, prefix);
-    				}
-    			} catch (ParseException e){
-    				//this message needs to get passed back to the gui, but run can't throw an Exception,
-    				// so instead just set the status
-    				status = TSImport.PARSEERROR;
-    			} catch (InterruptedException e) {
-    				status = TSImport.INTERRUPTED;
-    			} catch (Exception e) {
-    				status = TSImport.FAILED;
-    				System.err.println(e.toString());
-    				System.err.println("Exception while converting data!");
-    				e.printStackTrace();
-    				ErrorLogger.writeExceptionToLogAndPrompt("TSImport","Exception while converting data: " +e.toString());
-    			}
-    		}
-    	};
-    	// Since we called ProgressTask as a modal dialog, this call to .start()
-    	// does not return until the task is completed, but the GUI gets 
-    	// redrawn as needed anyway.  
-    	convTask.start();
     	
+		// interactive mode--i.e. normal mode
+		if(interactive){
+			convTask = new ProgressTask(parent, 
+					"Importing CSV Files", true) {
+				public void run() {  			
+					pSetInd(true);
+					this.pack();
+					readTaskFileNonGui(in);
+				}
+			};
+			// Since we called ProgressTask as a modal dialog, this call to .start()
+			// does not return until the task is completed, but the GUI gets 
+			// redrawn as needed anyway.  
+			convTask.start();
+		}
+		
+		//for non interactive mode, i.e. testing mode
+		else{
+			readTaskFileNonGui(in);			
+		}
+		
     	// throw an error all the way back to the gui if there was a Date format error
     	if(status==TSImport.PARSEERROR){
     		throw new UnsupportedFormatException("Improper Date Format");
@@ -180,9 +209,9 @@ public class TSImport{
     private void process(String[] args, String task_file, int line_no, String prefix)
     throws Exception{
         System.out.println("Processing "+args[0]+" ...");
-		
-		if (convTask.terminate) throw new InterruptedException("Inter");
-		
+		if(interactive){
+			if (convTask.terminate) throw new InterruptedException("Inter");
+		}
         if(args.length < 3)
             throw new Exception("Error in "+task_file+" at line "+line_no+": The correct format is FileName, TimeColumn, ValueColumn1, ...\n");
         final BufferedReader in = new BufferedReader(
@@ -229,10 +258,11 @@ public class TSImport{
         	throw new InterruptedException("Date Confirmation cancelled");
         }
         
-        
-        for(int i=2; i<values.length; i++){
-        	if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
-            putDataset(args[i],values[1],values[i]);
+        if(interactive){
+        	for(int i=2; i<values.length; i++){
+       	 		if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
+            	putDataset(args[i],values[1],values[i]);
+        	}
         }
     }
 
@@ -294,25 +324,27 @@ public class TSImport{
 			dateFormatter = null;
 		}
 		}
-		if(testDate!=null){
-			final String output = humanFormatter.format(testDate);
-			final TSImport thisref = this;
-			try {
-				SwingUtilities.invokeAndWait(new Runnable(){
-					public void run(){
-						thisref.choice = JOptionPane.showConfirmDialog(parent,"The date "+testString+" was interpreted as "+
-							output+".  Is this correct?","Verify Date Format",JOptionPane.YES_NO_CANCEL_OPTION);
-					}
-				});
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		if(interactive){
+			if(testDate!=null){
+				final String output = humanFormatter.format(testDate);
+				final TSImport thisref = this;
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+						public void run(){
+							thisref.choice = JOptionPane.showConfirmDialog(parent,"The date "+testString+" was interpreted as "+
+								output+".  Is this correct?","Verify Date Format",JOptionPane.YES_NO_CANCEL_OPTION);
+						}
+					});
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}else{
+				throw new ParseException("Invalid Date",0);
 			}
-		}else{
-			throw new ParseException("Invalid Date",0);
 		}
 		
     }
@@ -349,7 +381,7 @@ public class TSImport{
     	InfoWarehouse db = Database.getDatabase("SpASMSdb");
     	db.openConnection();
     	
-    	TSImport t = new TSImport(db, null);
+    	TSImport t = new TSImport(db, null, true);
     	
     	ArrayList<String> times = new ArrayList<String>();
     	times.add("2005-07-04 13:00:00");

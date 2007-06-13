@@ -81,6 +81,14 @@ public interface InfoWarehouse {
 	 * @return true on success
 	 */
 	public boolean openConnection();
+	
+	/**
+	 * Opens a connection to the database, flat file, memory structure,
+	 * or whatever you're working with.  
+	 * @return true on success
+	 */
+	public boolean openConnectionNoDB();
+	
 	/**
 	 * Closes existing connection
 	 * @return true on success.
@@ -374,4 +382,8 @@ public interface InfoWarehouse {
 	 * @return					The atomID for the desired particle.
 	 */
 	 public int getATOFMSAtomID(String ATOFMSFileName);
+	public boolean openConnection(String dbName);
+	public void bulkInsertInit() throws Exception;
+	public void bulkInsertAtom(int newChildID, int newHostID) throws Exception;
+	public void bulkInsertExecute() throws Exception;
 }

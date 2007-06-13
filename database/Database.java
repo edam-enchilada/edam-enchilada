@@ -117,7 +117,7 @@ public abstract class Database implements InfoWarehouse {
 	protected String port;
 	protected String database;
 	
-	protected String tempdir = System.getenv("TEMP");
+	protected String tempdir;
 	
 	//the name of this database, for debugging and error reporting purposes
 	private String dbType;
@@ -125,6 +125,8 @@ public abstract class Database implements InfoWarehouse {
 	// for batch stuff
 	private Statement batchStatement;
 	private ArrayList<Integer> alteredCollections;
+	private PrintWriter bulkInsertFile;
+	private String bulkInsertFileName;
 	
 	protected boolean isDirty = false;
 	public boolean isDirty(){
@@ -187,7 +189,7 @@ public abstract class Database implements InfoWarehouse {
 		String testdb = database;
 		try {
 			database = "";
-			openConnection();
+			openConnectionNoDB();
 			Connection con = getCon();
 			Statement stmt = con.createStatement();
 			
@@ -232,10 +234,15 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			con = DriverManager.getConnection(connectionstr, user, pass);
 			con.setAutoCommit(true);
+			//ResultSet rs = con.createStatement().executeQuery("SELECT db_name()");
+			//rs.next();
+			//System.out.println("use database: "+rs.getString(1));
+			
 		} catch (Exception e) {
 			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to establish a connection to " + database);
 			System.err.println("Failed to establish a connection to database");
 			System.err.println(e);
+			return false;
 		}
 		return true;
 	}
@@ -611,9 +618,11 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			dropDatabase(dbName);
 			db = Database.getDatabase("");
-			db.openConnection();
+			db.openConnectionNoDB();
 			Statement stmt = db.getCon().createStatement();
 			stmt.executeUpdate("create database " + dbName);
+			String sql = "ALTER DATABASE "+dbName+" SET RECOVERY SIMPLE";
+			stmt.executeUpdate(sql);
 			stmt.close();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(db.getName(),"Error rebuilding database.");
@@ -628,7 +637,7 @@ public abstract class Database implements InfoWarehouse {
 		// inserts all of the necessary tables.
 		try {
 			db = Database.getDatabase(dbName);
-			db.openConnection();
+			db.openConnection(dbName);
 			con = db.getCon();
 			in = new Scanner(new File("SQLServerRebuildDatabase.txt"));
 			String query = "";
@@ -1991,6 +2000,26 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * initializes atom batches for moving atoms and adding atoms.
+	 * @throws Exception 
+	 */
+	public void bulkInsertInit() throws Exception {
+		if (url.equals("localhost")) {
+			bulkInsertFileName = tempdir + File.separator + "bulkfile.txt";
+			bulkInsertFile = null;
+			alteredCollections = new ArrayList<Integer>();
+			try {
+				bulkInsertFile = new PrintWriter(new FileWriter(bulkInsertFileName));
+			} catch (IOException e) {
+				System.err.println("Trouble creating " + bulkInsertFileName);
+				e.printStackTrace();
+			}
+		}else{
+			throw new Exception("This operation can only be done with a localhost connection");
+		}
+	}
+	
+	/**
 	 * @author steinbel - altered Oct. 2006
 	 * Executes the current batch
 	 */
@@ -2021,6 +2050,59 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	public void bulkInsertExecute() throws Exception{
+		if(bulkInsertFile==null || bulkInsertFileName==null){
+			throw new Exception("Must initialize bulk insert first!");
+		}
+		bulkInsertFile.close();
+		
+		try {
+			Statement stmt = con.createStatement();
+			StringBuilder sql = new StringBuilder();
+			String tempFilename = tempdir + File.separator + "bulkfile.txt";
+			sql.append("CREATE TABLE #temp (CollectionID INT, AtomID INT);\n");
+			sql.append("BULK INSERT #temp" +
+					" FROM '"+bulkInsertFileName+"' " +
+					"WITH (FIELDTERMINATOR=',');\n");
+				
+			sql.append("INSERT INTO AtomMembership (CollectionID, AtomID)" +
+					" SELECT CollectionID, AtomID " +
+					"FROM #temp;\n");
+			sql.append("INSERT INTO InternalAtomOrder (CollectionID, AtomID)" +
+					" SELECT CollectionID, AtomID " +
+					"FROM #temp;\n");
+			System.out.println(sql.toString());
+			stmt.execute(sql.toString());
+			/*stmt.close();
+			for (int i = 0; i < alteredCollections.size(); i++)
+				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
+			
+			//when the parents of all the altered collections are the same
+			//don't need to update the parent FOR EACH subcollection, just at end
+			ArrayList<Collection> parents = new ArrayList<Collection>();
+			Collection temp;
+			for (int i = 0; i < alteredCollections.size(); i++){ 
+				temp = getCollection(alteredCollections.get(i)).getParentCollection();
+				if (! parents.contains(temp))
+					parents.add(temp);
+			}
+			//only update each distinct parent once
+			for (int i=0; i<parents.size(); i++)
+				updateAncestors(parents.get(i));*/
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public void bulkInsertAtom(int atomID,int parentID) throws Exception{
+		if(bulkInsertFile==null || bulkInsertFileName==null){
+			throw new Exception("Must initialize bulk insert first!");
+		}
+		alteredCollections.add(parentID);
+		bulkInsertFile.println(parentID+","+atomID);	
+	}
 	/* Get functions for collections and table names */
 	
 	/**
@@ -2512,10 +2594,10 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			//SQL Server 2005
-			//ResultSet rs = con.createStatement().executeQuery("SELECT name,type,physical_name FROM sys.backup_devices");
+			ResultSet rs = con.createStatement().executeQuery("SELECT name,type,physical_name FROM sys.backup_devices");
 			
 			//SQL Server 2000
-			ResultSet rs = con.createStatement().executeQuery("SELECT name,cntrltype,phyname FROM master..sysdevices");
+			//ResultSet rs = con.createStatement().executeQuery("SELECT name,cntrltype,phyname FROM master..sysdevices");
 			while (rs.next()) {
 				HashMap<String,String> loc = new HashMap<String,String>();
 				loc.put("name", rs.getString(1));
@@ -2641,9 +2723,9 @@ public abstract class Database implements InfoWarehouse {
 			//close the connection and use a non-database-specific one
 			closeConnection();
 			Database db = (Database) getDatabase("");
-			db.openConnection();
+			db.openConnectionNoDB();
 			
-			String query = "RESTORE DATABASE " + database + " FROM " + name;
+			String query = "RESTORE DATABASE " + database + " FROM " + name + " WITH REPLACE";
 			Statement stmt = db.getCon().createStatement();
 			stmt.execute(query);
 			

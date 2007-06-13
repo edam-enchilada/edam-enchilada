@@ -100,7 +100,7 @@ public class AMSDataSetImporterTest extends TestCase {
 					"  Close any other programs that may be accessing the database and try again.");
 		}
 		db = Database.getDatabase("TestDB");
-		assertTrue(db.openConnection());
+		assertTrue(db.openConnection("TestDB"));
 		
 		curRow = 0;
 		deleteFiles = new Vector<String>();

@@ -84,10 +84,14 @@ public class KMeans extends ClusterK
 	/** 
 	 * method necessary to extend from ClusterK.  Begins the clustering
 	 * process.
+	 * @param - interactive or testing mode - christej
 	 * @return - new collection int.
 	 */
-	public int cluster() {
-		return divide();
+	public int cluster(boolean interactive) {
+		if(interactive)
+			return divide();
+		else
+			return innerDivide(interactive);
 	}
 
 	/**

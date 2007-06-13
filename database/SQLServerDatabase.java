@@ -46,6 +46,8 @@
  */
 package database;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -65,6 +67,22 @@ public class SQLServerDatabase extends Database
 	 */
 	public SQLServerDatabase()
 	{
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+			tempdir = tempdir +File.separator+"TEMP";
+			File tempdirFile = new File(tempdir);
+			if(!tempdirFile.exists()){
+				tempdirFile.mkdir();
+			}
+			
+			if(!tempdirFile.isDirectory()){
+				tempdirFile.delete();
+				tempdirFile.mkdir();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
@@ -92,7 +110,37 @@ public class SQLServerDatabase extends Database
 
 		return openConnectionImpl(
 				"net.sourceforge.jtds.jdbc.Driver",
-				"jdbc:jtds:sqlserver://" + url + ":" + port + ";DatabaseName=" + database + ";SelectMethod=cursor;",
+				//Use this string to connect to the default SQL Server 2005 instance
+				"jdbc:jtds:sqlserver://localhost;databaseName=SpASMSdb;SelectMethod=cursor;",
+				//Use this string to connect to a SQL Server Express instance
+				//"jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;databaseName=SpASMSdb;SelectMethod=cursor;",
+				"SpASMS",
+				"finally");
+	}
+	public boolean openConnection(String s) {
+		return openConnectionImpl(
+				"net.sourceforge.jtds.jdbc.Driver",
+				//Use this string to connect to the default SQL Server 2005 instance
+				"jdbc:jtds:sqlserver://localhost;databaseName="+s+";SelectMethod=cursor;",
+				//Use this string to connect to a SQL Server Express instance
+			//	"jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;databaseName="+s+";SelectMethod=cursor;",
+				"SpASMS",
+				"finally");
+		
+	}
+	/**
+	 * Open a connection to a MySQL database:
+	 * uses the jtds driver from jtds-*.jar
+	 * TODO: change security model
+	 */
+	public boolean openConnectionNoDB() {
+
+		return openConnectionImpl(
+				"net.sourceforge.jtds.jdbc.Driver",
+				//Use this string to connect to the default SQL Server 2005 instance
+				"jdbc:jtds:sqlserver://localhost;SelectMethod=cursor;",
+				//Use this string to connect to a SQL Server Express instance
+				//"jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;SelectMethod=cursor;",
 				"SpASMS",
 				"finally");
 		
