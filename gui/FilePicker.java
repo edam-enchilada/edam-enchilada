@@ -11,6 +11,9 @@ import javax.swing.JFileChooser;
  * FilePickerEditor and FileDialogPickerEditor.
  * @author steinbel
  * 6.27.05
+ * 
+ * FilePicker is now no longer used and has been replaced with FileDialogPicker
+ * 6.13.07
  */
 
 public class FilePicker{

@@ -1,6 +1,6 @@
 package dataImporters;
 
-import gui.FilePicker;
+import gui.FileDialogPicker;
 
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -94,7 +94,7 @@ public class FlatToXML extends JFrame {
 	
 	
 	private File fileOpenDialog() {
-		FilePicker fp = new FilePicker("Choose a file to convert", 
+		FileDialogPicker fp = new FileDialogPicker("Choose a file to convert", 
 				"csv", this);
 		if (fp == null) {
 			return null;

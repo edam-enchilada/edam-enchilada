@@ -40,9 +40,53 @@ public class ATOFMSBatchImportGUI {
 	 * 
 	 * @return true if a dataset can now be imported, false otherwise.
 	 */
-	public boolean init() {
+	/**public boolean init() {
 		try {
 			FilePicker fpick = new FilePicker("Choose a dataset list to import",
+					"csv", parent);
+			if (fpick.getFileName() == null) {
+				// they chose to cancel.
+				return false;
+			}
+			File file = new File(fpick.getFileName());
+			// load the csv file
+			tab = new ATOFMSBatchTableModel(file);
+			
+			// ask whether to use autocal
+			int selection = JOptionPane.showConfirmDialog(parent,
+					"Use the autocalibrator on these data sets?",
+					"Autocalibrate peaks?",
+					JOptionPane.YES_NO_OPTION);
+			if (selection == JOptionPane.YES_OPTION)
+				tab.setAutocal(true);
+			else
+				tab.setAutocal(false);
+			
+			selection = JOptionPane.showConfirmDialog(parent,
+					"Import all datasets into one parent collection?",
+					"Import into parent?",
+					JOptionPane.YES_NO_OPTION);
+			if (selection == JOptionPane.YES_OPTION) {
+				EmptyCollectionDialog ecd = 
+					new EmptyCollectionDialog((JFrame)parent, "ATOFMS", false, MainFrame.db);
+				parentID = ecd.getCollectionID();
+				if (parentID == -1) {
+					return false;
+				}
+			} else {
+				parentID = 0;
+			}
+			
+			
+			return true;
+		} catch (IOException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt("ATOFMSBatchImport",ex.toString());
+		}
+		return false;
+	}*/
+	public boolean init() {
+		try {
+			FileDialogPicker fpick = new FileDialogPicker("Choose a dataset list to import",
 					"csv", parent);
 			if (fpick.getFileName() == null) {
 				// they chose to cancel.

@@ -115,7 +115,7 @@ public class ImportAMSDataDialog extends JDialog implements ActionListener{
 		setVisible(true);	
 	}
 	
-	private JTable getParTable()
+    private JTable getParTable()
 	{
 		amsTableModel = new AMSTableModel();
 		JTable pTable = new JTable(amsTableModel);		

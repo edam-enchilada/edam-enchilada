@@ -6,7 +6,7 @@ package dataImporters;
 
 import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
-import gui.FilePicker;
+import gui.FileDialogPicker;
 import gui.ProgressBarWrapper;
 
 import java.io.*;
@@ -99,7 +99,7 @@ public class ATOFMSBatchTableModel extends AbstractTableModel implements ParTabl
 		
 		
 		
-		FilePicker pick = new FilePicker("Foo", "csv", frame);
+		FileDialogPicker pick = new FileDialogPicker("Foo", "csv", frame);
 		ATOFMSBatchTableModel a;
 		try {
 			a = new ATOFMSBatchTableModel(

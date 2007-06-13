@@ -180,7 +180,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 					+ " new datatype.</html>");
 			newTypeLabel.setMaximumSize(new Dimension(150, 60));
 			
-			//button to pop up the FilePickerEditor
+			//button to pop up the FileDialogPickerEditor
 			dataTypeButton = new JButton("Choose .md file");
 			dataTypeButton.setMnemonic(KeyEvent.VK_H);
 			dataTypeButton.addActionListener(this);
@@ -238,7 +238,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			TableColumn numColumn = eTable.getColumnModel().getColumn(0);
 			numColumn.setPreferredWidth(10);
 			TableColumn list = eTable.getColumnModel().getColumn(1);
-			list.setCellEditor(new FilePickerEditor("ed", "Import", this));
+			list.setCellEditor(new FileDialogPickerEditor("ed", "Import", this));
 			list.setPreferredWidth(250);
 			
 			return eTable;
@@ -277,7 +277,7 @@ public class ImportEnchiladaDataDialog extends JDialog implements ActionListener
 			}
 			else if (source == dataTypeButton){
 						
-				FilePicker fp = new FilePicker("Import", "md", this);
+				FileDialogPicker fp = new FileDialogPicker("Import", "md", this);
 				String fileName = fp.getFileName();
 				
 				if (fileName != null){

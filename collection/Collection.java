@@ -45,7 +45,7 @@
 package collection;
 
 import database.*;
-import gui.FilePicker;
+import gui.FileDialogPicker;
 
 import java.io.*;
 import java.text.*;
@@ -277,7 +277,7 @@ public class Collection {
 	public boolean exportToPar(javax.swing.JFrame parent)
 	{
 		String name;
-		String parFileName = (new FilePicker("Choose .par file destination",
+		String parFileName = (new FileDialogPicker("Choose .par file destination",
 											 "par", parent)
 							  ).getFileName();
 

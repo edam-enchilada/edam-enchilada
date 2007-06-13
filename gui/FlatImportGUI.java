@@ -19,7 +19,6 @@ import errorframework.*;
  */
 
 public class FlatImportGUI {
-	private FilePicker fp;
 	private TSImport importer;
 	private Frame parent;
 	public static final String dateMessage = "The date is stored in an improper format." +
