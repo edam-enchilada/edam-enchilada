@@ -212,3 +212,9 @@ Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
 
 **Import Switzerland. Verify that imports in less than a couple of days.
+
+**Test File->New empty collection.
+	__ Make sure it works and can copy particles in
+	__ Make sure that if you leave out a name, error is handled properly
+	__ Make sure that if you leave out datatpe, error is handled properly
+	
