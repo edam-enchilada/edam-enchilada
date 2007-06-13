@@ -130,13 +130,16 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		JPanel commonInfo = setCommonInfo();
 		getRootPane().setDefaultButton(okButton);
 		
-		clusterSpecs.setBorder(getSectionBorder("1. Select Clustering Specifications"));
+		//Changed to "Information" - benzaids
+		clusterSpecs.setBorder(getSectionBorder("Information"));
 		rootPanel.add(clusterSpecs);
 		
-		clusterAlgorithms.setBorder(getSectionBorder("2. Choose Appropriate Clustering Algorithm"));
+		//Changed from step 2 to step 1 - benzaids
+		clusterAlgorithms.setBorder(getSectionBorder("1. Choose Appropriate Clustering Algorithm"));
 		rootPanel.add(clusterAlgorithms);
 
-		commonInfo.setBorder(getSectionBorder("3. Begin Clustering"));
+		//Changed from step 3 to step 2 - benzaids
+		commonInfo.setBorder(getSectionBorder("2. Begin Clustering"));
 		rootPanel.add(commonInfo);
 		rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.PAGE_AXIS));
 		
@@ -311,6 +314,9 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		// add cards to final panel
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel topPanel = new JPanel();
+//***We now only allow clustering on PeakArea - benzaids
+//***To revert to original, remove all comments with ***
+/***
 //		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
 
 		
@@ -320,13 +326,16 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		topPanel.add(new JLabel("NOTE: Clustering on anything other than peak area \n"
 				+" renders the cluster centers meaningless.  This is a known bug we are working to fix."),
 				BorderLayout.NORTH);
-//////////////////// end HACK	
+//////////////////// end HACK
+***/
 		
-		topPanel.add(new JLabel("Choose Type of Particle Information to Cluster on: "), BorderLayout.WEST);
-		topPanel.add(infoTypeDropdown, BorderLayout.CENTER);
+		//***topPanel.add(new JLabel("Choose Type of Particle Information to Cluster on: "), BorderLayout.WEST);
+		//***topPanel.add(infoTypeDropdown, BorderLayout.CENTER);
+		//***panel.add(specificationCards, BorderLayout.CENTER);
+		
+		topPanel.add(new JLabel("Clustering will be done with SPARSE PARTICLE INFORMATION on PeakArea (Integer)."));
 		panel.add(topPanel, BorderLayout.NORTH);
-		panel.add(specificationCards, BorderLayout.CENTER);
-	
+		
 		return panel;
 		
 	}
@@ -451,7 +460,11 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			// TODO: error check here to make sure something is selected.
 			// TODO: make this more graceful.
 			// Get clustering specifications and create ClusterInformation object.
-			String infoType = (String)infoTypeDropdown.getSelectedItem();
+			
+			//We now only use sparse - benzaids
+			//String infoType = (String)infoTypeDropdown.getSelectedItem();
+			String infoType = sparse;
+			
 			ArrayList<String> list = new ArrayList<String>();
 			String key = null, weight = null;
 			boolean auto = false;
@@ -460,6 +473,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 					cTree.getSelectedCollection().getDatatype());
 			String sparseTableName = db.getDynamicTableName(DynamicTable.AtomInfoSparse, 
 					cTree.getSelectedCollection().getDatatype());
+			
+			/*WE ONLY USE PEAKAREA NOW - benzaids
 			Scanner scan;
 			if (infoType.equals(dense)) {
 				for (int i = 0; i < denseButtons.size(); i++)
@@ -479,6 +494,10 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 					}
 				key = sparseKey.get(0);
 			}
+			*/
+			
+			list.add(sparseTableName + ".PeakArea");//We only use PeakArea now (i = 1 in loop above) - benzaids
+			key = sparseKey.get(0);//added this line outside of if statement - benzaids
 			ClusterInformation cInfo = new ClusterInformation(list, key, weight, auto, norm);
 			
 			// Call the appropriate algorithm.
