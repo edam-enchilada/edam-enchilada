@@ -333,7 +333,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		//***topPanel.add(infoTypeDropdown, BorderLayout.CENTER);
 		//***panel.add(specificationCards, BorderLayout.CENTER);
 		
-		topPanel.add(new JLabel("Clustering will be done with SPARSE PARTICLE INFORMATION on PeakArea (Integer)."));
+		topPanel.add(new JLabel("Clustering will be done on Peak Area."));
 		panel.add(topPanel, BorderLayout.NORTH);
 		
 		return panel;
