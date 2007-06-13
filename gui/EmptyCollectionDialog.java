@@ -194,12 +194,12 @@ public class EmptyCollectionDialog extends JDialog implements ActionListener
 				//If they didn't enter a data type, force them to choose one, this prevents
 				//errors later on when pasting collections into the created collection
 				else
-					JOptionPane.showMessageDialog(this, "Please select a data type");
+					JOptionPane.showMessageDialog(this, "Please select a data type.");
 			}
 			//If they didn't enter a name, force them to type one, this prevents errors
 			//later on because you can't select collections that don't have names
 			else
-				JOptionPane.showMessageDialog(this, "Please enter a name for the collection");
+				JOptionPane.showMessageDialog(this, "Please enter a name for the collection.");
 		}			
 		else  
 			dispose();
