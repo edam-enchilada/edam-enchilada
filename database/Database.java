@@ -2002,8 +2002,9 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
-	 * initializes atom batches for moving atoms and adding atoms.
+	 * Initializes atom batches for moving atoms and adding atoms.
 	 * @throws Exception 
+	 * @author olsonja
 	 */
 	public void bulkInsertInit() throws Exception {
 		if (url.equals("localhost")) {
@@ -2052,6 +2053,13 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	/**
+	 * Executes bulk insertion of atoms into database, from the list contained
+	 * in the bulkInsertFile.
+	 * 
+	 * @author olsonja
+	 */
+	
 	public void bulkInsertExecute() throws Exception{
 		if(bulkInsertFile==null || bulkInsertFileName==null){
 			throw new Exception("Must initialize bulk insert first!");
@@ -2098,6 +2106,15 @@ public abstract class Database implements InfoWarehouse {
 		
 	}
 	
+	/**
+	 * Adds an atom to the list in bulkInsertFile, which is a list of atoms to be
+	 * inserted into the database when the bulkInsertExecute() method is called.
+	 * 
+	 * @param atomID - integer
+	 * @param parentID - integer
+	 * 
+	 * @author olsonja
+	 */
 	public void bulkInsertAtom(int atomID,int parentID) throws Exception{
 		if(bulkInsertFile==null || bulkInsertFileName==null){
 			throw new Exception("Must initialize bulk insert first!");
