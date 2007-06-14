@@ -71,6 +71,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected ArrayList<Double> totalDistancePerPass;
 	protected int numPasses,collectionID;
 	protected String parameterString;
+	protected String folderName;
 	protected ClusterInformation clusterInfo;
 	protected static double power = 1.0;	//the power to which the peak areas
 											//are raised during preprocessing.
@@ -98,6 +99,7 @@ public abstract class Cluster extends CollectionDivider {
 	public Cluster(int cID, InfoWarehouse database, String name, 
 			String comment, boolean norm) {
 		super(cID,database,name.concat(",CLUST"),comment);
+		folderName = "," + super.comment;
 		isNormalized = norm;
 	}
 	

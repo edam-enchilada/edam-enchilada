@@ -59,6 +59,8 @@ import database.InfoWarehouse;
  */
 public abstract class CollectionDivider {
 	
+	protected String comment;
+	
 	private String atomIDsToDelete;
 	
 	/**
@@ -123,6 +125,8 @@ public abstract class CollectionDivider {
 	                "Parameter 'database' should not be null");
 	    	
 		db = database;
+		
+		this.comment = comment;
 		
 		collection = db.getCollection(collectionID);
 		

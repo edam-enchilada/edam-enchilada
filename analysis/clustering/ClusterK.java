@@ -110,7 +110,7 @@ public abstract class ClusterK extends Cluster {
 		this.k = k;
 		this.refineCentroids = refineCentroids;
 		collectionID = cID;
-		parameterString = name.concat(",K=" + k);
+		parameterString = name.concat(",K=" + k + super.folderName);
 		totalDistancePerPass = new ArrayList<Double>();
 		random = new Random(43291);
 		super.clusterInfo = c;//set inherited variable
