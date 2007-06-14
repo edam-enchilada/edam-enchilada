@@ -36,8 +36,8 @@ public class SQLAggregator {
 	private InfoWarehouse db;
 	private Connection con;
 
-	private int maxAtt = 603; //the maximum number of attributes
-	private int offset = 303; //the offset between the peak location and its
+	private int maxAtt = 604; //the maximum number of attributes
+	private int offset = 304; //the offset between the peak location and its
 								//attribute number
 	private double density = 1; //this will be given us by the atmo. scientists
 	
@@ -129,8 +129,8 @@ public class SQLAggregator {
 				// is zero, this corresponds to missing data.
 				
 				float value = denseSet.getFloat("value");
-				int count = denseSet.getInt("cnt");
-				count = 1; // Ignore count for now
+				float mass = denseSet.getFloat("mass");
+				float count = denseSet.getFloat("cnt");
 				
 				// Starting new dense, write out the header. Chop off the ".0"
 				// at the end of the time that seems to give Weka trouble.
@@ -140,9 +140,11 @@ public class SQLAggregator {
 				// this makes tools such as Weka happier. Also divide by
 				// count to normalize for the number of particles seen.
 				float massScaleFactor = 1e8f;
+				float countScaleFactor = 1e7f;
 				out.print("{" + "0 " + '"' + wekaTime + '"' +
-						",1 " + denseSet.getFloat("value") +
-						",2 " + denseSet.getFloat("mass")/massScaleFactor/count);
+						",1 " + value +
+						",2 " + mass/massScaleFactor +
+						",3 " + count/countScaleFactor);
 
 				// Loop over all sparse data with matching time
 				while (sparseRead && denseTime.equals(sparseTime)) {
@@ -153,9 +155,9 @@ public class SQLAggregator {
 					float peakScaleFactor = 1e8f;
 					int location = sparseSet.getInt("peaklocation");
 					if ((location >= -300) && (location <= 300)){
-						out.print("," + (location+303) + " " +
+						out.print("," + (location+304) + " " +
 								sparseSet.getFloat("adjustedpeak") /
-								peakScaleFactor/count);
+								peakScaleFactor);
 					}
 
 					// Grab next sparse row
@@ -298,10 +300,11 @@ public class SQLAggregator {
 		String attributeNames = "@relation " + relationName +"\n"
 				+"@attribute time date \"yyyy-MM-dd HH:mm:ss\" \n"
 				+"@attribute " + predictThis + " numeric \n"
-				+"@attribute mass numeric \n";
+				+"@attribute mass numeric \n"
+				+"@attribute count numeric \n";
 		
 		//start at 3 because of the attributes named above
-		for (int i=3; i<=maxAtt; i++){
+		for (int i=4; i<=maxAtt; i++){
 			attributeNames+="@attribute mz" + (i-offset) + " numeric \n";
 		}
 					
@@ -346,7 +349,7 @@ public class SQLAggregator {
 		SQLAggregator sa = new SQLAggregator();
 		sa.open();
 		try {
-			PrintWriter out = new PrintWriter("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC200confirm.arff"); 
+			PrintWriter out = new PrintWriter("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC200cnt.arff"); 
 			//write the .arff file headings
 			out.print(sa.assembleAttributes("ecrelation", "ec"));
 
