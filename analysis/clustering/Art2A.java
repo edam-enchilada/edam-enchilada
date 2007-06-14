@@ -78,7 +78,7 @@ public class Art2A extends Cluster
 		super(cID, database, "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
 				passes + ",DMetric=" + dMetric, comment, c.normalize);
 		parameterString = "Art2A,V=" + v + ",LR=" + lr +",Passes=" +
-		passes + ",DMetric=" + dMetric + "," + super.folderName;
+		passes + ",DMetric=" + dMetric + super.folderName;
 		vigilance = v;
 		learningRate = lr;
 		numPasses = passes;
