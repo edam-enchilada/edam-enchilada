@@ -85,7 +85,7 @@ public class KMeansTest extends TestCase {
 		
         int cID = 2;
         int k = 2;
-        String name = "Test clustering";
+        String name = "";
         String comment = "Test comment";
         boolean refine = false;
         ArrayList<String> list = new ArrayList<String>();
@@ -121,6 +121,10 @@ public class KMeansTest extends TestCase {
         kmeans.setDistanceMetric(DistanceMetric.DOT_PRODUCT);
         assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.DOT_PRODUCT)*100)/100.
                 == 0.97);
+    }
+    
+    public void testName() {
+    	assertTrue(kmeans.parameterString.equals("KMeans,K=2,Test comment"));
     }
     
     public void testKMeans() {

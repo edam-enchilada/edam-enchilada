@@ -69,6 +69,11 @@ public class Art2ATest extends TestCase{
 	                == 0.97);
 	    }
 	    
+	    public void testName() {
+	    	assertTrue(art2a.parameterString.equals("Art2A,V=1.0,LR=0.0050,Passes=25,DMetric=" +
+	    			"CITY_BLOCK,Test comment"));
+	    }
+	    
 	    public void testArt2A() {
 	    	art2a.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
 	    	int collectionID = art2a.cluster();

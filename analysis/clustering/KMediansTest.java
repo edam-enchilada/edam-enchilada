@@ -32,7 +32,7 @@ public class KMediansTest extends TestCase {
 			
 	        int cID = 2;
 	        int k = 2;
-	        String name = "Test clustering";
+	        String name = "";
 	        String comment = "Test comment";
 	        boolean refine = false;
 	        ArrayList<String> list = new ArrayList<String>();
@@ -68,6 +68,10 @@ public class KMediansTest extends TestCase {
 	        kmedians.setDistanceMetric(DistanceMetric.DOT_PRODUCT);
 	        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.DOT_PRODUCT)*100)/100.
 	                == 0.97);
+	    }
+	    
+	    public void testName() {
+	    	assertTrue(kmedians.parameterString.equals("KMedians,K=2,Test comment"));
 	    }
 	    
 	    public void testKMedians() {
