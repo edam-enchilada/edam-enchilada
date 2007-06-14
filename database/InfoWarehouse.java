@@ -386,4 +386,6 @@ public interface InfoWarehouse {
 	public void bulkInsertInit() throws Exception;
 	public void bulkInsertAtom(int newChildID, int newHostID) throws Exception;
 	public void bulkInsertExecute() throws Exception;
+
+	public String getDatabaseName();
 }

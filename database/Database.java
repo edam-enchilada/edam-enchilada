@@ -141,7 +141,9 @@ public abstract class Database implements InfoWarehouse {
 	public static InfoWarehouse getDatabase(String dbName) {
 		return new SQLServerDatabase(dbName);
 	}
-	
+	public String getDatabaseName(){
+		return database;
+	}
 	/**
 	 * Construct an instance of either SQLServerDatabase or MySQLDatabase
 	 * @return an InfoWarehouse backed by a relational database

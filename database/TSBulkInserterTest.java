@@ -22,7 +22,7 @@ public class TSBulkInserterTest extends TestCase {
 	protected void setUp() throws Exception {
 		new CreateTestDatabase();
 		db = Database.getDatabase("TestDB");
-		db.openConnection();
+		db.openConnection("TestDB");
 		ins = new TSBulkInserter(db);
 	}
 
