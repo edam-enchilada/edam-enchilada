@@ -126,9 +126,6 @@ public class SQLAggregator {
 					throw new RuntimeException("Dense time does not equal sparse time");
 				}
 				
-				// Only write out the row if the value is nonzero. If the mass
-				// is zero, this corresponds to missing data.
-				
 				float value = denseSet.getFloat("value1");
 				float mass = denseSet.getFloat("mass");
 				float count = denseSet.getFloat("cnt");
@@ -373,13 +370,13 @@ public class SQLAggregator {
 		try {
 			//Create .arff file for output.
 			String location = (new File(".")).getCanonicalPath();
-			String arfffilename = location + "/prediction/stlouis.arff";
+			String arfffilename = location + "/prediction/swiss.arff";
 			PrintWriter out = new PrintWriter(arfffilename);   
 			//write the .arff file headings
 			out.print(assembleAttributes("ecrelation", "ec"));
 
 			//Import the filter data from a CSV file.
-			String csvfilename = location + "/prediction/EC.csv";
+			String csvfilename = location + "/prediction/ECSwiss.csv";
 			importFilterData(csvfilename);
 			System.out.println("Data imported");
 			
