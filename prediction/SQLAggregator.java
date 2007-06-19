@@ -33,25 +33,24 @@ public class SQLAggregator {
 	// Set maxAtomId to 0 to run the whole thing
 	public static final int maxAtomId = 0;
 
-	private InfoWarehouse db;
-	private Connection con;
+	private static InfoWarehouse db;
+	private static Connection con;
 
-	private int maxAtt = 604; //the maximum number of attributes
-	private int offset = 304; //the offset between the peak location and its
-								//attribute number
-	private double density = 1; //this will be given us by the atmo. scientists
+	private static int maxAtt = 604;   //the maximum number of attributes
+	private static int offset = 304;   //the offset between the peak location and its
+								       //attribute number
+	private static double density = 1; //this will be given us by the atmo. scientists
 	
-	public SQLAggregator(){
-		db = Database.getDatabase();
-	}
-	
+	//Minimum number of particles in an acceptable bin
+	private static final int minParticles = 200;
+		
 	/**
 	 * @author steinbel
 	 * @author dmusican
 	 * Gathers and formats the ATOFMS data appropriately.
 	 * @param outputFile - name of the output file
 	 */
-	public void process(PrintWriter out) throws IOException{
+	public static void process(PrintWriter out) throws IOException{
 		//send incoming string to create a temp table
 		createTempTable();
 
@@ -69,7 +68,7 @@ public class SQLAggregator {
 				denseQuery += " WHERE atomID <= " + maxAtomId + "\n"; 
 			denseQuery +=
 				"   GROUP BY roundedTime\n" +
-				"   HAVING COUNT(*) > 200) Masses, AggData\n" +
+				"   HAVING COUNT(*) > " + minParticles + ") Masses, AggData\n" +
 				"WHERE Masses.roundedTime = AggData.Timestamp\n" +
 				"AND value <> 0\n" +
 				"ORDER BY roundedTime";
@@ -99,11 +98,13 @@ public class SQLAggregator {
 			boolean sparseRead = sparseSet.next();
 			boolean newMass = true;
 
+			//Make sure dense and sparse sets are not empty.
 			if (!denseRead)
 				throw new RuntimeException("Dense set empty");
 			if (!sparseRead)
 				throw new RuntimeException("Sparse set empty");
 			
+			//Execute as long as there is another row in denseSet
 			while (denseRead) {
 				Timestamp denseTime = denseSet.getTimestamp("roundedTime");
 				Timestamp sparseTime = sparseSet.getTimestamp("roundedTime");
@@ -125,7 +126,7 @@ public class SQLAggregator {
 					throw new RuntimeException("Dense time does not equal sparse time");
 				}
 				
-				// Only write out the row of the value is nonzero. If the mass
+				// Only write out the row if the value is nonzero. If the mass
 				// is zero, this corresponds to missing data.
 				
 				float value = denseSet.getFloat("value");
@@ -136,12 +137,14 @@ public class SQLAggregator {
 				// at the end of the time that seems to give Weka trouble.
 				String wekaTime = (denseTime.toString().split("\\."))[0];
 
-				// Adjust the units of mass to 	 it on a smaller scale:
+				// Adjust the units of mass to fit a smaller scale:
 				// this makes tools such as Weka happier. Also divide by
 				// count to normalize for the number of particles seen.
+								
+				//arbitrary scaling factors that are NOT hex
 				float massScaleFactor = 1e8f;
 				float countScaleFactor = 1e7f;
-				out.print("{" + "0 " + '"' + wekaTime + '"' +
+				out.print("{0 \"" + wekaTime + "\"" +
 						",1 " + value +
 						",2 " + mass/massScaleFactor +
 						",3 " + count/countScaleFactor);
@@ -152,10 +155,12 @@ public class SQLAggregator {
 					// Write out the sparse data. Adjust the units
 					// of adjustpeak to put it on a smaller scale:
 					// this makes tools such as Weka happier.
+					
+					//more not hex
 					float peakScaleFactor = 1e8f;
 					int location = sparseSet.getInt("peaklocation");
-					if ((location >= -300) && (location <= 300)){
-						out.print("," + (location+304) + " " +
+					if ((location >= -(offset - 4)) && (location <= (offset - 4))){
+						out.print("," + (location+offset) + " " +
 								sparseSet.getFloat("adjustedpeak") /
 								peakScaleFactor);
 					}
@@ -165,12 +170,12 @@ public class SQLAggregator {
 					if (sparseRead) {
 						sparseTime = sparseSet.getTimestamp("roundedTime");
 					}
-
 				}
 
 				// Write out end of row
 				out.println("}");
 
+				// Grab next dense row
 				denseRead = denseSet.next();
 			}
 			denseSet.close();
@@ -181,44 +186,32 @@ public class SQLAggregator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		//drop temp table
-		//dropTempTable();
-		
 	}
 	
 	/**
 	 * @author steinbel
 	 * Opens the connection to the database.
 	 */
-	public void open(){
+	public static void openAndConnect(){
+		db = Database.getDatabase();
 		db.openConnection();
 		con = db.getCon();
 	}
 	
 	/**
 	 * @author steinbel
-	 * Closes the connection to the database.
-	 */
-	public void close(){
-		db.closeConnection();
-	}
-	
-	/**
-	 * @author steinbel
 	 * @author dmusican
-	 * Creates a temporary table with all atomIDs of interest, and calculates
-	 * necessary detection efficiency.
+	 * 
+	 * Create a temp table with atomID, detection efficiency, roundedTime 
+	 * (initially populated with the size of the particles) during the
+	 * hour-long timebin around the given time.
 	 */
-	private void createTempTable(){
+	private static void createTempTable(){
 		try {
-			Statement stmt = con.createStatement();
-			/* Create a temp table with atomID and detection efficiency 
-			 * (initially populated with the size of the particles) during the
-			 * hour-long timebin around the given time.
-			 */
+			//Drop the temp table, in case one already exists.
 			dropTempTable();
-
+			
+			//Piece together the query to create the temp table (RoundedDense)
 			System.out.println("Creating temp table.");
 			String order = 
 				"CREATE TABLE RoundedDense (\n" +
@@ -228,20 +221,31 @@ public class SQLAggregator {
 				"	de REAL)\n" +
 				"INSERT INTO RoundedDense (atomid, roundedTime, size, de)\n" +
 				"SELECT atomid,\n" +
+				
+				//SQL Server-specific queries for appropriately rounding time values (nearest hour)
+				
+				//Rounds based on half-past the hour
 				//"	DATEADD(hour, DATEDIFF(hour, '20000101', DATEADD(minute, 30, time)), '20000101') as roundedTime,\n" +
+				//Rounds down to the nearest hour (truncates)
 				"	DATEADD(hour, DATEDIFF(hour, '20000101', time), '20000101') as roundedTime,\n" +
+				//Rounds up to the nearest hour
 				//"	DATEADD(hour, DATEDIFF(hour, '20000101', DATEADD(minute, 60, time)), '20000101') as roundedTime,\n" +
+								
 				"	size, NULL\n" +
 				"FROM ATOFMSAtomInfoDense\n" +
+				
+				//Size range is limited, as we do not have formulas for sizes outside of this range.
 				"WHERE size >= 0.1 AND size <= 2.5\n";
+			
 			if (maxAtomId > 0)
 				order += "AND atomID <= " + maxAtomId; 
 			
 			System.out.println(order);//TESTING
+			Statement stmt = con.createStatement();
 			stmt.executeUpdate(order);
 
 			//calculate the Detection Efficiency for the three size bins
-			//as described in DetectionEfficiency_Gomit.pdf
+			//as described in DetectionEfficiency_Gromit.pdf
 			System.out.println("Update 1");
 			stmt.executeUpdate("update RoundedDense " +
 					"set de = (select power(size*1000, 2.8574)*exp(-27.16)) " +
@@ -267,14 +271,13 @@ public class SQLAggregator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
 	
 	/**
 	 * @author steinbel
-	 * Drops the temporary table "#hourbin" from the database SpASMSdb.
+	 * Drops the temporary table RoundedDense from the database SpASMSdb.
 	 */
-	private void dropTempTable(){
+	private static void dropTempTable(){
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeUpdate("IF (OBJECT_ID('RoundedDense') " +
@@ -284,7 +287,6 @@ public class SQLAggregator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
 
 	/**
@@ -296,7 +298,7 @@ public class SQLAggregator {
 	 * @param predictThis - the attribute to be predicted (e.g., "ec" or "bc")
 	 * @return the header for the .arff file in the form of a string
 	 */
-	public String assembleAttributes(String relationName, String predictThis){
+	public static String assembleAttributes(String relationName, String predictThis){
 		String attributeNames = "@relation " + relationName +"\n"
 				+"@attribute time date \"yyyy-MM-dd HH:mm:ss\" \n"
 				+"@attribute " + predictThis + " numeric \n"
@@ -316,7 +318,7 @@ public class SQLAggregator {
 	 * @author dmusican
 	 * Import the filter data
 	 */
-	private void importFilterData(String filename) {
+	private static void importFilterData(String filename) {
 		try {
 			Statement stmt = con.createStatement();
 
@@ -325,7 +327,7 @@ public class SQLAggregator {
 			);
 			
 			stmt.executeUpdate(
-				"CREATE TABLE AggData (TimeStamp DATETIME, Value FLOAT)"
+				"CREATE TABLE AggData (TimeStamp DATETIME, Value1 FLOAT, Value2 FLOAT)"
 			);
 
 			stmt.executeUpdate(
@@ -345,21 +347,23 @@ public class SQLAggregator {
 //	take in file of ec/bc/whatever data in csv format
 	public static void main(String[] args){
 		Date start = new Date();
-		StringBuilder builder = new StringBuilder();
-		SQLAggregator sa = new SQLAggregator();
-		sa.open();
+		openAndConnect();
 		try {
-			PrintWriter out = new PrintWriter("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC200cnt.arff"); 
+			//Create .arff file for output.
+			String location = (new File(".")).getCanonicalPath();
+			String arfffilename = location + "/prediction/swissangst.arff";
+			PrintWriter out = new PrintWriter(arfffilename);   
 			//write the .arff file headings
-			out.print(sa.assembleAttributes("ecrelation", "ec"));
+			out.print(assembleAttributes("ecrelation", "ec"));
 
-			//aggregate data and format into .arff format, write to file
-			sa.importFilterData("C:/Documents and Settings/dmusican/workspace/edam-enchilada/prediction/EC.csv");
+			//Import the filter data from a CSV file.
+			String csvfilename = location + "/prediction/BapAngstSwiss.csv";
+			importFilterData(csvfilename);
 			System.out.println("Data imported");
 			
-			sa.process(out);
+			//process(out);
 			out.close();
-			sa.close();
+			db.closeConnection();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
