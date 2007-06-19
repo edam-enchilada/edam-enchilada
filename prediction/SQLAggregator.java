@@ -60,7 +60,7 @@ public class SQLAggregator {
 			// Calculate total mass for each time bin, and connect it with
 			// EC data. Throw away any bins with too few particles
 			String denseQuery =
-				"SELECT roundedTime, mass, value, cnt FROM\n" +
+				"SELECT roundedTime, mass, value1, cnt FROM\n" +
 				"(SELECT roundedTime, SUM(1/de) as cnt,\n" +
 				"	SUM(size*size*size*" + density + "*(1/de)) as mass\n" +
 				"   FROM RoundedDense\n";
@@ -70,7 +70,7 @@ public class SQLAggregator {
 				"   GROUP BY roundedTime\n" +
 				"   HAVING COUNT(*) > " + minParticles + ") Masses, AggData\n" +
 				"WHERE Masses.roundedTime = AggData.Timestamp\n" +
-				"AND value <> 0\n" +
+				"AND value1 <> 0\n" +
 				"ORDER BY roundedTime";
 
 			System.out.println(denseQuery);
@@ -129,7 +129,7 @@ public class SQLAggregator {
 				// Only write out the row if the value is nonzero. If the mass
 				// is zero, this corresponds to missing data.
 				
-				float value = denseSet.getFloat("value");
+				float value = denseSet.getFloat("value1");
 				float mass = denseSet.getFloat("mass");
 				float count = denseSet.getFloat("cnt");
 				
@@ -326,9 +326,31 @@ public class SQLAggregator {
 				"IF (OBJECT_ID('AggData') IS NOT NULL) DROP TABLE AggData"
 			);
 			
-			stmt.executeUpdate(
-				"CREATE TABLE AggData (TimeStamp DATETIME, Value1 FLOAT, Value2 FLOAT)"
-			);
+			//count the number of Value columns needed
+			int numColumns = 0;
+			
+			try {
+				Scanner tempScanner = new Scanner(new File(filename));
+				String[] tempArray = tempScanner.nextLine().split(",");
+				numColumns = tempArray.length - 1;
+			}
+			catch (IOException e) {
+				System.out.println("Something is wrong with the .csv file.");
+			}
+				
+			//build and execute query to create a table with appropriate number of Value columns
+			String valueColumns = "";
+			for (int i = 0; i < numColumns; i++) {
+				valueColumns += ", Value" + (i+1) + " FLOAT";
+			}
+			
+			String tableQuery = "CREATE TABLE AggData (TimeStamp DATETIME" + valueColumns + ")";
+			stmt.executeUpdate(tableQuery);
+			
+			//change this
+			//stmt.executeUpdate(
+			//	"CREATE TABLE AggData (TimeStamp DATETIME, Value1 FLOAT, Value2 FLOAT)"
+			//);
 
 			stmt.executeUpdate(
 				"BULK INSERT AggData\n" +
@@ -351,17 +373,17 @@ public class SQLAggregator {
 		try {
 			//Create .arff file for output.
 			String location = (new File(".")).getCanonicalPath();
-			String arfffilename = location + "/prediction/swissangst.arff";
+			String arfffilename = location + "/prediction/stlouis.arff";
 			PrintWriter out = new PrintWriter(arfffilename);   
 			//write the .arff file headings
 			out.print(assembleAttributes("ecrelation", "ec"));
 
 			//Import the filter data from a CSV file.
-			String csvfilename = location + "/prediction/BapAngstSwiss.csv";
+			String csvfilename = location + "/prediction/EC.csv";
 			importFilterData(csvfilename);
 			System.out.println("Data imported");
 			
-			//process(out);
+			process(out);
 			out.close();
 			db.closeConnection();
 		} catch (FileNotFoundException e) {
