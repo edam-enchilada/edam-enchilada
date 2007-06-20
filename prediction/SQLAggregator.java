@@ -35,11 +35,10 @@ public class SQLAggregator {
 
 	private static InfoWarehouse db;
 	private static Connection con;
-
-	private static int maxAtt = 604;   //the maximum number of attributes
-	private static int offset = 304;   //the offset between the peak location and its
-								       //attribute number
-	private static double density = 1; //this will be given us by the atmo. scientists
+	private static int maxAtt = 604;          //the maximum number of attributes
+	private static int peakRange = 300;       //the abs of the max/min peak values
+	private static int numAttributesB4MZ = 4; //number of attributes before mz
+	private static double density = 1;        //this will be given us by the atmo. scientists
 	
 	//Minimum number of particles in an acceptable bin
 	private static final int minParticles = 200;
@@ -156,8 +155,8 @@ public class SQLAggregator {
 					//more not hex
 					float peakScaleFactor = 1e8f;
 					int location = sparseSet.getInt("peaklocation");
-					if ((location >= -(offset - 4)) && (location <= (offset - 4))){
-						out.print("," + (location+offset) + " " +
+					if ((location >= -(peakRange)) && (location <= (peakRange))){
+						out.print("," + (location+peakRange+numAttributesB4MZ) + " " +
 								sparseSet.getFloat("adjustedpeak") /
 								peakScaleFactor);
 					}
@@ -241,20 +240,17 @@ public class SQLAggregator {
 			Statement stmt = con.createStatement();
 			stmt.executeUpdate(order);
 
-			//calculate the Detection Efficiency for the three size bins
-			//as described in DetectionEfficiency_Gromit.pdf
-			System.out.println("Update 1");
+			System.out.println("Updates 1,2, and 3");
 			stmt.executeUpdate("update RoundedDense " +
-					"set de = (select power(size*1000, 2.8574)*exp(-27.16)) " +
-					"where size >= .1 and size <= .75;");
-			System.out.println("Update 2");
-			stmt.executeUpdate("update RoundedDense " +
-					"set de = (select power(size*1000, -.58272)*exp(-4.803)) " +
-					"where size > .75 and size < 1.;");
-			System.out.println("Update 3");
-			stmt.executeUpdate("update RoundedDense " +
-					"set de = (select power(size*1000, -7.52)*exp(42.031)) " +
-					"where size >= 1. and size <= 2.5;");
+									"set de = " +
+										"case " +
+											"when (size >= .1 and size <= .75) " +
+												"then (select power(size*1000, 2.8574)*exp(-27.16)) " +
+											"when (size > .75 and size < 1.) " +
+												"then (select power(size*1000, -.58272)*exp(-4.803)) " +
+											"when (size >= 1. and size <= 2.5) " +
+												"then (select power(size*1000, -7.52)*exp(42.031)) " +
+										"end;");
 			
 			// Verify that all de rows have been calculated
 			ResultSet rs = 
@@ -303,8 +299,8 @@ public class SQLAggregator {
 				+"@attribute count numeric \n";
 		
 		//start at 3 because of the attributes named above
-		for (int i=4; i<=maxAtt; i++){
-			attributeNames+="@attribute mz" + (i-offset) + " numeric \n";
+		for (int i=-peakRange; i<=peakRange; i++){
+			attributeNames+="@attribute mz" + (i) + " numeric \n";
 		}
 					
 		attributeNames+="@data \n";
@@ -359,9 +355,7 @@ public class SQLAggregator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
-
 	
 //	take in file of ec/bc/whatever data in csv format
 	public static void main(String[] args){
@@ -370,13 +364,13 @@ public class SQLAggregator {
 		try {
 			//Create .arff file for output.
 			String location = (new File(".")).getCanonicalPath();
-			String arfffilename = location + "/prediction/swiss.arff";
+			String arfffilename = location + "/prediction/swissbap.arff";
 			PrintWriter out = new PrintWriter(arfffilename);   
 			//write the .arff file headings
-			out.print(assembleAttributes("ecrelation", "ec"));
+			out.print(assembleAttributes("baprelation", "bap"));
 
 			//Import the filter data from a CSV file.
-			String csvfilename = location + "/prediction/ECSwiss.csv";
+			String csvfilename = location + "/prediction/BapSwiss.csv";
 			importFilterData(csvfilename);
 			System.out.println("Data imported");
 			
