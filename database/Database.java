@@ -3435,9 +3435,11 @@ public abstract class Database implements InfoWarehouse {
 		private ResultSet rs;
 		private Statement stmt;
 		private int currID; // the current atomID.
+		private int collID;
 
 		// XXX: Generalize retrieval for multiple datatypes.
 		private BPLOnlyCursor(Collection coll) throws SQLException {
+			collID = coll.getCollectionID();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("use SpASMSdb; " +
 				"select AtomID, PeakLocation, PeakArea " +
@@ -3484,6 +3486,22 @@ public abstract class Database implements InfoWarehouse {
 		public void close() throws SQLException {
 			rs.close();
 			stmt.close();
+		}
+
+		
+		public void reset() throws SQLException {
+			rs.close();
+			rs = stmt.executeQuery("use SpASMSdb; " +
+					"select AtomID, PeakLocation, PeakArea " +
+					"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
+					"(SELECT AtomID FROM InternalAtomOrder " +
+					"Where CollectionID = "+collID +") " +
+			"order by AtomID;");
+			if (! rs.next()) {
+				throw new SQLException("Empty collection or a problem!");
+			}
+			currID = rs.getInt(1);
+
 		}
 
 		public void remove() {
