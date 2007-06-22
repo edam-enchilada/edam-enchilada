@@ -100,6 +100,10 @@ public class CFTree {
 			size++;
 			return root;
 		}
+		// Bottleneck ONE: findClosestLeafEntry. This is also about as
+		// efficient as it can be. This ultimately compares the peak list
+		// for the new particle with the cluster centers for the old, which
+		// is necessarily slow because of the high dimensionality. 
 		Pair<ClusterFeature, Float> pair = findClosestLeafEntry(entry, root);
 		ClusterFeature closestLeaf = pair.first;
 		CFNode closestNode = closestLeaf.curNode;
@@ -108,6 +112,11 @@ public class CFTree {
 		// if distance is below the threshold, CF absorbs the new entry.
 		Float distance = pair.second;
 		if (distance <= threshold) {
+			// Bottleneck TWO. It's about as efficient as it can be;
+			// it's just slow because every time you add a particle, you
+			// need to copy the list of peaks (to maintain normalized
+			// and non-normalized data). It's now using the copy constructor
+			// for TreeMap, so it's a fast copy.
 			closestLeaf.updateCF(entry, atomID, true);
 			size++;
 		}
@@ -125,7 +134,6 @@ public class CFTree {
 		}
 		memory+=closestNode.getMemory();
 		updateNonSplitPath(closestNode,entry,atomID,true);
-		//updateNonSplitPath(closestNode);
 		return closestNode;
 		
 	}
