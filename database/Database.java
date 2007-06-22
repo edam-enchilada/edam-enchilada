@@ -3441,7 +3441,7 @@ public abstract class Database implements InfoWarehouse {
 		private BPLOnlyCursor(Collection coll) throws SQLException {
 			collID = coll.getCollectionID();
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("use SpASMSdb; " +
+			rs = stmt.executeQuery(
 				"select AtomID, PeakLocation, PeakArea " +
 				"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
 				"(SELECT AtomID FROM InternalAtomOrder " +
@@ -3491,7 +3491,7 @@ public abstract class Database implements InfoWarehouse {
 		
 		public void reset() throws SQLException {
 			rs.close();
-			rs = stmt.executeQuery("use SpASMSdb; " +
+			rs = stmt.executeQuery(
 					"select AtomID, PeakLocation, PeakArea " +
 					"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
 					"(SELECT AtomID FROM InternalAtomOrder " +
