@@ -96,14 +96,13 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	/**
 	 * Deep-copies the data in this BinnedPeakList from another BinnedPeakList
 	 * @param original the BinnedPeakList to copy from
+	 * @author dmusican
 	 */
 	public void copyBinnedPeakList(BinnedPeakList original) {
-		Iterator<BinnedPeak> i = original.iterator();
-		BinnedPeak p;
-		while (i.hasNext()) {
-			p = i.next();
-			add(p.key, p.value);
-		}
+		// Note that the TreeMap copy-constructor is likely a shallow copy;
+		// it does not copy the keys and values. But this contains Integer and
+		// Float immutable objects, so this doesn't matter.
+		peaks = new TreeMap<Integer,Float>(original.peaks);
 		normalizable = original.getNormalizable();
 	}
 	
@@ -292,7 +291,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		 * them. 
 		 */
 		
-		
 		Map.Entry<Integer, Float> i = null, j = null;
 		Iterator<Map.Entry<Integer, Float>> thisIter = peaks.entrySet().iterator(),
 			thatIter = other.peaks.entrySet().iterator();
@@ -417,8 +415,8 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			if (other.peaks.containsKey(iKey)) {
 				float otherValue = other.peaks.get(iKey);
 				distance = distance +
-					DistanceMetric.getDistance(iValue,otherValue,metric) -
-					DistanceMetric.getDistance(0,otherValue,metric);
+					(DistanceMetric.getDistance(iValue,otherValue,metric) -
+					DistanceMetric.getDistance(0,otherValue,metric));
 			}
 			else {
 				distance += DistanceMetric.getDistance(0, iValue, metric);
@@ -558,22 +556,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			System.out.println(p.key + ", " + p.value);
 		}
 	}
-	
-	/**
-	 * Find the highest key in the mapping.
-	 * @return the highest key!!
-	 */
-	public int getLastLocation() {
-		return peaks.lastKey();
-	}
-	
-	/**
-	 * Finds the lowest key in the mapping.
-	 */
-	public int getFirstLocation() {
-		return peaks.firstKey();
-	}
-	
+
 	/**
 	 * Find the largest value contained in the peaklist.  (not its index, the
 	 * value itself).
