@@ -48,15 +48,7 @@
 package analysis.clustering;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
-import analysis.DummyNormalizer;
-import analysis.Normalizer;
-
 import database.InfoWarehouse;
-import database.CollectionCursor;
 
 /**
  * KMeans uses the mean to determine the new centroids.  
@@ -95,49 +87,14 @@ public class KMeans extends ClusterK
 	}
 
 	/**
-	 * Averages the given centroid.  See ClusterK abstract method for
-	 * parameter information.
+	 * This code has been removed; it is much more efficient to accumulate
+	 * a cluster as you go.
+	 * @author dmusican
 	 * 
 	 */
 	public Centroid averageCluster(
 			Centroid thisCentroid,
-			ArrayList<Integer> particlesInCentroid,
-			CollectionCursor curs) {
-		// initialize variables
-		int atomID;
-		BinnedPeakList thisBinnedPeakList;
-		BinnedPeak addedPeak;
-		Iterator<BinnedPeak> j;
-		
-		// newList will contain the new binned peak list for the moved centroid.
-		BinnedPeakList newList;
-		if (isNormalized)
-			newList = new BinnedPeakList(new Normalizer());
-		else
-			newList = new BinnedPeakList(new DummyNormalizer());
-		
-		// Loop through the particles in the centroid and add the areas together.
-		for (int i = 0; i < particlesInCentroid.size(); i++) {
-			// Using the atomID, find the atom's peak list.
-			atomID = particlesInCentroid.get(i).intValue();
-			thisBinnedPeakList = curs.getPeakListfromAtomID(atomID);
-			thisBinnedPeakList.normalize(distanceMetric);
-			
-			j = thisBinnedPeakList.iterator();
-			// For every key in the binned list, add that value to the new list.
-			while (j.hasNext())
-			{
-				addedPeak = 
-					j.next();
-				newList.add(addedPeak.key, addedPeak.value);
-			}
-		}
-		// we have the sums - divide by the particle number to get mean.
-		newList.divideAreasBy(thisCentroid.numMembers);
-		
-		//Create and return a centroid with the new list and 0 members.
-		newList.normalize(distanceMetric);
-		Centroid newCentroid = new Centroid(newList, 0);
-		return newCentroid;
+			ArrayList<Integer> particlesInCentroid) {
+		throw new UnsupportedOperationException("Averaging a k-means cluster is inefficient.");
 	}
 }

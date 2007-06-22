@@ -45,6 +45,7 @@ package analysis.clustering;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.regex.Matcher;
@@ -54,6 +55,9 @@ import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
+import database.Database.BPLOnlyCursor;
+import errorframework.ErrorLogger;
+import experiments.Tuple;
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
@@ -302,7 +306,7 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
-			CollectionCursor curs)
+			BPLOnlyCursor curs)
 	{
 		
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
@@ -322,11 +326,11 @@ public abstract class Cluster extends CollectionDivider {
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
 	
-		while(curs.next())
+		while(curs.hasNext())
 		{ // while there are particles remaining
 			particleCount++;
-			thisParticleInfo = curs.getCurrent();
-			thisBinnedPeakList = thisParticleInfo.getBinnedList();
+			Tuple<Integer,BinnedPeakList> tuple = curs.next();
+			thisBinnedPeakList = tuple.getValue();
 			thisBinnedPeakList.normalize(distanceMetric);
 			nearestDistance = Float.MAX_VALUE;
 			for (int centroidIndex = 0; 
@@ -353,13 +357,17 @@ public abstract class Cluster extends CollectionDivider {
 					System.err.println(
 							"Problem creating sub collection");
 			}
-			putInSubCollectionBatch(thisParticleInfo.getID(),
+			putInSubCollectionBatch(tuple.getKey(),
 					temp.subCollectionNum);
 			temp.numMembers++;
 			
 		}// end with no particle remaining
 		putInSubCollectionBatchExecute();
-		curs.reset();
+		try {
+			curs.reset();
+		} catch (SQLException e) {
+			ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
+		}
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);

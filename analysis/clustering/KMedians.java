@@ -49,6 +49,7 @@ import java.util.*;
 import analysis.*;
 import database.CollectionCursor;
 import database.InfoWarehouse;
+import database.NonZeroCursor;
 
 /**
  * @author andersbe
@@ -76,9 +77,10 @@ public class KMedians extends ClusterK {
 
 	public Centroid averageCluster(
 			Centroid origCentroids,
-			ArrayList<Integer> particlesInCentroid,
-			CollectionCursor curs)
+			ArrayList<Integer> particlesInCentroid)
 	{
+		CollectionCursor curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), clusterInfo));
+
 		ArrayList<BinnedPeakList> medianThis = 
 			new ArrayList<BinnedPeakList>(particlesInCentroid.size());
 		int atomID = 0;
@@ -123,6 +125,7 @@ public class KMedians extends ClusterK {
 			returnThis = new Centroid(mf.getMedianSumToOne(),
 					0,origCentroids.subCollectionNum);
 		}
+		curs.close();
 		return returnThis;
 	}
 }

@@ -44,6 +44,7 @@
  */
 package analysis.clustering;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -61,6 +62,9 @@ import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
+import database.Database.BPLOnlyCursor;
+import errorframework.ErrorLogger;
+import experiments.Tuple;
 import externalswing.SwingWorker;
 
 /**
@@ -81,7 +85,7 @@ public abstract class ClusterK extends Cluster {
 
 	private static float error = 0.01f;
 	private static int numSamples = 50;
-	protected NonZeroCursor curs;
+	protected BPLOnlyCursor curs;
 	private int returnThis;
 	private JFrame parentContainer;
 	private int curInt;
@@ -131,87 +135,88 @@ public abstract class ClusterK extends Cluster {
 		numParticles = db.getCollectionSize(collectionID);
 		// If refineCentroids is true, randomize the db and cluster subsamples.
 		if (refineCentroids) {
-			int sampleSize;
-			if (numSamples*4 > numParticles) 
-				sampleSize = numParticles/(numSamples*2);
-			else 
-				sampleSize = numParticles/numSamples - 1;
-			db.seedRandom(90125);
-			CollectionCursor randCurs = 
-				db.getRandomizedCursor(db.getCollection(collectionID));
-			NonZeroCursor partCurs = null;
-			System.out.println("clustering subSamples:");
-			System.out.println("number of samples: " + numSamples);
-			System.out.println("sample size: " + sampleSize);
-			ArrayList<ArrayList<Centroid>> allCentroidLists =
-			    new ArrayList<ArrayList<Centroid>>(numSamples);
-			sampleIters = 0;
-			for(int i = 0; i < numSamples; i++)
-			{
-				curInt = i+1;
-				
-				if(interactive){
-					try {
-						SwingUtilities.invokeAndWait(new Runnable() {
-							public void run() {
-								updateErrorDialog("Clustering subsample #" + (curInt));
-							}
-						});
-					} catch (Exception e) {	e.printStackTrace(); }
-					partCurs = new NonZeroCursor(new SubSampleCursor(
-							randCurs, 
-							i*sampleSize, 
-							sampleSize));
-				}
-				
-				allCentroidLists.add(processPart(new ArrayList<Centroid>(),
-				        				partCurs));
-				centroidList.addAll(allCentroidLists.get(i));
-
-			
-				sampleIters += totalDistancePerPass.size();
-			}
-			
-			// Of the various centroids that are found, try clustering all
-			// the centroids together using each set of centroids as a starting
-			// point. For each of the centroids that result, choose those
-			// that result in the least error.
-			System.out.println("clustering Centroids:");
-			double bestDistance = Double.POSITIVE_INFINITY;
-			ArrayList<Centroid> bestStartingCentroids = null;
-			int bestIndex = -1;
-			clusterCentroidIters = 0;
-			for (int i=0; i < numSamples; i++) {
-				curInt = i+1;
-				if(interactive){
-					try {
-						SwingUtilities.invokeAndWait(new Runnable() {
-							public void run() {
-								updateErrorDialog("Clustering centroid #" + (curInt));
-							}
-						});
-					} catch (Exception e) {	e.printStackTrace(); }
-				}
-
-				ArrayList<Centroid> centroids = 
-					processPart(allCentroidLists.get(i),
-							new NonZeroCursor(
-									new CentroidListCursor(centroidList)));
-				double distance = (totalDistancePerPass.
-			              get(totalDistancePerPass.size()-1).doubleValue());
-				clusterCentroidIters += totalDistancePerPass.size();
-			    if (distance < bestDistance) {
-			        bestDistance = distance;
-			        bestStartingCentroids = centroids;
-			        bestIndex = i;
-			    }
-			}
-			System.out.println("Centroid clustering iterations: " +
-			        clusterCentroidIters);
-			centroidList = processPart(bestStartingCentroids,
-					new NonZeroCursor(new CentroidListCursor(centroidList)));
-			partCurs.close();
-			randCurs.close();
+			ErrorLogger.displayException(null,"Refining centroids has not been reimplemented.");
+//			int sampleSize;
+//			if (numSamples*4 > numParticles) 
+//				sampleSize = numParticles/(numSamples*2);
+//			else 
+//				sampleSize = numParticles/numSamples - 1;
+//			db.seedRandom(90125);
+//			CollectionCursor randCurs = 
+//				db.getRandomizedCursor(db.getCollection(collectionID));
+//			NonZeroCursor partCurs = null;
+//			System.out.println("clustering subSamples:");
+//			System.out.println("number of samples: " + numSamples);
+//			System.out.println("sample size: " + sampleSize);
+//			ArrayList<ArrayList<Centroid>> allCentroidLists =
+//			    new ArrayList<ArrayList<Centroid>>(numSamples);
+//			sampleIters = 0;
+//			for(int i = 0; i < numSamples; i++)
+//			{
+//				curInt = i+1;
+//				
+//				if(interactive){
+//					try {
+//						SwingUtilities.invokeAndWait(new Runnable() {
+//							public void run() {
+//								updateErrorDialog("Clustering subsample #" + (curInt));
+//							}
+//						});
+//					} catch (Exception e) {	e.printStackTrace(); }
+//					partCurs = new NonZeroCursor(new SubSampleCursor(
+//							randCurs, 
+//							i*sampleSize, 
+//							sampleSize));
+//				}
+//				
+//				allCentroidLists.add(processPart(new ArrayList<Centroid>(),
+//				        				partCurs));
+//				centroidList.addAll(allCentroidLists.get(i));
+//
+//			
+//				sampleIters += totalDistancePerPass.size();
+//			}
+//			
+//			// Of the various centroids that are found, try clustering all
+//			// the centroids together using each set of centroids as a starting
+//			// point. For each of the centroids that result, choose those
+//			// that result in the least error.
+//			System.out.println("clustering Centroids:");
+//			double bestDistance = Double.POSITIVE_INFINITY;
+//			ArrayList<Centroid> bestStartingCentroids = null;
+//			int bestIndex = -1;
+//			clusterCentroidIters = 0;
+//			for (int i=0; i < numSamples; i++) {
+//				curInt = i+1;
+//				if(interactive){
+//					try {
+//						SwingUtilities.invokeAndWait(new Runnable() {
+//							public void run() {
+//								updateErrorDialog("Clustering centroid #" + (curInt));
+//							}
+//						});
+//					} catch (Exception e) {	e.printStackTrace(); }
+//				}
+//
+//				ArrayList<Centroid> centroids = 
+//					processPart(allCentroidLists.get(i),
+//							new NonZeroCursor(
+//									new CentroidListCursor(centroidList)));
+//				double distance = (totalDistancePerPass.
+//			              get(totalDistancePerPass.size()-1).doubleValue());
+//				clusterCentroidIters += totalDistancePerPass.size();
+//			    if (distance < bestDistance) {
+//			        bestDistance = distance;
+//			        bestStartingCentroids = centroids;
+//			        bestIndex = i;
+//			    }
+//			}
+//			System.out.println("Centroid clustering iterations: " +
+//			        clusterCentroidIters);
+//			centroidList = processPart(bestStartingCentroids,
+//					new NonZeroCursor(new CentroidListCursor(centroidList)));
+//			partCurs.close();
+//			randCurs.close();
 		} 
 		
 		if(interactive){
@@ -225,12 +230,16 @@ public abstract class ClusterK extends Cluster {
 		}
 		
 		centroidList = processPart(centroidList, curs);
-		
+
 		System.out.println("returning");
 		
 		returnThis = 
 			assignAtomsToNearestCentroid(centroidList, curs);
-		curs.close();
+		try {
+			curs.close();
+		} catch (SQLException e) {
+			ErrorLogger.displayException(null,"Error in closing cursor.");
+		}
 
 		if(interactive){
 			try {
@@ -297,16 +306,21 @@ public abstract class ClusterK extends Cluster {
 	 */
 	public boolean setCursorType(int type) 
 	{
-		switch (type) {
-		case CollectionDivider.DISK_BASED :
-			curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), clusterInfo));
-		return true;
-		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), clusterInfo));
-		return true;
-		default :
-			return false;
+//		switch (type) {
+//		case CollectionDivider.DISK_BASED :
+			//curs = new NonZeroCursor(db.getClusteringCursor(db.getCollection(collectionID), clusterInfo));
+		try {
+			curs = db.getBPLOnlyCursor(db.getCollection(collectionID));
+		} catch (SQLException e) {
+			ErrorLogger.displayException(null,"Error in grabbing BPLOnlyCursor.");
 		}
+		return true;
+//		case CollectionDivider.STORE_ON_FIRST_PASS : 
+//		    curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), clusterInfo));
+//		return true;
+//		default :
+//			return false;
+//		}
 	}
 
 	private static class OutlierData implements Comparable<OutlierData> {
@@ -334,10 +348,9 @@ public abstract class ClusterK extends Cluster {
 	 * @param curs - cursor to loop through the particles in the db.
 	 * @return the new list of centroids.
 	 */
-	private ArrayList<Centroid> processPart(
-			ArrayList<Centroid> centroidList,
-			NonZeroCursor curs) {
-		
+	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
+											  BPLOnlyCursor curs) {
+
 		boolean isStable = false;
 		
 		// Create an arrayList of particle peaklists for each centroid. 
@@ -353,10 +366,10 @@ public abstract class ClusterK extends Cluster {
 		if (numParticles == k) {
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
-				curs.next();
-				curs.getCurrent().getBinnedList().preProcess(power);
-				curs.getCurrent().getBinnedList().normalize(distanceMetric);
-				centroidList.add(new Centroid(curs.getCurrent().getBinnedList(),1));
+				Tuple<Integer, BinnedPeakList> tuple = curs.next();
+				tuple.getValue().preProcess(power);
+				tuple.getValue().normalize(distanceMetric);
+				centroidList.add(new Centroid(tuple.getValue(),1));
 			}
 			return centroidList;
 		}
@@ -385,24 +398,33 @@ public abstract class ClusterK extends Cluster {
 		    // Take the first point as the first centroid. For each succeeding
 		    // point, take the one that is furthest away from the closest
 		    // of the points chosen so far.
-		    curs.reset();
-		    boolean status = curs.next();
+			try {
+				curs.reset();
+			} catch (SQLException e) {
+				ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
+			}
+		    boolean status = curs.hasNext();
 		    assert status : "Cursor is empty.";
 		    Centroid newCent = null; 
-			curs.getCurrent().getBinnedList().preProcess(power);
-		    curs.getCurrent().getBinnedList().normalize(distanceMetric);
-		    newCent = new Centroid(curs.getCurrent().getBinnedList(),0);
+			Tuple<Integer, BinnedPeakList> tuple = curs.next();
+			tuple.getValue().preProcess(power);
+			tuple.getValue().normalize(distanceMetric);
+		    newCent = new Centroid(tuple.getValue(),0);
 		  
 		    assert (newCent != null) : "Error adding centroid";
 		    assert (newCent.peaks != null) : "New centroid has no peaklist!";
 		    centroidList.add(newCent);
 		    for (int i=1; i < k; i++) {
-		        curs.reset();
+				try {
+					curs.reset();
+				} catch (SQLException e) {
+					ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
+				}
 				BinnedPeakList furthestPeakList = null;
 				double furthestGlobalDistance = (double) 0;
-		        while (curs.next()) {
-					ParticleInfo thisParticleInfo = curs.getCurrent();
-					BinnedPeakList thisBinnedPeakList =	curs.getPeakListfromAtomID(thisParticleInfo.getID());
+		        while (curs.hasNext()) {
+					tuple = curs.next();
+					BinnedPeakList thisBinnedPeakList =	tuple.getValue();
 					thisBinnedPeakList.normalize(distanceMetric);
 					//thisBinnedPeakList.printPeakList();
 					//System.out.println("***");
@@ -444,7 +466,15 @@ public abstract class ClusterK extends Cluster {
 		//clear totalDistancePerPass array.
 		totalDistancePerPass.clear(); 
 		double accumDistance = 0.0;
-		curs.reset();
+		try {
+			curs.reset();
+		} catch (SQLException e) {
+			ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
+		};
+		// Get centroid magnitudes for efficiency
+		float[] centroidMags = new float[k];
+		for (int i=0; i < k; i++)
+			centroidMags[i] = centroidList.get(i).peaks.getMagnitude(distanceMetric);
 		while (!isStable) {
 			for (ArrayList<Integer> array : particlesInCentroids){
 				array.clear();
@@ -454,17 +484,21 @@ public abstract class ClusterK extends Cluster {
 			for (int i=0; i < k; i++)
 				outliers.add(new OutlierData(null,i*Double.MIN_VALUE));
 			double smallestOutlierDistance = Double.MIN_VALUE;
-			while(curs.next())
+			// Make array to store sum of all the cluster centroids
+			BinnedPeakList[] cumulativeCentroids = new BinnedPeakList[k];
+			for (int i=0; i < k; i++)
+				cumulativeCentroids[i] = new BinnedPeakList();
+			while(curs.hasNext())
 			{ // while there are particles remaining
-				ParticleInfo thisParticleInfo = curs.getCurrent();
-				BinnedPeakList thisBinnedPeakList =
-					curs.getPeakListfromAtomID(thisParticleInfo.getID());
-					thisBinnedPeakList.normalize(distanceMetric);
+				Tuple<Integer,BinnedPeakList> tuple = curs.next();
+				BinnedPeakList thisBinnedPeakList = tuple.getValue();
+				thisBinnedPeakList.normalize(distanceMetric);
 				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
 				{// for each centroid
-					double distance = centroidList.get(curCent).peaks.getDistance(thisBinnedPeakList,distanceMetric);
+					double distance = thisBinnedPeakList.getDistance(
+							centroidList.get(curCent).peaks,centroidMags[curCent],distanceMetric);
 					//If nearestDistance hasn't been set or is larger 
 					//than found distance, set the nearestCentroid index.
 					if (distance < nearestDistance){
@@ -495,25 +529,43 @@ public abstract class ClusterK extends Cluster {
 				// Put atomID assigned to curCent in particlesInCentroids array, and increment
 				// appropriately.  
 				particlesInCentroids.get(nearestCentroid).add(new Integer(
-						thisParticleInfo.getID()));
+						tuple.getKey()));
 				centroidList.get(nearestCentroid).numMembers++;
-				accumDistance += nearestDistance;	
-			
+				accumDistance += nearestDistance;
+				cumulativeCentroids[nearestCentroid].addAnotherParticle(thisBinnedPeakList);
+
 			}// end while there are particles remaining
-			zeroPeakListParticleCount = curs.getZeroCount();
+			// IMPORTANT TO FIX: ZERO ISSUE
+			zeroPeakListParticleCount = 0; //curs.getZeroCount();
 			totalDistancePerPass.add(new Double(accumDistance));
 
 			// reset centroid list.  The averageCluster method is overwritten
 			// in K-Means and K-Medians.
 			for (int i = 0; i < k; i++) {
-				Centroid newCent = averageCluster(centroidList.get(i),
-						particlesInCentroids.get(i), curs);
+				Centroid newCent;
+				if (this instanceof KMeans) {
+					// we have the sums - divide by the particle number to get mean.
+					cumulativeCentroids[i].divideAreasBy(centroidList.get(i).numMembers);
+					//Create and return a centroid with the new list and 0 members.
+					cumulativeCentroids[i].normalize(distanceMetric);
+					newCent = new Centroid(cumulativeCentroids[i],0);
+				}
+				else if (this instanceof KMedians) {
+					newCent = averageCluster(centroidList.get(i),
+							particlesInCentroids.get(i));
+				}
+				else
+					throw new UnsupportedOperationException("Undefined clustering type.");
 				centroidList.set(i, newCent);
 			}
 			//accumDistance:
 			accumDistance = 0.0;
 			// cursor:
-			curs.reset();
+			try {
+				curs.reset();
+			} catch (SQLException e) {
+				ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
+			}
 
 			if (outliers.last().distance < 1E-4) {
 				System.out.println("Particles are perfectly clustered!");
@@ -539,10 +591,11 @@ public abstract class ClusterK extends Cluster {
 		//totalDistancePerPass.remove(totalDistancePerPass.size()-1);
 		
 
-		System.out.println("Zero count = " + curs.getZeroCount());
+		// IMPORTANT: FIX ZERO COUNT
+		//System.out.println("Zero count = " + curs.getZeroCount());
 		return centroidList;
 	}
-		
+	
 	/**
 	 * Determines whether the centroids are stable or not.  It does this by
 	 * determining how much the centroids moved on the last pass and comparing
@@ -610,7 +663,6 @@ public abstract class ClusterK extends Cluster {
 	 */
 	public abstract Centroid averageCluster(
 			Centroid thisCentroid,
-			ArrayList<Integer> particlesInCentroid,
-			CollectionCursor curs);
+			ArrayList<Integer> particlesInCentroid);
 	
 }
