@@ -182,6 +182,23 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * @author steinbel
+	 * @author turetske
+	 * Drops the temporary table #temp from the database SpASMSdb.
+	 */
+	private void dropTempTable(){
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("IF (OBJECT_ID('tempdb..#TEMP') " +
+					"IS NOT NULL)\n" +
+					" DROP TABLE #TEMP\n");
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**
 	 * Find if the database is present
 	 * @param command the SQL to get a list of databases
 	 * @return true if present
@@ -2067,6 +2084,7 @@ public abstract class Database implements InfoWarehouse {
 		bulkInsertFile.close();
 		
 		try {
+			dropTempTable();
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
 			String tempFilename = tempdir + File.separator + "bulkfile.txt";
