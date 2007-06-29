@@ -65,7 +65,7 @@ public class GUItest extends UISpecTestCase {
 	 * Test importing a dataset (testRow/b) as a single collection and
 	 * as tripled into a parent collection.
 	 */
-	public void testImportData() throws Throwable {
+	/*public void testImportData() throws Throwable {
 		//locations of files to import - these will be entered in the GUI
 		final String parFile = "testRow/b/b.par";
 		final String calFile = "testRow/b/cal.cal";
@@ -178,6 +178,7 @@ public class GUItest extends UISpecTestCase {
 						System.out.println("version: " + s);
 						if (s.length() > 1)
 							versfound = true;
+						System.out.println("here");
 					}
 				}
 				assertTrue(versfound);

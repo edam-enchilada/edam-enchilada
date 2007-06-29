@@ -129,14 +129,14 @@ public class BIRCH extends CompressData{
 		curTree = new CFTree(threshold, branchingFactor, distanceMetric); ; 
 		
 		// Insert particles one by one.
-		Tuple<Integer, BinnedPeakList> tuple;
+		ParticleInfo p;
 		BinnedPeakList peakList;
 		Integer atomID;
 		CFNode changedNode, lastSplitNode;
-		while(curs.hasNext()) {
-			tuple = curs.next();
-			peakList = tuple.getValue();
-			atomID = tuple.getKey();
+		while(curs.next()) {
+			p = curs.getCurrent();
+			peakList = p.getBinnedList();
+			atomID = p.getID();
 			peakList.posNegNormalize(distanceMetric);//necessary?
 			System.out.println("inserting particle " + atomID);
 			assert!peakList.containsZeros():"zero present";

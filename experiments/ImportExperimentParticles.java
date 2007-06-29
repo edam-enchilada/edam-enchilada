@@ -4,7 +4,11 @@
  */
 package experiments;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
+
+import javax.swing.JOptionPane;
 
 import database.InfoWarehouse;
 import database.Database;
@@ -23,9 +27,24 @@ public class ImportExperimentParticles {
 		particles = new ArrayList<ATOFMSParticle>();
 		ArrayList<Integer>  indices = new ArrayList<Integer>(2000);
 		
+		
+
+	   try {
+				Database.rebuildDatabase("TestDB");
+			} catch (SQLException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+				JOptionPane.showMessageDialog(null,
+						"Could not rebuild the database." +
+						"  Close any other programs that may be accessing the database and try again.");
+			}
+		
 		//Open database connection:
-		db = Database.getDatabase();
-		db.openConnection();
+        db = Database.getDatabase("TestDB");
+        db.openConnection("TestDB");
+        Connection con = db.getCon();
+        
+    		
 		
 		
 		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f,.50f);
@@ -47,19 +66,19 @@ public class ImportExperimentParticles {
 		
 		// Use the indices array to duplicate the number of each type of particle.
 		// Choose a random number of duplications.  
-		for (int p1 = 0; p1 < 140; p1++) 
+		for (int p1 = 0; p1 < 100; p1++) 
 			indices.add(new Integer(1));
-		for (int p2 = 0; p2 < 40; p2++) 
+		for (int p2 = 0; p2 < 100; p2++) 
 			indices.add(new Integer(2));
-		for (int p3 = 0; p3 < 20; p3++) 
+		for (int p3 = 0; p3 < 100; p3++) 
 			indices.add(new Integer(3));
-		for (int p4 = 0; p4 < 80; p4++) 
+		for (int p4 = 0; p4 < 100; p4++) 
 			indices.add(new Integer(4));
-		for (int p5 = 0; p5 < 20; p5++) 
+		for (int p5 = 0; p5 < 100; p5++) 
 			indices.add(new Integer(5));
-		for (int p6 = 0; p6 < 80; p6++) 
+		for (int p6 = 0; p6 < 100; p6++) 
 			indices.add(new Integer(6));
-		for (int p7 = 0; p7 < 20; p7++) 
+		for (int p7 = 0; p7 < 100; p7++) 
 			indices.add(new Integer(7));
 		
 		// randomize the particles in the array.

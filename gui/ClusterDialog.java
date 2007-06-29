@@ -620,7 +620,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 							// cursors?
 							if (db.getCollectionSize(
 									cTree.getSelectedCollection().
-									getCollectionID()) < 0) // Was 10000
+									getCollectionID()) < 10000) // Was 10000
 							{
 								kMeans.setCursorType(Cluster.STORE_ON_FIRST_PASS);
 							}

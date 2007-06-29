@@ -7,11 +7,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.DistanceMetric;
 import database.InfoWarehouse;
 import database.Database;
+import database.Database.BPLOnlyCursor;
 import experiments.Tuple;
 
 /**
@@ -53,8 +55,7 @@ public class HistogramDataset {
 		return ret;
 	}
 	
-	public static HistogramDataset[] 
-	    analyseBPLs(Iterator<Tuple<Integer, BinnedPeakList>> iter, Color c)
+	public static HistogramDataset[] analyseBPLs(BPLOnlyCursor b, Color c)
 	{
 		BinnedPeakList peakList;
 		int partnum = 0;
@@ -62,9 +63,9 @@ public class HistogramDataset {
 		ChainingHistogram[] histograms, posHists = new ChainingHistogram[maxMZ],
 			negHists = new ChainingHistogram[maxMZ];
 		
-		while (iter.hasNext()) {
-			Tuple<Integer, BinnedPeakList> t = iter.next();
-			peakList = t.getValue();
+		while (b.next()) {
+			ParticleInfo t = b.getCurrent();
+			peakList = t.getBinnedList();
 			peakList.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
 	
 			++partnum;
@@ -82,7 +83,7 @@ public class HistogramDataset {
 				if (histograms[p.key] == null) {
 					histograms[p.key] = new ChainingHistogram(binWidth);
 				}
-				histograms[p.key].addPeak(p.value, t.getKey());
+				histograms[p.key].addPeak(p.value, t.getID());
 			}
 		}
 		

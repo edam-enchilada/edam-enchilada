@@ -3448,14 +3448,14 @@ public abstract class Database implements InfoWarehouse {
 	 * 
 	 * @author smitht
 	 *
+	 *
+	 * Modified by christej to implement CollectionCursor instead of Iterator
 	 */
-	public class BPLOnlyCursor implements Iterator<Tuple<Integer, BinnedPeakList>> {
+	public class BPLOnlyCursor implements CollectionCursor{
 		private ResultSet rs;
 		private Statement stmt;
-		private int currID; // the current atomID.
-		private int collID;
-
-		// XXX: Generalize retrieval for multiple datatypes.
+		public int currID; // the current atomID.
+		public int collID;
 		private BPLOnlyCursor(Collection coll) throws SQLException {
 			collID = coll.getCollectionID();
 			stmt = con.createStatement();
@@ -3470,17 +3470,24 @@ public abstract class Database implements InfoWarehouse {
 			}
 			currID = rs.getInt(1);
 		}
-
-		public boolean hasNext() {
+		
+		public void close() {
 			try {
-				return ! rs.isAfterLast();
+				rs.close();
+				stmt.close();
 			} catch (SQLException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
-				return false;
 			}
 		}
 
-		public Tuple<Integer, BinnedPeakList> next() throws NoSuchElementException {
+
+		public ParticleInfo get(int i) throws NoSuchMethodException {
+			throw new NoSuchMethodException("Not implemented in disk based cursors.");
+		}
+
+		public ParticleInfo getCurrent() {
+			ParticleInfo p = new ParticleInfo();
 			try {
 				int retAtom = currID;
 				BinnedPeakList bpl = new BinnedPeakList();
@@ -3491,43 +3498,58 @@ public abstract class Database implements InfoWarehouse {
 						break;
 					}
 				}
-	
 				if (! rs.isAfterLast())
 					currID = rs.getInt(1);
 	
-				return new Tuple<Integer, BinnedPeakList>(retAtom, bpl);
+				p.setBinnedList(bpl);
+				p.setID(retAtom);
+				return p;
 			} catch (SQLException e) {
 				throw new NoSuchElementException(e.toString());
 			}
 		}
-		
-		public void close() throws SQLException {
-			rs.close();
-			stmt.close();
+
+		public BinnedPeakList getPeakListfromAtomID(int id) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
-		
-		public void reset() throws SQLException {
-			rs.close();
-			rs = stmt.executeQuery(
-					"select AtomID, PeakLocation, PeakArea " +
-					"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
-					"(SELECT AtomID FROM InternalAtomOrder " +
-					"Where CollectionID = "+collID +") " +
-			"order by AtomID;");
-			if (! rs.next()) {
-				throw new SQLException("Empty collection or a problem!");
+		public boolean next() {
+			try {
+				return ! rs.isAfterLast();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
 			}
-			currID = rs.getInt(1);
+		}
+
+		public void reset() {
+			try {
+				rs.close();
+				String q = "select AtomID, PeakLocation, PeakArea " +
+				"FROM ATOFMSAtomInfoSparse WHERE AtomID in " +
+				"(SELECT AtomID FROM InternalAtomOrder " +
+				"Where CollectionID = "+collID +") " +
+				"order by AtomID;";
+				System.out.println(q);
+				rs = stmt.executeQuery(q);
+				if (! rs.next()) {
+					throw new SQLException("Empty collection or a problem!");
+				}
+				currID = rs.getInt(1);
+				
+				System.out.println(currID);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 
 		}
 
-		public void remove() {
-			throw new java.lang.UnsupportedOperationException();
-		}
 		
 	}
-	
+
 	/**
 	 * AtomInfoOnly cursor.  Returns atom info.
 	 */
@@ -3548,11 +3570,17 @@ public abstract class Database implements InfoWarehouse {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			try {
-				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+			String q = "SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
 						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
-						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
+						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID";
+			System.out.println(q);
+			try {
+				partInfRS = stmt.executeQuery(q);
+				/*partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
+						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
+						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");*/
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -3752,7 +3780,7 @@ public abstract class Database implements InfoWarehouse {
 	{
 		private Statement stmt;
 		private String where;
-		private Collection collection;
+		public Collection collection;
 		InfoWarehouse db;
 		/**
 		 * @param collectionID
@@ -3810,7 +3838,7 @@ public abstract class Database implements InfoWarehouse {
 	{	
 		protected Statement stmt = null;
 		protected ResultSet peakRS = null;
-		private Collection collection;
+		Collection collection;
 		
 		public PeakCursor(Collection col)
 		{
@@ -3996,7 +4024,7 @@ public abstract class Database implements InfoWarehouse {
 	 * Memory Binned Cursor.  Returns binned peak info for a given atom,
 	 * info kept in memory.
 	 */
-	private class MemoryBinnedCursor extends BinnedCursor {
+	public class MemoryBinnedCursor extends BinnedCursor {
 		InfoWarehouse db;
 		boolean firstPass = true;
 		int position = -1;
@@ -4110,7 +4138,7 @@ public abstract class Database implements InfoWarehouse {
 	/**
 	 * get method for MemoryBinnedCursor.
 	 */
-	public CollectionCursor getMemoryBinnedCursor(Collection collection)
+	public MemoryBinnedCursor getMemoryBinnedCursor(Collection collection)
 	{
 		return new MemoryBinnedCursor(collection);
 	}

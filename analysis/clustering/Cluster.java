@@ -55,6 +55,7 @@ import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
+import database.NonZeroCursor;
 import database.Database.BPLOnlyCursor;
 import errorframework.ErrorLogger;
 import experiments.Tuple;
@@ -306,7 +307,7 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
-			BPLOnlyCursor curs)
+			CollectionCursor curs)
 	{
 		
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
@@ -326,11 +327,11 @@ public abstract class Cluster extends CollectionDivider {
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
 	
-		while(curs.hasNext())
+		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;
-			Tuple<Integer,BinnedPeakList> tuple = curs.next();
-			thisBinnedPeakList = tuple.getValue();
+			thisParticleInfo = curs.getCurrent();
+			thisBinnedPeakList = thisParticleInfo.getBinnedList();
 			thisBinnedPeakList.normalize(distanceMetric);
 			nearestDistance = Float.MAX_VALUE;
 			for (int centroidIndex = 0; 
@@ -357,17 +358,13 @@ public abstract class Cluster extends CollectionDivider {
 					System.err.println(
 							"Problem creating sub collection");
 			}
-			putInSubCollectionBatch(tuple.getKey(),
+			putInSubCollectionBatch(thisParticleInfo.getID(),
 					temp.subCollectionNum);
 			temp.numMembers++;
 			
 		}// end with no particle remaining
 		putInSubCollectionBatchExecute();
-		try {
-			curs.reset();
-		} catch (SQLException e) {
-			ErrorLogger.displayException(null,"Error in resetting BPLOnlyCursor.");
-		}
+		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);

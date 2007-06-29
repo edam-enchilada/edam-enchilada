@@ -64,6 +64,9 @@ import java.util.regex.MatchResult;
 import javax.swing.JDialog;
 
 import collection.Collection;
+import database.Database.BPLOnlyCursor;
+import database.Database.MemoryBinnedCursor;
+import experiments.Tuple;
 
 
 import ATOFMS.ATOFMSParticle;
@@ -72,9 +75,10 @@ import ATOFMS.CalInfo;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
 import ATOFMS.PeakParams;
+import analysis.BinnedPeakList;
 import atom.ATOFMSAtomFromDB;
 import atom.GeneralAtomFromDB;
-
+import java.sql.ResultSet;
 /**
  * @author andersbe
  *
@@ -1146,10 +1150,22 @@ public class DatabaseTest extends TestCase {
 		testCursor(curs);
 		db.closeConnection();
 	}
-	
+	public void testBPLOnlyCursor() {
+		db.openConnection(dbName);
+		BPLOnlyCursor curs;
+		try {
+			curs = db.getBPLOnlyCursor(db.getCollection(2));
+			testCursor(curs);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		db.closeConnection();
+	}
 	public void testGetMemoryBinnedCursor() {
 		db.openConnection(dbName);
-		CollectionCursor curs = db.getMemoryBinnedCursor(db.getCollection(2));	
+		Collection c = db.getCollection(2);
+		MemoryBinnedCursor curs = db.getMemoryBinnedCursor(c);
 		testCursor(curs);	
 		db.closeConnection();
 	}
@@ -1159,6 +1175,46 @@ public class DatabaseTest extends TestCase {
 		CollectionCursor curs = db.getRandomizedCursor(db.getCollection(2));	
 		testCursor(curs);	
 		db.closeConnection();
+	}
+	private void testCursor(BPLOnlyCursor curs)
+	{
+		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
+		
+		ParticleInfo temp = new ParticleInfo();
+		ATOFMSAtomFromDB tempPI = 
+			new ATOFMSAtomFromDB(
+					1,"One",1,0.1f,
+					new Date("9/2/2003 5:30:38 PM"));
+		//int aID, String fname, int sDelay, float lPower, Date tStamp
+		temp.setParticleInfo(tempPI);
+		temp.setID(1);
+
+		partInfo.add(temp);
+		
+		int[] ids = new int[4];
+		for (int i = 0; i < 4; i++)
+		{
+			//assertTrue(curs.getCurrent()!= null);
+			assertTrue(curs.next());
+			ParticleInfo p = curs.getCurrent();
+			ids[i] = p.getID();
+			BinnedPeakList b = p.getBinnedList();
+			System.out.println(ids[i]);
+			System.out.println(b.getPeaks());
+		}
+		assertFalse(curs.next());	
+		curs.reset();
+
+		
+		for (int i = 0; i < 4; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent().getID() == ids[i]);
+		}
+		
+		assertFalse(curs.next());
+			curs.reset();
+
 	}
 	
 	private void testCursor(CollectionCursor curs)
