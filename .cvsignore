@@ -20,3 +20,6 @@ profile-no-jtds.txt
 profile.txt
 .profile-fixed-yminmax-no-jtds.txt.swp
 .*.swp
+TEMP
+*.arff
+*.csv

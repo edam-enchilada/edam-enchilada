@@ -65,6 +65,22 @@ toList, DistanceMetric dMetric, float distance) {
 		}
 		return distance;
 	}
+	
+	//same method as above (roundDistance), except this one deals with 
+	//float arrays instead of BinnedPeakLists
+	// - benzaids
+	public float roundDistance(BinnedPeakList peakList, float[] toList,
+								DistanceMetric dMetric, float distance) {
+		assert distance < 2.01 : 		    "Distance should be <= 2.0, actually is " + distance +"\n" 		   + "Magnitudes: toList = " + 
+		BinnedPeakList.getMagnitude4Array(toList,dMetric) + " this = "
+					+ peakList.getMagnitude(dMetric) + "\n";
+
+		if (distance > 2) {
+			distance = 2.0f;
+		}
+		
+		return distance;
+	}
 
 }
 

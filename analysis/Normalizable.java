@@ -6,6 +6,11 @@ import java.util.Map.Entry;
 public abstract class Normalizable {
 	public abstract float normalize(BinnedPeakList peakList, DistanceMetric dMetric);
 	public abstract float roundDistance(BinnedPeakList peakList, BinnedPeakList toList, DistanceMetric dMetric, float distance);
+	
+	//added this method to deal with arrays when clustering
+	// - benzaids
+	public abstract float roundDistance(BinnedPeakList peakList, float[] toList, DistanceMetric dMetric, float distance);
+	
 	/**
 	 * @author steinbel
 	 * Raises peak areas to the power passed in for preprocessing.

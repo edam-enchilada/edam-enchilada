@@ -56,10 +56,12 @@ import analysis.dataCompression.Pair;
  * with no checks.
  */
 public class BinnedPeakList implements Iterable<BinnedPeak> {
+	
 	protected SortedMap<Integer, Float> peaks;
 
 	private Normalizable normalizable;
 	public static long distTime = 0;
+	public static long dist2Time = 0;
 
 	/**
 	 * A constructor for the peaklist, initializes the underlying
@@ -206,6 +208,39 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		}
 	//	if(magnitude>1.0)
 	//		System.out.println("BAD MAGNITUDE " + magnitude);
+		return magnitude;
+	}
+	
+	/**
+	 * Returns the magnitude of a peaklist represented by a one-dimensional
+	 * array.  The method is static, since it does not apply directly to the 
+	 * BinnedPeakList data structure, and it needs to be accessed from outside.
+	 * 
+	 * @author benzaids
+	 * 
+	 * @param peakarray - a one-dimensional array representing a peaklist.
+	 * @param dMetric - the distance metric to be used in the calculation.
+	 */
+	public static float getMagnitude4Array(float[] peakarray, DistanceMetric dMetric)
+	{
+		float magnitude = 0;
+
+		if (dMetric == DistanceMetric.CITY_BLOCK)
+			for (int i = 0; i < peakarray.length; i++)
+			{
+				magnitude += peakarray[i];
+			}
+		else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
+		         dMetric == DistanceMetric.DOT_PRODUCT)
+		{
+			float currentArea;
+			for (int i = 0; i < peakarray.length; i++)
+			{
+				currentArea = peakarray[i];
+				magnitude += currentArea*currentArea;
+			}
+			magnitude = (float) Math.sqrt(magnitude);
+		}
 		return magnitude;
 	}
 	
@@ -394,7 +429,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 */
 	public float getDistance(BinnedPeakList other, float magnitude,
 							 DistanceMetric metric) {
-
+		
 		/*
 		 * The following distance calculation algorithm is very similar to the
 		 * merge part of merge sort, where you riffle through both lists looking
@@ -403,6 +438,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		 * in which case we don't choose one but calculate the distance between
 		 * them. 
 		 */
+		long temptime = System.currentTimeMillis();
 		
 		float distance = magnitude;
 		
@@ -428,11 +464,63 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		// dot product actually comes up with similarity, rather than distance,
 		// so we take 1- it to find "distance".
 		
+		dist2Time += System.currentTimeMillis() - temptime;
+		
 		return normalizable.roundDistance(this, other, metric, distance);
 	}
 	
 	
-	
+	/**
+	 * Find the distance between this peaklist and another one. By including
+	 * the magnitude of the other peak list, the method can be run faster.
+	 * @param other The peaklist (in array form) to compare to
+	 * @param magnitude The magnitude of the other peak list
+	 * @param metric The distance metric to use
+	 * @return the distance between the lists.
+	 */
+	public float getDistance(float[] other, float magnitude,
+							 DistanceMetric metric, int zeroOffset) {
+		
+		/*
+		 * The following distance calculation algorithm is very similar to the
+		 * merge part of merge sort, where you riffle through both lists looking
+		 * for the lowest entry, and choosing that one.  The extra condition
+		 * is when we have an entry for the same dimension in each list,
+		 * in which case we don't choose one but calculate the distance between
+		 * them. 
+		 */
+		long temptime = System.currentTimeMillis();
+		
+		float distance = magnitude;
+		
+		// loop over this peak list, accumulating magnitude as you go,
+		// but calculating distance if match with other (and subtracting off
+		// that portion from magnitude with other)
+		for (Map.Entry<Integer,Float> i : peaks.entrySet()) {
+			int iKey = i.getKey();
+			if (iKey >= -300 && iKey <= 300) {
+				float iValue = i.getValue();
+				if (other[iKey + zeroOffset] != 0) {
+					float otherValue = other[iKey + zeroOffset];
+					distance = distance + 
+						(DistanceMetric.getDistance(iValue,otherValue,metric) - 
+								DistanceMetric.getDistance(0,otherValue,metric));
+				}
+				else {
+					distance += DistanceMetric.getDistance(0,iValue,metric);
+				}
+			}
+		}
+		
+		if (metric == DistanceMetric.DOT_PRODUCT)
+		    distance = 1-distance; 
+		// dot product actually comes up with similarity, rather than distance,
+		// so we take 1- it to find "distance".
+		
+		dist2Time += System.currentTimeMillis() - temptime;
+		
+		return normalizable.roundDistance(this, other, metric, distance);
+	}
 	
 	
 	

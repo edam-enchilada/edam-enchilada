@@ -83,7 +83,8 @@ public class SQLAggregator {
 				"SELECT roundedTime, peaklocation,\n" +
 				"	SUM(peakarea/de) as adjustedpeak\n" +
 				"FROM RoundedDense d, ATOFMSAtomInfosparse s\n" +
-				"WHERE d.atomid = s.atomid\n";
+				//relpeakarea > .0001 has been added; remove it later
+				"WHERE d.atomid = s.atomid and relpeakarea > .0001\n";
 			if (maxAtomId > 0)
 				sparseQuery += "AND d.atomID <= " + maxAtomId + "\n"; 
 			sparseQuery +=
@@ -364,13 +365,13 @@ public class SQLAggregator {
 		try {
 			//Create .arff file for output.
 			String location = (new File(".")).getCanonicalPath();
-			String arfffilename = location + "/prediction/swissbap.arff";
+			String arfffilename = location + "/prediction/swissbapadjusted_newrel.arff";
 			PrintWriter out = new PrintWriter(arfffilename);   
 			//write the .arff file headings
 			out.print(assembleAttributes("baprelation", "bap"));
 
 			//Import the filter data from a CSV file.
-			String csvfilename = location + "/prediction/BapSwiss.csv";
+			String csvfilename = location + "/prediction/BapSwissAdjusted.csv";
 			importFilterData(csvfilename);
 			System.out.println("Data imported");
 			

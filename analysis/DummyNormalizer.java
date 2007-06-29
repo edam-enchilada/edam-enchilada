@@ -14,5 +14,10 @@ public class DummyNormalizer extends Normalizable{
 		return distance;
 	}
 	
+	//added this method to deal with arrays when clustering
+	// - benzaids
+	public float roundDistance(BinnedPeakList peakList, float[] toList, DistanceMetric dMetric, float distance) {
+		return distance;
+	}
 
 }

@@ -97,6 +97,9 @@ public abstract class ClusterK extends Cluster {
 	private JFrame container;
 	
 	
+	//Testing time
+	public static long timeTaken = 0;
+	
 	/**
 	 * Constructor; calls the constructor of the Cluster class.
 	 * @param cID - collection ID
@@ -350,7 +353,9 @@ public abstract class ClusterK extends Cluster {
 	 */
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
 											  BPLOnlyCursor curs) {
-
+			
+		long beginning = System.currentTimeMillis();
+		
 		boolean isStable = false;
 		
 		// Create an arrayList of particle peaklists for each centroid. 
@@ -488,6 +493,28 @@ public abstract class ClusterK extends Cluster {
 			BinnedPeakList[] cumulativeCentroids = new BinnedPeakList[k];
 			for (int i=0; i < k; i++)
 				cumulativeCentroids[i] = new BinnedPeakList();
+			
+			//BUILD AN ARRAYLIST OF CENTROID INFO
+			//THIS INFO IS PASSED TO GETDISTANCE, WHICH MAKES IT FASTER
+			// - benzaids
+			ArrayList<float[]> tempCentroidList = new ArrayList<float[]>();
+			int arrayoffset = 600;
+			for (int i = 0; i < centroidList.size(); i++)
+			{
+				BinnedPeakList temp = centroidList.get(i).peaks;
+				float[] peakInfo = new float[1201];
+				for (int q = 0; q < peakInfo.length; q++)
+				{
+					int tempkey = q - arrayoffset;
+					if (temp.getPeaks().containsKey(tempkey))
+						peakInfo[q] = temp.getPeaks().get(tempkey);
+					else
+						peakInfo[q] = 0;
+				}
+				tempCentroidList.add(peakInfo);
+			}
+			//**********			
+			
 			while(curs.hasNext())
 			{ // while there are particles remaining
 				Tuple<Integer,BinnedPeakList> tuple = curs.next();
@@ -497,8 +524,14 @@ public abstract class ClusterK extends Cluster {
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
 				{// for each centroid
+					
+					//first parameter was centroidList.get(curCent).peaks
+					//change it back in order to use the original data structure
+					//(instead of float arrays)
+					//also, don't pass 4th argument (arrayoffset)
+					// - benzaids
 					double distance = thisBinnedPeakList.getDistance(
-							centroidList.get(curCent).peaks,centroidMags[curCent],distanceMetric);
+							tempCentroidList.get(curCent),centroidMags[curCent],distanceMetric, arrayoffset);
 					//If nearestDistance hasn't been set or is larger 
 					//than found distance, set the nearestCentroid index.
 					if (distance < nearestDistance){
@@ -593,6 +626,15 @@ public abstract class ClusterK extends Cluster {
 
 		// IMPORTANT: FIX ZERO COUNT
 		//System.out.println("Zero count = " + curs.getZeroCount());
+		
+		//Timing stuff
+        System.out.println("Time taken for getDistance (ms): " + BinnedPeakList.distTime);
+        System.out.println("Time taken for other getDistance (ms): " + BinnedPeakList.dist2Time);
+        System.out.println("Total time taken for getDistance methods (ms): " + (BinnedPeakList.dist2Time + BinnedPeakList.distTime));
+		
+        timeTaken += System.currentTimeMillis() - beginning;
+		System.out.println("Time taken for processPart (clustering): " + timeTaken);
+        
 		return centroidList;
 	}
 	
