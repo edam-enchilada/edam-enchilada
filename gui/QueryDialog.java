@@ -123,7 +123,7 @@ implements ActionListener, ItemListener
 	public QueryDialog(JFrame frame, CollectionTree cTree,
 			InfoWarehouse db, Collection collection) 
 	{
-		super(frame, "Query", true);
+		super(frame, "Query", false);
 		
 		Container cont = getContentPane();
 		cont.setLayout(new BorderLayout());
@@ -530,7 +530,7 @@ implements ActionListener, ItemListener
 		private JComboBox hour;
 		private JComboBox minute;
 		private JComboBox second;
-		private JComboBox ampm;
+//		private JComboBox ampm;
 		
 		private String[] padding = {
 				"", "0", "00", "000", "0000", "00000"
@@ -546,10 +546,10 @@ implements ActionListener, ItemListener
 			month = new JComboBox(getPaddedNumArray(1, 12, 2));
 			day = new JComboBox(getPaddedNumArray(1, 31, 2));
 			year = new JComboBox(getPaddedNumArray(1990, 2039, 4));
-			hour = new JComboBox(getPaddedNumArray(1, 12, 2));
+			hour = new JComboBox(getPaddedNumArray(1, 24, 2));
 			minute = new JComboBox(getPaddedNumArray(0, 59, 2));
 			second = new JComboBox(getPaddedNumArray(0, 59, 2));
-			ampm = new JComboBox(new String[]{"AM", "PM"});
+			//ampm = new JComboBox(new String[]{"AM", "PM"});
 			
 			add(month);
 			add(getTextObj("/"));
@@ -567,7 +567,7 @@ implements ActionListener, ItemListener
 			
 			add(getTextObj(" "));
 			
-			add(ampm);
+			//add(ampm);
 		}
 		
 		private JLabel getTextObj(String text) {
@@ -625,8 +625,8 @@ implements ActionListener, ItemListener
 			year.getSelectedItem() + " " +
 			hour.getSelectedItem() + ":" + 
 			minute.getSelectedItem() + ":" + 
-			second.getSelectedItem() + " " +
-			ampm.getSelectedItem();
+			second.getSelectedItem() /*+ " " +
+			ampm.getSelectedItem()*/;
 		}
 	}
 }

@@ -82,13 +82,13 @@ public class ReadSpec {
 	 * reads accordingly.
 	 * @param file - filename of particle.
 	 */
-	public ReadSpec(String file)  throws IOException, ZipException {
+	public ReadSpec(String file, Date d)  throws IOException, ZipException {
 		int index = file.length() - 4;
 		String fileType = file.substring(index);
 		if (fileType.equals(".amz"))
-			readZipped(file);
+			readZipped(file, d);
 		else if (fileType.equals(".ams"))
-			readUnzipped(file);
+			readUnzipped(file, d);
 	}
 	
 	/**
@@ -96,7 +96,7 @@ public class ReadSpec {
 	 * @param filename - file name of particle.
 	 * @return - the particle created from the file information. 
 	 */
-	public void readZipped(String filename) throws IOException, ZipException {		
+	public void readZipped(String filename, Date d) throws IOException, ZipException {		
 		// Reads the file using ZipInputStream.
 		FileInputStream in = new FileInputStream(filename);
 		ZipInputStream zipInput = 
@@ -132,7 +132,7 @@ public class ReadSpec {
 		dataStream.close();
 		
 		//read file:
-		readFromFile(filename);
+		readFromFile(filename, d);
 	}
 	
 	/**
@@ -140,7 +140,7 @@ public class ReadSpec {
 	 * @param filename - filename of particle.
 	 * @return - the particle created from the file information.
 	 */
-	public void readUnzipped(String filename) throws IOException {
+	public void readUnzipped(String filename, Date d) throws IOException {
 		
 		
 		File f = new File(filename);
@@ -170,23 +170,23 @@ public class ReadSpec {
 		dataStream.close();
 		
 		//read file:
-		readFromFile(filename);
+		readFromFile(filename, d);
 	}
 	
-	public void readFromFile(String name) {
+	public void readFromFile(String name, Date d) {
 		byteBuff.clear(); // Clears the byte array.
 		// Read information from the byte array.
 		//version = byteBuff.getShort();
 		switch(version) {
 			case 201: case 202: {
-				readFromOldFile(name);
+				readFromOldFile(name, d);
 				break;
 			}
 			case 770: case 768: {
-				readFromNewFile(name);
+				readFromNewFile(name, d);
 				break;
 			}
-			default: readFromNewFile(name);
+			default: readFromNewFile(name, d);
 		}
 	}
 	/**
@@ -194,7 +194,7 @@ public class ReadSpec {
 	 * are commented out; uncomment to use them.
 	 *@return - the particle created from the file information.
 	 */
-	public void readFromOldFile(String name) {
+	public void readFromOldFile(String name, Date d) {
 		//Instantiate arrays that will contain the data.
 
 		// Read information from the byte array.
@@ -218,7 +218,7 @@ public class ReadSpec {
 			byteBuff.getInt();
 		iontype = 
 			byteBuff.getShort();
-		long timestamp = 
+		//long timestamp = 
 			byteBuff.getInt();
 		//String timetext = 
 			getByteString(byteBuff,20);
@@ -279,7 +279,7 @@ public class ReadSpec {
 		}
 		// Create the ATOFMS particle.
 
-		particle = createParticle(name, new Date(timestamp*1000), laserpow, 
+		particle = createParticle(name, d, laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 
 	}
@@ -289,7 +289,7 @@ public class ReadSpec {
 	 * are commented out; uncomment to use them.
 	 *@return - the particle created from the file information.
 	 */
-	public void readFromNewFile(String name) {
+	public void readFromNewFile(String name, Date d) {
 		//Instantiate arrays that will contain the data.
 		
 		
@@ -312,7 +312,7 @@ public class ReadSpec {
 			// particles with only positive
 			// or negative spectra works
 		iontype = byteBuff.getShort();
-		long timestamp = 
+		//long timestamp = 
 			byteBuff.getInt();
 		//This is the other part of timestamp.  Either they 
 		//reversed the byte order but not the bit order for this 
@@ -416,7 +416,7 @@ public class ReadSpec {
 		//for (int i = 5285; i < 5295; i++)
 		//	System.out.println(posdata[i]);
 		
-		particle = createParticle(name, new Date(timestamp*1000), laserpow, 
+		particle = createParticle(name, d, laserpow, 
 				digitrate, scatdelay, posdata, negdata);
 
 	}
@@ -464,6 +464,7 @@ public class ReadSpec {
 	public static void main(String[] args) throws IOException {
 		ATOFMSParticle.currCalInfo = new CalInfo();
 		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f,.50f);
+		Date d = new Date("3/13/2002 12:04:44");
 		//ReadSpec rs = new ReadSpec
 		//("C:\\Documents and Settings\\andersbe\\My Documents\\" +
 		//		"atofms data\\07-27-2004\\a\\" +
@@ -471,7 +472,7 @@ public class ReadSpec {
 		ReadSpec rs = new ReadSpec
 		("C:\\Documents and Settings\\andersbe\\My Documents\\" +
 				"atofms data\\Engine Data\\03-13-2002\\e\\" +
-				"e-020313120444-00001.ams");
+				"e-020313120444-00001.ams", d);
 		//ReadSpec rs = new ReadSpec
 		//("C:\\Documents and Settings\\andersbe\\My Documents\\" +
 		//		"atofms data\\RSC-YS-TOF-1\\RSC-YS-TOF-1\\a\\" +

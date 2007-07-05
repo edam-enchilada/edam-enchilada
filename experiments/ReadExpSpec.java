@@ -24,8 +24,8 @@ public class ReadExpSpec extends ReadSpec{
 	private int[] posdata;
 	private int[] negdata;
 	
-	public ReadExpSpec(String filename) throws ZipException, IOException {
-		super(filename);
+	public ReadExpSpec(String filename, Date d) throws ZipException, IOException {
+		super(filename, d);
 	}
 	
 	public ATOFMSParticle createParticle(String name,

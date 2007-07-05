@@ -69,6 +69,7 @@ import java.util.StringTokenizer;
 import java.util.zip.DataFormatException;
 import java.util.zip.ZipException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -445,6 +446,7 @@ public class ATOFMSDataSetImporter {
 			Collection destination = db.getCollection(id[0]);
 			collections[collectionIndex] = destination;
 			ATOFMSParticle currentParticle;
+			Date d;
 				Scanner readSet = new Scanner(new File(name));
 				readSet.useDelimiter("\r\n");
 		        
@@ -469,8 +471,15 @@ public class ATOFMSDataSetImporter {
 						token.nextToken();
 						String particleName = token.nextToken().replace('\\', File.separatorChar);
 						particleFileName = grandParent.toString() + File.separator + particleName;
+						
+						for(int i = 0; i < 3; i++){
+							token.nextToken();
+						}
+						
+						String time = token.nextToken();						
+						d = new Date(time);
 
-						ReadSpec read = new ReadSpec(particleFileName);
+						ReadSpec read = new ReadSpec(particleFileName, d);
 						
 						currentParticle = read.getParticle();
 						
@@ -479,7 +488,7 @@ public class ATOFMSDataSetImporter {
 								currentParticle.particleInfoSparseString(),
 								destination,id[1],nextID, true);
 						**/
-						//***SLH
+						//***SLH						
 						((Database)db).saveDataParticle(														// daves  do I need a try/catch around here?
 								currentParticle.particleInfoDenseStr(db.getDateFormat()),
 								currentParticle.particleInfoSparseString(),

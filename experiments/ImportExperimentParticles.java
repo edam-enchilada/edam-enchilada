@@ -106,6 +106,7 @@ public class ImportExperimentParticles {
 			int particleNumber;
 			ReadExpSpec readSpec;
 			String file;
+			Date time;
 			int marker = 100;
 			for (int i = 0; i < indices.size(); i++) {
 				if (i/marker == i/(double)marker)
@@ -114,26 +115,33 @@ public class ImportExperimentParticles {
 				switch (particleNumber) {
 				case 1:
 					file = "a-020801071636-00055.amz";
+					time = new Date("8/1/2002 07:16:36");
 					break;
 				case 2:
 					file = "a-040215084636-00033.amz";
+					time = new Date("2/15/2004 08:46:36");
 					break;
 				case 3:
 					file = "b-040215093256-00061.amz";
+					time = new Date("2/15/2004 09:32:56");
 					break;
 				case 4:
 					file = "b-040215093918-00150.amz";
+					time = new Date("2/15/2004 09:39:18");
 					break;
 				case 5:
 					file = "h-041120141836-00007.amz";
+					time = new Date("11/20/2004 14:18:36");
 					break;
 				case 6:
 					file = "i-040808153000-00112.amz";
+					time = new Date("8/8/2004 15:30:00");
 					break;
 				default:
 					file = "i-040808160921-00310.amz";
+				    time = new Date("8/8/2004 16:9:21");
 				}
-				readSpec = new ReadExpSpec("Particles for Clustering\\" + file); 
+				readSpec = new ReadExpSpec("Particles for Clustering\\" + file, time); 
 				db.insertParticle(readSpec.getParticle().particleInfoDenseString(db.getDateFormat()),
 						readSpec.getParticle().particleInfoSparseString(), db.getCollection(id[0]),id[1],newAtomID++);
 			}

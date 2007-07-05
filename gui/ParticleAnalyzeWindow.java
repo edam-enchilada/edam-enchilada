@@ -74,6 +74,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.Date;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -156,6 +157,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private ArrayList<LabelingIon> negLabels;
 	private Dataset posSpecDS, negSpecDS;
 	private int atomID;
+	private Date timet;
 	private int clusterID;
 	private String atomFile;
 	private double selectedMZ = 0;
@@ -553,12 +555,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	 * @param filename The path of the file in which the data resides.  Null if no file
 	 * is found or desired.  This file is used for importing the full spectrum.
 	 */
-	public void setPeaks(ArrayList<Peak> newPeaks, int atomID, String filename)
+	public void setPeaks(ArrayList<Peak> newPeaks, int atomID, String filename, Date date)
 	{
 		this.atomID = atomID;
 		this.atomFile = filename;
 		spectrumLoaded = false;
 		peaks = newPeaks;
+		this.timet = date;
 		posPeaks = new ArrayList<Peak>();
 		negPeaks = new ArrayList<Peak>();
 		
@@ -698,6 +701,13 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		if (datatype.equals("ATOFMS"))
 			filename = (String)particlesData.get(curRow).get(5);
 		
+		String dateTime = (String)particlesData.get(curRow).get(1);
+		int length = dateTime.length();
+		String newDate = dateTime.substring(0, length-2);
+		String realDate = newDate.replace('-', '/');
+		Date time = new Date(realDate);
+
+		
 		String peakString = "Peaks:\n";
 		
 		System.out.println("AtomID = " + atomID);
@@ -710,7 +720,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		}
 		
 		System.out.println(peakString);
-		setPeaks(peaks, atomID, filename);		
+		setPeaks(peaks, atomID, filename, time);		
 		
 		db.buildAtomRemovedIons(atomID, posIons, negIons);
 	}
@@ -978,7 +988,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		
 		//read spectrum
 		try {
-			particle = new ReadSpec(atomFile).getParticle();
+			particle = new ReadSpec(atomFile, timet).getParticle();
 		} catch (Exception e)
 		{
 			//System.err.println("Exception opening atom file");
