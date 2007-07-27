@@ -61,7 +61,7 @@ public abstract class CollectionDivider {
 	
 	protected String comment;
 	
-	private String atomIDsToDelete;
+	private StringBuilder atomIDsToDelete;
 	
 	/**
 	 * Use a disk based cursor/retrieve each row from the database
@@ -252,7 +252,7 @@ public abstract class CollectionDivider {
 	 * Initializes putInSubcollectionBatch.
 	 */
 	protected void putInSubCollectionBatchInit() {
-		atomIDsToDelete = "";
+		atomIDsToDelete = new StringBuilder("");
 		db.atomBatchInit();
 	}
 
@@ -264,7 +264,7 @@ public abstract class CollectionDivider {
 	 */
 	protected boolean putInSubCollectionBatch(int atomID, int target)
 	{
-		atomIDsToDelete = atomIDsToDelete + atomID + ",";
+		atomIDsToDelete.append(atomID + ",");
 		return db.addAtomBatch(atomID,
 				subCollectionIDs.get(target-1).intValue());
 	}
@@ -281,13 +281,14 @@ public abstract class CollectionDivider {
 		//System.out.println((new Date()).toString());
 		db.atomBatchInit();
 		
-		if (atomIDsToDelete.length() > 0 &&
-				atomIDsToDelete.length() < 2000) {
-			atomIDsToDelete = atomIDsToDelete.substring(0,atomIDsToDelete.length()-1);
-			db.deleteAtomsBatch(atomIDsToDelete,collection);
-		} else if (atomIDsToDelete.length() > 0 &&
+		String atomIDsToDel = atomIDsToDelete.toString();
+		if (atomIDsToDel.length() > 0 &&
+				atomIDsToDel.length() < 2000) {
+			atomIDsToDel = atomIDsToDel.substring(0,atomIDsToDel.length()-1);
+			db.deleteAtomsBatch(atomIDsToDel,collection);
+		} else if (atomIDsToDel.length() > 0 &&
 				atomIDsToDelete.length() >= 2000) {
-			Scanner atomIDs = new Scanner(atomIDsToDelete).useDelimiter(",");
+			Scanner atomIDs = new Scanner(atomIDsToDel).useDelimiter(",");
 			while (atomIDs.hasNext()) {
 				db.deleteAtomBatch(atomIDs.nextInt(), collection);
 			}
