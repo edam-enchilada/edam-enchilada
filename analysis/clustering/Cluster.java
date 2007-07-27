@@ -84,7 +84,11 @@ public abstract class Cluster extends CollectionDivider {
 ///////////////////////////////////////////////////////////////////////////////
 	private static final int BOOST = 1000;		//EVIL HACK CONSTANT!!!!!
 ///////////////////////////////////////////////////////////////////////////////
-	
+
+	public static final int ARRAYOFFSET = 600; // size of centroid array
+			// in both negative and positive directions (1201 total) when
+			// copying as an array of floats for efficiency
+
 	protected DistanceMetric distanceMetric = DistanceMetric.CITY_BLOCK;
 	
 	protected int zeroPeakListParticleCount = 0;
@@ -123,6 +127,35 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	public static void setPower(double newPower){
 		power = newPower;
+	}
+	
+	
+	// For efficiency it can be useful to represent a list of centroids as
+	// a list of arrays of floats.
+	// Code by benzaids, wrapped by dmusican
+	public static ArrayList<float[]> generateCentroidArrays(
+					ArrayList<Centroid> centroidList, int arrayoffset)
+	{
+		//BUILD AN ARRAYLIST OF CENTROID INFO
+		//THIS INFO IS PASSED TO GETDISTANCE, WHICH MAKES IT FASTER
+		// - benzaids
+		ArrayList<float[]> tempCentroidList = new ArrayList<float[]>();
+		for (int i = 0; i < centroidList.size(); i++)
+		{
+			BinnedPeakList temp = centroidList.get(i).peaks;
+			float[] peakInfo = new float[arrayoffset*2+1];
+			for (int q = 0; q < peakInfo.length; q++)
+			{
+				int tempkey = q - arrayoffset;
+				if (temp.getPeaks().containsKey(tempkey))
+					peakInfo[q] = temp.getPeaks().get(tempkey);
+				else
+					peakInfo[q] = 0;
+			}
+			tempCentroidList.add(peakInfo);
+		}
+		//**********
+		return tempCentroidList;
 	}
 	
 	/**
@@ -326,44 +359,58 @@ public abstract class Cluster extends CollectionDivider {
 		double distance = 3.0;
 		int chosenCluster = -1;
 		putInSubCollectionBatchInit();
-	
-		while(curs.next())
-		{ // while there are particles remaining
-			particleCount++;
-			thisParticleInfo = curs.getCurrent();
-			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList.normalize(distanceMetric);
-			nearestDistance = Float.MAX_VALUE;
-			for (int centroidIndex = 0; 
-			centroidIndex < centroidList.size(); 
-			centroidIndex++)
-			{// for each centroid
-				distance = centroidList.get(centroidIndex).peaks.
-					getDistance(thisBinnedPeakList, distanceMetric);
-				if (distance < nearestDistance)
-				{
-					nearestDistance = distance;
-					chosenCluster = centroidIndex;
-				}
-			}// end for each centroid
+		
+		ArrayList<float[]> tempCentroidList =
+			Cluster.generateCentroidArrays(centroidList,ARRAYOFFSET);
+		int k = centroidList.size();
+		float[] centroidMags = new float[k];
+		for (int i=0; i < k; i++)
+			centroidMags[i] = centroidList.get(i).peaks.getMagnitude(distanceMetric);
 
-			sums.get(chosenCluster).addAnotherParticle(thisBinnedPeakList);
-			
-			Centroid temp = centroidList.get(chosenCluster);
-			totalDistance += nearestDistance;
-			if (temp.numMembers == 0)
-			{
-				temp.subCollectionNum = createSubCollection();
-				if (temp.subCollectionNum == -1)
-					System.err.println(
-							"Problem creating sub collection");
-			}
-			putInSubCollectionBatch(thisParticleInfo.getID(),
-					temp.subCollectionNum);
-			temp.numMembers++;
-			
-		}// end with no particle remaining
-		putInSubCollectionBatchExecute();
+		try
+		{
+			while(curs.next())
+			{ // while there are particles remaining
+				particleCount++;
+				thisParticleInfo = curs.getCurrent();
+				thisBinnedPeakList = thisParticleInfo.getBinnedList();
+				thisBinnedPeakList.normalize(distanceMetric);
+				nearestDistance = Float.MAX_VALUE;
+				for (int centroidIndex = 0; centroidIndex < centroidList.size(); 
+				centroidIndex++)
+				{// for each centroid
+					if (particleCount % 10000 == 0)
+						System.out.println("Particle number = " + particleCount);
+					distance = thisBinnedPeakList.getDistance(
+							tempCentroidList.get(centroidIndex),centroidMags[centroidIndex],
+							distanceMetric, Cluster.ARRAYOFFSET);
+					if (distance < nearestDistance)
+					{
+						nearestDistance = distance;
+						chosenCluster = centroidIndex;
+					}
+				}// end for each centroid
+
+				sums.get(chosenCluster).addAnotherParticle(thisBinnedPeakList);
+
+				Centroid temp = centroidList.get(chosenCluster);
+				totalDistance += nearestDistance;
+				if (temp.numMembers == 0)
+				{
+					temp.subCollectionNum = createSubCollection();
+					if (temp.subCollectionNum == -1)
+						System.err.println(
+						"Problem creating sub collection");
+				}
+				putInSubCollectionBatch(thisParticleInfo.getID(),
+						temp.subCollectionNum);
+				temp.numMembers++;
+
+			}// end with no particle remaining
+			putInSubCollectionBatchExecute();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		curs.reset();
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {

@@ -238,7 +238,7 @@ public abstract class ClusterK extends Cluster {
 		
 		returnThis = 
 			assignAtomsToNearestCentroid(centroidList, curs);
-			curs.close();
+		curs.close();
 
 		if(interactive){
 			try {
@@ -482,29 +482,15 @@ public abstract class ClusterK extends Cluster {
 			for (int i=0; i < k; i++)
 				cumulativeCentroids[i] = new BinnedPeakList();
 			
-			//BUILD AN ARRAYLIST OF CENTROID INFO
-			//THIS INFO IS PASSED TO GETDISTANCE, WHICH MAKES IT FASTER
-			// - benzaids
-			ArrayList<float[]> tempCentroidList = new ArrayList<float[]>();
-			int arrayoffset = 600;
-			for (int i = 0; i < centroidList.size(); i++)
-			{
-				BinnedPeakList temp = centroidList.get(i).peaks;
-				float[] peakInfo = new float[1201];
-				for (int q = 0; q < peakInfo.length; q++)
-				{
-					int tempkey = q - arrayoffset;
-					if (temp.getPeaks().containsKey(tempkey))
-						peakInfo[q] = temp.getPeaks().get(tempkey);
-					else
-						peakInfo[q] = 0;
-				}
-				tempCentroidList.add(peakInfo);
-			}
-			//**********			
+			ArrayList<float[]> tempCentroidList =
+				Cluster.generateCentroidArrays(centroidList,Cluster.ARRAYOFFSET);
 			
+			int particleNumber = 0;
 			while(curs.next())
 			{ // while there are particles remaining
+				particleNumber++;
+				if (particleNumber % 10000 == 0)
+					System.out.println("Particle number = " + particleNumber);
 				ParticleInfo p = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList = p.getBinnedList();
 				thisBinnedPeakList.normalize(distanceMetric);	
@@ -519,7 +505,8 @@ public abstract class ClusterK extends Cluster {
 					//also, don't pass 4th argument (arrayoffset)
 					// - benzaids
 					double distance = thisBinnedPeakList.getDistance(
-							tempCentroidList.get(curCent),centroidMags[curCent],distanceMetric, arrayoffset);
+							tempCentroidList.get(curCent),centroidMags[curCent],
+							distanceMetric, Cluster.ARRAYOFFSET);
 					//If nearestDistance hasn't been set or is larger 
 					//than found distance, set the nearestCentroid index.
 					if (distance < nearestDistance){
@@ -652,7 +639,7 @@ public abstract class ClusterK extends Cluster {
 		System.out.println("Error: " + totDist.get(lastIndex).doubleValue());
 		System.out.println("Change in error: " + difference);
 		System.out.flush();
-		assert (difference >= -0.00001f) : "increased error!";
+		assert (difference >= -1f) : "increased error!";
 		if (difference > error) 
 			return false;
 		return true;
