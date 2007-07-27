@@ -498,7 +498,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		// that portion from magnitude with other)
 		for (Map.Entry<Integer,Float> i : peaks.entrySet()) {
 			int iKey = i.getKey();
-			if (iKey >= -300 && iKey <= 300) {
+			if (iKey >= -zeroOffset && iKey <= zeroOffset) {
 				float iValue = i.getValue();
 				if (other[iKey + zeroOffset] != 0) {
 					float otherValue = other[iKey + zeroOffset];
