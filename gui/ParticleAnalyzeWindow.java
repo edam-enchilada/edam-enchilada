@@ -702,10 +702,16 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			filename = (String)particlesData.get(curRow).get(5);
 		
 		String dateTime = (String)particlesData.get(curRow).get(1);
-		int length = dateTime.length();
-		String newDate = dateTime.substring(0, length-2);
-		String realDate = newDate.replace('-', '/');
-		Date time = new Date(realDate);
+		Date time = null;
+		// dateTime can be null if the particle is artificial, such as a
+		// cluster center
+		if (dateTime != null)
+		{
+			int length = dateTime.length();
+			String newDate = dateTime.substring(0, length-2);
+			String realDate = newDate.replace('-', '/');
+			time = new Date(realDate);
+		}
 
 		
 		String peakString = "Peaks:\n";
