@@ -342,7 +342,7 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs)
 	{
-		
+		System.out.println("in assignAtoms");
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
 		if (isNormalized)
 			for (int i = 0; i < centroidList.size(); i++)
@@ -367,6 +367,14 @@ public abstract class Cluster extends CollectionDivider {
 		for (int i=0; i < k; i++)
 			centroidMags[i] = centroidList.get(i).peaks.getMagnitude(distanceMetric);
 
+	
+		try {
+			db.bulkInsertInit();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		try
 		{
 			while(curs.next())
@@ -402,12 +410,16 @@ public abstract class Cluster extends CollectionDivider {
 						System.err.println(
 						"Problem creating sub collection");
 				}
-				putInSubCollectionBatch(thisParticleInfo.getID(),
+				putInSubCollectionBulk(thisParticleInfo.getID(),
 						temp.subCollectionNum);
+	//			putInSubCollectionBatch(thisParticleInfo.getID(),
+	//					temp.subCollectionNum);
+				System.out.println("putting in subcollectionbatch " + thisParticleInfo.getID() + " " + temp.subCollectionNum);
 				temp.numMembers++;
 
 			}// end with no particle remaining
-			putInSubCollectionBatchExecute();
+		//	putInSubCollectionBatchExecute();
+			putInSubCollectionBulkExecute();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -493,6 +505,7 @@ public abstract class Cluster extends CollectionDivider {
 						createSubCollection("Outliers", "Outliers");
 				putInSubCollectionBatch(thisParticleInfo.getID(),
 						outliers.subCollectionNum);
+				System.out.println("putting in subcollectionbatch " + thisParticleInfo.getID() + " " + outliers.subCollectionNum);
 				outliers.numMembers++;
 				System.out.println("Outlier #" + outliers.numMembers);
 			}
@@ -508,7 +521,8 @@ public abstract class Cluster extends CollectionDivider {
 				putInSubCollectionBatch(
 						thisParticleInfo.getID(), 
 						temp.subCollectionNum);
-				
+				System.out.println("putting in subcollectionbatch2 " + thisParticleInfo.getID() + " " + temp.subCollectionNum);
+
 				temp.numMembers++;
 			}
 			

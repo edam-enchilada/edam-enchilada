@@ -2045,6 +2045,7 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public void atomBatchExecute() {
 		try {
+			long time = System.currentTimeMillis();
 			batchStatement.executeBatch();
 			for (int i = 0; i < alteredCollections.size(); i++)
 				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
@@ -2062,6 +2063,8 @@ public abstract class Database implements InfoWarehouse {
 			for (int i=0; i<parents.size(); i++)
 				updateAncestors(parents.get(i));
 			batchStatement.close();
+			System.out.println("done with updating, time = " + (System.currentTimeMillis()-time));
+
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception executing batch atom adds and inserts.");
 			System.out.println("Exception executing batch atom adds " +
@@ -2078,12 +2081,19 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	
 	public void bulkInsertExecute() throws Exception{
-		if(bulkInsertFile==null || bulkInsertFileName==null){
-			throw new Exception("Must initialize bulk insert first!");
-		}
-		bulkInsertFile.close();
-		
 		try {
+			long time = System.currentTimeMillis();
+			
+			if(bulkInsertFile==null || bulkInsertFileName==null){
+				try {
+					throw new Exception("Must initialize bulk insert first!");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			bulkInsertFile.close();
+
 			dropTempTable();
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
@@ -2101,7 +2111,13 @@ public abstract class Database implements InfoWarehouse {
 					"FROM #temp;\n");
 			System.out.println(sql.toString());
 			stmt.execute(sql.toString());
-			/*stmt.close();
+			stmt.close();
+			
+			System.out.println("Time: " + (System.currentTimeMillis()-time));	
+			System.out.println("done inserting now time for altering collections");
+			
+			time = System.currentTimeMillis();
+			System.out.println("alteredCollections.size() " + alteredCollections.size());
 			for (int i = 0; i < alteredCollections.size(); i++)
 				updateInternalAtomOrder(getCollection(alteredCollections.get(i)));
 			
@@ -2116,9 +2132,14 @@ public abstract class Database implements InfoWarehouse {
 			}
 			//only update each distinct parent once
 			for (int i=0; i<parents.size(); i++)
-				updateAncestors(parents.get(i));*/
+				updateAncestors(parents.get(i));
+			batchStatement.close();
+			System.out.println("done with updating, time = " + (System.currentTimeMillis()-time));
+
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception executing batch atom adds and inserts.");
+			System.out.println("Exception executing batch atom adds " +
+			"and inserts");
 			e.printStackTrace();
 		}
 		
@@ -2137,7 +2158,10 @@ public abstract class Database implements InfoWarehouse {
 		if(bulkInsertFile==null || bulkInsertFileName==null){
 			throw new Exception("Must initialize bulk insert first!");
 		}
-		alteredCollections.add(parentID);
+		if (!alteredCollections.contains(new Integer(parentID)))
+			alteredCollections.add(new Integer(parentID));
+		
+		//alteredCollections.add(parentID);
 		bulkInsertFile.println(parentID+","+atomID);	
 	}
 	/* Get functions for collections and table names */
@@ -6060,7 +6084,7 @@ public abstract class Database implements InfoWarehouse {
 				collection.getCollectionID() == 1) 
 			return;
 		int cID = collection.getCollectionID();
-		//System.out.println("updating InternalAtomOrder Table for: " + cID);
+		System.out.println("updating InternalAtomOrder Table for: " + cID);
 		try {
 			Statement stmt = con.createStatement();
 			

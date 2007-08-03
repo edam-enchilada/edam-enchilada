@@ -268,16 +268,34 @@ public abstract class CollectionDivider {
 		return db.addAtomBatch(atomID,
 				subCollectionIDs.get(target-1).intValue());
 	}
-	
+	/**
+	* Does the bulk version of putInSubCollectionBatch
+	* @author christej
+	*/
+	protected boolean putInSubCollectionBulk(int atomID, int target)
+	{
+		atomIDsToDelete.append(atomID + ",");
+
+		try {
+			db.bulkInsertAtom(atomID,
+					subCollectionIDs.get(target-1).intValue());
+			return true;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		
+	}
 	/**
 	 * Executes putInSubCollectionBatch
 	 */
 	protected void putInSubCollectionBatchExecute()
 	{
-		//System.out.println("About to execute INSERTs.");
+		System.out.println("About to execute INSERTs.");
 		//System.out.println((new Date()).toString());
 		db.atomBatchExecute();
-		//System.out.println("Done with INSERTS, about to do DELETE");
+		System.out.println("Done with INSERTS, about to do DELETE");
 		//System.out.println((new Date()).toString());
 		db.atomBatchInit();
 		
@@ -294,7 +312,42 @@ public abstract class CollectionDivider {
 			}
 		}
 		db.atomBatchExecute();
-		//System.out.println("Done with DELETEs.");
+		System.out.println("Done with DELETEs.");
+		//System.out.println((new Date()).toString());
+	}
+	/**
+	 * Executes putInSubCollectionBulk
+	 * @author christej 
+	*/
+	 
+	protected void putInSubCollectionBulkExecute()
+	{
+		System.out.println("About to execute INSERTs.");
+		//System.out.println((new Date()).toString());
+		try {
+			db.bulkInsertExecute();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Done with INSERTS, about to do DELETE");
+		//System.out.println((new Date()).toString());
+		db.atomBatchInit();
+		
+		String atomIDsToDel = atomIDsToDelete.toString();
+		if (atomIDsToDel.length() > 0 &&
+				atomIDsToDel.length() < 2000) {
+			atomIDsToDel = atomIDsToDel.substring(0,atomIDsToDel.length()-1);
+			db.deleteAtomsBatch(atomIDsToDel,collection);
+		} else if (atomIDsToDel.length() > 0 &&
+				atomIDsToDelete.length() >= 2000) {
+			Scanner atomIDs = new Scanner(atomIDsToDel).useDelimiter(",");
+			while (atomIDs.hasNext()) {
+				db.deleteAtomBatch(atomIDs.nextInt(), collection);
+			}
+		}
+		db.atomBatchExecute();
+		System.out.println("Done with DELETEs.");
 		//System.out.println((new Date()).toString());
 	}
 

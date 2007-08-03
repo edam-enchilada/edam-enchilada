@@ -282,7 +282,7 @@ public abstract class ClusterK extends Cluster {
 		errorUpdate.add(errorLabel);
 		errorUpdate.pack();
 		errorUpdate.validate();
-		// XXX: still a race condition!  Not a really bad one, though.  
+		// XXX: still a race condition!  Not a really bad one, though.  		System.out.println("HERE");
 		worker.start();
 		errorUpdate.setVisible(true);
 		
