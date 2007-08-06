@@ -165,7 +165,7 @@ check the next & prev buttons for
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
 	
-**Import time series data:
+**Import time series data: (small.task should work, upload.task is SLOOOOOOW!!)
 	__import a task file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries) that works
 		__works
 	__import a task file (\\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\\timeseries) that doesn't work
