@@ -44,12 +44,15 @@
 
 package analysis;
 import database.CollectionCursor;
+import errorframework.ErrorLogger;
+
 import java.util.*;
 
 import ATOFMS.ParticleInfo;
 
 /**
  * @author ritza
+ * @author dmusican
  * 
  * Assumes that subsample is small enough to remain in memory, and thus
  * caches the data in memory for repeated reads.
@@ -65,7 +68,6 @@ public class SubSampleCursor implements CollectionCursor {
 	private int sampleSize;
 	private ArrayList<ParticleInfo> storedInfo = null;
 	private boolean firstPass = true;
-	private int storedPosition = -1;
 	
 	public SubSampleCursor(CollectionCursor curs, 
 				int startIndex, int sampleSize)
@@ -76,37 +78,42 @@ public class SubSampleCursor implements CollectionCursor {
 		storedInfo = new ArrayList<ParticleInfo>(sampleSize);
 		
 		curs.reset();
-		for (int i = 0; i <= startIndex; i++)
+		for (int i = 0; i < startIndex; i++)
 			curs.next();
 	}	
 	/* (non-Javadoc)
 	 * @see database.CollectionCursor#next()
 	 */
 	public boolean next() {
-	    storedPosition++;
+	    currentIndex++;
 	    if (firstPass) {
    	        if (currentIndex < sampleSize) {
-	            currentIndex++;
 	            boolean cursNext = curs.next();
 	            if (cursNext)
 	                storedInfo.add(curs.getCurrent());
-	            else
-	                firstPass = false;
+	            else {
+	    			ErrorLogger.writeExceptionToLogAndPrompt("SubSampleCursor",
+	    					"Sample size was too large, internal error.");
+	            }
 	            return cursNext;            
 	        }
    	        firstPass = false;
 	        return false;      
 	    } else
-	    	return (storedPosition < storedInfo.size());
+	    	return (currentIndex < storedInfo.size());
 	}
 
 	/* (non-Javadoc)
 	 * @see database.CollectionCursor#getCurrent()
 	 */
 	public ParticleInfo getCurrent() {
-	    ParticleInfo particleInfo = storedInfo.get(storedPosition);
-		particleInfo.setID(curs.getCurrent().getID());
-		return particleInfo; 
+		if (currentIndex < storedInfo.size()) {
+			ParticleInfo particleInfo = storedInfo.get(currentIndex);
+			return particleInfo;
+		}
+		else {
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -122,10 +129,10 @@ public class SubSampleCursor implements CollectionCursor {
 	        storedInfo.clear();
 	        curs.reset();
 	        currentIndex = -1;
-	        for (int i = 0; i <= startIndex; i++)
+	        for (int i = 0; i < startIndex; i++)
 	            curs.next();
 	    }
-	    storedPosition = -1;
+	    currentIndex = -1;
 	}
 
 	/* (non-Javadoc)

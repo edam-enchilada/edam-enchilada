@@ -138,7 +138,6 @@ public abstract class ClusterK extends Cluster {
 		numParticles = db.getCollectionSize(collectionID);
 		// If refineCentroids is true, randomize the db and cluster subsamples.
 		if (refineCentroids) {
-			ErrorLogger.displayException(null,"Refining centroids has not been reimplemented.");
 			int sampleSize;
 			if (numSamples*4 > numParticles) 
 				sampleSize = numParticles/(numSamples*2);

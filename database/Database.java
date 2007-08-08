@@ -3535,7 +3535,7 @@ public abstract class Database implements InfoWarehouse {
 
 		public BinnedPeakList getPeakListfromAtomID(int id) {
 			// TODO Auto-generated method stub
-			return null;
+			throw new UnsupportedOperationException("getPeakListfromAtomID not implemented for BPLOnlyCursor");
 		}
 
 		public boolean next() {

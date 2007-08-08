@@ -1176,6 +1176,48 @@ public class DatabaseTest extends TestCase {
 		testCursor(curs);	
 		db.closeConnection();
 	}
+
+	// SubSampleCursor is actually located in the analysis package, but
+	// it's much more convenient to test it here since this is where the
+	// other cursor tests are.
+	public void testSubSampleCursor() {
+		db.openConnection(dbName);
+		CollectionCursor curs = new analysis.SubSampleCursor(
+				db.getRandomizedCursor(db.getCollection(2)),0,5);	
+		testCursor(curs);	
+		db.closeConnection();
+	}
+
+	
+	
+	public void testSubSampleCursor2() {
+		db.openConnection(dbName);
+		CollectionCursor curs = new analysis.SubSampleCursor(
+				db.getRandomizedCursor(db.getCollection(2)),0,10);	
+
+		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
+
+		ParticleInfo temp = new ParticleInfo();
+		ATOFMSAtomFromDB tempPI = 
+			new ATOFMSAtomFromDB(
+					1,"One",1,0.1f,
+					new Date("9/2/2003 5:30:38 PM"));
+		//int aID, String fname, int sDelay, float lPower, Date tStamp
+		temp.setParticleInfo(tempPI);
+		temp.setID(1);
+
+		partInfo.add(temp);
+
+		for (int i = 0; i < 5; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent()!= null);
+		}
+		assertFalse(curs.next());	
+		curs.reset();
+	}	
+	
+	
 	private void testCursor(BPLOnlyCursor curs)
 	{
 		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
@@ -1240,6 +1282,16 @@ public class DatabaseTest extends TestCase {
 			ids[i] = curs.getCurrent().getID();
 		}
 		assertFalse(curs.next());	
+		curs.reset();
+		
+		for (int i = 0; i < 5; i++)
+		{
+			assertTrue(curs.next());
+			assertTrue(curs.getCurrent() != null);
+			assertTrue(curs.getCurrent().getID() == ids[i]);
+		}
+		
+		assertFalse(curs.next());
 		curs.reset();
 		
 		for (int i = 0; i < 5; i++)
