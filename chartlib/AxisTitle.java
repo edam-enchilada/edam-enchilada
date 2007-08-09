@@ -3,7 +3,6 @@ package chartlib;
 import java.awt.*;
 import java.awt.geom.*;
 
-import javax.swing.*;
 import java.awt.font.GlyphVector;
 import java.lang.Math;
 

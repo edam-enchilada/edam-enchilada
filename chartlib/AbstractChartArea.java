@@ -5,8 +5,6 @@ import java.awt.geom.*;
 import static chartlib.AxisTitle.AxisPosition;
 
 import javax.swing.JComponent;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 
 /**
  * This class just handles the basic task of being a place where charts are drawn.

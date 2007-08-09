@@ -1,13 +1,10 @@
 package chartlib;
 
 import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
+
 
 
 /**

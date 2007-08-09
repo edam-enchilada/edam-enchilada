@@ -5,7 +5,6 @@ import java.text.NumberFormat;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 
 public class FloatRenderer extends DefaultTableCellRenderer{
 	NumberFormat floatFormat;

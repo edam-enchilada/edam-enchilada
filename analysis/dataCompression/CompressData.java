@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import analysis.DistanceMetric;
 
 import collection.Collection;
-import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
 import database.Database.BPLOnlyCursor;

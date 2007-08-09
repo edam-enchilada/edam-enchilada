@@ -46,7 +46,6 @@ package gui;
 import javax.swing.*;
 
 import database.InfoWarehouse;
-import database.Database;
 
 import java.awt.event.*;
 import java.util.ArrayList;

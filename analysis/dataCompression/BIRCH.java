@@ -50,7 +50,6 @@ import collection.Collection;
 import ATOFMS.ParticleInfo;
 import analysis.*;
 import database.*;
-import experiments.Tuple;
 
 /**
  * BIRCH is a scalable clustering algorithm that fits all the particles into

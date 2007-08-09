@@ -1,7 +1,6 @@
 package analysis.clustering;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 public class ClusterInformation {
 	// names have 'ATOFMSAtomInfoDense.' , etc. before it. - AR

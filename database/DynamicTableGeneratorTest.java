@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import org.xml.sax.SAXException;
-
 import errorframework.ErrorLogger;
 
 import junit.framework.TestCase;

@@ -45,8 +45,6 @@ package gui;
 
 import javax.swing.*;
 
-import sun.util.calendar.JulianCalendar;
-
 import collection.Collection;
 
 import analysis.CollectionDivider;
@@ -58,10 +56,8 @@ import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 /**
  * @author ritza
@@ -546,7 +542,7 @@ implements ActionListener, ItemListener
 			month = new JComboBox(getPaddedNumArray(1, 12, 2));
 			day = new JComboBox(getPaddedNumArray(1, 31, 2));
 			year = new JComboBox(getPaddedNumArray(1990, 2039, 4));
-			hour = new JComboBox(getPaddedNumArray(1, 24, 2));
+			hour = new JComboBox(getPaddedNumArray(0, 23, 2));
 			minute = new JComboBox(getPaddedNumArray(0, 59, 2));
 			second = new JComboBox(getPaddedNumArray(0, 59, 2));
 			//ampm = new JComboBox(new String[]{"AM", "PM"});

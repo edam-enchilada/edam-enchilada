@@ -8,7 +8,6 @@ import javax.swing.JOptionPane;
 
 import analysis.DistanceMetric;
 
-import database.CreateTestDatabase;
 import database.InfoWarehouse;
 import database.Database;
 

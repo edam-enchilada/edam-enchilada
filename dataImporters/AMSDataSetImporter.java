@@ -17,7 +17,6 @@ import database.Database;
 import database.InfoWarehouse;
 import errorframework.*;
 import gui.AMSTableModel;
-import gui.MainFrame;
 import gui.ProgressBarWrapper;
 
 public class AMSDataSetImporter {

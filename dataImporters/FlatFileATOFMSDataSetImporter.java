@@ -44,24 +44,16 @@
  */
 package dataImporters;
 
-import database.InfoWarehouse;
 import database.Database;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
-import externalswing.SwingWorker;
 import gui.*;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 
 import ATOFMS.*;
 
-import java.awt.Container;
-import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.Window;
 import java.util.Date;
 import java.text.ParseException;
@@ -70,15 +62,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringTokenizer;
-import java.util.zip.DataFormatException;
-import java.util.zip.ZipException;
-import java.lang.reflect.InvocationTargetException;
-
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JFrame;
-import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
 
 import collection.Collection;
 

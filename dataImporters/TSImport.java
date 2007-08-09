@@ -8,10 +8,8 @@ import java.text.*;
 import java.util.*;
 
 import javax.swing.JOptionPane;
-import javax.swing.ProgressMonitorInputStream;
 import javax.swing.SwingUtilities;
 
-import collection.Collection;
 
 import database.InfoWarehouse;
 import database.Database;

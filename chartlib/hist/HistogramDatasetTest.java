@@ -13,7 +13,6 @@ import database.Database;
 import database.InfoWarehouse;
 import experiments.Tuple;
 import analysis.BinnedPeakList;
-import analysis.DistanceMetric;
 import junit.framework.TestCase;
 
 public class HistogramDatasetTest extends TestCase {

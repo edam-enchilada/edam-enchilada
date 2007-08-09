@@ -46,7 +46,6 @@
  */
 package gui;
 
-import junit.framework.TestCase;
 
 import java.awt.BorderLayout;
 import java.awt.FileDialog;
@@ -54,58 +53,24 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Date;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import org.dbunit.DatabaseTestCase;
-import org.dbunit.DatabaseUnitException;
-import org.dbunit.database.DatabaseConnection;
-import org.dbunit.database.DatabaseSequenceFilter;
-import org.dbunit.database.IDatabaseConnection;
-import org.dbunit.dataset.DataSetException;
-import org.dbunit.dataset.FilteredDataSet;
-import org.dbunit.dataset.IDataSet;
-import org.dbunit.dataset.SortedDataSet;
-import org.dbunit.dataset.filter.ITableFilter;
-import org.dbunit.dataset.xml.FlatXmlDataSet;
-import org.dbunit.dataset.xml.XmlDataSet;
-import org.dbunit.ext.mssql.InsertIdentityOperation;
-import org.dbunit.operation.DatabaseOperation;
-import org.dbunit.operation.TransactionOperation;
 
 import database.Database;
 import database.SQLServerDatabase;
 import database.InfoWarehouse;
 
-import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
 
-import ATOFMS.ATOFMSParticle;
-import ATOFMS.CalInfo;
-import ATOFMS.ParticleInfo;
-import ATOFMS.Peak;
-import ATOFMS.PeakParams;
-import atom.ATOFMSAtomFromDB;
-import atom.GeneralAtomFromDB;
 
 /**
  * This class is a simple interface for saving and restoring a database from the xml file

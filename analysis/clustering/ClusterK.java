@@ -46,7 +46,6 @@ package analysis.clustering;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -54,17 +53,12 @@ import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
 import ATOFMS.ParticleInfo;
-import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.SubSampleCursor;
-import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
-import database.Database.BPLOnlyCursor;
-import errorframework.ErrorLogger;
-import experiments.Tuple;
 import externalswing.SwingWorker;
 
 /**

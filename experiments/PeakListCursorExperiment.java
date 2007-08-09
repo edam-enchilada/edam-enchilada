@@ -4,7 +4,6 @@ import ATOFMS.CalInfo;
 import ATOFMS.ParticleInfo;
 import ATOFMS.PeakParams;
 import analysis.BinnedPeakList;
-import collection.Collection;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.Database;

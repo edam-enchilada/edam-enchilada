@@ -14,7 +14,7 @@ import analysis.DistanceMetric;
 import database.InfoWarehouse;
 import database.Database;
 import database.Database.BPLOnlyCursor;
-import experiments.Tuple;
+
 
 /**
  * Holds all the information needed to graph 

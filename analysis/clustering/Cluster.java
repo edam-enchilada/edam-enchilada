@@ -45,7 +45,6 @@ package analysis.clustering;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.regex.Matcher;
@@ -55,10 +54,6 @@ import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
-import database.NonZeroCursor;
-import database.Database.BPLOnlyCursor;
-import errorframework.ErrorLogger;
-import experiments.Tuple;
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;

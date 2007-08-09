@@ -1,17 +1,5 @@
 package analysis.clustering;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-
-import org.dbunit.*;
-import org.dbunit.database.*;
-import org.dbunit.dataset.*;
-import org.dbunit.dataset.xml.*;
-import org.dbunit.dataset.excel.*;
-
-import database.InfoWarehouse;
-import database.Database;
 
 /**
  * Still working on this one . . . having lots of trouble with importing

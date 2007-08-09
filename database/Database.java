@@ -97,12 +97,11 @@ import collection.AggregationOptions;
 import collection.Collection;
 
 import errorframework.ErrorLogger;
-import experiments.Tuple;
 import gui.LabelingIon;
 import gui.ProgressBarWrapper;
 
 /* 
- * Maybe a good way to refactor this file is to separate out methods that
+ * Maybe a good way to re-factor this file is to separate out methods that
  * are used by importers from those used by clustering code, and so on.
  * It might work well, or it might not...
  */

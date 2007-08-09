@@ -58,7 +58,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.regex.MatchResult;
 
 import javax.swing.JDialog;
@@ -66,7 +65,6 @@ import javax.swing.JDialog;
 import collection.Collection;
 import database.Database.BPLOnlyCursor;
 import database.Database.MemoryBinnedCursor;
-import experiments.Tuple;
 
 
 import ATOFMS.ATOFMSParticle;
@@ -74,11 +72,9 @@ import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
 import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
-import ATOFMS.PeakParams;
 import analysis.BinnedPeakList;
 import atom.ATOFMSAtomFromDB;
-import atom.GeneralAtomFromDB;
-import java.sql.ResultSet;
+
 /**
  * @author andersbe
  *

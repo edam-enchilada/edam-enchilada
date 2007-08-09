@@ -11,7 +11,6 @@ import java.text.*;
 import java.util.*;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
 
 public class SyncAnalyzePanel extends JPanel {

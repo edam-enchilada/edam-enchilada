@@ -1,7 +1,6 @@
 package gui;
 
 import java.awt.CardLayout;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
@@ -12,7 +11,6 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 
-import dataImporters.EnchiladaDataSetImporter;
 import database.DynamicTable;
 
 public class ClusteringSpecifications extends JDialog implements ActionListener, ItemListener{

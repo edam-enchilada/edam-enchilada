@@ -58,8 +58,6 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 import analysis.clustering.ClusterInformation;
-import analysis.dataCompression.CFTree;
-import atom.GeneralAtomFromDB;
 
 import ATOFMS.Peak;
 

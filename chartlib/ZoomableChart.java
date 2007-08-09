@@ -42,13 +42,12 @@
 
 package chartlib;
 
-import gui.ParticleAnalyzeWindow;
 
 import javax.swing.event.MouseInputListener;
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
-import java.util.Scanner;
+
 
 
 /**

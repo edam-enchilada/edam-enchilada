@@ -7,7 +7,6 @@ import javax.swing.*;
 import collection.AggregationOptions;
 import collection.Collection;
 import database.*;
-import externalswing.SwingWorker;
 
 public class Aggregator {
 	private JFrame parentFrame;

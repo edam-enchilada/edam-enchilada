@@ -43,7 +43,6 @@
  */
 package dataImporters;
 
-import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -57,19 +56,13 @@ import javax.swing.JOptionPane;
 import javax.swing.event.TableModelEvent;
 
 import ATOFMS.CalInfo;
-import atom.ATOFMSAtomFromDB;
-import atom.GeneralAtomFromDB;
 
 
-import database.CreateTestDatabase;
 import database.InfoWarehouse;
 import database.Database;
 import errorframework.DisplayException;
-import errorframework.ErrorLogger;
-import externalswing.SwingWorker;
 import junit.framework.TestCase;
 
-import gui.ImportParsDialog;
 import gui.ParTableModel;
 import gui.ProgressBarWrapper;
 

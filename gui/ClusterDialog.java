@@ -55,8 +55,6 @@ import analysis.clustering.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 

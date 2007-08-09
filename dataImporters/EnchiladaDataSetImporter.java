@@ -4,7 +4,6 @@ import gui.EnchiladaDataTableModel;
 import gui.ImportEnchiladaDataDialog;
 
 
-import java.awt.Component;
 import java.awt.Frame;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -12,16 +11,12 @@ import java.io.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeMap;
-import java.util.concurrent.BlockingQueue;
 
-import javax.swing.ProgressMonitorInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;

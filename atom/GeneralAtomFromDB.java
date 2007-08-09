@@ -1,7 +1,5 @@
 package atom;
 
-import gui.MainFrame;
-
 import java.util.ArrayList;
 import java.util.Date;
 

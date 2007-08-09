@@ -50,7 +50,6 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
-import javax.swing.tree.TreePath;
 
 import analysis.dataCompression.BIRCH;
 import analysis.DistanceMetric;
@@ -59,11 +58,8 @@ import collection.*;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Scanner;
 import java.util.Vector;
 
 import dataImporters.ATOFMSDataSetImporter;

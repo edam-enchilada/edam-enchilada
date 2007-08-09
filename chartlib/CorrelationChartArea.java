@@ -12,13 +12,9 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
 
 import javax.swing.JFrame;
 
-import chartlib.GraphAxis.AxisLabeller;
 
 /**
  * @author olsonja
