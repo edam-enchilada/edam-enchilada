@@ -53,6 +53,12 @@ import collection.Collection;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 
+import java.sql.Connection;
+import java.sql.Statement;
+
+import java.io.File;
+import java.io.PrintWriter;
+
 /**
  * @author andersbe
  *
@@ -318,6 +324,7 @@ public abstract class CollectionDivider {
 	/**
 	 * Executes putInSubCollectionBulk
 	 * @author christej 
+	 * @author benzaids
 	*/
 	 
 	protected void putInSubCollectionBulkExecute()
@@ -331,6 +338,87 @@ public abstract class CollectionDivider {
 			e.printStackTrace();
 		}
 		System.out.println("Done with INSERTS, about to do DELETE");
+		
+		//build a table for deletes
+		//drop the table in case it already (mistakenly) exists
+		System.out.println("Creating deletion table...");
+		Connection dbCon = db.getCon();
+		Statement delStmt = null;
+		try {
+			delStmt = dbCon.createStatement();
+			delStmt.executeUpdate("IF (OBJECT_ID('stuffToDelete') IS NOT NULL)\n" +
+								  "DROP TABLE stuffToDelete");
+			delStmt.executeUpdate("CREATE TABLE stuffToDelete(atoms int)");
+		}
+		catch (Exception e) {
+			System.out.println("Error creating table stuffToDelete in database.");
+		}
+		
+		//create tempfile used to bulk insert to stuffToDelete
+		//tempfile goes in same place as other temp files
+		System.out.println("Creating tempdelete.data file...");
+		String tempdir = "";
+		try {
+			tempdir = (new File(".")).getCanonicalPath();
+		}
+		catch (Exception e) {
+			System.out.println("Error Creating tempDelte file in proper location.");
+		}
+		tempdir = tempdir + File.separator+ "TEMP" + File.separator + "tempdelete.data";
+		File temp = new File(tempdir);
+		PrintWriter pw = null;
+		try {
+			pw = new PrintWriter(temp);
+		}
+		catch (Exception e) {
+			System.out.println("Error Creating tempDelete file.");
+		}
+		
+		//put stuff in the tempfile
+		System.out.println("Putting stuff in tempdelete.data...");
+		String atomIDsToDel = atomIDsToDelete.toString();
+		Scanner atomIDs = new Scanner(atomIDsToDel).useDelimiter(",");
+		while (atomIDs.hasNext()) {
+			pw.println(atomIDs.next());
+		}
+		pw.println();
+		pw.close();
+		
+		//execute a statement to bulk insert into stuffToDelete
+		System.out.println("Putting stuff in deletion table...");
+		try {
+			delStmt.executeUpdate("BULK INSERT stuffToDelete\n" + 
+								  "FROM '" + temp.getAbsoluteFile() + "'");
+		}
+		catch (Exception e) {
+			System.out.println("Error inserting into stuffToDelete.");
+		}
+		
+		//delete the temp file
+		System.out.println("Deleting tempdelete.data...");
+		temp.delete();
+		
+		//finally, delete what's in stuffToDelete from AtomMembership
+		//and drop the stuffToDelete table
+		System.out.println("Finally, deleting from AtomMembership...");
+		String deletionquery = "DELETE FROM AtomMembership\n" +
+		  					   "WHERE CollectionID = " + collection.getCollectionID() + 
+		  					   "\n" + "AND AtomID IN \n" +
+		  					   "(SELECT atoms FROM stuffToDelete)";
+		System.out.println("Query:");
+		System.out.println(deletionquery);
+		try {
+			delStmt.executeUpdate(deletionquery);
+			delStmt.executeUpdate("DROP TABLE stuffToDelete");
+		}
+		catch (Exception e) {
+			System.out.println("Error deleting from AtomMembership");
+		}
+		System.out.println("...and dropping deletion table.");
+		
+		System.out.println("Done with DELETEs.");
+		
+		/*
 		//System.out.println((new Date()).toString());
 		db.atomBatchInit();
 		
@@ -349,6 +437,7 @@ public abstract class CollectionDivider {
 		db.atomBatchExecute();
 		System.out.println("Done with DELETEs.");
 		//System.out.println((new Date()).toString());
+		*/
 	}
 
 	/**

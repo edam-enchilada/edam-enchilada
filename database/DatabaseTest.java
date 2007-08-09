@@ -55,10 +55,12 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.BatchUpdateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.regex.MatchResult;
+import java.util.Random;
 
 import javax.swing.JDialog;
 
@@ -1029,6 +1031,31 @@ public class DatabaseTest extends TestCase {
 		assertTrue(db.addAtomBatch(1,1));
 		db.atomBatchExecute();
 		db.closeConnection();
+	}
+	
+	/**
+	 * Tests deleteAtomsBatch, specifically the case where it blows 
+	 * memory because of an oversized queue.
+	 * 
+	 * @author benzaids
+	 */
+	public void testBatchMemoryProblem() {
+		try {
+			db.openConnection(dbName);
+			db.atomBatchInit();
+			Random rand = new Random();
+			for (int i = 0; i < 100000; i++) {
+				int atom = rand.nextInt(1000000) + 1;
+				assertTrue(db.deleteAtomBatch(atom, db.getCollection(1)));
+			}
+			db.atomBatchExecute();
+			db.closeConnection();
+			
+		}
+		catch (Exception e){
+			System.out.println("Too many queries in a result blew memory, as expected.");
+			//The test passed.
+		}
 	}
 	
 	public void testCheckAtomParent() {
