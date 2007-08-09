@@ -391,10 +391,6 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			bottomPanel = new JPanel(new GridLayout(3,1));//change this line after bug fix
 			bottomPanel.add(peakButtonPanel);
 			bottomPanel.add(origParticles);
-//////////////////// HACK warning below - when bug is fixed, remove the below
-			//line and reset the marked line above to make the GridLayout 2,1
-			bottomPanel.add(new JLabel("NOTE: If anything other than peak area was used as a clustering parameter, these numbers are inaccurrate.  This is a known bug we are working to fix."));
-//////////////////// end HACK		
 		} else{
 			bottomPanel = new JPanel (new GridLayout(1, 2));
 			bottomPanel.add(buttonPanel);
