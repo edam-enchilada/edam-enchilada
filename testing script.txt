@@ -199,6 +199,7 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__Highlighting peaks selects peak in peak list, provides peak label information
 	__Zooming in and out works correctly
 	
+<NO LONGER RELEVANT>
 **Try to import an existing datatype in the metadata format.  
 	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
 (Note that this is not a complete .md file - just enough to catch the problem.)
@@ -207,6 +208,7 @@ Enchilada should pop up a message informing the user that the datatype name is a
 	and simpleData.ed
 		__Creating new metadata works
 		__Importing data works
+</NO LONGER RELEVANT>
 	
 Check the Task manager for extra javaw.exe's running.  If there are some, then
 something's wrong.
