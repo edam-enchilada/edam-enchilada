@@ -5757,8 +5757,11 @@ public abstract class Database implements InfoWarehouse {
 					for (ArrayList<Integer> sub : subColls){
 						for (Integer i : sub){
 							currMin = getFirstAtomInCollection(getCollection(i));
-							if (currMin<=min)
+							//If we've already set min to something, then we don't
+							//want to reset it to -99 christej
+							if (currMin<=min && currMin != -99){
 								min = currMin;
+							}
 						}
 					}
 					atom = min;
