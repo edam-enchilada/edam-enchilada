@@ -909,6 +909,7 @@ public class MainFrame extends JFrame implements ActionListener
 			UIWorker worker = new UIWorker() {
 				public Object construct() {
 					((Database)db).compactDatabase(progressBar);
+					db.clearCache();
 					db.closeConnection();
 					return null;
 				}
@@ -923,6 +924,8 @@ public class MainFrame extends JFrame implements ActionListener
 			worker.start();
 			
 		}else{
+			
+			db.clearCache();
 			db.closeConnection();
 			dispose();
 			

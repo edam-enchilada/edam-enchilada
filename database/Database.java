@@ -197,6 +197,17 @@ public abstract class Database implements InfoWarehouse {
 		}
 	}
 	
+	public void clearCache(){
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("dbcc freeproccache");
+			System.out.println("db cache cleared");
+		}
+		catch (Exception e1) {
+			System.out.println("Error clearing the database cache.");
+		}
+	}
+	
 	/**
 	 * Find if the database is present
 	 * @param command the SQL to get a list of databases
@@ -5722,6 +5733,9 @@ public abstract class Database implements InfoWarehouse {
 	 * @author steinbel
 	 * Gets first atom in collection (recursively finds the first atom for
 	 * parent collections).
+	 * 
+	 * @author christej
+	 * revised to make use of InternalAtomOrder
 	 */
 	//TODO: what if collection is a parent with smaller atomID than any of
 	//its children?  need to fix this case.
@@ -5729,44 +5743,16 @@ public abstract class Database implements InfoWarehouse {
 		int atom = -99;
 		try{
 			Statement stmt = con.createStatement();
-			String string = "SELECT MIN(AtomID) FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID();
+			String string = "SELECT MIN(AtomID) FROM InternalAtomOrder WHERE CollectionID = " + collection.getCollectionID();
 			ResultSet rs = stmt.executeQuery(string);
 			
-			if (rs.next())
+			if (rs.next()){
 				atom = rs.getInt(1);
-			
+				System.out.println("ATOM:" + atom);
+			}
 			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
-			if (atom == 0) {
-				//check for subcollections
-				HashMap<Integer, ArrayList<Integer>> hierarchy = 
-										getSubCollectionsHierarchy(collection);
-
-				java.util.Collection<ArrayList<Integer>> subColls = 
-					hierarchy.values();
-				if (hierarchy.isEmpty()){
-					//TODO: this query is useless
-					rs = stmt.executeQuery("SELECT AtomID FROM AtomMembership WHERE CollectionID = " + collection.getCollectionID());
-					if (!rs.next())
-						atom = -99;
-				} else { //grab the min amongst all subcollections
-					//TODO: simply initialize min to largest possible atomID
-					rs = stmt.executeQuery("SELECT MAX(AtomID) FROM AtomMembership");
-					int min = -99;
-					if (rs.next())
-						min = rs.getInt(1);
-					int currMin;
-					for (ArrayList<Integer> sub : subColls){
-						for (Integer i : sub){
-							currMin = getFirstAtomInCollection(getCollection(i));
-							//If we've already set min to something, then we don't
-							//want to reset it to -99 christej
-							if (currMin<=min && currMin != -99){
-								min = currMin;
-							}
-						}
-					}
-					atom = min;
-				}
+			if (atom == 0){
+				atom = -99;
 			}
 			
 			stmt.close();
@@ -5775,7 +5761,6 @@ public abstract class Database implements InfoWarehouse {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting first atom in collection");
 			System.err.println("problems getting first atom in collection from SQLServer.");
 		}
-		System.out.println("atom3 = "+ atom);
 		return atom;
 	}
 	

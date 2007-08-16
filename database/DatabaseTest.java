@@ -1916,7 +1916,7 @@ public class DatabaseTest extends TestCase {
 		
 		try {
 			db.getCon().createStatement().executeUpdate(
-					"DELETE FROM AtomMembership WHERE CollectionID = 2");
+					"DELETE FROM InternalAtomOrder WHERE CollectionID = 2");
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();

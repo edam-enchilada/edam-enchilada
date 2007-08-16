@@ -386,4 +386,6 @@ public interface InfoWarehouse {
 	public void bulkInsertExecute() throws Exception;
 
 	public String getDatabaseName();
+
+	public void clearCache();
 }

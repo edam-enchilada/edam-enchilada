@@ -662,6 +662,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		}
 		else  
 			dispose();
+		
+		db.clearCache();
 	}
 	
 	/**
