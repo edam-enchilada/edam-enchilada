@@ -2552,14 +2552,15 @@ public abstract class Database implements InfoWarehouse {
 			int starter = getFirstAtomInCollection(collection) - 1;
 			System.out.println("starter " + starter);//TESTING
 			
-			ResultSet rs = stmt.executeQuery(
-					"SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
-					"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
-					", InternalAtomOrder\n" +
-					"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
-					"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
-					" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
-			" ORDER BY InternalAtomOrder.AtomID");//changed with IAO change - steinbel 9.19.06
+			String query = "SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
+				"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
+				", InternalAtomOrder\n" +
+				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
+				"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
+				" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
+			" ORDER BY InternalAtomOrder.AtomID";
+			//System.out.println(query);
+			ResultSet rs = stmt.executeQuery(query);//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
 			{
@@ -5774,6 +5775,7 @@ public abstract class Database implements InfoWarehouse {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting first atom in collection");
 			System.err.println("problems getting first atom in collection from SQLServer.");
 		}
+		System.out.println("atom3 = "+ atom);
 		return atom;
 	}
 	
