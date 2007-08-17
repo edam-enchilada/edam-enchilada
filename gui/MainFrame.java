@@ -93,6 +93,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JButton analyzeParticleButton;
 	private JButton aggregateButton;
 	private JButton mapValuesButton;
+	private JButton clusterDialogButton;
 	private JMenu analysisMenu;
 	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
@@ -482,6 +483,13 @@ public class MainFrame extends JFrame implements ActionListener
 		else if (source == exportParsButton || source == MSAexportItem)
 		{
 			getSelectedCollection().exportToPar(this);
+		}
+		
+		else if (source == clusterDialogButton) {
+			new ClusterQueryDialog(this, db);
+			
+			collectionPane.updateTree();
+			validate();
 		}
 		
 		else if (source == deleteAdoptItem)
@@ -1187,12 +1195,17 @@ public class MainFrame extends JFrame implements ActionListener
 		exportParsButton.setBorder(new EtchedBorder());
 		exportParsButton.addActionListener(this);
 		
+		clusterDialogButton = new JButton("Cluster Query");
+		clusterDialogButton.setBorder(new EtchedBorder());
+		clusterDialogButton.addActionListener(this);
+		
 		buttonPanel.add(emptyCollButton);
 		buttonPanel.add(importParsButton);
 		buttonPanel.add(importFlatButton);
 		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(importAMSDataButton);
 		buttonPanel.add(exportParsButton);
+		buttonPanel.add(clusterDialogButton);
 		add(buttonPanel);
 	}
 	
