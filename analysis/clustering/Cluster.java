@@ -105,6 +105,7 @@ public abstract class Cluster extends CollectionDivider {
 		super(cID,database,name.concat(",CLUST"),comment);
 		folderName = "," + super.comment;
 		isNormalized = norm;
+		totalDistancePerPass = new ArrayList<Double>();
 	}
 	
 	/**
@@ -335,7 +336,23 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
-			CollectionCursor curs)
+			CollectionCursor curs){
+		return assignAtomsToNearestCentroid(centroidList, curs, (double)2.5, clusterInfo.normalize, true);
+	}
+	/**
+	* This method assigns atoms to nearest centroid using only centroidList
+	* and collection cursor.  
+	* @param centroidList the list of centroids
+	* @param curs the cursor over the collection
+	* @param minDistance used by cluster query, indicates the minimum distance
+	* a particle must be from a centroid
+	* @param normalize whether the centroids are normalized
+	* @param changecentroids whether the centroids should be modified as particles are assigned to them
+	* @author christej
+	*/
+	protected int assignAtomsToNearestCentroid(
+			ArrayList<Centroid> centroidList,
+			CollectionCursor curs, double minDistance, boolean normalize, boolean changeCentroids)
 	{
 		System.out.println("in assignAtoms");
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
@@ -394,31 +411,37 @@ public abstract class Cluster extends CollectionDivider {
 					}
 				}// end for each centroid
 
-				sums.get(chosenCluster).addAnotherParticle(thisBinnedPeakList);
+				if(nearestDistance<minDistance){
+					if(changeCentroids){
+						sums.get(chosenCluster).addAnotherParticle(thisBinnedPeakList);
+					}
 
-				Centroid temp = centroidList.get(chosenCluster);
-				totalDistance += nearestDistance;
-				if (temp.numMembers == 0)
-				{
-					temp.subCollectionNum = createSubCollection();
-					if (temp.subCollectionNum == -1)
-						System.err.println(
-						"Problem creating sub collection");
+
+					Centroid temp = centroidList.get(chosenCluster);
+					totalDistance += nearestDistance;
+					if (temp.numMembers == 0)
+					{
+						temp.subCollectionNum = createSubCollection();
+						if (temp.subCollectionNum == -1)
+							System.err.println(
+							"Problem creating sub collection");
+					}
+					putInSubCollectionBulk(thisParticleInfo.getID(),
+							temp.subCollectionNum);
+					System.out.println("putting in subcollectionbatch " + thisParticleInfo.getID() + " " + temp.subCollectionNum);
+					temp.numMembers++;
 				}
-				putInSubCollectionBulk(thisParticleInfo.getID(),
-						temp.subCollectionNum);
-	//			putInSubCollectionBatch(thisParticleInfo.getID(),
-	//					temp.subCollectionNum);
-				System.out.println("putting in subcollectionbatch " + thisParticleInfo.getID() + " " + temp.subCollectionNum);
-				temp.numMembers++;
-
 			}// end with no particle remaining
-		//	putInSubCollectionBatchExecute();
 			putInSubCollectionBulkExecute();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		curs.reset();
+		if(!changeCentroids){
+			for(int i = 0; i < sums.size(); i++){
+				sums.get(i).addAnotherParticle(centroidList.get(i).peaks);
+			}
+		}
 		totalDistancePerPass.add(new Double(totalDistance));
 		for (int i = 0; i < sums.size(); i++) {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);
@@ -431,7 +454,7 @@ public abstract class Cluster extends CollectionDivider {
 //	 * areas for normalized centroids/centeratoms, we need to scale up.   //
 //	 */																	  //
 ////////////////////////////////////////////////////////////////////////////////
-	if (clusterInfo.normalize){
+	if (normalize){
 		//boost the peaklist
 
 		for (Centroid c: centroidList){

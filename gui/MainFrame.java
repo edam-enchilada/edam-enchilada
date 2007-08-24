@@ -51,6 +51,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 
+import ATOFMS.Peak;
 import analysis.dataCompression.BIRCH;
 import analysis.DistanceMetric;
 
@@ -58,6 +59,8 @@ import collection.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -93,7 +96,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JButton analyzeParticleButton;
 	private JButton aggregateButton;
 	private JButton mapValuesButton;
-	private JButton clusterDialogButton;
+//	private JButton clusterDialogButton;
 	private JMenu analysisMenu;
 	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
@@ -111,7 +114,9 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem exportCsvDatabaseItem;
 	*/
 	private JMenuItem emptyCollection;
+	private JMenuItem saveParticle;
 	private JMenuItem queryItem;
+	private JMenuItem clusterQueryItem;
 	private JMenuItem compressItem;
 	private JMenuItem clusterItem;
 	private JMenuItem detectPlumesItem;
@@ -479,18 +484,26 @@ public class MainFrame extends JFrame implements ActionListener
 			collectionPane.updateTree();
 			validate();
 		}
-		
+		else if(source == saveParticle){
+			int[] selectedRows = particlesTable.getSelectedRows();
+			int curRow = selectedRows[0];
+			if(selectedRows.length>0){
+				int atomID= ((Integer)
+						data.get(curRow).get(0)).intValue();
+				
+				FileDialogPicker dialog = new FileDialogPicker("Save as", ".txt", this, false);
+				if(dialog.getFileName()!=null){
+					System.out.println(dialog.getFileName());
+					writeToFile(dialog.getFileName(), atomID);
+				}
+				
+			}
+		}
 		else if (source == exportParsButton || source == MSAexportItem)
 		{
 			getSelectedCollection().exportToPar(this);
 		}
 		
-		else if (source == clusterDialogButton) {
-			new ClusterQueryDialog(this, db);
-			
-			collectionPane.updateTree();
-			validate();
-		}
 		
 		else if (source == deleteAdoptItem)
 		{
@@ -641,6 +654,19 @@ public class MainFrame extends JFrame implements ActionListener
 			else
 				new QueryDialog(this, collectionPane, db, getSelectedCollection());
 		}
+		
+		else if (source == clusterQueryItem) {
+			if (collectionPane.getSelectedCollection() == null)
+				JOptionPane.showMessageDialog(this, "Please select a collection to cluster query.", 
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
+			else{
+				new ClusterQueryDialog(this, collectionPane, db);
+			
+				collectionPane.updateTree();
+				validate();
+			}
+		}
+		
 		else if (source == clusterItem) {
 			if (collectionPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection to cluster.", 
@@ -995,7 +1021,8 @@ public class MainFrame extends JFrame implements ActionListener
 				"New empty collection", 
 				KeyEvent.VK_N);
 		emptyCollection.addActionListener(this);
-		
+		saveParticle = new JMenuItem("Save particle as");
+		saveParticle.addActionListener(this);
 		JMenu importCollectionMenu = new JMenu("Import Collection. . . ");
 		loadATOFMSItem = new JMenuItem("from ATOFMS data. . .");
 		loadATOFMSItem.addActionListener(this);
@@ -1056,6 +1083,8 @@ public class MainFrame extends JFrame implements ActionListener
 		exitItem = new JMenuItem("Exit", KeyEvent.VK_X);
 		exitItem.addActionListener(this);
 		
+		fileMenu.add(saveParticle);
+		fileMenu.addSeparator();
 		fileMenu.add(emptyCollection);
 		fileMenu.addSeparator();
 		fileMenu.add(importCollectionMenu);
@@ -1098,6 +1127,8 @@ public class MainFrame extends JFrame implements ActionListener
 		
 		clusterItem = new JMenuItem("Cluster. . .", KeyEvent.VK_C);
 		clusterItem.addActionListener(this);
+		clusterQueryItem = new JMenuItem("Cluster query. . .", KeyEvent.VK_C);
+		clusterQueryItem.addActionListener(this);
 //		JMenuItem labelItem = new JMenuItem("Label. . .", 
 //				KeyEvent.VK_L);
 //		JMenuItem classifyItem = new JMenuItem("Classify. . . ", 
@@ -1112,6 +1143,7 @@ public class MainFrame extends JFrame implements ActionListener
 		detectPlumesItem.addActionListener(this);
 		
 		analysisMenu.add(clusterItem);
+		analysisMenu.add(clusterQueryItem);
 //		analysisMenu.add(labelItem);
 //		analysisMenu.add(classifyItem);
 		analysisMenu.add(queryItem);
@@ -1195,17 +1227,12 @@ public class MainFrame extends JFrame implements ActionListener
 		exportParsButton.setBorder(new EtchedBorder());
 		exportParsButton.addActionListener(this);
 		
-		clusterDialogButton = new JButton("Cluster Query");
-		clusterDialogButton.setBorder(new EtchedBorder());
-		clusterDialogButton.addActionListener(this);
-		
 		buttonPanel.add(emptyCollButton);
 		buttonPanel.add(importParsButton);
 		buttonPanel.add(importFlatButton);
 		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(importAMSDataButton);
 		buttonPanel.add(exportParsButton);
-		buttonPanel.add(clusterDialogButton);
 		add(buttonPanel);
 	}
 	
@@ -1504,6 +1531,23 @@ public class MainFrame extends JFrame implements ActionListener
 			 
 			 descriptionTA.replaceRange(text, 0,docLength);*/
 		}
+	}
+	private void writeToFile(String filename, int atomID){
+		PrintWriter pw;
+		try {
+			pw = new PrintWriter(filename);
+			pw.println(db.getATOFMSFileName(atomID));
+			ArrayList<Peak> peaks = db.getPeaks(db.getAtomDatatype(atomID), atomID);		
+
+			for(int i = 0; i<peaks.size();i++){
+				pw.println(peaks.get(i).massToCharge + "," + peaks.get(i).value);
+			}
+			pw.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+			
 	}
 	
 	public void updateSynchronizedTree(int collectionID) {

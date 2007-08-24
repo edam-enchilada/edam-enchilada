@@ -64,6 +64,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -129,7 +130,7 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 	private ZoomableChart zchart;
 	private JTable peaksTable; 
 	private JRadioButton peakButton, specButton;
-	private JButton nextButton, zoomDefaultButton, prevButton, origPButton;
+	private JButton nextButton, zoomDefaultButton, prevButton, origPButton, writeToFile;
 	private JTextPane labelText;
 	private JScrollPane labelScrollPane;
 	private JCheckBox labelPeaks;
@@ -833,9 +834,33 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 			assert(clusterID != -1):"There is no cluster to show.";
 			showParent(clusterID);
 		}
+	/*	else if(source == writeToFile){
+			FileDialogPicker dialog = new FileDialogPicker("Save as", ".txt", this, false);
+			if(dialog.getFileName()!=null){
+				System.out.println(dialog.getFileName());
+				writeToFile(dialog.getFileName());
+			}
+			
+		}*/
 
 	}
-	
+	/*private void writeToFile(String filename){
+		try {
+			PrintWriter pw = new PrintWriter(filename);
+			for(int i = 0; i<negPeaks.size();i++){
+				pw.println(negPeaks.get(i).massToCharge + "," + negPeaks.get(i).value);
+			}
+			for(int i = 0; i<posPeaks.size();i++){
+				pw.println(posPeaks.get(i).massToCharge + "," + posPeaks.get(i).value);
+			}
+			pw.close();
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}*/
 	/**
 	 * Shows collection in the main window of Enchilada.  (Used to show clusters.)
 	 * @param cID - the collection to display
