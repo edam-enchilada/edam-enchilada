@@ -61,6 +61,7 @@ import analysis.CollectionDivider;
 import analysis.DistanceMetric;
 import analysis.DummyNormalizer;
 import analysis.Normalizer;
+import errorframework.NoSubCollectionException;
 
 /**
  * @author andersbe
@@ -663,6 +664,9 @@ public abstract class Cluster extends CollectionDivider {
 			//get the dense info for each particle in the cluster.
 			//iterate through the atoms in the cluster
 			//adding their averageable and int columns together
+			if(center.subCollectionNum == -1){
+				throw new NoSubCollectionException();
+			}
 			densecurs = db.getAtomInfoOnlyCursor(db.getCollection(ids.get(center.subCollectionNum-1)));
 			
 			//NOTE: this is currently only set up to deal with ATOFMS particles
@@ -709,6 +713,7 @@ public abstract class Cluster extends CollectionDivider {
 			
 			
 			}
+			
 			//System.out.println("DENSE " + dense);	//Debugging
 
 			/*

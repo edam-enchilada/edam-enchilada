@@ -39,7 +39,7 @@ import externalswing.SwingWorker;
  *
  * ClusterQueryDialog opens a dialogue window that allows the user to 
  * cluster a selected collection using cluster centers that the user imputs.
- * There is an expanding list that the user can inputs a file into as well as
+ * There is an expanding list that the user can input a file into as well as
  * an input box for a distance parameter.
  *
  */
@@ -193,8 +193,11 @@ public class ClusterQueryDialog extends JDialog implements ActionListener{
 							System.out.println("setting cursor type");
 							qc.setCursorType(Cluster.DISK_BASED);
 						//}
-	
-						qc.divide();
+						try{
+							qc.divide();
+						}catch (NoSubCollectionException sce){
+							JOptionPane.showMessageDialog(this, "No clusters found for these particles");
+						}
 						
 						dispose();
 					}
