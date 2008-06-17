@@ -705,12 +705,13 @@ public abstract class Cluster extends CollectionDivider {
 						avgValues.add(Float.toString(temp));
 				} else if(charCols.contains(denseNames.get(i))){
 					avgValues.add("Center for cluster " + center.subCollectionNum);
+				} else if(i == 1) {
+					avgValues.add("0");
 				} else
 					avgValues.add("");
 
 				dense = EnchiladaDataSetImporter.intersperse(avgValues.get(i-1),
 						dense);
-			
 			
 			}
 			

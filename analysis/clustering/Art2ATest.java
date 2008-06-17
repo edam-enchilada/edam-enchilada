@@ -18,6 +18,7 @@ import database.Database;
 
 public class Art2ATest extends TestCase{
 	  private Art2A art2a;
+	  private Art2A art2a2;
 	    private InfoWarehouse db;
 	    String dbName = "TestDB";
 	    
@@ -83,7 +84,7 @@ public class Art2ATest extends TestCase{
 	    	Collection cluster1 = db.getCollection(8);
 	    	Collection cluster2 = db.getCollection(9);
 	    	Collection cluster3 = db.getCollection(10);
-
+	    	
 	    	assertTrue(cluster1.containsData());
 	    	assertTrue(cluster1.getComment().equals("1"));
 	    	assertTrue(cluster1.getDatatype().equals("ATOFMS"));
@@ -196,5 +197,58 @@ Key:	Value:
 30	0.2
 	    	 */
 	    	
+	    }
+	    
+	    /**
+		 * @author rzeszotj
+	     * Tests whether Art2A can cluster the centers of a previously clustered collection,
+	     * Results should mimic what happens with K-Means/Medians          -rzeszotj
+	     */
+	    public void testClusterCenters() {
+	    	art2a.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+	    	int collectionID = art2a.cluster();
+	    	assertTrue(collectionID == 7);
+	    	
+	    	System.out.println("First Clusters Generated!");
+	    	
+	    	int centersID = 11;
+	        
+	        String comment = "Test comment";
+	        ArrayList<String> list = new ArrayList<String>();
+	        list.add("ATOFMSAtomInfoSparse.PeakArea");
+	    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+	    	art2a2 = new Art2A(centersID,db,1.0f, 0.005f,25,DistanceMetric.CITY_BLOCK,comment,cInfo);
+	    	art2a2.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+	    	
+	    	int centerClusterID = art2a2.cluster();
+	    	assertTrue(centerClusterID == 12);
+	    	
+	    	Collection cluster1 = db.getCollection(13);
+	    	Collection cluster2 = db.getCollection(14);
+	    	Collection cluster3 = db.getCollection(15);
+	    	
+	    	assertTrue(cluster1.containsData());
+	    	assertTrue(cluster1.getComment().equals("1"));
+	    	assertTrue(cluster1.getDatatype().equals("ATOFMS"));
+	    	assertTrue(cluster1.getDescription().startsWith("Key:\tValue:"));
+	    	assertTrue(cluster1.getName().equals("1"));
+	    	assertTrue(cluster1.getParentCollection().getCollectionID() == 12);
+	    	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
+	    	
+	    	assertTrue(cluster2.containsData());
+	    	assertTrue(cluster2.getComment().equals("2"));
+	    	assertTrue(cluster2.getDatatype().equals("ATOFMS"));
+	    	assertTrue(cluster2.getDescription().startsWith("Key:\tValue:"));
+	    	assertTrue(cluster2.getName().equals("2"));
+	    	assertTrue(cluster2.getParentCollection().getCollectionID() == 12);
+	    	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+	    	
+	    	assertTrue(cluster3.containsData());
+	    	assertTrue(cluster3.getComment().equals("3"));
+	    	assertTrue(cluster3.getDatatype().equals("ATOFMS"));
+	    	assertTrue(cluster3.getDescription().startsWith("Key:\tValue:"));
+	    	assertTrue(cluster3.getName().equals("3"));
+	    	assertTrue(cluster3.getParentCollection().getCollectionID() == 12);
+	    	assertTrue(cluster3.getSubCollectionIDs().isEmpty());
 	    }
 }
