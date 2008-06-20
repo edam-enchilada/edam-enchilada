@@ -1037,7 +1037,7 @@ public class MainFrame extends JFrame implements ActionListener
 		loadEnchiladaDataItem.addActionListener(this);
 		loadAMSDataItem = new JMenuItem("from AMS data. . .");
 		loadAMSDataItem.addActionListener(this); 
-		loadSPASSItem = new JMenuItem("from SPASS data. . .");
+		loadSPASSItem = new JMenuItem("from JRC-SPASS data. . .");
 		loadSPASSItem.addActionListener(this); 
 		batchLoadATOFMSItem = new JMenuItem("from ATOFMS data (with bulk file). . .");
 		batchLoadATOFMSItem.addActionListener(this);

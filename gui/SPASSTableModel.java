@@ -23,7 +23,7 @@ public class SPASSTableModel extends AbstractTableModel implements TableModelLis
 			
 			columnNames = new String[2]; 
 			columnNames[0] = "#";
-			columnNames[1] = "SPASS File";
+			columnNames[1] = "JRC-SPASS File";
 			
 			newColumn.add(new Integer(++setCount));
 			newColumn.add(new String(".txt file"));
