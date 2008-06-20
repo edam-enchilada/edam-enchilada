@@ -187,9 +187,25 @@ Choose the same files as above, selecting "import into parent collection" in the
 	__AMS data imports successfully
 	__All data is imported into the chosen parent collection
 	
+**Import SPASS data from \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\spass
+Choose SPASS_JRC.txt for the first row, and SPASS_JRC_Zeros.txt for the second.
+   Verify that:
+	__SPASS data imports successfully
+	__Progress bar properly indicates progress and dataset number for each import
+Choose the same files as above, selecting "import into parent collection" in the import dialog.
+	Pick a name and description, and verify that:
+	__SPASS data imports successfully
+	__All data is imported into the chosen parent collection	
+	
 **Test Analyze->Query
 	__ATOFMS data works on everything
-	__AMS data won't let you query size
+	__AMS/SPASS data won't let you query size
+	
+**Try analyzing a particle from a SPASS collection. Verify that:
+	__"Next" and "Prev" buttons work and display the correct particles
+	__Peaks look correct (1 peak at m/z 23 for the first particle in SPASS_JRC.txt
+	__Clicking the Spectrum radio button errors gracefully (since this is considered ATOFMS)
+	__Zooming, highlighting, etc. works as expected.
 	
 **Try analyzing a particle from an AMS collection. Verify that
 	__"Next" and "Prev" buttons work and display the correct particles
