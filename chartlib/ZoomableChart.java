@@ -316,11 +316,14 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		int scrollmax = scrollmin + scrollBar.getVisibleAmount();
 		System.out.println("extent: "+scrollBar.getVisibleAmount());
 		
-		// extent/visibleAmount should never be <=0
+//		 extent/visibleAmount should never be <=0
+		//  enforce minimum scroll width of "2"
+		//  uses ++ and -- to keep view centered at minimum width
+		//     -rzeszotj
 		if(scrollmin >= scrollmax){
 			System.out.println("scroll values bad: "+scrollmin+"\t"+scrollmax);
-			repaint();
-			return;
+			scrollmax++;
+			scrollmin--;
 		}
 		
 		//convert back to chart coords
