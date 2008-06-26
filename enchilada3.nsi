@@ -3,6 +3,7 @@
 ; This script is based on example2.nsi
 ; which was included in the distribution of the Nullsoft Software Installation
 ; System.  Yay!  Adapted shoddily by Thomas Smith
+;   and further adapted by christja and rzeszotj
 
 
 ;;; the compiler for this file, which makes an installer executable, is
@@ -72,7 +73,7 @@ Section "EDAM Enchilada (required)"
 
   SectionIn RO
   
-  StrCpy $OSQL "C:\Program Files\Microsoft SQL Server\90\Tools\Binn\SQLCMD"
+  StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\SQLCMD"
   
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
@@ -88,8 +89,8 @@ Section "EDAM Enchilada (required)"
   File "library.txt"
   File "MPL-1.1.txt"
   File "SQLServerRebuildDatabase.txt"
-  File "icon.ico"
-  File "icon.gif"
+  File "new_icon.ico"
+  File "new_icon.gif"
   
   CreateDirectory $INSTDIR\errorframework
   CreateDirectory $INSTDIR\errorframework\ErrorLogs
@@ -277,13 +278,13 @@ Section "Start Menu Shortcuts"
 
   CreateDirectory "$SMPROGRAMS\EDAM Enchilada"
   CreateShortCut "$SMPROGRAMS\EDAM Enchilada\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\icon.ico" 0
+  CreateShortCut "$SMPROGRAMS\EDAM Enchilada\EDAM Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\new_icon.ico" 0
   
 SectionEnd
 
 Section "Desktop Shortcut"
 
-    CreateShortCut "$DESKTOP\Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\icon.ico" 0
+    CreateShortCut "$DESKTOP\Enchilada.lnk" "javaw.exe" `-Xmx800m -jar "$INSTDIR\edam-enchilada.jar" -redirectOutput` "$INSTDIR\new_icon.ico" 0
 
 SectionEnd
 
@@ -304,7 +305,7 @@ Section "un.Uninstall"
   MessageBox MB_OK "Since you are uninstalling Enchilada, it is likely that you should also uninstall SQL Server.  You can do this from the Add/Remove Programs dialog in the Control Panel."
 !endif
 
-  StrCpy $OSQL "C:\Program Files\Microsoft SQL Server\80\Tools\Binn\osql.exe"
+  StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\80\Tools\Binn\osql.exe"
   ExecWait '"$OSQL" -?' $0
   IfErrors 0 +3
     DetailPrint "Can't find SQL Server, maybe you've already uninstalled it?"
@@ -337,7 +338,7 @@ Section "un.Uninstall"
   Delete $INSTDIR\*.par
   Delete $INSTDIR\*.set
   Delete $INSTDIR\uninstall.exe
-  Delete $INSTDIR\icon.ico
+  Delete $INSTDIR\new_icon.ico
   Delete $INSTDIR\labeling\cygwin1.dll
   Delete $INSTDIR\labeling\nion-sigs.txt
   Delete $INSTDIR\labeling\pion-sigs.txt
