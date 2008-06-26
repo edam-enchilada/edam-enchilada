@@ -14,10 +14,12 @@ public class LabelingIon {
 	public String name;
 	public int[] mzVals;
 	public double[] ratios;
-
+	
+	
 	private JCheckBox checkBox;
 	private String stringRep;
-
+	private String[] subscriptUnicodeArray={"\u2080","\u2081","\u2082","\u2083","\u2084","\u2085","\u2086","\u2087","\u2088","\u2089"};
+	
 	private boolean isValidIon = true;
 	private boolean isUpdatingCheckbox = false;
 	
@@ -36,6 +38,8 @@ public class LabelingIon {
 				mzVals[i] = Integer.parseInt(tokens[i * 2 + 1]);
 				ratios[i] = Double.parseDouble(tokens[i * 2 + 1]);
 			}
+			setupSubscriptsAndSuperscripts();
+			
 		} catch (NumberFormatException e) {
 			System.err.println("Invalid ion string: " + stringRep);
 			isValidIon = false;
@@ -49,11 +53,41 @@ public class LabelingIon {
 		name = ion.name;
 		mzVals = ion.mzVals;
 		ratios = ion.ratios;
+		//setupSubscriptsAndSuperscripts(); //Don't think it's necessary, but not absolutely sure.
 	}
 	
 	public boolean isValid() { return isValidIon; }
 	public boolean isChecked() { return checkBox.isSelected(); }
 	public String toString() { return stringRep; }
+	
+	public void setupSubscriptsAndSuperscripts()
+	{
+		String newName=new String();
+		for(int i=0;i<this.name.length();i++)
+		{		
+			if (this.name.substring(i,i+1).equals("+"))
+			{
+				newName=newName.concat("\u207A");
+			}
+			else if (this.name.substring(i,i+1).equals("-"))
+			{
+				newName=newName.concat("\u207B");
+			}
+			else
+			{
+				try
+				{
+					int numOfParticle=Integer.valueOf(this.name.substring(i,i+1));
+					newName=newName.concat(subscriptUnicodeArray[numOfParticle]);
+				}
+				catch(NumberFormatException e)
+				{
+					newName=newName.concat(this.name.substring(i,i+1));
+				}
+			}	
+		}
+		this.name=newName;
+	}
 	
 	public void setChecked(boolean checked) { 
 		isUpdatingCheckbox = true;

@@ -131,6 +131,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem deleteAdoptItem;
 	private JMenuItem dataFormatItem;
 	private JMenuItem recursiveDeleteItem;
+	private JMenuItem renameItem;
 	private CollectionTree collectionPane;
 	private CollectionTree synchronizedPane;
 	private JTextArea descriptionTA;
@@ -219,7 +220,7 @@ public class MainFrame extends JFrame implements ActionListener
 		 */
 		setupButtonBar();
 		/**
-		 * Create the mane panel consisting of a splitpane between the
+		 * Create the main panel consisting of a splitpane between the
 		 * collections tree and the browsing tabs.
 		 */	
 		setupSplitPane();
@@ -570,6 +571,28 @@ public class MainFrame extends JFrame implements ActionListener
 				}
 			};
 			worker.start(new Component[]{selectedCollectionTree});
+		}
+		
+		else if (source == renameItem)
+		{
+			final Collection[] c = getSelectedCollections();
+			if(c==null)
+			{
+				JOptionPane.showMessageDialog(this, "Please select one collection to rename.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+			}
+			else if(c.length>1)
+			{
+				JOptionPane.showMessageDialog(this, "Please select one collection to rename.",
+						"Too many collections selected", JOptionPane.WARNING_MESSAGE);
+			}
+			else
+			{
+				String newName=JOptionPane.showInputDialog(this,"Choose a new name for collection.","Rename Collection",JOptionPane.QUESTION_MESSAGE);
+				db.renameCollection(c[0], newName);
+				c[0].setName(newName);
+				collectionPane.updateTree(); //Mostly unnecessary, but without it, there is a problem when the name of a collection is changes length.
+			}
 		}
 		
 		else if (source == copyItem)
@@ -1173,9 +1196,12 @@ public class MainFrame extends JFrame implements ActionListener
 		recursiveDeleteItem = 
 			new JMenuItem("Delete Selected and All Children");
 		recursiveDeleteItem.addActionListener(this);
+		renameItem = new JMenuItem("Rename Collection");
+		renameItem.addActionListener(this);
 		
 		collectionMenu.add(deleteAdoptItem);
 		collectionMenu.add(recursiveDeleteItem);
+		collectionMenu.add(renameItem);
 		
 		// add a datatype menu to the menu bar.
 		JMenu datatypeMenu = new JMenu("Datatype");

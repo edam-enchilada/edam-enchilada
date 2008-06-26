@@ -241,6 +241,10 @@ public class Collection {
 		return cachedName;
 	}
 	
+	public void setName(String newName){
+		cachedName=newName;
+	}
+	
 	public String getComment() {
 		if (cachedComment == null)
 			cachedComment = db.getCollectionComment(collectionID);

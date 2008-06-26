@@ -190,12 +190,21 @@ public interface InfoWarehouse {
 	public boolean recursiveDelete(Collection collection);
 	
 	/**
+	 * Renames a collection.
+	 * @param collection the collection to rename
+	 * @param newName the new name for the collection
+	 * @return true on success
+	 * @author atlasr
+	 */
+	public boolean renameCollection(Collection collection, String newName);
+	
+	/**
 	 * Returns the id's of the immediate subchildren of the input
 	 * collection
 	 * @param collectionID 	ID of the collection you wish to see the 
 	 * 						subchildren of
 	 * @return	an array of subchildren
-	 */
+	 */	
 	public ArrayList<Integer> getImmediateSubCollections(Collection collection);
 	public ArrayList<Integer> getImmediateSubCollections(ArrayList<Integer> collections);
 	

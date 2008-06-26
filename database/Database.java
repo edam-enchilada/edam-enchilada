@@ -1851,6 +1851,31 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	/**
+	 * Renames a collection.
+	 * @param collection the collection to remove
+	 * @param newName the new name for the collection
+	 * @return true on success
+	 * @author atlasr
+	 */
+	public boolean renameCollection(Collection collection, String newName) {
+		try {
+			//ensure that this collection does not have subcollections or atoms
+			Statement stmt = con.createStatement();
+			String query = "UPDATE Collections SET Name = '" + 
+			newName + "' WHERE CollectionID = '" + collection.getCollectionID()+"'";
+			stmt.executeUpdate(query);
+			stmt.close();
+			return true;
+			}
+		catch (SQLException ex) {
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error renaming collection.");
+			System.err.println("Error renaming collection");
+			ex.printStackTrace();
+			return false;			
+		}
+	}	
+	
+	/**
 	 * Get the immediate subcollections for the given collection.
 	 * @param collection
 	 * @return arrayList of atomIDs of subchildren.
