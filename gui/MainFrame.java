@@ -200,7 +200,7 @@ public class MainFrame extends JFrame implements ActionListener
 		Font f = new Font("Dialog", Font.PLAIN, 11);
 		fixFonts(f);
 		
-		setIconImage(Toolkit.getDefaultToolkit().getImage("icon.gif"));
+		setIconImage(Toolkit.getDefaultToolkit().getImage("new_icon.gif"));
 		
 		setSize(800, 600);
 		
@@ -377,11 +377,13 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version aug-2007-1"
+					"Software Version jul-2008-1"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
 //					"Janara Christensen, David Musicant, Jon Sulman\n" +
+//					"Sami Benzaid, Emma Turetsky, Jeff Rzeszotarski,\n +"
+//					"Rob Atlas\n" +
 //					"Madison Contributors:\n"
 					);
 		}
