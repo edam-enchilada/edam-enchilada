@@ -117,6 +117,7 @@ check the next & prev buttons for
 		  view, for both positive and negative spectrum
 		__highlighting peak with mouse causes labels to update when in spectrum
 		  view, for both positive and negative spectrum
+		__subscripts and superscripts display correctly in selected peak labels and signature views
 		__Verify that the stuff ParticleAnalyzeWindow prints out appears in the "Output" window (should be hiding behind the main Enchilada window).
 		__window appears properly in different sizes, as well as maximized
 		__with a maximized window, click scroll bar and verify chart scrolls and refreshes appropriately

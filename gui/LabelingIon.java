@@ -62,31 +62,31 @@ public class LabelingIon {
 	
 	public void setupSubscriptsAndSuperscripts()
 	{
-		String newName=new String();
+		StringBuilder newName=new StringBuilder();
 		for(int i=0;i<this.name.length();i++)
 		{		
 			if (this.name.substring(i,i+1).equals("+"))
 			{
-				newName=newName.concat("\u207A");
+				newName.append("\u207A");
 			}
 			else if (this.name.substring(i,i+1).equals("-"))
 			{
-				newName=newName.concat("\u207B");
+				newName.append("\u207B");
 			}
 			else
 			{
 				try
 				{
-					int numOfParticle=Integer.valueOf(this.name.substring(i,i+1));
-					newName=newName.concat(subscriptUnicodeArray[numOfParticle]);
+					int numOfParticle=Integer.parseInt(this.name.substring(i,i+1));
+					newName.append(subscriptUnicodeArray[numOfParticle]);
 				}
 				catch(NumberFormatException e)
 				{
-					newName=newName.concat(this.name.substring(i,i+1));
+					newName.append(this.name.substring(i,i+1));
 				}
 			}	
 		}
-		this.name=newName;
+		this.name=newName.toString();
 	}
 	
 	public void setChecked(boolean checked) { 
