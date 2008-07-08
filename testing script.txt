@@ -162,6 +162,8 @@ check the next & prev buttons for
 **Try aggregating the small and large collections together with a 'time series' collection(EC, BC, hg0).
 	__aggregation happens and they end up within the same aggregation collection.
 
+**Try deleting, renaming, etc collections, make sure everything looks right.
+	__ different length renames work
 	
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version

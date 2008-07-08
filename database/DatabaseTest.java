@@ -237,6 +237,43 @@ public class DatabaseTest extends TestCase {
 		db.closeConnection();
 	}
 	
+	public void testRenameCollection()
+	{
+		db.openConnection(dbName);
+		int collectionID = db.createEmptyCollection("ATOFMS", 0,"Collection",  "collection","");
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"USE TestDB\n" +
+					"SELECT Name, Comment\n" +
+					"FROM Collections\n" +
+					"WHERE CollectionID = " + collectionID);
+			assertTrue(rs.next());			
+			assertTrue(rs.getString(1).equals("Collection"));
+			//Checks to see if the internal collection object has the right name initially.			
+			assertTrue(db.getCollection(collectionID).getName().equals("Collection"));
+			//Call the change method
+			db.renameCollection(db.getCollection(collectionID), "Collection2");
+			//Checks to see if the sql database has the right name after renaming.
+			rs = stmt.executeQuery(
+					"USE TestDB\n" +
+					"SELECT Name, Comment\n" +
+					"FROM Collections\n" +
+					"WHERE CollectionID = " + collectionID);
+			assertTrue(rs.next());
+			assertTrue(rs.getString(1).equals("Collection2"));
+			//Checks to see if the internal collection object has the right name after renaming.
+			assertTrue(db.getCollection(collectionID).getName().equals("Collection2"));
+			rs.close();
+			stmt.close();
+		}
+		catch(SQLException e){
+		}
+		System.out.println(collectionID);
+		db.closeConnection();
+	}
+	
 	/**
 	 * @author steinbel
 	 * Tests updateInteralAtomOrder() by manually creating sub-collections

@@ -1852,14 +1852,13 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * Renames a collection.
-	 * @param collection the collection to remove
+	 * @param collection the collection to rename
 	 * @param newName the new name for the collection
 	 * @return true on success
 	 * @author atlasr
 	 */
 	public boolean renameCollection(Collection collection, String newName) {
 		try {
-			//ensure that this collection does not have subcollections or atoms
 			Statement stmt = con.createStatement();
 			String query = "UPDATE Collections SET Name = '" + 
 			newName + "' WHERE CollectionID = '" + collection.getCollectionID()+"'";
