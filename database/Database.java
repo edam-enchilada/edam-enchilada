@@ -3181,6 +3181,11 @@ public abstract class Database implements InfoWarehouse {
 			odbcStmt.executeUpdate(
 					"DELETE FROM Peaks \n" +
 					"WHERE DataSet = '" + newName + "'");
+			
+			int counter=0; //THIS IS A HACK, IT PREVENTS AN OUT OF MEMORY ERROR BELOW.
+			//Despite its hack-like nature, we think this is a reasonable way to do it.  We tried to do it in
+			//more elegant ways (such as catching the heap space error, and executing the batch then), but 
+			//that caused more problems.
 			while (rs.next())
 			{
 				odbcStmt.addBatch(
@@ -3196,8 +3201,13 @@ public abstract class Database implements InfoWarehouse {
 						", " +
 						rs.getFloat(4) + ", " + rs.getInt(5) +
 				")");
+				counter++;
+				if(counter>=256) //256 is an arbitrary choice, not too big, but better than executing batch every time.
+				{
+					odbcStmt.executeBatch();
+					counter=0;
+				}				
 			}
-			
 			odbcStmt.executeBatch();
 			stmt.execute("DROP TABLE #PeaksToExport");
 			odbcCon.close();
