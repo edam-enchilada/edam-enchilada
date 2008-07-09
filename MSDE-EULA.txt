@@ -3,7 +3,7 @@ EDAM Enchilada with Microsoft SQL End User License Agreement
 This installation package contains two pieces of software,
 which are licensed separately.
 
-Part of the package is the Microsoft SQL Server 2000 Desktop
+Part of the package is the Microsoft SQL Server 2005 Desktop
 Environment, which is Copyright Microsoft.  YOU DO NOT HAVE
 THE RIGHT TO DISTRIBUTE, MODIFY, OR OTHERWISE ABUSE
 MICROSOFT-COPYRIGHT CODE FROM THIS PACKAGE.  You are granted

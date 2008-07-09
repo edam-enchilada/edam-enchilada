@@ -43,6 +43,7 @@ package dataImporters;
 import java.awt.Window;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.InputMismatchException;
 import java.text.SimpleDateFormat;
 import java.text.DateFormat;
 import java.text.ParsePosition;
@@ -56,31 +57,45 @@ import collection.Collection;
 import database.Database;
 import database.InfoWarehouse;
 import errorframework.*;
-import gui.SPASSTableModel;
+import gui.PALMSTableModel;
 import gui.ProgressBarWrapper;
 
-/**Imports a SPASS type data file into the database as
+/**Imports a PALMS type data file into the database as
  *  ATOFMS data points. 
  * 
  * @author rzeszotj with credit to AMS and ATOFMS import authors
  *
  */
 
-public class SPASSDataSetImporter {
-	private SPASSTableModel table;
+public class PALMSDataSetImporter {
+	private PALMSTableModel table;
 	private Window mainFrame;
 	private boolean parent;
 	
 	//Table values - used repeatedly.
 	protected int rowCount;
 	protected String datasetName = "";
-	//protected massToCharge list, dense and sparse data strings/lists;
-	protected ArrayList<Double> massToCharge = null;
+	//header sizes, dense and sparse data strings/lists;
+	//This is a fix for peak area being represented as an integer while
+	//  PALMS represents peak relatively in decimal
+	//HACK FIX THIS NOW  -  Right now it just bumps up X sigfigs to integers and rounds
+	private final int significantFiguresToKeep = 6;
+	
 	private String dense;
 	private ArrayList<String> sparse;
 	
+	private String comments;	
+	private int decimalScalar;
+	private Date fullDate;
+	private String missionDate;
+	
+	private int numPeaks;
+	private int peakScalar;
+	private int header2Length;
+	
+	
 	// Progress Bar variables
-	public static final String TITLE = "Importing SPASS Dataset";
+	public static final String TITLE = "Importing PALMS Dataset";
 	protected ProgressBarWrapper progressBar;
 	protected int particleNum;
 	protected int totalParticles;
@@ -96,7 +111,9 @@ public class SPASSDataSetImporter {
 	private static Integer dbLock = new Integer(0);
 	
 	/* for time conversion */
-	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+	private ParsePosition p = new ParsePosition(0);
+	private SimpleDateFormat secondsFormat = new SimpleDateFormat("HH mm ss SSS");
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy MM dd HH mm ss SSS");
 	private final float SEC_PER_YEAR  = 31556926;
 	
 	private Scanner readData; // for reading the dataset;
@@ -106,15 +123,15 @@ public class SPASSDataSetImporter {
 		
 	/**
 	 * Constructor.  Sets the particle table for the importer.
-	 * @param SPASSTableModel - particle table model.
+	 * @param PALMSTableModel - particle table model.
 	 */
-	public SPASSDataSetImporter(SPASSTableModel t, Window mf, InfoWarehouse db) {
+	public PALMSDataSetImporter(PALMSTableModel t, Window mf, InfoWarehouse db) {
 		table = t; //The gui table with multiple datasets
 		mainFrame = mf;
 		this.db = db;
 	}
 	
-	public SPASSDataSetImporter(SPASSTableModel t, Window mf, InfoWarehouse db, ProgressBarWrapper pbar) {
+	public PALMSDataSetImporter(PALMSTableModel t, Window mf, InfoWarehouse db, ProgressBarWrapper pbar) {
 		this(t, mf, db);
 		progressBar = pbar;
 	}
@@ -141,14 +158,18 @@ public class SPASSDataSetImporter {
 				System.out.println(datasetName);
 				
 				positionInBatch = i + 1;
-				// Call relevant method to read SPASS.txt
+				// Call relevant method to read PALMS.txt
 				processDataSet(i);
 
 			} catch (DisplayException e) {
 				throw new DisplayException(datasetName + " failed to import. Exception: " + e.toString());
 			} catch (WriteException e) {
 				throw new WriteException(datasetName + " failed to import.  Exception: " + e.toString());
+			} catch (InputMismatchException e) {
+				throw new InputMismatchException(getName() + " failed to import. It is an invalid PALMS data file.");
 			}
+				
+			
 		}
 	}
 	
@@ -158,73 +179,96 @@ public class SPASSDataSetImporter {
 	 * // NOTE: Datatype is already in the db.
 	 * @author rzeszotj with credit to AMSimport author
 	 */
-	public void processDataSet(int index) throws DisplayException, WriteException {
+	public void processDataSet(int index) throws DisplayException, WriteException, InputMismatchException {
 		boolean skipFile = false;
 		final String[] ATOFMS_tables = {"ATOFMSAtomInfoDense", "AtomMembership", 
 				   "DataSetMembers", "ATOFMSAtomInfoSparse","InternalAtomOrder"};
 		Database.Data_bulkBucket ATOFMS_buckets = ((Database)db).getDatabulkBucket(ATOFMS_tables) ;
 		
-		//get total number of particles for progress bar.
+		//Begin reading data file
 		progressBar.setIndeterminate(true);
-		progressBar.setText("Finding number of items");
+		progressBar.setText("Reading data headers");
 		try {
 			readData = new Scanner(new File(datasetName));//.useDelimiter("\t");
 		} catch (FileNotFoundException e1) {
 			throw new WriteException(datasetName+" was not found.");
 		}
-		String headers = readData.nextLine();//grab headers for later
 		
-		//Count # particles by counting lines after header
-		int tParticles = 0;
-		while (readData.hasNextLine()) {
+		//Read in header block, adding to comments
+		String versionNumber1 = readData.nextLine();
+		comments = "Comments: ";
+		comments = comments.concat(readData.nextLine() + ", ");
+		comments = comments.concat(readData.nextLine() + ", ");
+		//Relying on a string here sounds like a terrible idea...
+		String negPosDetermine = readData.nextLine();
+		if(negPosDetermine.contains("Positive"))
+		{
+			System.out.println("Spectrum is positive");
+			peakScalar = 1;
+		}
+		else if(negPosDetermine.contains("Negative"))
+		{
+			System.out.println("Spectrum is negative");
+			peakScalar = -1;
+		}
+		else
+		{
+			System.out.println("Unknown whether spectrum is positive or negative.");
+			System.out.println("Assuming spectrum is positive");
+			peakScalar = 1;
+		}
+		comments = comments.concat(negPosDetermine + ", ");
+		comments = comments.concat(readData.nextLine());
+		System.out.println(comments);
+		String versionNumber2 = readData.nextLine();
+		//Get the date of mission for use during particle read
+		String temptimes = readData.nextLine();
+		missionDate = temptimes.substring(0,10);
+		
+		readData.nextLine();
+		readData.nextLine();
+		
+		numPeaks = readData.nextInt() - 4;
+		System.out.println(numPeaks+" peaks exist.");
+		
+		//Skip the (numpeaks+4)*2+4 worth of garbage info
+		for(int i = 0; i <= ((numPeaks + 4)*2+4); i++)
 			readData.nextLine();
-			tParticles++;
-		}
-		readData.close();
-		final int totalParticles = tParticles;
-		int progressTextStep = tParticles/20;
-		System.out.println("total items: " + totalParticles);
+
+		//Skip the meaningless mass names
+		for(int i = 0; i < numPeaks; i++)
+			readData.nextLine();
 		
-		progressBar.setText("Reading data headers");
-		//Skip past column labels
-		Scanner readHeaders = new Scanner(headers);
-		for (int i = 0; i < 6; i++)
-			readHeaders.next();
-	
-		//Read m/z labels
-		massToCharge = new ArrayList<Double>();
-		while (readHeaders.hasNext()) {
-			massToCharge.add(readHeaders.nextDouble());
-		}
-		readHeaders.close();
-		System.out.println(massToCharge.size()+" mass/charge values found.");
+		//Get length of header 2 and skip the 0s, maxINTs, and header text
+		header2Length = readData.nextInt();
+		for (int i = 0; i <= header2Length*3; i++)
+			readData.nextLine();
+		//Skip 2 dead lines
+		readData.nextLine();
+		readData.nextLine();
+		//Finally no more garbage data, we are at the right place
+		//Leave readData hanging around so read() can grab it
+		
+		//Calculate peak height scalar here - no place better for it
+		decimalScalar = (int)Math.pow(10, significantFiguresToKeep);
 		
 		//Create empty ATOFMS collection
 		id = db.createEmptyCollectionAndDataset("ATOFMS",parentID,getName(),
-				"SPASS Import dummy ATOFMS",
-				"'" + "SPASS" + "','" + "SPASS" + "'," +
+				comments,
+				"'" + "PALMS" + "','" + "PALMS" + "'," +
 				"0" + "," + "0"  + "," + "0" + ",0");
 		
-		progressBar.setMaximum((totalParticles/10)+1);
-		progressBar.setIndeterminate(false);
+		progressBar.setIndeterminate(true);
 		try{
 			Collection destination = db.getCollection(id[0]);
-			
-			readData = new Scanner(new File(datasetName));
-			readData.nextLine(); // skip headers again
 			
 			//Loop through particles in file
 			particleNum = 0;
 			int nextID = db.getNextID();
-			while (readData.hasNext()) { // repeat until end of file.
-				if(particleNum % 10 == 0 && particleNum >= 10) {
-					String barText =
-						"Importing Item # " + particleNum + " out of " 
-									+ totalParticles;
-					progressBar.increment(barText);
-				}
-				if ((particleNum % progressTextStep) == 0)
-					System.out.println("Processing particle #" + particleNum);
+			while (readData.hasNext()) {
+				//Announce
+				if (particleNum % 50 == 0)
+					System.out.println("Reading particle #"+particleNum);
 				
 				read(particleNum, nextID); //READ IN PARTICLE DATA HERE
 				
@@ -236,12 +280,9 @@ public class SPASSDataSetImporter {
 				}
 				particleNum++;
 			}
-			
-			progressBar.setIndeterminate(true);
 			progressBar.setText("Inserting Items...");
 			((Database)db).BulkInsertDataParticles(ATOFMS_buckets);
 			((Database)db).updateInternalAtomOrder(destination);
-			
 			//percolate possession of new atoms up the hierarchy
 			progressBar.setText("Updating Ancestors...");
 			db.propagateNewCollection(destination);
@@ -274,28 +315,40 @@ public class SPASSDataSetImporter {
 	 */
 	public void read(int particleNum, int nextID) {
 		//Import dense data
-		String fName = readData.next();
-		String dateS = (readData.next() + " " + readData.next());
+		long dateS = (long)readData.nextDouble();
+		readData.nextDouble();
 		int acqNumber = readData.nextInt();
-		double diameterV = readData.nextDouble();
 		
-		//Format date correctly	
+		//Skip MORE useless garbage, awful hack etc.
+		for (int i = 0; i < header2Length-2; i++)
+			readData.nextLine();
+		//Skip top 4 lines of mass data
+		for (int i = 0; i < 4; i++)
+			readData.nextLine();
+		
+		//Format date correctly	- add seconds to mission date (stripping off last seconds if need to)
+		Date seconds = new Date(dateS);
+		String sec = secondsFormat.format(seconds);
+		missionDate = missionDate.substring(0,10);
+		missionDate = missionDate.concat(" "+sec);
+		p.setIndex(0);
+		fullDate = dateFormat.parse(missionDate,p);
 		DateFormat dbDF = db.getDateFormat();
-		ParsePosition p = new ParsePosition(0);
-		Date currentDate = dateFormat.parse(dateS, p);
-		String newD = dbDF.format(currentDate);
+		String newD = dbDF.format(fullDate);		
 		
 		//ATOFMSDense = Time, Laser Power, Size, Scatter Delay, File Name
-		dense = (newD + ", 0.0, " + diameterV + ", " + acqNumber + "," + fName);
+		dense = (newD + ", 0.0, 0.0, " + acqNumber + "," + datasetName);
 		
 		//ATOFMSSparse = Location, Height, Area, Relative Area
 		sparse = new ArrayList<String>();
-		int temp;
-		for (int i = 0; i < massToCharge.size(); i++) {
-			temp = readData.nextInt();
-			//System.out.println(tempNum);
-			if (temp != 0.0)
-				sparse.add(massToCharge.get(i)+", "+temp+", 0, 0");
+		for (int i = 0; i <= numPeaks; i++) {
+			double t = readData.nextDouble();
+			if (t != 0.0)
+			{
+				//Scale the result and write it
+				int temp = (int)Math.round(t*decimalScalar);
+				sparse.add(((i+1)*peakScalar)+", "+temp+", "+"0"+", "+"0");
+			}
 		}
 	}
 	
@@ -306,7 +359,7 @@ public class SPASSDataSetImporter {
 	 * @author rzeszotj
 	 */
 	public String getName(){
-		String s = "SPASS file";
+		String s = "PALMS file";
 		Character c1 = '.';
 		Character c2 = '\\';
 		
@@ -325,7 +378,7 @@ public class SPASSDataSetImporter {
 			return datasetName;//datasetName had no extension etc.
 		}
 		//For some reason datasetName doesn't exist
-		return "SPASS data";
+		return "PALMS data";
 	}
 	
 	/**

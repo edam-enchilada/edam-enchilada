@@ -54,25 +54,25 @@ import database.Database;
 import database.InfoWarehouse;
 import errorframework.DisplayException;
 import errorframework.WriteException;
-import gui.SPASSTableModel;
+import gui.PALMSTableModel;
 import gui.ProgressBarWrapper;
-import testRow.spass.GenData;
+import testRow.palms.GenData;
 
 /**
- * Tests SPASS import as implemented in SPASSDataSetImporter
+ * Tests PALMS import as implemented in PALMSDataSetImporter
  * @author rzeszotj based on shaferia
  */
-public class SPASSDataSetImporterTest extends TestCase {
-	SPASSDataSetImporter importer;
+public class PALMSDataSetImporterTest extends TestCase {
+	PALMSDataSetImporter importer;
 	InfoWarehouse db;
-	SPASSTableModel table;
+	PALMSTableModel table;
 	
 	JFrame mf;
 	ProgressBarWrapper pbar;
 	
 	//was data loaded in this test?
 	boolean dataLoaded;
-	//the current row in the SPASSTableModel
+	//the current row in the PALMSTableModel
 	int curRow = 0;
 	//test data files to be deleted
 	Vector<String> deleteFiles;
@@ -80,7 +80,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 	/**
 	 * @see TestCase#setUp()
 	 */
-	public SPASSDataSetImporterTest(String s) {
+	public PALMSDataSetImporterTest(String s) {
 		super(s);
 	}
 	
@@ -102,24 +102,24 @@ public class SPASSDataSetImporterTest extends TestCase {
 		
 		curRow = 0;
 		deleteFiles = new Vector<String>();
-		table = new SPASSTableModel();
+		table = new PALMSTableModel();
 		dataLoaded = false;
 	}
 	
 	/**
-	 * Create a dataset with the given parameters (as defined in testRow/SPASS/GenData),
+	 * Create a dataset with the given parameters (as defined in testRow/PALMS/GenData),
 	 * 	save it to disk, and add it to the import table
-	 * @param items	the number of SPASS items to write
-	 * @param mzmin	the minimum in the range of m/z values
-	 * @param mzmax the maximum in the range of m/z values
-	 * @param peaks	a list containing the m/z values at which SPASS items should have peaks
+	 * @param items	the number of PALMS items to write
+	 * @param mznum	the number of mz values to write
+	 * @param mzscale a 1 or -1 to denote - or + spectrum
+	 * @param peaks	a list containing the positive m/z values at which PALMS items should have peaks
 	 * @param tstart	the time at which to start the particle timeseries
 	 * @param tdelta	the fixed timestep for the particle timeseries
 	 * @param fnames	names of the files to generate: {datasetname, timeseriesname, mzname}
 	 */
-	private void addData(int items, int mzmin, int mzmax, int[] peaks, long tstart, long tdelta) {
+	private void addData(int items, int mznum, int mzscale, int[] peaks, long tstart, long tdelta) {
 		String[] names = new String[]{"Test_" + curRow};
-		String[] files = GenData.generate(names, items, mzmin, mzmax, peaks, tstart, tdelta);
+		String[] files = GenData.generate(names, items, mznum, mzscale, peaks, tstart, tdelta);
 
 		
 		table.setValueAt(files[0], curRow, 1);	
@@ -136,19 +136,19 @@ public class SPASSDataSetImporterTest extends TestCase {
 	 * Load data from the tablemodel and import it
 	 * preconditions: 
 	 * 	- test database exists and connection is open
-	 *  - SPASSTableModel table has been filled with data
+	 *  - PALMSTableModel table has been filled with data
 	 */
 	private void loadData() {
 		dataLoaded = true;
 		mf = new JFrame();
-		pbar = new ProgressBarWrapper(mf, "Importing Test SPASS Data", 100);
-		importer = new SPASSDataSetImporter(table, mf, db, pbar);
+		pbar = new ProgressBarWrapper(mf, "Importing Test PALMS Data", 100);
+		importer = new PALMSDataSetImporter(table, mf, db, pbar);
 		
 		try {
 			importer.collectTableInfo();
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			fail("Error in importing test SPASS data");
+			fail("Error in importing test PALMS data");
 		}
 	}
 	
@@ -182,17 +182,17 @@ public class SPASSDataSetImporterTest extends TestCase {
 	 */
 	public void testProcessDataSet() {
 		int items = 30;
-		int mzmin = -15;
-		int mzmax = 15;
-		int[] peaks = new int[]{-4, 10, 11, -5, 14, -7};
+		int mznum = 150;
+		int mzscale = 1;
+		int[] peaks = new int[]{3,5,22,54,19,78,143};
 		long tstart = 3114199800l;
 		long tdelta = 600;
-		addData(items, mzmin, mzmax, peaks, tstart, tdelta);
+		addData(items, mznum, mzscale, peaks, tstart, tdelta);
 	
 		dataLoaded = true;
 		mf = new JFrame();
-		pbar = new ProgressBarWrapper(mf, "Importing Test SPASS Data", 100);
-		importer = new SPASSDataSetImporter(table, mf, db, pbar);
+		pbar = new ProgressBarWrapper(mf, "Importing Test PALMS Data", 100);
+		importer = new PALMSDataSetImporter(table, mf, db, pbar);
 		
 		importer.datasetName = (String) table.getValueAt(0, 1);
 		
@@ -202,32 +202,32 @@ public class SPASSDataSetImporterTest extends TestCase {
 		}
 		catch (WriteException e1) {
 			e1.printStackTrace();
-			fail("Couldn't process SPASS dataset");
+			fail("Couldn't process PALMS dataset");
 		}
 		catch (DisplayException e2) {
 			e2.printStackTrace();
-			fail("Couldn't process SPASS dataset");
+			fail("Couldn't process PALMS dataset");
 		}
 		
 		//make sure the correct number of items were imported, and that sparse data has the correct length
 		testDataLength(items, items * peaks.length);
 		
 		//perform deeper testing
-		testDataset(items, mzmin, mzmax, peaks, tstart, tdelta, 2, 1, 1);
+		testDataset(items, mznum, mzscale, peaks, tstart, tdelta, 2, 1, 1);
 	}
 
 	
 	/**
-	 * Test import of a SPASS datasets imported separately using SPASSDataSetImporter.collectTableInfo
+	 * Test import of a PALMS datasets imported separately using PALMSDataSetImporter.collectTableInfo
 	 */
 	public void testCollectTableInfo() {
 		int items = 30;
-		int mzmin = -15;
-		int mzmax = 15;
-		int[] peaks = new int[]{4, 10, 11, -15, -4, -7};
+		int mznum = 150;
+		int mzscale = -1;
+		int[] peaks = new int[]{3,5,22,54,19,78,143};
 		long tstart = 3114199800l;
 		long tdelta = 600;
-		addData(items, mzmin, mzmax, peaks, tstart, tdelta);
+		addData(items, mznum, mzscale, peaks, tstart, tdelta);
 		
 		loadData();
 		
@@ -235,13 +235,13 @@ public class SPASSDataSetImporterTest extends TestCase {
 		testDataLength(items, items * peaks.length);
 		
 		//perform deeper testing
-		testDataset(items, mzmin, mzmax, peaks, tstart, tdelta, 2, 1, 1);
+		testDataset(items, mznum, mzscale, peaks, tstart, tdelta, 2, 1, 1);
 		
-		//create a second SPASS dataset with different values
+		//create a second PALMS dataset with different values
 		int items_2 = 20;
-		int mzmin_2 = -20;
-		int mzmax_2 = 20;
-		int[] peaks_2 = new int[]{4, 10, 11, 12};
+		int mznum_2 = 160;
+		int mzscale_2 = 1;
+		int[] peaks_2 = new int[]{4,10,11,12,66,99,155};
 		long tstart_2 = 3114199800l;
 		long tdelta_2 = 400;
 		
@@ -249,7 +249,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 		
 		//add the other dataset, overwriting the first
 		String[] names = new String[]{"Test_" + curRow};
-		String[] files = GenData.generate(names, items_2, mzmin_2, mzmax_2, peaks_2, tstart_2, tdelta_2);
+		String[] files = GenData.generate(names, items_2, mznum_2, mzscale_2, peaks_2, tstart_2, tdelta_2);
 		
 		table.setValueAt(files[0], curRow, 1);
 
@@ -261,53 +261,53 @@ public class SPASSDataSetImporterTest extends TestCase {
 		testDataLength(items + items_2, items * peaks.length + items_2 * peaks_2.length);
 		
 		//test the first import more thoroughly...
-		testDataset(items, mzmin, mzmax, peaks, tstart, tdelta, 2, 1, 1);
+		testDataset(items, mznum, mzscale, peaks, tstart, tdelta, 2, 1, 1);
 		
 		//... and the second
-		testDataset(items_2, mzmin_2, mzmax_2, peaks_2, tstart_2, tdelta_2, 3, 2, items + 1);
+		testDataset(items_2, mznum_2, mzscale_2, peaks_2, tstart_2, tdelta_2, 3, 2, items + 1);
 	}
 
 	/**
-	 * Test import of three SPASS datasets imported together 
-	 * (as though multiple rows of data were input in ImportSPASSDataDialog) 
+	 * Test import of three PALMS datasets imported together 
+	 * (as though multiple rows of data were input in ImportPALMSDataDialog) 
 	 */	
 	public void testCollectTableInfoBatch() {
 		int items = 30;
-		int mzmin = -15;
-		int mzmax = 15;
-		int[] peaks = new int[]{4, 10, 11, 15, -4, -7};
+		int mznum = 30;
+		int mzscale = 1;
+		int[] peaks = new int[]{2,7,22};
 		long tstart = 3114199800l;
-		long tdelta = 600;
-		addData(items, mzmin, mzmax, peaks, tstart, tdelta);
+		long tdelta = 400;
+		addData(items, mznum, mzscale, peaks, tstart, tdelta);
 
 		int items_2 = 20;
-		int mzmin_2 = -20;
-		int mzmax_2 = 20;
-		int[] peaks_2 = new int[]{4, 10, 11, 12};
+		int mznum_2 = 40;
+		int mzscale_2 = -1;
+		int[] peaks_2 = new int[]{1,3,6,15};
 		long tstart_2 = 3114199800l;
-		long tdelta_2 = 400;
-		addData(items_2, mzmin_2, mzmax_2, peaks_2, tstart_2, tdelta_2);
+		long tdelta_2 = 500;
+		addData(items_2, mznum_2, mzscale_2, peaks_2, tstart_2, tdelta_2);
 
-		int items_3 = 100;
-		int mzmin_3 = -5;
-		int mzmax_3 = 5;
-		int[] peaks_3 = new int[]{2, 4, -3};
-		long tstart_3 = 2304123400l;
-		long tdelta_3 = 800;
-		addData(items_3, mzmin_3, mzmax_3, peaks_3, tstart_3, tdelta_3);
+		int items_3 = 50;
+		int mznum_3 = 80;
+		int mzscale_3 = 1;
+		int[] peaks_3 = new int[]{10,43,56,74};
+		long tstart_3 = 3114199800l;
+		long tdelta_3 = 600;
+		addData(items_3, mznum_3, mzscale_3, peaks_3, tstart_3, tdelta_3);
 		
 		loadData();
 		
 		//Test the length and content of data, as with sequential imports
 		testDataLength(items + items_2 + items_3, 
 				items * peaks.length + items_2 * peaks_2.length + items_3 * peaks_3.length);
-		testDataset(items, mzmin, mzmax, peaks, tstart, tdelta, 2, 1, 1);
-		testDataset(items_2, mzmin_2, mzmax_2, peaks_2, tstart_2, tdelta_2, 3, 2, items + 1);
-		testDataset(items_3, mzmin_3, mzmax_3, peaks_3, tstart_3, tdelta_3, 4, 3, items + items_2 + 1);
+		testDataset(items, mznum, mzscale, peaks, tstart, tdelta, 2, 1, 1);
+		testDataset(items_2, mznum_2, mzscale_2, peaks_2, tstart_2, tdelta_2, 3, 2, items + 1);
+		testDataset(items_3, mznum_3, mzscale_3, peaks_3, tstart_3, tdelta_3, 4, 3, items + items_2 + 1);
 	}
 	
 	/**
-	 * Ensure that SPASSAtomInfoDense, AtomMembership, DataSetMembers, and SPASSAtomInfoSparse
+	 * Ensure that PALMSAtomInfoDense, AtomMembership, DataSetMembers, and PALMSAtomInfoSparse
 	 * 	have the correct number of rows
 	 * @param items	the number of expected Items
 	 * @param peaks	the number of expected total peaks
@@ -340,21 +340,20 @@ public class SPASSDataSetImporterTest extends TestCase {
 	}
 	
 	/**
-	 * Test to see if the database contains information corresponding to a proper SPASS import
+	 * Test to see if the database contains information corresponding to a proper PALMS import
 	 * 	by querying against the four tables particle information is written to.
-	 * @param items	the number of SPASS items to write
-	 * @param mzmin	the minimum in the range of m/z values
-	 * @param mzmax the maximum in the range of m/z values
+	 * @param items	the number of PALMS items to write
+	 * @param mznum	the number of mz values to write
+	 * @param mzscale a 1 or -1 to denote - or + spectrum
+	 * @param peaks	a list containing the positive m/z values at which PALMS items should have peaks
 	 * @param tstart	the time at which to start the particle timeseries
 	 * @param tdelta	the fixed timestep for the particle timeseries
 	 * @param CollectionID the collection the items were imported into
 	 * @param OrigDataSetID the original dataset ID of the imported collection
 	 * @param AtomIDStart the starting atomID of the imported items
 	 */
-	private void testDataset(int items, int mzmin, int mzmax, int[] peaks, long tstart, long tdelta, 
+	private void testDataset(int items, int mznum, int mzscale, int[] peaks, long tstart, long tdelta, 
 			int CollectionID, int OrigDataSetID, int AtomIDStart) {
-		//Grab the peak values from GenData
-		int[] peakVals = GenData.peakVals;
 		
 		Connection con = db.getCon();
 		ResultSet rs = null;
@@ -363,7 +362,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 			rs = con.createStatement().executeQuery(
 					"SELECT * FROM ATOFMSAtomInfoDense WHERE AtomID >= " + AtomIDStart + 
 					" AND AtomID < " + (AtomIDStart + items));
-			for (int i = 0; i < items; ++i) {
+			for (int i = 0; i < items; i++) {
 				rs.next();
 				assertEquals(rs.getInt(1), i + AtomIDStart);
 				rs.getTimestamp(2);
@@ -377,7 +376,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
-			fail("Error while testing dense SPASS atom table");
+			fail("Error while testing dense PALMS atom table");
 		}
 		
 		//check for correct atom membership
@@ -395,7 +394,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
-			fail("Error while testing SPASS atom<->collection membership");
+			fail("Error while testing PALMS atom<->collection membership");
 		}
 		
 		//check for the correct OrigDataSetID on each Atom
@@ -411,7 +410,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
-			fail("Error while testing original SPASS dataset membership");
+			fail("Error while testing original PALMS dataset membership");
 		}
 		
 		//check that sparse is correct
@@ -427,9 +426,10 @@ public class SPASSDataSetImporterTest extends TestCase {
 				boolean peakExists = false;
 				boolean peakValueExists = false;
 				for (int j = 0; j < peaks.length; j++){
-					if (peaks[j] == rs.getInt(2))
+					if (peaks[j] == mzscale*rs.getInt(2))
 						peakExists = true;
-					if (peakVals[j%peakVals.length] == rs.getInt(3))
+					int value = rs.getInt(3);
+					if (value > 0)
 						peakValueExists = true;
 				}
 				assertTrue(peakExists);
@@ -443,7 +443,7 @@ public class SPASSDataSetImporterTest extends TestCase {
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
-			fail("Error while testing SPASS sparse data");
+			fail("Error while testing PALMS sparse data");
 		}
 	}
 }

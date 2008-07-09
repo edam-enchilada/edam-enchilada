@@ -1,3 +1,4 @@
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -37,22 +38,21 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package testRow.spass;
+package testRow.palms;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Used to generate SPASS test data
+ * Used to generate PALMS test data
  * @author rzeszotj based off of shaferia
  */
 public class GenData {
 	//should messages be output when files are overwritten?
 	private boolean warn_overwrite;
 	//the location to save data
-	public static final int[] peakVals = {10,20,30,40,50,60,70,80,99};
-	private static String THISLOC = "testRow/spass/";
+	private static String THISLOC = "testRow/PALMS/";
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 	private File f;
 	
@@ -64,31 +64,30 @@ public class GenData {
 		GenData d = new GenData();
 		d.warn_overwrite = true;
 
-		int items = 20;
-		int mzmin = -10;
-		int mzmax = 10;
+		int items = 5;
+		int mznum = 6;
+		int mzscale = 1;
 		long tstart = 3114199800l;
 		long tdelta = 600;
 		
-		d.writeData("Test", items, mzmin, mzmax, tstart, tdelta, new int[]{2, 5, 6});
+		d.writeData("Test", items, mznum, mzscale, tstart, tdelta, new int[]{2, 5, 6});
 	}
 	
 	/**
-	 * Generate sample SPASS data
-	 * @param items	the number of SPASS items to write
+	 * Generate sample PALMS data
+	 * @param items	the number of PALMS items to write
 	 * @param mzmin the minimum in the range of m/z valued to consider
 	 * @param mzmax	the maximum in the range of m/z values to consider
-	 * @param peaks	a list containing the m/z values at which SPASS items should have peaks (in range 1..mzlen)
+	 * @param peaks	a list containing the m/z values at which PALMS items should have peaks (in range 1..mzlen)
 	 * @param tstart	the time at which to start the particle timeseries
 	 * @param tdelta	the change in time per particle
 	 * @return relative pathnames of the files created: {datasetname, timeseriesname, mzname}
 	 */
 	public static String[] generate(
-			String[] fnames, int items, int mzmin, int mzmax, int[] peaks, long tstart, long tdelta) {
+			String[] fnames, int items, int mznum, int mzscale, int[] peaks, long tstart, long tdelta) {
 		GenData d = new GenData();
 		d.warn_overwrite = false;
-		
-		d.writeData(fnames[0], items, mzmin, mzmax, tstart, tdelta, peaks);
+		d.writeData(fnames[0], items, mznum, mzscale, tstart, tdelta, peaks);
 
 		for (int i = 0; i < fnames.length; ++i)
 			fnames[i] = THISLOC + fnames[i] + ".txt";
@@ -118,9 +117,9 @@ public class GenData {
 	}
 	
 	/**
-	 * Write the 2D matrix data file for the SPASS test data
+	 * Write the 2D matrix data file for the PALMS test data
 	 * @param name	the dataset name (name and first line of file)
-	 * @param items	the number of SPASS items to write to the file
+	 * @param items	the number of PALMS items to write to the file
 	 * @param mzmin	the minimum of m/z values in the data
 	 * @param mzmax the maximum of m/z values in the data
 	 * @param tstart the starting time for particles
@@ -128,55 +127,83 @@ public class GenData {
 	 * @param peaks	the m/z values at which to write non-negative values
 	 * 
 	 */
-	public void writeData(String name, int items, int mzmin, int mzmax, long tstart, long tdelta, int[] peaks) {
+	public void writeData(String name, int items, int mznum, int mzscale, long tstart, long tdelta, int[] peaks) {
 		PrintWriter file = getWriter(name + ".txt");
-		//File header
-		
-		file.print("Filename\t");
-		file.print("Date\t");
-		file.print("Acquisition #\t");
-		file.print("µm Diameter\t");
-		//Peak positions
-		for (int i = mzmin; i <= mzmax; i++)
-			file.print(i+"\t");
-		file.println();
-		
+		//File header - Time to write a ton of garbage
+		file.println("999 9999");
+		file.println("Doe, John");
+		file.println("TEST Lab");
+		if (mzscale == 1)
+			file.println("PALMS Positive Ion Data");
+		else if (mzscale == -1)
+			file.println("PALMS Negative Ion Data");
+		else
+			file.println("PALMS GJIFJIGJ Ion Data");
+		file.println("TEST Mission");
+		file.println("1 1");
+		file.println("1970 01 01 2008 07 09");
+		file.println("0");
+		file.println("TIME (UT SECONDS)");
+		file.println(mznum+4);
+		for(int i = 0; i < mznum+4; i++)
+			file.println("1.0");
+		for(int i = 0; i < mznum+4; i++)
+			file.println("9.9E29");
+		file.println("TOTION total MCP signal (electron units)");
+		file.println("HMASS high mass integral (fraction)");
+		file.println("UNLIST (unlisted low mass peaks (fraction)");
+		file.println("UFO unidentified peaks (fraction)"); //Proof of alien life
+		for(int i = 1; i <= mznum; i++)
+			file.println("MS"+i+" (fraction)");			
+		int header2length = 13;
+		file.println(header2length);
+		for(int i = 0; i < header2length; i++)
+			file.println("1.0");
+		for(int i = 0; i < header2length; i++)
+			file.println("9.9E29");
+		//Prepare yourself for an onslaught of refuse
+		file.println("AirCraftTime aircraft time (s)");
+		file.println("INDEX index ()");
+		file.println("SCAT scatter (V)");
+		file.println("JMETER joule meter ()"); //boo
+		file.println("ND neutral density (fraction)");
+		file.println("SCALEA Mass scale intercept (us)");
+		file.println("SCALEB mass scale slope (us)");//boo
+		file.println("NUMPKS number of peaks ()");
+		file.println("CONF confidence (coded)");
+		file.println("CAT preliminary category ()");//boo
+		file.println("AeroDiam aerodynamic diameter (um)");
+		file.println("AeroDiam1p7 aero diam if density=1.7 (um)");
+		file.println("TOTBACK total background subtracted (electron units)");
+		file.println("0");
+		file.println("0");
 		// the value to write for no peak
-		int nothing = 0;
-		
-		String fileLoc = "C:/abcd/"+name+".txt\t";
-		Date tempDate;
-		for (int i = 0; i < items; i++) {//Loop through particles
-			tempDate = new Date(tstart);
-			tstart += tdelta;
+		String nothing = "0.000000";
+		//Loop through particles
+		for(int i = 0; i < items; i++)
+		{
 			//Fill in particle header
-			file.print(fileLoc);
-			file.print(dateFormat.format(tempDate) + "\t");
-			file.print(i+1+"\t");
-			double t = (double)(i)/10;
-			file.print(t+"\t");
-			
+			file.println(tstart + (tdelta*i));
+			file.println(tstart + (tdelta*i) - 3);
+			file.println(i+1);
+			//The garbage keeps on coming
+			for(int j = 0; j < header2length + 1; j++)
+				file.println(Math.random());
 			//Fill in peak values
 			boolean peaked = false;
-			for (int k = mzmin; k <= mzmax; k++){
-				for (int j = 0; j < peaks.length && !peaked; j++) {
-					if (k == peaks[j]) {
-						file.print(peakVals[j%peakVals.length]+"\t");
+			for (int k = 1; k <= mznum; k++){
+				for (int j = 0; j < peaks.length && !peaked; j++)
+					if (k == peaks[j]){
+						double randData = (int)(1000000*Math.random());
+						file.println(randData/1000000);
 						peaked = true;
-					}	
-				}
-				if (!peaked){
-					if (k == mzmax)
-						file.print(nothing);
-					else
-						file.print(nothing+"\t");
-				}					
+						}	
+				if (!peaked)
+						file.println(nothing);		
 				peaked = false;
 			}
 			//End the particle line
-			file.println();
 		}
-		
 		try{Scanner test = new Scanner(f);
 			while(test.hasNext())
 			{System.out.println(test.nextLine());}

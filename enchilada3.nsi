@@ -10,7 +10,7 @@
 ;;; available from http://nsis.sourceforge.net/
 
 ; To build a copy of the installer with EXPRESS, uncomment this line:
-; !define WITH_EXPRESS
+; ;!define WITH_EXPRESS
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line: (engages slow but effective compression)

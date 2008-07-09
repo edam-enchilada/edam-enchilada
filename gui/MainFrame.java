@@ -102,6 +102,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem loadSPASSItem;
+	private JMenuItem loadPALMSItem;
 	private JMenuItem txtLoadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
@@ -480,7 +481,13 @@ public class MainFrame extends JFrame implements ActionListener
 			new ImportSPASSDataDialog(this, db);
 			collectionPane.updateTree();
 			validate();
-	}
+		}
+		
+		if (source == loadPALMSItem) {
+			new ImportPALMSDataDialog(this, db);
+			collectionPane.updateTree();
+			validate();
+		}
 		
 		else if (source == importFlatButton) {
 			new FlatImportGUI(this, db);
@@ -1064,6 +1071,8 @@ public class MainFrame extends JFrame implements ActionListener
 		loadAMSDataItem.addActionListener(this); 
 		loadSPASSItem = new JMenuItem("from JRC-SPASS data. . .");
 		loadSPASSItem.addActionListener(this); 
+		loadPALMSItem = new JMenuItem("from PALMS data. . .");
+		loadPALMSItem.addActionListener(this);
 		batchLoadATOFMSItem = new JMenuItem("from ATOFMS data (with bulk file). . .");
 		batchLoadATOFMSItem.addActionListener(this);
 		txtLoadATOFMSItem = new JMenuItem("from txt data file . . .");
@@ -1075,6 +1084,7 @@ public class MainFrame extends JFrame implements ActionListener
 		importCollectionMenu.add(loadEnchiladaDataItem);
 		importCollectionMenu.add(loadAMSDataItem);
 		importCollectionMenu.add(loadSPASSItem);
+		importCollectionMenu.add(loadPALMSItem);
 		
 		JMenu exportCollectionMenu = new JMenu("Export Collection. . .");
 		MSAexportItem = new JMenuItem("to MS-Analyze. . .");
