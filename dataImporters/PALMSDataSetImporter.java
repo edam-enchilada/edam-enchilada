@@ -323,7 +323,7 @@ public class PALMSDataSetImporter {
 		for (int i = 0; i < header2Length-2; i++)
 			readData.nextLine();
 		//Skip top 4 lines of mass data
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i <= 4; i++)
 			readData.nextLine();
 		
 		//Format date correctly	- add seconds to mission date (stripping off last seconds if need to)
@@ -338,18 +338,18 @@ public class PALMSDataSetImporter {
 		
 		//ATOFMSDense = Time, Laser Power, Size, Scatter Delay, File Name
 		dense = (newD + ", 0.0, 0.0, " + acqNumber + "," + datasetName);
-		
 		//ATOFMSSparse = Location, Height, Area, Relative Area
 		sparse = new ArrayList<String>();
-		for (int i = 0; i <= numPeaks; i++) {
+		for (int i = 1; i <= numPeaks; i++) {
 			double t = readData.nextDouble();
 			if (t != 0.0)
 			{
 				//Scale the result and write it
 				int temp = (int)Math.round(t*decimalScalar);
-				sparse.add(((i+1)*peakScalar)+", "+temp+", "+"0"+", "+"0");
+				sparse.add((i*peakScalar)+", "+temp+", "+"0"+", "+"0");
 			}
 		}
+		System.out.println(sparse);
 	}
 	
 	/**

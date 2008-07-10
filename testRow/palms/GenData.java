@@ -65,12 +65,12 @@ public class GenData {
 		d.warn_overwrite = true;
 
 		int items = 5;
-		int mznum = 6;
+		int mznum = 10;
 		int mzscale = 1;
 		long tstart = 3114199800l;
 		long tdelta = 600;
 		
-		d.writeData("Test", items, mznum, mzscale, tstart, tdelta, new int[]{2, 5, 6});
+		d.writeData("Test", items, mznum, mzscale, tstart, tdelta, new int[]{2, 5, 6, 10});
 	}
 	
 	/**
@@ -187,14 +187,14 @@ public class GenData {
 			file.println(tstart + (tdelta*i) - 3);
 			file.println(i+1);
 			//The garbage keeps on coming
-			for(int j = 0; j < header2length + 1; j++)
+			for(int j = 0; j < 15; j++)
 				file.println(Math.random());
 			//Fill in peak values
 			boolean peaked = false;
 			for (int k = 1; k <= mznum; k++){
 				for (int j = 0; j < peaks.length && !peaked; j++)
 					if (k == peaks[j]){
-						double randData = (int)(1000000*Math.random());
+						double randData = (int)(1000000*(j+1));
 						file.println(randData/1000000);
 						peaked = true;
 						}	
