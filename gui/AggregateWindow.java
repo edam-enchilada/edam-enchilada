@@ -1,3 +1,42 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is EDAM Enchilada's ClusterDialog class.
+ *
+ * The Initial Developer of the Original Code is
+ * The EDAM Project at Carleton College.
+ * Portions created by the Initial Developer are Copyright (C) 2005
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Ben J Anderson andersbe@gmail.com
+ * David R Musicant dmusican@carleton.edu
+ * Anna Ritz ritza@carleton.edu
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 package gui;
 
 import collection.AggregationOptions;
@@ -14,6 +53,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
 
+/**
+ * This class is a gui object for aggregating data. It automatically adjusts options depending on
+ * data type and automatically parses dates of varying format. 
+ * 
+ */
 public class AggregateWindow extends JFrame implements ActionListener, ListSelectionListener {
 	private MainFrame parentFrame;
 	private JButton createSeries, cancel, calculateTimes;
@@ -22,13 +66,14 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	private JList collectionsList;
 	private CollectionListModel collectionListModel;
 	private JRadioButton selSeqRadio, timesRadio; 
+	private JRadioButton eurDateRadio, naDateRadio, iso_1DateRadio, iso_2DateRadio;
 	private JComboBox matchingCombo;
 	
 	private InfoWarehouse db;
 	private Hashtable<Collection, JPanel> cachedCollectionPanels;
 	private Collection[] collections;
 	
-	private JPanel centerPanel,timesPanel; 
+	private JPanel centerPanel,timesPanel, dateRadioPanel;
 
 	public AggregateWindow(MainFrame parentFrame, InfoWarehouse db, Collection[] collections) {
 		super("Aggregate Collections");
@@ -48,8 +93,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		cachedCollectionPanels = new Hashtable<Collection, JPanel>();
 		collectionsList = new JList(collectionListModel = new CollectionListModel(collections));
 		
-		setPreferredSize(new Dimension(500, 580));
-		setSize(500,580);
+		setPreferredSize(new Dimension(500, 625));
+		setSize(500,625);
 		setResizable(true);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -115,10 +160,21 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		bottomPanel.setBorder(new EmptyBorder(10, 5, 5, 0));
 
 		JLabel timeBasis = new JLabel("Time Basis:");
-	    ButtonGroup group = new ButtonGroup();
-	    group.add(selSeqRadio = new JRadioButton("Match to:"));
-	    group.add(timesRadio = new JRadioButton("Times"));
-	    selSeqRadio.setSelected(true);
+	    ButtonGroup group_1 = new ButtonGroup();
+	    group_1.add(selSeqRadio = new JRadioButton("Match to:"));
+	    group_1.add(timesRadio = new JRadioButton("Times"));
+	    timesRadio.setSelected(true);
+	    
+	    ButtonGroup group_2 = new ButtonGroup();
+	    group_2.add(naDateRadio = new JRadioButton("MM/DD/YYYY or MM-DD-YYYY"));
+	    group_2.add(eurDateRadio = new JRadioButton("DD/MM/YYYY or DD.MM.YYYY"));
+	    group_2.add(iso_1DateRadio = new JRadioButton("YYYY-MM-DD"));
+	    group_2.add(iso_2DateRadio = new JRadioButton("YYYY-DD-MM"));
+	    naDateRadio.addActionListener(this);
+	    eurDateRadio.addActionListener(this);
+	    iso_1DateRadio.addActionListener(this);
+	    iso_2DateRadio.addActionListener(this);
+	    naDateRadio.setSelected(true);
 	    
 	    JPanel matchingPanel = new JPanel();
 	    matchingCombo = new JComboBox(collections);
@@ -136,7 +192,14 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false),2);
 	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true),3);
 	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
-	   
+	    
+	    dateRadioPanel = new JPanel(new GridLayout(2,2,3,3));
+	    dateRadioPanel.add(naDateRadio,0);
+	    dateRadioPanel.add(eurDateRadio,1);
+	    dateRadioPanel.add(iso_1DateRadio,2);
+	    dateRadioPanel.add(iso_2DateRadio,3);
+	    dateRadioPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
+	    
 		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
 		//bottomHalf = addComponent(matchingPanel, bottomHalf);
 		bottomHalf = addComponent(selSeqRadio, bottomHalf);
@@ -144,6 +207,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		
 		bottomHalf = addComponent(timesRadio, bottomHalf);
 		bottomHalf = addComponent(timesPanel, bottomHalf);
+		bottomHalf = addComponent(dateRadioPanel, bottomHalf);
 		
 	    return bottomPanel;
 	}
@@ -385,10 +449,40 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				System.out.println("selected Collection: "+selectedCollection.getName()+
 						"\tID: "+ selectedCollection.getCollectionID());
 			} else {
+				//Check the time scales for correct formatting
+				if(startTime.isBad())
+				{
+					JOptionPane.showMessageDialog(
+		    				this, 
+		    				"Please enter a valid time for \"Start Time\".\n"+
+		    				"Valid times will appear in green.", 
+		    				"Invalid Time String", 
+		    				JOptionPane.ERROR_MESSAGE);
+		    		return;
+				}
+				else if(endTime.isBad())
+				{
+					JOptionPane.showMessageDialog(
+		    				this, 
+		    				"Please enter a valid time for \"End Time\".\n"+
+		    				"Valid times will appear in green.", 
+		    				"Invalid Time String", 
+		    				JOptionPane.ERROR_MESSAGE);
+		    		return;
+				}
+				else if(intervalPeriod.isBad())
+				{
+					JOptionPane.showMessageDialog(
+		    				this, 
+		    				"Please enter a valid time for \"Interval\".\n"+
+		    				"Valid times will appear in green.", 
+		    				"Invalid Time String", 
+		    				JOptionPane.ERROR_MESSAGE);
+		    		return;
+				}
 				Calendar start = startTime.getDate();
 				Calendar end = endTime.getDate();
 				Calendar interval = intervalPeriod.getDate();
-			
 				if (end.before(start)) {
 					JOptionPane.showMessageDialog(
 	    					this, 
@@ -470,6 +564,56 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		} else if (source == cancel) {
 			cancel();
 		}
+		//When the radio buttons are clicked, adjust the text in each box to conform to the new format
+		//It's faster just to delete them and make new ones using the correct standard
+		else if (source == naDateRadio)
+		{
+			Calendar start = startTime.getDate();
+			Calendar end = endTime.getDate();
+			final AggregateWindow thisRef = this;
+			timesPanel.remove(1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.remove(2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    thisRef.pack();
+		    thisRef.repaint();
+		}
+		else if (source == eurDateRadio)
+		{
+			Calendar start = startTime.getDate();
+			Calendar end = endTime.getDate();
+			final AggregateWindow thisRef = this;
+			timesPanel.remove(1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.remove(2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    thisRef.pack();
+		    thisRef.repaint();
+		}	
+		else if (source == iso_1DateRadio)
+		{
+			Calendar start = startTime.getDate();
+			Calendar end = endTime.getDate();
+			final AggregateWindow thisRef = this;
+			timesPanel.remove(1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.remove(2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    thisRef.pack();
+		    thisRef.repaint();
+		}
+		else if (source == iso_2DateRadio)
+		{
+			Calendar start = startTime.getDate();
+			Calendar end = endTime.getDate();
+			final AggregateWindow thisRef = this;
+			timesPanel.remove(1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.remove(2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    thisRef.pack();
+		    thisRef.repaint();
+		}
 	}
 	
 	public void cancel(){
@@ -515,92 +659,189 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 		}
 	};
 	
-	public class TimePanel extends JPanel implements ActionListener {
-		private JComboBox day, month, year, hour, minute, second;
+	/**
+	 * This is the updated TimePanel class. The old class used pulldowns for date and time selection, 
+	 * which was not very easy.
+	 * Instead, it now uses a JTextField that updates on every change within it. The parsing style 
+	 * is configurable through radio buttons, and the TimePanel adopts whatever style is currently selected
+	 * upon creation.
+	 * 
+	 * @author rzeszotj
+	 *
+	 */
+	public class TimePanel extends JPanel implements DocumentListener {
 		private boolean isInterval;
 		
-		public TimePanel(String name, Calendar initDate, boolean interval) {
+		private SimpleDateFormat NADate_1 = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		private SimpleDateFormat NADate_2 = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+		private SimpleDateFormat EDate_1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		private SimpleDateFormat EDate_2 = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+		private SimpleDateFormat ISO_1Date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		private SimpleDateFormat ISO_2Date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
+		private SimpleDateFormat Hours_1 = new SimpleDateFormat("HH:mm:ss");
+		
+		private Date currentTime;
+		private JTextField timeField;
+		private ParsePosition p = new ParsePosition(0);
+		
+		private final Color ERROR = new Color(255,128,128);
+		private final Color GOOD = new Color(70,255,85);
+		
+		public TimePanel(String name, Calendar init, boolean interval) {
 			setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
 			isInterval = interval;
 			
 			JLabel label = new JLabel(name);
-			hour   = getComboBox(initDate.get(Calendar.HOUR_OF_DAY), 0, isInterval ? 24 : 23, false);
-			minute = getComboBox(initDate.get(Calendar.MINUTE), 0, 59, true);
-			second = getComboBox(initDate.get(Calendar.SECOND), 0, 59, true);
-
-			label.setPreferredSize(new Dimension(70, 20));
-			hour.setPreferredSize(new Dimension(40, 20));
-			minute.setPreferredSize(new Dimension(40, 20));
-			second.setPreferredSize(new Dimension(40, 20));
-			
-			add(label);
-			
-			add(hour);
-			add(new JLabel(":"));
-			add(minute);
-			add(new JLabel(":"));
-			add(second);
-			
-			if (!isInterval) {
-				month  = getComboBox(initDate.get(Calendar.MONTH) + 1, 1, 12, false);
-				day    = getComboBox(initDate.get(Calendar.DAY_OF_MONTH), 1, 31, false);
-
-				// Obtain current year and set upperbound to be 3 years beyond
-				DateFormat df = new SimpleDateFormat("yyyy");
-		        Date date = new Date();
-		        int currentYear = Integer.parseInt(df.format(date));
-				year   = getComboBox(initDate.get(Calendar.YEAR), 2000, currentYear+3, false);
-				day.setPreferredSize(new Dimension(40, 20));
-				month.setPreferredSize(new Dimension(40, 20));
-				year.setPreferredSize(new Dimension(60, 20));
-				
-				add(new JLabel("   "));
-				
-				add(month);
-				add(new JLabel("\\"));
-				add(day);
-				add(new JLabel("\\"));
-				add(year);
-				
-				day.addActionListener(this);
-				month.addActionListener(this);
-				year.addActionListener(this);
+			if (isInterval)
+			{
+				timeField = new JTextField(getTimeString(init),9);
+			}
+			else
+			{
+				timeField = new JTextField(getTimeString(init),19);
 			}
 			
-			hour.addActionListener(this);
-			minute.addActionListener(this);
-			second.addActionListener(this);
+			timeField.getDocument().addDocumentListener(this);
+	        
+			label.setPreferredSize(new Dimension(70, 20));
+			
+			add(label);
+			add(timeField);
+			updateDate();
+		}
+		
+		/**
+		 * Formats a calendar into a string using whatever style is selected
+		 * @param c The calendar to format
+		 */
+	    private String getTimeString(Calendar c)
+	    {
+	    	String s = "";
+	    	Date cur = c.getTime();
+	    	if(isInterval)
+	    		s = Hours_1.format(cur);
+			else if(naDateRadio.isSelected())
+			{
+				s = NADate_1.format(cur);
+			}
+			else if(eurDateRadio.isSelected())
+			{
+				s = EDate_1.format(cur);
+			}
+			else if(iso_1DateRadio.isSelected())
+			{
+				s = ISO_1Date.format(cur);
+			}
+			else if(iso_2DateRadio.isSelected())
+			{
+				s = ISO_2Date.format(cur);
+			}
+	    	return s;
+	    }
+	    
+	    /**
+		 * Updates currentTime with text in timeField, changing background
+		 */
+		private void updateDate()
+		{
+			//Get text from the text box, if blank, show error and stop
+			String cur = null;
+			try
+			{
+				cur = timeField.getText();
+			}
+			catch(NullPointerException e)
+			{
+				timeField.setBackground(ERROR);
+				currentTime = null;
+				return;
+			}
+			//Make sure we have a string with something in it
+			p.setIndex(0);
+			if (cur == null)
+			{
+				timeField.setBackground(ERROR);
+				return;
+			}
+			
+			//Parse the string depending on what is selected
+			if(isInterval)
+			{
+				currentTime = Hours_1.parse(cur,p);
+			}
+			else if(naDateRadio.isSelected())
+			{
+				currentTime = NADate_1.parse(cur,p);
+				if (currentTime == null)
+				{
+					p.setIndex(0);
+					currentTime = NADate_2.parse(cur,p);
+				}
+			}
+			else if(eurDateRadio.isSelected())
+			{
+				currentTime = EDate_1.parse(cur,p);
+				if (currentTime == null)
+				{
+					p.setIndex(0);
+					currentTime = EDate_2.parse(cur,p);
+				}
+			}
+			else if(iso_1DateRadio.isSelected())
+			{
+				currentTime = ISO_1Date.parse(cur,p);
+			}
+			else if(iso_2DateRadio.isSelected())
+			{
+				currentTime = ISO_2Date.parse(cur,p);
+			}
+			else
+				timeField.setBackground(ERROR);
+			
+			//If we parsed correctly, color it GOOD, otherwise color an ERROR
+			if(currentTime == null)
+			{
+				timeField.setBackground(ERROR);
+			}
+			else
+			{
+				timeField.setBackground(GOOD);
+			}
+		}
+		
+		/**
+		 * Returns true is an unparsable entry is present
+		 */
+		public boolean isBad()
+		{
+			if (currentTime == null)
+				return true;
+			else
+				return false;
+		}
+		
+		/**
+		 * Returns a calendar object based on the string in textField
+		 */
+		public GregorianCalendar getDate() {
+			GregorianCalendar c = new GregorianCalendar();
+			c.setTime(currentTime);
+			return c;
 		}
 		
 		public void actionPerformed(ActionEvent e) {
 			timesRadio.setSelected(true);
 		}
-		
-		private JComboBox getComboBox(int initVal, int start, int end, boolean padZero) {
-			String[] ret = new String[end - start + 1];
-			for (int i = 0; i < ret.length; i++) {
-				int num = start + i;
-				String prefix = (padZero && num < 10) ? "0" : "";
-				
-				ret[i] = prefix + String.valueOf(start + i);
-			}
-			
-			JComboBox retBox = new JComboBox(ret);
-			retBox.setSelectedIndex(initVal - start);
-			return retBox;
-		}
-		
-		private int getIntVal(JComboBox box) {
-			if (box != null)
-				return Integer.parseInt((String) box.getSelectedItem());
-			else
-				return 0;
-		}
-		
-		public GregorianCalendar getDate() {
-			return new GregorianCalendar(
-					getIntVal(year), getIntVal(month) - 1, getIntVal(day),
-					getIntVal(hour), getIntVal(minute),	getIntVal(second));
-		}
+		public void insertUpdate(DocumentEvent ev) {
+	        updateDate();
+	    }
+	    
+	    public void removeUpdate(DocumentEvent ev) {
+	        updateDate();
+	    }
+	    
+	    public void changedUpdate(DocumentEvent ev) {
+	    	
+	    }
 	}
 }
