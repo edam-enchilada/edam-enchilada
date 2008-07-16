@@ -258,7 +258,7 @@ public class PALMSDataSetImporter {
 				"'" + "PALMS" + "','" + "PALMS" + "'," +
 				"0" + "," + "0"  + "," + "0" + ",0");
 		
-		progressBar.setIndeterminate(true);
+		progressBar.setText("Reading particle data");
 		try{
 			Collection destination = db.getCollection(id[0]);
 			
@@ -267,7 +267,7 @@ public class PALMSDataSetImporter {
 			int nextID = db.getNextID();
 			while (readData.hasNext()) {
 				//Announce
-				if (particleNum % 50 == 0)
+				if (particleNum % 100 == 0)
 					System.out.println("Reading particle #"+particleNum);
 				
 				read(particleNum, nextID); //READ IN PARTICLE DATA HERE
@@ -349,7 +349,7 @@ public class PALMSDataSetImporter {
 				sparse.add((i*peakScalar)+", "+temp+", "+"0"+", "+"0");
 			}
 		}
-		System.out.println(sparse);
+		//System.out.println(sparse);
 	}
 	
 	/**
