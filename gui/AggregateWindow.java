@@ -46,7 +46,6 @@ import externalswing.SwingWorker;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.text.*;
 import java.util.*;
 
 import javax.swing.*;
@@ -66,7 +65,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	private JList collectionsList;
 	private CollectionListModel collectionListModel;
 	private JRadioButton selSeqRadio, timesRadio; 
-	private JRadioButton eurDateRadio, naDateRadio, iso_1DateRadio, iso_2DateRadio;
+	private JRadioButton naDateRadio,eurDateRadio;
 	private JComboBox matchingCombo;
 	
 	private InfoWarehouse db;
@@ -168,12 +167,8 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    ButtonGroup group_2 = new ButtonGroup();
 	    group_2.add(naDateRadio = new JRadioButton("MM/DD/YYYY or MM-DD-YYYY"));
 	    group_2.add(eurDateRadio = new JRadioButton("DD/MM/YYYY or DD.MM.YYYY"));
-	    group_2.add(iso_1DateRadio = new JRadioButton("YYYY-MM-DD"));
-	    group_2.add(iso_2DateRadio = new JRadioButton("YYYY-DD-MM"));
 	    naDateRadio.addActionListener(this);
 	    eurDateRadio.addActionListener(this);
-	    iso_1DateRadio.addActionListener(this);
-	    iso_2DateRadio.addActionListener(this);
 	    naDateRadio.setSelected(true);
 	    
 	    JPanel matchingPanel = new JPanel();
@@ -188,16 +183,14 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 	    timesPanel = new JPanel(new GridLayout(4, 1, 0, 5));
 	    timesPanel.add(calculateTimes=new JButton("Calculate Time Interval"),0);
 	    calculateTimes.addActionListener(this);
-	    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false),1);
-	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false),2);
-	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true),3);
+	    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false,naDateRadio,eurDateRadio),1);
+	    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false,naDateRadio,eurDateRadio),2);
+	    timesPanel.add(intervalPeriod = new TimePanel("Interval:", interval, true,naDateRadio,eurDateRadio),3);
 	    timesPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
 	    
-	    dateRadioPanel = new JPanel(new GridLayout(2,2,3,3));
+	    dateRadioPanel = new JPanel(new GridLayout(1,2,3,3));
 	    dateRadioPanel.add(naDateRadio,0);
 	    dateRadioPanel.add(eurDateRadio,1);
-	    dateRadioPanel.add(iso_1DateRadio,2);
-	    dateRadioPanel.add(iso_2DateRadio,3);
 	    dateRadioPanel.setBorder(new EmptyBorder(0, 25, 0, 0));
 	    
 		JPanel bottomHalf = addComponent(timeBasis, bottomPanel);
@@ -415,9 +408,11 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 				}
 				public void finished() {
 					timesPanel.remove(1);
-				    timesPanel.add(startTime = new TimePanel("Start Time:", startDate, false),1);
+				    timesPanel.add(startTime = new TimePanel("Start Time:", startDate,
+				    		                                 false,naDateRadio,eurDateRadio),1);
 				    timesPanel.remove(2);
-				    timesPanel.add(endTime = new TimePanel("End Time:", endDate, false),2);
+				    timesPanel.add(endTime = new TimePanel("End Time:", endDate,
+				    		                               false,naDateRadio,eurDateRadio),2);
 				    thisRef.pack();
 				    thisRef.repaint();
 					progressBar.disposeThis();
@@ -455,7 +450,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 					JOptionPane.showMessageDialog(
 		    				this, 
 		    				"Please enter a valid time for \"Start Time\".\n"+
-		    				"Valid times will appear in green.", 
+		    				"Invalid times will appear in red.", 
 		    				"Invalid Time String", 
 		    				JOptionPane.ERROR_MESSAGE);
 		    		return;
@@ -465,7 +460,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 					JOptionPane.showMessageDialog(
 		    				this, 
 		    				"Please enter a valid time for \"End Time\".\n"+
-		    				"Valid times will appear in green.", 
+		    				"Invalid times will appear in red.", 
 		    				"Invalid Time String", 
 		    				JOptionPane.ERROR_MESSAGE);
 		    		return;
@@ -475,7 +470,7 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 					JOptionPane.showMessageDialog(
 		    				this, 
 		    				"Please enter a valid time for \"Interval\".\n"+
-		    				"Valid times will appear in green.", 
+		    				"Invalid times will appear in red.", 
 		    				"Invalid Time String", 
 		    				JOptionPane.ERROR_MESSAGE);
 		    		return;
@@ -572,9 +567,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			Calendar end = endTime.getDate();
 			final AggregateWindow thisRef = this;
 			timesPanel.remove(1);
-		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false,naDateRadio,eurDateRadio),1);
 		    timesPanel.remove(2);
-		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false,naDateRadio,eurDateRadio),2);
 		    thisRef.pack();
 		    thisRef.repaint();
 		}
@@ -584,33 +579,9 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			Calendar end = endTime.getDate();
 			final AggregateWindow thisRef = this;
 			timesPanel.remove(1);
-		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
+		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false,naDateRadio,eurDateRadio),1);
 		    timesPanel.remove(2);
-		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
-		    thisRef.pack();
-		    thisRef.repaint();
-		}	
-		else if (source == iso_1DateRadio)
-		{
-			Calendar start = startTime.getDate();
-			Calendar end = endTime.getDate();
-			final AggregateWindow thisRef = this;
-			timesPanel.remove(1);
-		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
-		    timesPanel.remove(2);
-		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
-		    thisRef.pack();
-		    thisRef.repaint();
-		}
-		else if (source == iso_2DateRadio)
-		{
-			Calendar start = startTime.getDate();
-			Calendar end = endTime.getDate();
-			final AggregateWindow thisRef = this;
-			timesPanel.remove(1);
-		    timesPanel.add(startTime = new TimePanel("Start Time:", start, false),1);
-		    timesPanel.remove(2);
-		    timesPanel.add(endTime = new TimePanel("End Time:", end, false),2);
+		    timesPanel.add(endTime = new TimePanel("End Time:", end, false,naDateRadio,eurDateRadio),2);
 		    thisRef.pack();
 		    thisRef.repaint();
 		}
@@ -658,190 +629,4 @@ public class AggregateWindow extends JFrame implements ActionListener, ListSelec
 			return collections[index];
 		}
 	};
-	
-	/**
-	 * This is the updated TimePanel class. The old class used pulldowns for date and time selection, 
-	 * which was not very easy.
-	 * Instead, it now uses a JTextField that updates on every change within it. The parsing style 
-	 * is configurable through radio buttons, and the TimePanel adopts whatever style is currently selected
-	 * upon creation.
-	 * 
-	 * @author rzeszotj
-	 *
-	 */
-	public class TimePanel extends JPanel implements DocumentListener {
-		private boolean isInterval;
-		
-		private SimpleDateFormat NADate_1 = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-		private SimpleDateFormat NADate_2 = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-		private SimpleDateFormat EDate_1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-		private SimpleDateFormat EDate_2 = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-		private SimpleDateFormat ISO_1Date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		private SimpleDateFormat ISO_2Date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
-		private SimpleDateFormat Hours_1 = new SimpleDateFormat("HH:mm:ss");
-		
-		private Date currentTime;
-		private JTextField timeField;
-		private ParsePosition p = new ParsePosition(0);
-		
-		private final Color ERROR = new Color(255,128,128);
-		private final Color GOOD = new Color(70,255,85);
-		
-		public TimePanel(String name, Calendar init, boolean interval) {
-			setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
-			isInterval = interval;
-			
-			JLabel label = new JLabel(name);
-			if (isInterval)
-			{
-				timeField = new JTextField(getTimeString(init),9);
-			}
-			else
-			{
-				timeField = new JTextField(getTimeString(init),19);
-			}
-			
-			timeField.getDocument().addDocumentListener(this);
-	        
-			label.setPreferredSize(new Dimension(70, 20));
-			
-			add(label);
-			add(timeField);
-			updateDate();
-		}
-		
-		/**
-		 * Formats a calendar into a string using whatever style is selected
-		 * @param c The calendar to format
-		 */
-	    private String getTimeString(Calendar c)
-	    {
-	    	String s = "";
-	    	Date cur = c.getTime();
-	    	if(isInterval)
-	    		s = Hours_1.format(cur);
-			else if(naDateRadio.isSelected())
-			{
-				s = NADate_1.format(cur);
-			}
-			else if(eurDateRadio.isSelected())
-			{
-				s = EDate_1.format(cur);
-			}
-			else if(iso_1DateRadio.isSelected())
-			{
-				s = ISO_1Date.format(cur);
-			}
-			else if(iso_2DateRadio.isSelected())
-			{
-				s = ISO_2Date.format(cur);
-			}
-	    	return s;
-	    }
-	    
-	    /**
-		 * Updates currentTime with text in timeField, changing background
-		 */
-		private void updateDate()
-		{
-			//Get text from the text box, if blank, show error and stop
-			String cur = null;
-			try
-			{
-				cur = timeField.getText();
-			}
-			catch(NullPointerException e)
-			{
-				timeField.setBackground(ERROR);
-				currentTime = null;
-				return;
-			}
-			//Make sure we have a string with something in it
-			p.setIndex(0);
-			if (cur == null)
-			{
-				timeField.setBackground(ERROR);
-				return;
-			}
-			
-			//Parse the string depending on what is selected
-			if(isInterval)
-			{
-				currentTime = Hours_1.parse(cur,p);
-			}
-			else if(naDateRadio.isSelected())
-			{
-				currentTime = NADate_1.parse(cur,p);
-				if (currentTime == null)
-				{
-					p.setIndex(0);
-					currentTime = NADate_2.parse(cur,p);
-				}
-			}
-			else if(eurDateRadio.isSelected())
-			{
-				currentTime = EDate_1.parse(cur,p);
-				if (currentTime == null)
-				{
-					p.setIndex(0);
-					currentTime = EDate_2.parse(cur,p);
-				}
-			}
-			else if(iso_1DateRadio.isSelected())
-			{
-				currentTime = ISO_1Date.parse(cur,p);
-			}
-			else if(iso_2DateRadio.isSelected())
-			{
-				currentTime = ISO_2Date.parse(cur,p);
-			}
-			else
-				timeField.setBackground(ERROR);
-			
-			//If we parsed correctly, color it GOOD, otherwise color an ERROR
-			if(currentTime == null)
-			{
-				timeField.setBackground(ERROR);
-			}
-			else
-			{
-				timeField.setBackground(GOOD);
-			}
-		}
-		
-		/**
-		 * Returns true is an unparsable entry is present
-		 */
-		public boolean isBad()
-		{
-			if (currentTime == null)
-				return true;
-			else
-				return false;
-		}
-		
-		/**
-		 * Returns a calendar object based on the string in textField
-		 */
-		public GregorianCalendar getDate() {
-			GregorianCalendar c = new GregorianCalendar();
-			c.setTime(currentTime);
-			return c;
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			timesRadio.setSelected(true);
-		}
-		public void insertUpdate(DocumentEvent ev) {
-	        updateDate();
-	    }
-	    
-	    public void removeUpdate(DocumentEvent ev) {
-	        updateDate();
-	    }
-	    
-	    public void changedUpdate(DocumentEvent ev) {
-	    	
-	    }
-	}
 }

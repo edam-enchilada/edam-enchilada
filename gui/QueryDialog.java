@@ -57,7 +57,6 @@ import externalswing.SwingWorker;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  * @author ritza
@@ -94,8 +93,11 @@ implements ActionListener, ItemListener
 	private JCheckBox sizeButton;
 	private JCheckBox countButton;
 	
-	private DatePicker fromTime;
-	private DatePicker toTime;
+	private JRadioButton naDateRadio,eurDateRadio;
+	private Calendar epoch = Calendar.getInstance();
+	private TimePanel fromTime;
+	private TimePanel toTime;
+
 	
 	private JTextField fromSize;
 	private JTextField toSize;
@@ -173,22 +175,22 @@ implements ActionListener, ItemListener
 		timeButton = new JCheckBox("Time:");
 		timeButton.addItemListener(this);
 		
-		timePanel = new JPanel();
+	    timePanel = new JPanel(new GridLayout(3, 1, 0, 5));
+		Calendar epoch = Calendar.getInstance();
 		
-		JPanel fromTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		fromTimePanel.add(new JLabel("From: "));
-		fromTimePanel.add(fromTime = new DatePicker());
+		ButtonGroup dateGroup = new ButtonGroup();
+		dateGroup.add(naDateRadio = new JRadioButton("MM/DD/YYYY or MM-DD-YYYY"));
+		dateGroup.add(eurDateRadio = new JRadioButton("DD/MM/YYYY or DD.MM.YYYY"));
+		naDateRadio.setSelected(true);
+		naDateRadio.addActionListener(this);
+		eurDateRadio.addActionListener(this);
 		
-		JPanel toTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		toTimePanel.add(new JLabel("To: "));
-		toTimePanel.add(toTime = new DatePicker());
+		timePanel.add(fromTime = new TimePanel("Start Time:",epoch,false,naDateRadio,eurDateRadio),0);
+		timePanel.add(toTime = new TimePanel("End Time:",epoch,false,naDateRadio,eurDateRadio),1);
 		
-		timePanel.setLayout(new BoxLayout(timePanel, BoxLayout.PAGE_AXIS));
-		timePanel.add(fromTimePanel);
-		timePanel.add(toTimePanel);
-		
-		JPanel explPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		explPanel.add(new JLabel("mm/dd/yyyy hh:mm:ss AM/PM"));
+		JPanel explPanel = new JPanel(new GridLayout(1,2,3,3));
+		explPanel.add(naDateRadio,0);
+		explPanel.add(eurDateRadio,1);
 		timePanel.add(explPanel);
 		
 		
@@ -457,6 +459,35 @@ implements ActionListener, ItemListener
 				}
 				if (timeSelected)
 				{
+					if(fromTime.isBad())
+					{
+						JOptionPane.showMessageDialog(
+			    				this, 
+			    				"Please enter a valid time for \"Start Time\".\n"+
+			    				"Invalid times will appear in red.", 
+			    				"Invalid Time String", 
+			    				JOptionPane.ERROR_MESSAGE);
+			    		return;
+					}
+					else if(toTime.isBad())
+					{
+						JOptionPane.showMessageDialog(
+			    				this, 
+			    				"Please enter a valid time for \"End Time\".\n"+
+			    				"Invalid times will appear in red.", 
+			    				"Invalid Time String", 
+			    				JOptionPane.ERROR_MESSAGE);
+			    		return;
+					}
+					else if(fromTime.getDate().after(toTime.getDate()))
+					{
+						JOptionPane.showMessageDialog(
+			    				this, 
+			    				"Start time must be before end time.", 
+			    				"Invalid Time Strings", 
+			    				JOptionPane.ERROR_MESSAGE);
+			    		return;
+					}
 					if (sizeSelected)
 						where += " AND";
 					where += " [time] <= '" + 
@@ -507,6 +538,34 @@ implements ActionListener, ItemListener
 				};
 				sw.start();
 			}			
+			else if (source == naDateRadio)
+			{
+				Calendar start = fromTime.getDate();
+				Calendar end = toTime.getDate();
+				final QueryDialog thisRef = this;
+				timePanel.remove(0);
+			    timePanel.add(fromTime = new TimePanel("Start Time:", start,
+			    		                               false,naDateRadio,eurDateRadio),0);
+			    timePanel.remove(1);
+			    timePanel.add(toTime = new TimePanel("End Time:", end,
+			    		                             false,naDateRadio,eurDateRadio),1);
+			    thisRef.pack();
+			    thisRef.repaint();
+			}
+			else if (source == eurDateRadio)
+			{
+				Calendar start = fromTime.getDate();
+				Calendar end = toTime.getDate();
+				final QueryDialog thisRef = this;
+				timePanel.remove(0);
+			    timePanel.add(fromTime = new TimePanel("Start Time:", start,
+			    		                               false,naDateRadio,eurDateRadio),0);
+			    timePanel.remove(1);
+			    timePanel.add(toTime = new TimePanel("End Time:", end,
+			    		                             false,naDateRadio,eurDateRadio),1);
+			    thisRef.pack();
+			    thisRef.repaint();
+			}
 			else  
 			{
 				System.out.println("Disposing");
@@ -515,114 +574,5 @@ implements ActionListener, ItemListener
 		}
 	}
 	
-	/**
-	 * Puts a box around the existing date selector for nicer code
-	 * @author shaferia
-	 */
-	private class DatePicker extends JPanel {
-		private JComboBox month;
-		private JComboBox day;
-		private JComboBox year;
-		private JComboBox hour;
-		private JComboBox minute;
-		private JComboBox second;
-//		private JComboBox ampm;
-		
-		private String[] padding = {
-				"", "0", "00", "000", "0000", "00000"
-		};
-		
-		public DatePicker(java.awt.LayoutManager mgr) {
-			this();	
-		}
-		
-		public DatePicker() {
-			super();
 
-			month = new JComboBox(getPaddedNumArray(1, 12, 2));
-			day = new JComboBox(getPaddedNumArray(1, 31, 2));
-			year = new JComboBox(getPaddedNumArray(1990, 2039, 4));
-			hour = new JComboBox(getPaddedNumArray(0, 23, 2));
-			minute = new JComboBox(getPaddedNumArray(0, 59, 2));
-			second = new JComboBox(getPaddedNumArray(0, 59, 2));
-			//ampm = new JComboBox(new String[]{"AM", "PM"});
-			
-			add(month);
-			add(getTextObj("/"));
-			add(day);
-			add(getTextObj("/"));
-			add(year);
-			
-			add(getTextObj(" "));
-			
-			add(hour);
-			add(getTextObj(":"));
-			add(minute);
-			add(getTextObj(":"));
-			add(second);
-			
-			add(getTextObj(" "));
-			
-			//add(ampm);
-		}
-		
-		private JLabel getTextObj(String text) {
-			JLabel obj = new JLabel(text);
-			obj.setFont(new Font(obj.getFont().getName(),
-					obj.getFont().getStyle() | Font.BOLD,
-					13));
-			return obj;
-		}
-		
-		/**
-		 * Return an array of Strings of constant length with numbers in a range
-		 * @param from the number to start at
-		 * @param to the number to end at
-		 * @param padLen the length that all Strings should be (up to 5)
-		 * @return zero-padded Strings
-		 */
-		private String[] getPaddedNumArray(int from, int to, int padLen) {
-			assert (padLen < 5) : "zero padding size is too large";
-			String[] nums = new String[to - from + 1];
-			String res = null;
-			
-			for (int x = 0; x < nums.length; ++x) {
-				res = Integer.toString(x + from);
-				nums[x] = padding[Math.max(padLen - res.length(), 0)] + res;
-			}
-			
-			return nums;
-		}
-		
-		/**
-		 * Returns an object representation of the currently selected time
-		 * @return a Date object representing the current date and time
-		 */
-		public Date getDate() {
-			Calendar c = Calendar.getInstance();
-			c.set(
-					Integer.parseInt((String)year.getSelectedItem()),
-					Integer.parseInt((String)month.getSelectedItem()),
-					Integer.parseInt((String)day.getSelectedItem()),
-					Integer.parseInt((String)hour.getSelectedItem()), 
-					Integer.parseInt((String)minute.getSelectedItem()),
-					Integer.parseInt((String)second.getSelectedItem()));
-			return c.getTime();
-		}
-		
-		/**
-		 * Returns a String representing the currently selected time
-		 * @return a String of format mm/dd/yyyy hh:mm:ss ap
-		 */
-		public String getTimeString() {
-			return 
-			month.getSelectedItem() + "/" + 
-			day.getSelectedItem() + "/" +
-			year.getSelectedItem() + " " +
-			hour.getSelectedItem() + ":" + 
-			minute.getSelectedItem() + ":" + 
-			second.getSelectedItem() /*+ " " +
-			ampm.getSelectedItem()*/;
-		}
-	}
 }
