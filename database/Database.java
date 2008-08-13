@@ -5141,7 +5141,6 @@ public abstract class Database implements InfoWarehouse {
 	}
 	
 	public ArrayList<Date> getCollectionDates(Collection seq1, Collection seq2){
-		
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		int parentSeq1 = this.getParentCollectionID(seq1.getCollectionID());
@@ -5157,6 +5156,58 @@ public abstract class Database implements InfoWarehouse {
 		if (seq2 != null) {
 			selectAllTimesStr += "\nOR ParentID = " + parentSeq2 + "";
 		}
+		selectAllTimesStr += "\n     Order BY Time";
+		selectAllTimesStr += ";";
+		
+		ArrayList<Date> retData = new ArrayList<Date>();
+		
+		try{
+			Statement stmt = con.createStatement();
+			System.out.println("DATES:\n"+selectAllTimesStr);
+			ResultSet rs;
+			rs = stmt.executeQuery(selectAllTimesStr);
+			while (rs.next()) {
+				String dateTime = rs.getString("Time");
+				if (dateTime != null)
+					retData.add(parser.parse(dateTime));	
+			}
+			
+		} catch (SQLException e){
+			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception retrieving time series data.");
+			System.err.println("Error retrieving time series data.");
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return retData;
+	}
+	
+	//Overload so that exporting of >2 collections to CVS is possible
+	public ArrayList<Date> getCollectionDates(Collection[] collections){
+		//This should NEVER happen!
+		if (collections.length < 1)
+			return null;
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		int parentSeq1 = this.getParentCollectionID(collections[0].getCollectionID());
+
+		String selectAllTimesStr = 
+			"SELECT DISTINCT T.Time\n" +
+			"FROM (SELECT CollectionID, Time, Value\n" +
+			"	FROM " + getDynamicTableName(DynamicTable.AtomInfoDense, "TimeSeries") + " D\n" +
+			" 	JOIN AtomMembership M on (D.AtomID = M.AtomID)) T\n" +
+			"	JOIN CollectionRelationships CR on (CollectionID = CR.ChildID)" +
+			"WHERE ParentID = " + parentSeq1+"";
+		
+		//Tack on additional groups
+		for (int i = 1; i < collections.length; i++) {
+			int parentSeq2 = this.getParentCollectionID(collections[i].getCollectionID());
+			selectAllTimesStr += "\nOR ParentID = " + parentSeq2 + "";
+		}
+
 		selectAllTimesStr += "\n     Order BY Time";
 		selectAllTimesStr += ";";
 		
@@ -5213,11 +5264,34 @@ public abstract class Database implements InfoWarehouse {
 			for (int i = 0; i < conditionalSeqs.size(); i++) {
 				tableJoinStr += "JOIN (" + atomSelStr + ") C" + i + " on (C" + i + ".Time = T.Time) \n";
 				//selectStr += ", C" + i + ".Value as C" + i + "Value";
-				collCondStr += "AND C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + "\n" +
-						"AND "+conditionStrs.get(i)+"\n";
+				if (i == 0)
+				{
+					collCondStr += "AND ((C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID();
+					collCondStr += " AND "+conditionStrs.get(i)+")\n";
+				}
+				else
+				{
+					if (conditionStrs.get(i).contains("AND"))
+					{
+						collCondStr += "AND (C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID();	
+						collCondStr += " AND "+conditionStrs.get(i).substring(5, conditionStrs.get(i).length())+")\n";
+					}
+					else //OR
+					{
+						collCondStr += "OR (C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID();
+						collCondStr += " AND "+conditionStrs.get(i).substring(4, conditionStrs.get(i).length())+")\n";
+					}
+				}
+				
+				/*
+				collCondStr += "AND C" + i + ".CollectionID = " + conditionalSeqs.get(i).getCollectionID() + "\n";
+				if (i == 0)
+					collCondStr += "AND "+conditionStrs.get(i)+"\n";
+				else
+					collCondStr += conditionStrs.get(i)+"\n";*/
 			}
 		}
-		
+		collCondStr += ")";
 		
 		String timesStr = selectStr + " \n" + tableJoinStr + collCondStr;
 		String sqlStr;

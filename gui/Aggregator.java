@@ -66,6 +66,9 @@ public class Aggregator {
 	 * 
 	 * This method should always be called from outside the EDT, e.g. via
 	 * SwingWorker.
+	 * 
+	 * Be aware that changing the way collectionIDs are allocated here will change how SyncAnalyzePanel and
+	 *  Collection.compareTo works for aggregate collections.
 	 * @return CollectionID of the new Collection or -1 if aggregation failed or was cancelled
 	 */
 	public int createAggregateTimeSeries(String syncRootName,

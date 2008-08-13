@@ -95,7 +95,7 @@ public class ImportSPASSDataDialog extends JDialog implements ActionListener{
 	public ImportSPASSDataDialog(JFrame owner, InfoWarehouse db) throws HeadlessException {
 		// calls the constructor of the superclass (JDialog), sets the title and makes the
 		// dialog modal.  
-		super(owner, "Import JRC-SPASS Datasets as Collections", true);
+		super(owner, "Import SPASS Datasets as Collections", true);
 		parent = owner;
 		this.db = db;
 		setSize(1000,600);

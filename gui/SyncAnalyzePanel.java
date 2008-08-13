@@ -16,6 +16,7 @@ import javax.swing.event.*;
 public class SyncAnalyzePanel extends JPanel {
 	private MainFrame parentFrame;
 	private CollectionTree tree;
+	private Collection collectionToBaseOn;
 	private InfoWarehouse db;
 	private JScrollPane bottomPane;
 	private JComboBox firstSeq, secondSeq;
@@ -29,9 +30,12 @@ public class SyncAnalyzePanel extends JPanel {
 	private ArrayList<Hashtable<Date,Double>> data;
 	private Dataset[] datasets;
 	private Dataset[] scatterplotData;
+	private Collection[] collectionsToExport;
 
 	private int numConditions = 2;
-
+	ArrayList<String> conditionStrs;
+	ArrayList<Collection> condCollections;
+	
 	private JPanel topPanel;
 	private ZoomableChart zchart;
 	private JButton zoomOutButton;
@@ -49,7 +53,9 @@ public class SyncAnalyzePanel extends JPanel {
 		this.parentFrame = parentFrame;
 		this.db = db;
 		this.tree = tree;
+		this.collectionToBaseOn = collectionToBaseOn;
 
+		/** TODO  Change this stuff so that export button loads up a new window with collections*/
 		firstCollectionModel = new SyncCollectionModel(collectionToBaseOn);
 		secondCollectionModel = new SyncCollectionModel(firstCollectionModel);
 
@@ -87,7 +93,10 @@ public class SyncAnalyzePanel extends JPanel {
 
 		exportToCSV.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
-				exportDataToCSV();
+				int[] preSelected = new int[2];
+				preSelected[0] = firstSeq.getSelectedIndex();
+				preSelected[1] = secondSeq.getSelectedIndex();
+				new CollectionChooser(preSelected);
 			}
 		});
 
@@ -174,8 +183,8 @@ public class SyncAnalyzePanel extends JPanel {
 		Collection seq1 = (Collection) firstSeq.getSelectedItem();
 		Collection seq2 = (Collection) secondSeq.getSelectedItem();
 
-		ArrayList<String> conditionStrs = new ArrayList<String>();
-		ArrayList<Collection> condCollections = new ArrayList<Collection>();
+		conditionStrs = new ArrayList<String>();
+		condCollections = new ArrayList<Collection>();
 
 		if (seq1 != null) {
 			for (int i = 0; i < numConditions; i++) {
@@ -305,48 +314,53 @@ public class SyncAnalyzePanel extends JPanel {
 		}
 	}
 
+	
+	/**Method dovetails with CollectionChooser class through collectionsToExport
+	 * Significantly changed to allow for multiple collection exports
+	 * @author rzeszotj
+	 */
 	private void exportDataToCSV() {
+		//One or two collections the user has already selected
+
 		// Rebuild data, and show new graph before exporting...
 		setupBottomPane();
-		ArrayList<Date> dateSet;
-		//dateSet = new ArrayList<Date>(data.keySet());
-		dateSet = db.getCollectionDates((Collection) firstSeq.getSelectedItem(),
-				(Collection) secondSeq.getSelectedItem());
-		Collections.sort(dateSet);
-
+		
 		try {
 			JFileChooser fc = new JFileChooser("Choose Output File");
 			int result = fc.showSaveDialog(null);
 			if (result == JFileChooser.APPROVE_OPTION) {
+				//Read in the dates for any given collections
+				ArrayList<Date> dateSet;
+				dateSet = db.getCollectionDates(collectionsToExport);
+				Collections.sort(dateSet);
+				
 				SimpleDateFormat dformat = new SimpleDateFormat(
 						"M/d/yyyy hh:mm:ss a");
 				File f = fc.getSelectedFile();
 				PrintWriter fWriter = new PrintWriter(f);
-
-				Collection seq1 = (Collection) firstSeq.getSelectedItem();
-				Collection seq2 = (Collection) secondSeq.getSelectedItem();
-				int numCollections = 1;
-				if (seq2 != null){
+					
+				//Print r^2 value iff 2 datasets were selected
+				int numCollections = collectionsToExport.length;
+				if (numCollections == 2 && datasets.length >= 2){
 					fWriter.println("R^2: "	+ datasets[0].getCorrelationStats(datasets[1]).r2);
-					numCollections++;
 				}
+				
+				//Load in conditions
 				String condString = "";
 				for (int i = 0; i < numConditions; i++) {
 					Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
-
-					boolean compareAgainstValue = (conditionType[i].getSelectedIndex() == 0);
+						boolean compareAgainstValue = (conditionType[i].getSelectedIndex() == 0);
 					
 					String condVal = conditionValue[i].getText().trim();
 					Collection compareColl = (Collection) conditionSeq2[i].getSelectedItem();
-
-					if (condColl != null && conditionComp[i].getSelectedIndex() > 0
-							&& (compareAgainstValue && !condVal.equals("") || !compareAgainstValue && compareColl != null)) {
+						if (condColl != null && conditionComp[i].getSelectedIndex() > 0
+							&& (compareAgainstValue && !condVal.equals("") || 
+							    !compareAgainstValue && compareColl != null)) {
 					
 						if (condString.length() > 0)
 							condString += booleanOps[i - 1].getSelectedItem()
 									+ " ";
-
-						condString += condColl + " "
+							condString += condColl + " "
 								+ conditionComp[i].getSelectedItem() + " ";
 						
 						if (compareAgainstValue)
@@ -360,21 +374,19 @@ public class SyncAnalyzePanel extends JPanel {
 					condString = "None";
 				else
 					condString = "\"" + condString + "\"";
-
-				fWriter.println("Condition applied: " + condString);
-
-				String line1 = "";
+					fWriter.println("Condition applied: " + condString);
+					String line1 = "";
 				String line2 = "Date";
-				if (seq1 != null) {
-					line1 += ",Sequence 1";
-					line2 += ",\"" + seq1.getName().replace("\"", "\"\"") + "\"";
+				
+				//Sequence and collection info
+				for(int i = 0; i < collectionsToExport.length; i++)
+				{
+					line1 += ",Sequence " + (i+1);
+					line2 += ",\"" + 
+					    collectionsToExport[i].getName().replace("\"", "\"\"") + "\"";
 				}
 				
-				if (seq2 != null) {
-					line1 += ",Sequence 2";
-					line2 += ",\"" + seq2.getName().replace("\"", "\"\"") + "\"";
-				}
-				
+				//More conditions
 				int index = 1;
 				for (int i = 0; i < numConditions; i++) {
 					Collection condColl = (Collection) conditionSeq[i].getSelectedItem();
@@ -391,12 +403,19 @@ public class SyncAnalyzePanel extends JPanel {
 						index++;
 					}
 				}
+					
 				fWriter.println(line1);
 				fWriter.println(line2);
+				//Parse through collectionsToExport - similar to "data" arrayList in setupBottom()
+				ArrayList<Hashtable<Date,Double>> colData = new ArrayList<Hashtable<Date,Double>>();
+				for (Collection c : collectionsToExport)
+					colData.add(db.getConditionalTSCollectionData(c, condCollections, conditionStrs));
+									
+				//Print out the values, finally
 				for (Date d : dateSet) {
 					fWriter.print(dformat.format(d));
 					
-					for(Hashtable<Date,Double> table : data){
+					for(Hashtable<Date,Double> table : colData){
 						Double value = table.get(d);
 						String stringVal = "";
 						if(value != null) stringVal = ""+value;
@@ -411,6 +430,7 @@ public class SyncAnalyzePanel extends JPanel {
 			e.printStackTrace();
 		}
 	}
+
 
 	private JPanel addComponent(JComponent newComponent, JPanel parent) {
 		JPanel bottomHalf = new JPanel();
@@ -446,7 +466,7 @@ public class SyncAnalyzePanel extends JPanel {
 
 		setupBottomPane();
 	}
-
+	
 	private class SyncCollectionModel implements ComboBoxModel {
 		private Collection[] collections;
 
@@ -534,4 +554,231 @@ public class SyncAnalyzePanel extends JPanel {
 		public void removeListDataListener(ListDataListener l) {
 		}
 	}
+	
+	/**CollectionChooser
+	 *  UI window that allows user to select multiple collections from a list
+	 * Chains with exportDataToCSV() from Export button
+	 * Updates on "Okay" press, sends collections to collectionsToExport global var
+	 * 
+	 * @author rzeszotj
+	 */
+	public class CollectionChooser extends JDialog implements ActionListener, ListSelectionListener{
+		private JButton okay,arrowR,arrowL;
+		private JList colList,selList;
+		
+		public CollectionChooser(int[] selected) {
+			super();
+			setSize(450,450);
+			setTitle("Select Collections to Export");
+			setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
+			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+			okay = new JButton("OK");
+			okay.addActionListener(this);
+			arrowR = new JButton("->");
+			arrowR.addActionListener(this);
+			arrowL = new JButton("<-");
+			arrowL.addActionListener(this);
+			
+			Collection[] c = getCollections();
+			Arrays.sort(c);
+			colList = new JList(c);
+			colList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			colList.setLayoutOrientation(JList.VERTICAL);
+			colList.setVisibleRowCount(20);
+	        colList.addListSelectionListener(this);
+	        
+	        selList = new JList();
+			selList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			selList.setLayoutOrientation(JList.VERTICAL);
+			selList.setVisibleRowCount(20);
+	        selList.addListSelectionListener(this);
+	        
+	        //Trick it into selecting and moving items from previous window
+			if (selected[1] == 0 || selected[1] == -1)
+				colList.setSelectedIndex(selected[0]);
+			else
+			{
+				//Have to compensate for the null location
+				selected[1]--;
+				colList.setSelectedIndices(selected);
+			}
+			moveRight();
+			okay.setEnabled(true);//
+			
+			//Now entering terrible UI section
+			JScrollPane colListScroll = new JScrollPane(colList);
+			JScrollPane selListScroll = new JScrollPane(selList);
+			colListScroll.setPreferredSize(new Dimension(190,360));
+			selListScroll.setPreferredSize(new Dimension(190,360));
+			colListScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			selListScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			
+			JLabel l = new JLabel("Hold CTRL and click to select multiple collections.");
+			JLabel h = new JLabel("To get R^2 values, select two collections " +
+					                          "in the main window and press okay here.");
+			Dimension a = new Dimension(10,25);
+			//Splitting it up into subpanes seemed the only choice to get the correct look
+			JPanel pane = new JPanel();
+			JPanel textPane = new JPanel();
+			JPanel buttonPane = new JPanel();
+			JPanel listPane = new JPanel();
+			
+			textPane.add(l);
+			textPane.add(h);
+			buttonPane.add(arrowR);
+			buttonPane.add(new Box.Filler(a,a,a));
+			buttonPane.add(arrowL);
+			buttonPane.add(new Box.Filler(a,a,a));
+			buttonPane.add(new Box.Filler(a,a,a));
+			buttonPane.add(okay);
+			listPane.add(colListScroll);
+			listPane.add(buttonPane);
+			listPane.add(selListScroll);
+	
+			textPane.setLayout(new BoxLayout(textPane,BoxLayout.Y_AXIS));
+			buttonPane.setLayout(new BoxLayout(buttonPane,BoxLayout.Y_AXIS));
+			listPane.setLayout(new BoxLayout(listPane,BoxLayout.X_AXIS));
+			
+			
+			pane.add(textPane);
+			pane.add(listPane);
+			add(pane);
+			
+			setVisible(true);
+			getRootPane().setDefaultButton(okay);
+		}
+		//Grabs all collections in the aggregate tree
+		private Collection[] getCollections() {
+			ArrayList<Collection> allCollectionsInTree = tree
+					.getCollectionsInTreeOrderFromRoot(1, collectionToBaseOn);
+			ArrayList<Integer> collectionIDs = new ArrayList<Integer>();
+
+			for (int i = 0; i < allCollectionsInTree.size(); i++)
+				collectionIDs.add(allCollectionsInTree.get(i).getCollectionID());
+
+			collectionIDs = db.getCollectionIDsWithAtoms(collectionIDs);
+
+			Collection[] collections = new Collection[collectionIDs.size()];
+
+			//Populate collections with the correct items
+			int index = 0;
+			for (int i = 0; i < allCollectionsInTree.size(); i++) {
+				Collection curCollection = allCollectionsInTree.get(i);
+				if (collectionIDs.contains(curCollection.getCollectionID())) {
+					collections[index++] = curCollection;
+				}
+			}
+			return collections;
+		}
+		//Gets elements in a given list
+		public Collection[] getElements(JList list)
+		{
+			ListModel mod = list.getModel();
+			Collection[] elements = new Collection[mod.getSize()];
+			for (int i = 0; i < elements.length; i++) {
+				elements[i] = (Collection)mod.getElementAt(i);
+			}
+			return elements;
+		}
+		//Copies selected items from colList to selList
+		public void moveRight() {
+			ListModel toModel = selList.getModel();
+				
+			//Get everything in the selected list
+			ArrayList<Collection> toAll = new ArrayList<Collection>();
+			for (int i = 0; i < toModel.getSize(); i++)
+				toAll.add((Collection)toModel.getElementAt(i));
+			
+			//Add what was selected
+			Object[] fromObj = colList.getSelectedValues();
+			ArrayList<Collection> fromCol = new ArrayList<Collection>();
+			for (int i = 0; i < fromObj.length; i++) {
+				Collection c = (Collection)fromObj[i];
+				if (!toAll.contains(c))
+					toAll.add((Collection)fromObj[i]);
+			}
+			
+			//Convert back to arrays
+			Object[] toObj = toAll.toArray();
+			Collection[] toCol = new Collection[toObj.length];
+			for (int i = 0; i < toCol.length; i++)
+				toCol[i] = (Collection)toObj[i];
+			
+			//Reassign new data set
+			Arrays.sort(toCol);
+			selList.setListData(toCol);
+		}
+		//Deletes selected items from selList
+		public void moveLeft() {
+			ListModel toModel = selList.getModel();
+			
+			//Get everything in the selected list
+			ArrayList<Collection> toAll = new ArrayList<Collection>();
+			for (int i = 0; i < toModel.getSize(); i++)
+				toAll.add((Collection)toModel.getElementAt(i));
+			
+			//Get everything that was selected
+			Object[] selObj = selList.getSelectedValues();
+			ArrayList<Collection> selCol = new ArrayList<Collection>();
+			for (int i = 0; i < selObj.length; i++)
+				selCol.add((Collection)selObj[i]);
+			
+			//Remove the selection
+			for (Collection c : selCol)
+				toAll.remove(c);
+			
+			//Convert back to arrays
+			Object[] toObj = toAll.toArray();
+			Collection[] toCol = new Collection[toObj.length];
+			for (int i = 0; i < toCol.length; i++)
+				toCol[i] = (Collection)toObj[i];
+			
+			//Reassign new data set
+			selList.setListData(toCol);
+		}		
+		//Listener disables buttons if conditions not met
+	    public void valueChanged(ListSelectionEvent evt) {
+	        if (evt.getValueIsAdjusting() == false) {
+	        	arrowR.setEnabled(true);
+	        	arrowL.setEnabled(true);
+	        	//Cannot move stuff to the right
+	            if (colList.getSelectedIndex() < 0) {
+	                arrowR.setEnabled(false);
+	            } 
+	            //Cannot move stuff to the left
+	            if (selList.getSelectedIndex() < 0) {
+	            	arrowL.setEnabled(false);
+	            }
+	            
+	            //Nothing is in selected side
+	            if (selList.getModel().getSize() < 1) {
+	            	
+	                okay.setEnabled(false);
+	            }
+	            else {
+	            //Something is selected, enable OK
+	                okay.setEnabled(true);
+	            }
+	        }
+	    }
+		//Update collectionsToExport and exportDataToCSV()
+	    //Move selections
+		public void actionPerformed(ActionEvent evt) {
+			Object source = evt.getSource();
+			if (source == okay) {
+				collectionsToExport = getElements(selList);
+				dispose();
+				if (collectionsToExport.length > 0)
+					exportDataToCSV();
+			}
+			else if (source == arrowL)
+				moveLeft();
+			else if (source == arrowR) {
+				moveRight();
+				okay.setEnabled(true);
+			}
+		}
+	}
+	
 }

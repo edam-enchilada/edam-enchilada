@@ -1069,7 +1069,7 @@ public class MainFrame extends JFrame implements ActionListener
 		loadEnchiladaDataItem.addActionListener(this);
 		loadAMSDataItem = new JMenuItem("from AMS data. . .");
 		loadAMSDataItem.addActionListener(this); 
-		loadSPASSItem = new JMenuItem("from JRC-SPASS data. . .");
+		loadSPASSItem = new JMenuItem("from SPASS data. . .");
 		loadSPASSItem.addActionListener(this); 
 		loadPALMSItem = new JMenuItem("from PALMS data. . .");
 		loadPALMSItem.addActionListener(this);

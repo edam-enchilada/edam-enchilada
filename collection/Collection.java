@@ -59,7 +59,7 @@ import atom.ATOFMSAtomFromDB;
  * @author andersbe
  *
  */
-public class Collection {
+public class Collection implements Comparable{
 	private int collectionID;
 	private Collection parentCollection;
 	private boolean parentCollectionInitialized = false;
@@ -241,6 +241,12 @@ public class Collection {
 		return cachedName;
 	}
 	
+	//Hack - not good
+	public int compareTo(Object o){
+		Collection c = (Collection)o;
+		return (((Integer)this.getCollectionID()).compareTo(c.getCollectionID()));
+	}
+	
 	public void setName(String newName){
 		cachedName=newName;
 	}
@@ -277,7 +283,7 @@ public class Collection {
 		return aggregationOptions;
 	}
 	
-	//TODO:  Need a progress bar here.
+	//	TODO:  Need a progress bar here.
 	public boolean exportToPar(javax.swing.JFrame parent)
 	{
 		String name;
