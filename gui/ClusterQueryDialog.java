@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.zip.DataFormatException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -174,6 +175,7 @@ public class ClusterQueryDialog extends JDialog implements ActionListener{
 						}
 					}
 					if(filenames.size()>0){
+						try{
 						ClusterQuery qc = new ClusterQuery(
 								cTree.getSelectedCollection().
 								getCollectionID(),db, 
@@ -200,6 +202,10 @@ public class ClusterQueryDialog extends JDialog implements ActionListener{
 						}
 						
 						dispose();
+					} catch (AssertionError ae){
+						JOptionPane.showMessageDialog(this, "One or more of the particles is empty.");
+						dispose();
+					}
 					}
 					else
 						JOptionPane.showMessageDialog(this, "Please select a file to cluster on");

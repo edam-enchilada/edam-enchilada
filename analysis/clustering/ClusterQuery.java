@@ -15,6 +15,7 @@ import database.NonZeroCursor;
 /**
  * ClusterQuery clusters a collection around a list of centroids chosen by the user
  * @author christej
+ * @author turetske
  *
  */
 public class ClusterQuery extends Cluster {
