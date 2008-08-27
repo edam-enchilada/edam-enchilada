@@ -1,4 +1,4 @@
-; enchilada2.nsi
+; enchilada3.nsi
 ;
 ; This script is based on example2.nsi
 ; which was included in the distribution of the Nullsoft Software Installation
@@ -148,7 +148,7 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 		Abort "SQLEXPRESS could not be installed. Contact the Enchilada team for assistance."
 	DetailPrint "setup.exe returned $0"
 	IntCmp $0 0 setup_success
-    	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."  It could also be because the Microsoft File and Print Sharing protocol is not installed (install it from Properties from the right-click menu of a Network Connection in the Control Panel).'
+    	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."'
         SetOutPath "$INSTDIR"
         RMDir /r "C:\EXPRESS-install-temp"
 	RMDir "C:\EXPRESS-install-temp"
