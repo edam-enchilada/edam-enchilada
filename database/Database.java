@@ -2577,9 +2577,9 @@ public abstract class Database implements InfoWarehouse {
 		assert (highIndex - lowIndex < 1000) : "trying to collect over 1000 particles at a time!";
 		particleInfo.clear();
 		System.out.println("Low " + lowIndex + " high " + highIndex);//TESTING
-		int numberColumns = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense).size();
+		ArrayList<String> colNames = getColNames(collection.getDatatype(),DynamicTable.AtomInfoDense);
 		// This isn't a registered datatype... oops
-		if (numberColumns == 0)
+		if (colNames.size() == 0)
 			return null;
 		
 		try {
@@ -2587,21 +2587,46 @@ public abstract class Database implements InfoWarehouse {
 			int starter = getFirstAtomInCollection(collection) - 1;
 			System.out.println("starter " + starter);//TESTING
 			
-			String query = "SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
-				"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
-				", InternalAtomOrder\n" +
-				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
-				"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
-				" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
-			" ORDER BY InternalAtomOrder.AtomID";
-			//System.out.println(query);
-			ResultSet rs = stmt.executeQuery(query);//changed with IAO change - steinbel 9.19.06
+			StringBuffer query = new StringBuffer();
+			query.append("SELECT ");
+			for (int i = 0; i < colNames.size(); i++)
+			{
+				query.append(colNames.get(i));
+				query.append(",");
+			}
+			query.setLength(query.length() - 1);
+			query.append(" FROM \n(\n");
+			query.append("SELECT ");
+			query.append(getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()));
+			query.append(".*, ROW_NUMBER() OVER (ORDER BY InternalAtomOrder.AtomID) as rowNum FROM ");
+			query.append(getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()));
+			query.append(", InternalAtomOrder\n");
+			query.append("WHERE ");
+			query.append(getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()));
+			query.append(".AtomID = InternalAtomOrder.AtomID\n");
+			query.append("AND InternalAtomOrder.CollectionID = ");
+			query.append(collection.getCollectionID());
+			query.append("\n) temptable \n");
+			query.append("WHERE rowNum >= ");
+			query.append(lowIndex);
+			query.append(" AND rowNum <= ");
+			query.append(highIndex);
+			query.append(" ORDER BY AtomID\n"); 
+//			String query = "SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
+//				"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
+//				", InternalAtomOrder\n" +
+//				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
+//				"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
+//				" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
+//			" ORDER BY InternalAtomOrder.AtomID";
+//			System.out.println(query);
+			ResultSet rs = stmt.executeQuery(query.toString());//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
 			{
-				Vector<Object> vtemp = new Vector<Object>(numberColumns);
+				Vector<Object> vtemp = new Vector<Object>(colNames.size());
 				vtemp.add(rs.getInt(1)); // Integer for atomID
-				for (int i = 2; i <= numberColumns; i++) 
+				for (int i = 2; i <= colNames.size(); i++) 
 					vtemp.add(rs.getString(i));
 				particleInfo.add(vtemp);
 			}
