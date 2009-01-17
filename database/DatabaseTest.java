@@ -59,6 +59,7 @@ import java.sql.BatchUpdateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.Vector;
 import java.util.regex.MatchResult;
 import java.util.Random;
 
@@ -2576,5 +2577,62 @@ public class DatabaseTest extends TestCase {
 		assertEquals(c.getCollectionID(), 2);
 		
 		db.closeConnection();
+	}
+
+	/**
+	 * author jtbigwoo
+	 */
+	public void testUpdateParticleTable()
+	{
+		Collection c;
+		Vector<Vector<Object>> particleInfo = new Vector<Vector<Object>>();
+		Connection con;
+		Statement stmt;
+
+		String manual = "USE TestDB INSERT INTO Collections VALUES "+
+		"(7,'Seven', 'seven', 'sevendescrip', 'ATOFMS')";
+
+		db.openConnection(dbName);
+		con = db.getCon();
+		try
+		{
+			stmt = con.createStatement();
+			stmt.executeUpdate(
+					"USE TestDB\n " +
+					"INSERT INTO Collections VALUES (7, 'Seven', 'seven', 'sevendescrip', 'ATOFMS')\n" +
+					"INSERT INTO AtomMembership VALUES (7,1)\n" +
+					"INSERT INTO AtomMembership VALUES (7,3)\n" +
+					"INSERT INTO AtomMembership VALUES (7,5)\n" +
+					"INSERT INTO AtomMembership VALUES (7,7)\n" +
+					"INSERT INTO InternalAtomOrder (AtomID, CollectionID) (SELECT AtomID, CollectionID FROM AtomMembership WHERE CollectionID = 7)");
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+			fail("Failed to insert new collection to test updateParticleTable");
+		}
+		c = db.getCollection(7);
+		db.updateParticleTable(c, particleInfo, 1, 2);
+		assertEquals(2, particleInfo.size());
+		assertEquals(1, particleInfo.get(0).get(0));
+		assertEquals("2003-09-02 17:30:38.0", particleInfo.get(0).get(1));
+		assertEquals("1.0", particleInfo.get(0).get(2));
+		assertEquals("0.1", particleInfo.get(0).get(3));
+		assertEquals("1", particleInfo.get(0).get(4));
+		assertEquals("One", particleInfo.get(0).get(5));
+		assertEquals(3, particleInfo.get(1).get(0));
+		// test defect 1964860 - doesn't get the right stuff when atom id's are not consecutive
+		db.updateParticleTable(c, particleInfo, 3, 4);
+		assertEquals(2, particleInfo.size());
+		assertEquals(5, particleInfo.get(0).get(0));
+		assertEquals(7, particleInfo.get(1).get(0));
+		
+		c = db.getCollection(5);
+		db.updateParticleTable(c, particleInfo, 1, 5);
+		assertEquals(5, particleInfo.size(), 5);
+		assertEquals(16, particleInfo.get(0).get(0));
+		assertEquals("0.5", particleInfo.get(0).get(1));
+		assertEquals("1.0", particleInfo.get(0).get(2));
+		assertEquals(20, particleInfo.get(4).get(0));
 	}
 }
