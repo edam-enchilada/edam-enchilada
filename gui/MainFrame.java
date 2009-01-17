@@ -76,7 +76,7 @@ import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
 /**
- * @author ritza
+ * @author ritza, jtbigwoo
  * TODO:  In all files, check to make sure that when exceptions are
  * thrown/caught etc, that the application makes it back to a 
  * workable state.
@@ -1835,6 +1835,7 @@ public class MainFrame extends JFrame implements ActionListener
 		particleTablePane.setViewportView(particlesTable);
 		collectionViewPanel.setComponentAt(0, particlePanel);
 		collectionViewPanel.repaint();
+		currentlyShowing.setText("Currently showing 0 particles");
 		
 //		searchFileBox.setEnabled(false);	//commented out for fall 06 release - steinbel
 //		searchButton.setEnabled(false);
