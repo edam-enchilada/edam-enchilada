@@ -164,6 +164,7 @@ check the next & prev buttons for
 
 **Try deleting, renaming, etc collections, make sure everything looks right.
 	__ different length renames work
+	__ after a delete the label in the upper right should change to "Currently showing 0 particles"
 	
 **Try "Help, About Enchilada". Check that
 	__It indicates the current version
