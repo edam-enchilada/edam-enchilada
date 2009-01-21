@@ -290,10 +290,10 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 		glassPane.drawLine = false;
 		if(glassPane.start != null && glassPane.end != null)
 		{
-			if(chart.isInDataArea(e.getPoint())){
+			//if(chart.isInDataArea(e.getPoint())){
 				//System.out.println("mouse released: "+glassPane.start+"\t"+glassPane.end);
 				performZoom();
-			}
+			//}
 		}
 		// whether or not a zoom was made, clear glassPane's start and end!
 		glassPane.start=null;
