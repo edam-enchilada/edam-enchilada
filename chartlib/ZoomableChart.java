@@ -73,6 +73,7 @@ import java.awt.*;
  * @author sulmanj
  * @author smitht
  * @author olsonja
+ * @author jtbigwoo
  * 
  */
 public class ZoomableChart extends JLayeredPane implements MouseInputListener,
@@ -247,6 +248,7 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 	 * Part of MouseListener
 	 */
 	public void mouseDragged(MouseEvent e) {
+		Point oldEnd;
 		// keep drawing the gray thing
 		if(glassPane.start != null)
 		{
@@ -256,24 +258,30 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			 * don't need to change for scrollbar changes, since this just
 			 * sees if the point is on the chart or not. 
 			 */
+			if(glassPane.end != null) oldEnd = glassPane.end;
+			else oldEnd = e.getPoint();
 			if(chart.isInDataArea(e.getPoint()))
 			{
-				Point oldEnd;
-				if(glassPane.end != null) oldEnd = glassPane.end;
-				else oldEnd = e.getPoint();
 				glassPane.end = e.getPoint();
-				if(glassPane.start.x < oldEnd.x)
-				{
-					repaint(glassPane.start.x - 10,
-							glassPane.start.y - 5,
-							oldEnd.x + 20 - glassPane.start.x,
-							10);
-				}
-				else
-					repaint(oldEnd.x - 10,
-							glassPane.start.y - 5,
-							glassPane.start.x + 20 - oldEnd.x,
-							10);
+			}
+			else
+			{
+				glassPane.end = e.getPoint();
+				glassPane.end.x = chart.getDataAreaEdge(glassPane.start, e.getPoint());
+			}
+			if(glassPane.start.x < oldEnd.x)
+			{
+				repaint(glassPane.start.x - 10,
+						glassPane.start.y - 5,
+						oldEnd.x + 20 - glassPane.start.x,
+						10);
+			}
+			else
+			{
+				repaint(oldEnd.x - 10,
+						glassPane.start.y - 5,
+						glassPane.start.x + 20 - oldEnd.x,
+						10);
 			}
 		}else{
 			//The mouse click was invalid

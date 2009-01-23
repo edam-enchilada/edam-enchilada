@@ -26,6 +26,7 @@ import chartlib.AbstractMetricChartArea;
  * A chartarea for drawing these wonky Spectrum Histograms.
  * 
  * @author smitht
+ * @author jtbigwoo
  *
  */
 public class HistogramsChartArea 
@@ -211,6 +212,34 @@ public class HistogramsChartArea
 		JSlider source = (JSlider) e.getSource();
 //		this.setBrightness(1f / (source.getValue() / 200f));
 		this.setBrightness(source.getValue() * source.getValue());
+	}
+	
+	public int getDataAreaEdge(Point start, Point end)
+	{
+		int xresult = -1;
+		Rectangle chartBoundaries;
+		if (!isInDataArea(start))
+		{
+			return -1;
+		}
+		else
+		{
+			chartBoundaries = getDataAreaBounds();
+			// there's a 10 width legend on the left side
+			if (end.x < chartBoundaries.x + 10)
+			{
+				xresult = chartBoundaries.x + 10;
+			}
+			else if (end.x > chartBoundaries.x + chartBoundaries.width)
+			{
+				xresult = chartBoundaries.x + chartBoundaries.width;
+			}
+			else
+			{
+				xresult = end.x;
+			}
+			return xresult;
+		}
 	}
 }
 

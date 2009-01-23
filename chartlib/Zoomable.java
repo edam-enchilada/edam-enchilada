@@ -6,6 +6,7 @@ package chartlib;
  * event/listener/source type design pattern might be the way to go.
  * 
  * @author smitht
+ * @author jtbigwoo
  */
 
 import java.awt.Point;
@@ -19,6 +20,18 @@ public interface Zoomable {
 	 * @return
 	 */
 	public abstract boolean isInDataArea(Point p);
+
+	/**
+	 * Given a point that's in the data area (start), and a point that's off
+	 * the edge (end) this method will give us a valid x value to use for 
+	 * zooming.
+	 * @param start the point that's in the data area
+	 * @param end the point that's off the edge
+	 * @return the x on the screen for that will keep the zooming pane on the 
+	 * data area.  If you supply a start that's not on the data area, we return
+	 * -1.
+	 */
+	public abstract int getDataAreaEdge(Point start, Point end);
 
 	/**
 	 * Given a point in screen coordinates that is on a chart,

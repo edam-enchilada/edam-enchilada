@@ -48,6 +48,7 @@ import java.util.ArrayList;
 
 /**
  * @author sulmanj
+ * @author jtbigwoo
  * A container with one or more chart areas (containing labeled axes and data),
  * a key and a title, if desired.
  * 
@@ -659,6 +660,35 @@ public class Chart extends JPanel implements Zoomable
 
 	public boolean isInDataArea(Point p) {
 		return getChartIndexAt(p, true) != -1;
+	}
+
+	public int getDataAreaEdge(Point start, Point end)
+	{
+		int xresult = -1;
+		Rectangle chartBoundaries;
+		if (!isInDataArea(start))
+		{
+			return -1;
+		}
+		else
+		{
+			Component cp = findComponentAt(start);
+			chartBoundaries = ((AbstractChartArea) cp).getDataAreaBounds();
+			// there's a 10 width legend on the left side
+			if (end.x < chartBoundaries.x + 10)
+			{
+				xresult = chartBoundaries.x + 10;
+			}
+			else if (end.x > chartBoundaries.x + chartBoundaries.width)
+			{
+				xresult = chartBoundaries.x + chartBoundaries.width;
+			}
+			else
+			{
+				xresult = end.x;
+			}
+			return xresult;
+		}
 	}
 
 	public void setXAxisBounds(double xmin, double xmax) throws IllegalArgumentException {
