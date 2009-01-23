@@ -237,10 +237,12 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 					new ProgressBarWrapper(parent, ATOFMSDataSetImporter.title, 100);
 				final ATOFMSDataSetImporter dsi;
 				if(showAdvancedOptions){
+					advancedTableModel.fireTableDataChanged();
 					dsi = 
 						new ATOFMSDataSetImporter(
 								advancedTableModel, parent, progressBar);
 				}else{
+					basicTableModel.fireTableDataChanged();
 					dsi = 
 						new ATOFMSDataSetImporter(
 								basicTableModel, parent, progressBar);
@@ -318,6 +320,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			//Copy values from the current TableModel into the new TableModel
 			// and display the new TableModel
 			if(showAdvancedOptions){
+				basicTableModel.fireTableDataChanged();
 				advancedOptionsButton.setText("<<<Simple");
 				for(int i=0;i<basicTableModel.getRowCount();i++){
 					for(int j=0;j<basicTableModel.getColumnCount()-1; j++){
@@ -330,6 +333,7 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 				}
 				card.show(listPane, "Advanced");
 			}else{
+				advancedTableModel.fireTableDataChanged();
 				advancedOptionsButton.setText("Advanced>>>");
 				for(int i=0;i<advancedTableModel.getRowCount();i++){
 					for(int j=0;j<basicTableModel.getColumnCount()-1; j++){
