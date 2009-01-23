@@ -316,12 +316,14 @@ public class ATOFMSDataSetImporter {
 						"'.cal' file at row # " + (i+1) + ".");
 			}
 			height= ((Integer)table.getValueAt(i,4)).intValue();
+			if (height == 0)
+				throw new DisplayException("The Min. Height must be greater than 0 in row # " + (i+1) + ".");
 			area = ((Integer)table.getValueAt(i,5)).intValue();
+			if (area == 0)
+				throw new DisplayException("The Min. Area must be greater than 0 in row # " + (i+1) + ".");
 			relArea = ((Float)table.getValueAt(i,6)).floatValue();
-			if (height == 0 || area == 0 || relArea == 0.0) {
-				throw new DisplayException("The Peaklisting Parameters need to be greater " +
-						"than 0 at row # " + (i+1) + ".");
-			}
+			if (relArea == 0.0)
+				throw new DisplayException("The Min. Rel. Area must be greater than 0 in row # " + (i+1) + ".");
 		}
 	}
 	
