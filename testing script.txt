@@ -112,6 +112,7 @@ check the next & prev buttons for
 		__spectrum view works
 		__zoom in spectrum view works
 		__zoom by dragging the mouse off the side of the chart works
+		__zoom by dragging the mouse off the top or bottom of the chart works
 		__highlighting peak with mouse causes peak in list on top right to highlight when in peak view
 		__highlighting peak with mouse causes peak in list on top right to highlight when in spectrum view
 		__highlighting peak with mouse causes labels to update when in peak
