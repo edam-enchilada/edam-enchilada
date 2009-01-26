@@ -23,6 +23,7 @@ import externalswing.ProgressTask;
 /**
  * TSImport.java - Import a list of CSV files to the database.
  * @author smitht
+ * @author jtbigwoo
  */
 
 /*
@@ -51,11 +52,14 @@ public class TSImport{
 	public static final String defaultDFString = "yyyy-MM-dd HH:mm:ss";
     private static final SimpleDateFormat defaultDateFormatter = new SimpleDateFormat(defaultDFString);
     
+    public static final String excelWithSecondsDFString = "MM/dd/yyyy HH:mm:ss";
+    private static final SimpleDateFormat excelWithSecondsDateFormatter = new SimpleDateFormat(excelWithSecondsDFString);
+
     public static final String excelDFString = "MM/dd/yyyy HH:mm";
     private static final SimpleDateFormat excelDateFormatter = new SimpleDateFormat(excelDFString);
     private SimpleDateFormat dateFormatter = null;
     
-    private static final SimpleDateFormat humanFormatter = new SimpleDateFormat("MMM d, yyyy, hh:mm a");
+    private static final SimpleDateFormat humanFormatter = new SimpleDateFormat("MMM d, yyyy, hh:mm:ss a");
 
     public boolean interactive;
     public File task;
@@ -231,7 +235,7 @@ public class TSImport{
             if(!found) throw new Exception("Error in "+args[0]+" at line 1: Cannot find column name "+args[i]+", which is defined in "+task_file+" at line "+line_no+"\n");
         }
         
-	    final ArrayList[] values = new ArrayList[args.length];
+	    final ArrayList<String>[] values = new ArrayList[args.length];
         for(int i=1; i<values.length; i++)
         	values[i] = new ArrayList<String>(1000);
         try {
@@ -256,12 +260,10 @@ public class TSImport{
         	throw new InterruptedException("Date Confirmation cancelled");
         }
         
-        if(interactive){
-        	for(int i=2; i<values.length; i++){
-       	 		if (convTask.terminate) throw new InterruptedException("dialog closed, probably");
-            	putDataset(args[i],values[1],values[i]);
-        	}
-        }
+    	for(int i=2; i<values.length; i++){
+   	 		if (interactive && convTask.terminate) throw new InterruptedException("dialog closed, probably");
+        	putDataset(args[i],values[1],values[i]);
+    	}
     }
 
     // process a csv file
@@ -315,12 +317,17 @@ public class TSImport{
        	testDate = defaultDateFormatter.parse(testString);
     	dateFormatter = defaultDateFormatter;
 		}catch(ParseException e){
+	    try{
+	       	testDate = excelWithSecondsDateFormatter.parse(testString);
+        	dateFormatter = excelWithSecondsDateFormatter;
+        }catch(ParseException f){
 		try{
 			testDate = excelDateFormatter.parse(testString);
 			dateFormatter = excelDateFormatter;
-		}catch(ParseException f){
+		}catch(ParseException g){
 			dateFormatter = null;
 		}
+	    }
 		}
 		if(interactive){
 			if(testDate!=null){
@@ -357,7 +364,7 @@ public class TSImport{
     	TreeMap<String, ArrayList<String>> noSparseTables = new TreeMap<String, ArrayList<String>>(); 
     	
     	for(int i=0; i<time.size(); i++) {
-    		if (convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
+    		if (interactive && convTask.terminate) throw new InterruptedException("Time for the task to terminate!");
     		float nextValue = 0;
     		try{
     			Date nextDate = dateFormatter.parse(time.get(i));
