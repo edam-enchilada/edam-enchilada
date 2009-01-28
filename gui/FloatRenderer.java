@@ -1,27 +1,30 @@
 package gui;
 
 import java.awt.Component;
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class FloatRenderer extends DefaultTableCellRenderer{
-	NumberFormat floatFormat;
+	DecimalFormat floatFormat;
 	
     public FloatRenderer() {
-    	floatFormat = NumberFormat.getInstance();
-        // Set the maximum decimal point precision
-        floatFormat.setMaximumIntegerDigits(1);
-        floatFormat.setMaximumFractionDigits(10);
+    	// we only use 7 digits after the decimal place because the internal
+    	// representation of some numbers is not as clean, e.g. .005 is 
+    	// 0.004999999888241291 internally.  No need to show the crummy-looking
+    	// decimal numbers.
+    	floatFormat = new DecimalFormat("#.#######");
     }
 
     public Component getTableCellRendererComponent(
                             JTable table, Object value,
                             boolean isSelected, boolean hasFocus,
                             int row, int column) {
-    	String formatted = floatFormat.format(value);
+    	String formatted = floatFormat.format(((Float) value).floatValue());
+    	System.out.println(formatted);
     	Component result=super.getTableCellRendererComponent(table, formatted, isSelected, hasFocus, row, column);
+    	System.out.println(result);
     	return result;
     }	
 }
