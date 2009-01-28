@@ -262,10 +262,15 @@ public class ZoomableChart extends JLayeredPane implements MouseInputListener,
 			else oldEnd = e.getPoint();
 			if(chart.isInDataArea(e.getPoint()))
 			{
+				// if we're still in the graph area, just move the end of the glasspane
+				// to where the mouse is.
 				glassPane.end = e.getPoint();
 			}
 			else
 			{
+				// if we're off the edge of the graph area, call getDataAreaEdge to move
+				// the end of the glasspane to the closest spot to the mouse. (bug 2525223)
+				// @see chartlib.Zoomable.getDataAreaEdge()
 				glassPane.end = e.getPoint();
 				glassPane.end.x = chart.getDataAreaEdge(glassPane.start, e.getPoint());
 			}

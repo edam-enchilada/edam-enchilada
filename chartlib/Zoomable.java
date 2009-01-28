@@ -24,7 +24,8 @@ public interface Zoomable {
 	/**
 	 * Given a point that's in the data area (start), and a point that's off
 	 * the edge (end) this method will give us a valid x value to use for 
-	 * zooming.
+	 * zooming.  We need this so that we can move the pane that shows the
+	 * zoom area even when the mouse pointer is not in the data area.  (bug 2525223)
 	 * @param start the point that's in the data area
 	 * @param end the point that's off the edge
 	 * @return the x on the screen for that will keep the zooming pane on the 
