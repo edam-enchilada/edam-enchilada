@@ -46,11 +46,11 @@ import java.awt.Component;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import javax.swing.text.DefaultFormatterFactory;
-import javax.swing.text.NumberFormatter;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 /**
  * @author christej
+ * @author jtbigwoo
  *
  */
 public class FloatEditor extends DefaultCellEditor {
@@ -68,11 +68,8 @@ public class FloatEditor extends DefaultCellEditor {
         // Set the maximum decimal point precision
         floatFormat.setMaximumIntegerDigits(1);
         floatFormat.setMaximumFractionDigits(10);
-        NumberFormatter floatFormatter = new NumberFormatter(floatFormat);
-        floatFormatter.setFormat(floatFormat);
         textField.setFormatterFactory(
-                new DefaultFormatterFactory(floatFormatter));
-
+                new DefaultFormatterFactory(new FloatFormatter()));
     }
     
     /**
@@ -126,4 +123,33 @@ public class FloatEditor extends DefaultCellEditor {
         return super.stopCellEditing();
     }
 
+    /**
+     * Just does one thing: turns e into E so that the number formatter will
+     * work better on user-entered scientific notation.  Users tend to enter
+     * numbers as 1.2e-7, but java wants them to enter 1.2E-7
+     * @author jtbigwoo
+     */
+    private class FloatFormatter extends JFormattedTextField.AbstractFormatter{
+    	
+    	public Object stringToValue(String text)
+    	{
+    		text = text.replace('e', 'E');
+            try {
+                return floatFormat.parseObject(text);
+            } 
+            catch (ParseException pe) {
+                return null;
+            }
+    	}
+    	
+    	public String valueToString(Object value)
+    	{
+    		try {
+        		return floatFormat.format(value);
+    		}
+    		catch (IllegalArgumentException ae) {
+    			return null;
+    		}
+    	}
+    }
 }
