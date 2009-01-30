@@ -45,7 +45,10 @@ import javax.swing.JTable;
 import java.awt.Component;
 import java.text.NumberFormat;
 import java.text.ParseException;
+
+import javax.swing.text.DefaultFormatter;
 import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.JFormattedTextField.AbstractFormatter;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 /**
@@ -93,30 +96,26 @@ public class FloatEditor extends DefaultCellEditor {
             return value;
         else if (value instanceof Number) 
             return new Float(((Number)value).floatValue()); 
-        else {
+        else if (value != null) {
             try {
                 return floatFormat.parseObject(value.toString());
             } 
             catch (ParseException e) {
-                return null;
             }
         }
+        return null;
     }
     /**
      * If there was a problem with the input, try commiting it
-     * and if that doesn't work, turn the border read and
+     * and if that doesn't work, turn the border red and
      * return false (the user will not be able to type 
      * anywhere else until the input is in the correct form)
      */
     public boolean stopCellEditing() {
-        if (textField.isEditValid()) {
-        	try {
-        		textField.commitEdit();
-            } 
-            catch (java.text.ParseException exc) { }
-	    
+    	try {
+    		textField.commitEdit();
         } 
-        else {
+        catch (java.text.ParseException exc) {
 	        textField.setBorder(new LineBorder(Color.red));
         	return false; 
         }
@@ -129,27 +128,31 @@ public class FloatEditor extends DefaultCellEditor {
      * numbers as 1.2e-7, but java wants them to enter 1.2E-7
      * @author jtbigwoo
      */
-    private class FloatFormatter extends JFormattedTextField.AbstractFormatter{
+    private class FloatFormatter extends AbstractFormatter{
     	
     	public Object stringToValue(String text)
+    		throws ParseException
     	{
+    		Number parsedValue;
     		text = text.replace('e', 'E');
             try {
-                return floatFormat.parseObject(text);
+                parsedValue = (Number) floatFormat.parseObject(text);
+                return parsedValue;
             } 
             catch (ParseException pe) {
-                return null;
+                throw pe;
             }
     	}
     	
     	public String valueToString(Object value)
     	{
     		try {
-        		return floatFormat.format(value);
+    			return floatFormat.format(value);
     		}
     		catch (IllegalArgumentException ae) {
     			return null;
     		}
     	}
+    	
     }
 }
