@@ -193,6 +193,9 @@ public class ImportParsDialog extends JDialog implements ActionListener {
 			tableColumns[i].setPreferredWidth(60);
 		
 		pTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		// if you don't put this next line in, the current change will be lost
+		// when you click on a button outside the table
+		pTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 		
 		return pTable;
 	}
