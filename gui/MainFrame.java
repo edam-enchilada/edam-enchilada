@@ -65,6 +65,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import dataExporters.MSAnalyzeDataSetExporter;
 import dataImporters.ATOFMSDataSetImporter;
 import dataImporters.FlatFileATOFMSDataSetImporter;
 import database.InfoWarehouse;
@@ -518,7 +519,48 @@ public class MainFrame extends JFrame implements ActionListener
 		}
 		else if (source == exportParsButton || source == MSAexportItem)
 		{
-			getSelectedCollection().exportToPar(this);
+			final Collection c = getSelectedCollection();
+			if (c == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to export.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			final JFrame thisRef = this;
+			final Database dbRef = (Database)db;
+			final String parFileName = (new FileDialogPicker("Choose .par file destination",
+					 "par", this)).getFileName();
+
+			if (parFileName == null) {
+				JOptionPane.showMessageDialog(this, "Please select a valid file name.",
+						"No file name selected", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			
+			final ProgressBarWrapper progressBar = 
+				new ProgressBarWrapper(this, MSAnalyzeDataSetExporter.TITLE, 100);
+			final MSAnalyzeDataSetExporter dse = 
+					new MSAnalyzeDataSetExporter(
+							this, dbRef,progressBar);
+			
+			progressBar.constructThis();
+			
+			
+			final SwingWorker worker = new SwingWorker(){
+				public Object construct(){
+						try{
+							dse.exportToPar(c, parFileName, null);
+						}catch (DisplayException e1) {
+							ErrorLogger.displayException(progressBar,e1.toString());
+						} 
+					return null;
+				}
+				public void finished(){
+					progressBar.disposeThis();
+					thisRef.validate();
+				}
+			};
+			worker.start();
 		}
 		
 		
