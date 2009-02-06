@@ -46,7 +46,6 @@ import java.awt.Component;
 import java.text.NumberFormat;
 import java.text.ParseException;
 
-import javax.swing.text.DefaultFormatter;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.JFormattedTextField.AbstractFormatter;
 import javax.swing.border.LineBorder;
