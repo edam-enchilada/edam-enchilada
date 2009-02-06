@@ -45,14 +45,7 @@
 package collection;
 
 import database.*;
-import gui.FileDialogPicker;
-
-import java.io.*;
-import java.text.*;
 import java.util.*;
-
-import atom.ATOFMSAtomFromDB;
-
 
 /**
  * @author gregc
@@ -281,108 +274,6 @@ public class Collection implements Comparable{
 	
 	public AggregationOptions getAggregationOptions() { 
 		return aggregationOptions;
-	}
-	
-	//	TODO:  Need a progress bar here.
-	public boolean exportToPar(javax.swing.JFrame parent)
-	{
-		String name;
-		String parFileName = (new FileDialogPicker("Choose .par file destination",
-											 "par", parent)
-							  ).getFileName();
-
-		if (parFileName == null) {
-			return false;
-		} else if (! parFileName.endsWith(".par")) {
-			parFileName = parFileName + ".par";
-		}
-		parFileName = parFileName.replaceAll("'", "");
-		// parFileName is an absolute pathname to the par file.
-		// the set file goes in the same directory
-		File parFile = new File(parFileName);
-		File setFile = new File(parFileName.replaceAll("\\.par$", ".set"));
-		System.out.println(parFile.getAbsolutePath());
-		
-		// String name is the basename of the par file---the dataset name.
-		// I've done trivial testing---spaces and periods seem to be ok
-		// in this name.  I'm sure that single quotes aren't... so I remove
-		// them above.
-		File noExt = new File(parFileName.replaceAll("\\.par$", ""));
-		name = noExt.getName(); // name has no path
-		
-	
-		// the thought: set "name" to the basename of the file they choose.
-		java.util.Date date = db.exportToMSAnalyzeDatabase(this, name, "MS-Analyze");
-		try {
-			DateFormat dFormat = 
-				new SimpleDateFormat("MM/dd/yyyy kk:mm:ss");
-			PrintWriter out = new PrintWriter(new FileOutputStream(parFile, false));
-			out.println("ATOFMS data set parameters");
-			out.println(name);
-			out.println(dFormat.format(date));
-			out.println(getComment());
-			out.close();
-			
-			int particleCount = 1;
-			out = new PrintWriter(new FileOutputStream(setFile, false));
-
-			ATOFMSAtomFromDB particle = null;
-			// The Atom iterator is essentially a thin wrapper to a 
-			// Result set and thus you must call hasNext to get to the
-			// next element of the interator as it links to 
-			// ResultSet.next()
-			CollectionCursor curs = db.getAtomInfoOnlyCursor(this);
-			
-			NumberFormat nFormat = NumberFormat.getNumberInstance();
-			nFormat.setMaximumFractionDigits(6);
-			nFormat.setMinimumFractionDigits(6);
-			while (curs.next())
-			{
-				particle = curs.getCurrent().getATOFMSParticleInfo();
-
-			// the number in the string (65535) is 
-			// somewhat meaningless for our purposes, this is
-			// the busy 
-			// delay according to the MS-Analyze manual.  So I 
-			// just put in a dummy value.  I looked at a dataset
-			// and it had 65535 for the busy time for every single
-			// particle anyway, which leads me to believe it's 
-			// actually the max value of a bin in the data (2^16)
-			// TODO: Test to make sure size matches the
-			// scatter delay MSA produces for the same dataset
-				out.println(particleCount + "," + 
-						// better would be to copy all the .amz files around
-						// and use relative pathnames in a non-abusive way.
-//						particle.getFilename().substring(0,1) + 
-//						File.separator +
-						
-						//XXX: hack.  MSA only understands relative pathnames:
-						"..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\" +
-						// .substring(3) : the part of the path after "c:\".
-						// How to make this platform-independent?
-						// well, MS-Analyze doesn't work on linux, so there!
-						particle.getFilename().substring(3) + 
-
-						// if MS-Analyze is ever smart enough to recognize
-						// absolute pathnames, get rid of the stuff above
-						// and use this line.
-//						particle.getFilename() + 
-						", " + particle.getScatDelay() + 
-						", 65535, " +
-						nFormat.format(particle.getLaserPower()) + 
-						", " + 
-						dFormat.format(particle.getTimeStamp()));
-				particleCount++;
-			}
-			curs.close();
-			out.close();
-			System.out.println("Finished exporting to MSA");
-		} catch (IOException e) {
-			System.err.println("Problem writing .par file: ");
-			e.printStackTrace();
-			return false;
-		}
-		return true;
 	}
 	
 	public void updateParent(Collection p) {
