@@ -71,6 +71,7 @@ import database.Database.BPLOnlyCursor;
  * with long term storage, typically in the form of a database, but in
  * theory it could be anything, flat files, a custom binary format, etc.
  * @author andersbe
+ * @author jtbigwoo
  */
 public interface InfoWarehouse {
 	/**
@@ -250,7 +251,7 @@ public interface InfoWarehouse {
 	
 	public Set<Integer> getAllDescendantCollections(int collectionID, boolean includeTopLevel);
 	
-	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection);
+	public Date exportToMSAnalyzeDatabase(Collection collection, String newName, String sOdbcConnection, String fileName, ProgressBarWrapper progressBar);
 	
 	public String getCollectionComment(int collectionID);
 	
