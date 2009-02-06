@@ -69,7 +69,6 @@ import collection.Collection;
 import database.Database.BPLOnlyCursor;
 import database.Database.MemoryBinnedCursor;
 
-
 import ATOFMS.ATOFMSParticle;
 import ATOFMS.ATOFMSPeak;
 import ATOFMS.CalInfo;
@@ -1022,10 +1021,15 @@ public class DatabaseTest extends TestCase {
 
 	public void testExportToMSAnalyzeDatabase() {
 		db.openConnection(dbName);
-		java.util.Date date = db.exportToMSAnalyzeDatabase(db.getCollection(2),"MSAnalyzeDB","MS-Analyze");
-		assertTrue(date.toString().equals("Tue Sep 02 17:30:38 CDT 2003"));
+		final ProgressBarWrapper progressBar = 
+			new ProgressBarWrapper(null, "Exporting to MS-Analyze",100);
+		progressBar.constructThis();
+		progressBar.setIndeterminate(true);
+		progressBar.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		progressBar.setVisible(false);
+		java.util.Date date = db.exportToMSAnalyzeDatabase(db.getCollection(2),"MSAnalyzeDB","MS-Analyze", null, progressBar);
 		db.closeConnection();
-	
+		assertTrue(date.toString().equals("Tue Sep 02 17:30:38 CDT 2003"));
 	}
 	
 	
