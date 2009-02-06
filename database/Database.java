@@ -111,6 +111,9 @@ import gui.ProgressBarWrapper;
  * @author andersbe, shaferia
  */
 public abstract class Database implements InfoWarehouse {
+    private static final String accessDBURLPrefix = "jdbc:odbc:Driver={Microsoft Access Driver (*.mdb)};DBQ=";
+    private static final String accessDBURLSuffix = ";READONLY=false}";
+
 	protected Connection con;
 	protected String url;
 	protected String port;
@@ -2978,14 +2981,22 @@ public abstract class Database implements InfoWarehouse {
 	/**
 	 * exports a collection to the MSAnalyze database by making up 
 	 * the necessary data to import (.par file, etc).
+	 * @param collection the collection to export
+	 * @param newName the name of the par file without the ".par" part.
+	 * @param sOdbcConnection the name of the system data source to export to
+	 * -- ignored if a fileName is supplied.
+	 * @param fileName the path to the access database to export to--
+	 * overrides sOdbcConnection
+	 * @param progressBar
 	 * @return date associated with the mock dataset.
 	 */
 	public java.util.Date exportToMSAnalyzeDatabase(
 			Collection collection, 
 			String newName, 
-			String sOdbcConnection) 
+			String sOdbcConnection,
+			String fileName,
+			ProgressBarWrapper progressBar)// throws InterruptedException
 	{
-		
 		if (! collection.getDatatype().equals("ATOFMS")) {
 			throw new RuntimeException(
 					"trying to export the wrong datatype for MSAnalyze: " 
@@ -2997,30 +3008,74 @@ public abstract class Database implements InfoWarehouse {
 			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
 		} catch (ClassNotFoundException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error loading ODBC bridge driver.");
-			System.err.println("Error loading ODBC " +
-			"bridge driver");
+			System.err.println("Error loading ODBC bridge driver");
 			e.printStackTrace();
 			return null;
 		}
 		try {
-			Connection odbcCon = DriverManager.getConnection(
-					"jdbc:odbc:" + sOdbcConnection);
-			System.out.println("jdbc:odbc:" +sOdbcConnection);
+			Connection odbcCon;
+			
+			if (fileName != null) {
+				try {
+			        fileName = fileName.replace('\\', '/').trim();
+
+					odbcCon = DriverManager.getConnection(
+							accessDBURLPrefix + fileName + accessDBURLSuffix);
+					System.out.println(accessDBURLPrefix + fileName + accessDBURLSuffix);
+				}
+				catch (SQLException se) {
+					//putting in specific error message here to help the user 
+					//if something goes wrong. the generic message at the end
+					//of this method is not helpful
+					ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error connecting to the file path " + fileName + " please ensure the file exists.");
+					System.err.println("Error connecting to Access database");
+					se.printStackTrace();
+					return null;
+				}
+			}
+			else {
+				try {
+					odbcCon = DriverManager.getConnection(
+							"jdbc:odbc:" + sOdbcConnection);
+					System.out.println("jdbc:odbc:" + sOdbcConnection);
+				}
+				catch (SQLException se) {
+					//putting in specific error message here to help the user 
+					//if something goes wrong. the generic message at the end
+					//of this method is not helpful
+					ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error connecting to the system data source name " + sOdbcConnection + " please the name and the file exist.");
+					System.err.println("Error connecting to Access database");
+					se.printStackTrace();
+					return null;
+				}
+			}
 			
 			Statement odbcStmt = odbcCon.createStatement();
 			Statement stmt = con.createStatement();
-			
+
 			// Create a table containing the values that will be 
 			// exported to the particles table in MS-Analyze
-			stmt.execute(
-					"IF (OBJECT_ID('#ParticlesToExport') " +
-					"IS NOT NULL)\n" +
-					"	DROP TABLE #ParticlesToExport\n" +
-					"CREATE TABLE #ParticlesToExport (AtomID INT " +
-					"PRIMARY KEY, Filename TEXT, [Time] DATETIME, [Size] FLOAT, " +
-					"LaserPower FLOAT, NumPeaks INT, TotalPosIntegral INT, " +
-					"TotalNegIntegral INT)\n" +
-					
+			try {
+				stmt.execute(
+						"IF (OBJECT_ID('tempdb..#ParticlesToExport') " +
+						"IS NOT NULL)\n" +
+						"	DROP TABLE #ParticlesToExport\n" +
+						"CREATE TABLE #ParticlesToExport (AtomID INT " +
+						"PRIMARY KEY, Filename TEXT, [Time] DATETIME, [Size] FLOAT, " +
+						"LaserPower FLOAT, NumPeaks INT, TotalPosIntegral INT, " +
+						"TotalNegIntegral INT)\n");
+			}
+			catch (SQLException se) {
+				//putting in specific error message here to help the user 
+				//if something goes wrong. the generic message at the end
+				//of this method is not helpful
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error setting up temporary table in SQL server.  Please ensure you have appropriate access to the database.");
+				System.err.println("Error connecting to Access database");
+				se.printStackTrace();
+				return null;
+			}
+			
+			stmt.execute(		
 					"INSERT INTO #ParticlesToExport\n" +
 					"(AtomID,Filename, [Time], [Size], LaserPower)\n" +
 					"(\n" +
@@ -3120,9 +3175,21 @@ public abstract class Database implements InfoWarehouse {
 			// table.  Since the particles from this dataset
 			// might have been peaklisted separately, enter zeroes
 			// for those values, and for the missed particles.
+			try {
 			odbcStmt.executeUpdate(
 					"DELETE FROM DataSets\n" +
 					"WHERE Name = '" + newName + "'\n");
+			}
+			catch (SQLException se) {
+				//putting in specific error message here to help the user 
+				//if something goes wrong. the generic message at the end
+				//of this method is not helpful
+				ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Error updating the MS-Analyze database.  Please ensure you have update access to the database.");
+				System.err.println("Error updating the Access database");
+				se.printStackTrace();
+				return null;
+			}
+
 			System.out.println(
 					"INSERT INTO DataSets\n" +
 					"VALUES ('" + newName + "', '" + 
@@ -3148,6 +3215,7 @@ public abstract class Database implements InfoWarehouse {
 			odbcStmt.execute(
 					"DELETE FROM Particles\n" +
 					"WHERE DataSet = '" + newName + "'\n");
+
 			while(rs.next())
 			{
 				odbcStmt.addBatch(
@@ -3174,7 +3242,7 @@ public abstract class Database implements InfoWarehouse {
 			stmt.executeUpdate(
 			"DROP TABLE #ParticlesToExport");
 			stmt.executeUpdate(
-					"IF (OBJECT_ID('#PeaksToExport') " +
+					"IF (OBJECT_ID('tempdb..#PeaksToExport') " +
 					"IS NOT NULL)\n" +
 					"	DROP TABLE #PeaksToExport\n" +
 					"CREATE TABLE #PeaksToExport\n" +
@@ -4049,7 +4117,7 @@ public abstract class Database implements InfoWarehouse {
 				stmt = con.createStatement();
 				
 				// Drop table if it already exists.
-				stmt.execute("IF (OBJECT_ID('#TempRand') " +
+				stmt.execute("IF (OBJECT_ID('tempdb..#TempRand') " +
 						"IS NOT NULL)\n" +
 				"	DROP TABLE #TempRand\n");
 				//These strings constitute the entire SQL query for randomization.
@@ -6155,7 +6223,7 @@ public abstract class Database implements InfoWarehouse {
 	public void propagateNewCollection(Collection newCollection){
 		try {
 			Statement stmt = con.createStatement();
-			stmt.executeUpdate("IF (OBJECT_ID('#children') " +
+			stmt.executeUpdate("IF (OBJECT_ID('tempdb..#newCollection') " +
 				"IS NOT NULL)\n" +
 				"	DROP TABLE #newCollection\n");
 			stmt.executeUpdate("CREATE TABLE #newCollection (AtomID int, CollectionID int)");
@@ -6234,7 +6302,7 @@ public abstract class Database implements InfoWarehouse {
 				 * of the children collection and the CollectionID of the 
 				 * current collection.  Then we'll copy that info into IAO. - steinbel
 				 */
-				stmt.executeUpdate("IF (OBJECT_ID('#children') " +
+				stmt.executeUpdate("IF (OBJECT_ID('tempdb..#children') " +
 					"IS NOT NULL)\n" +
 					"	DROP TABLE #children\n");
 				stmt.executeUpdate("CREATE TABLE #children (AtomID int, CollectionID int)");
