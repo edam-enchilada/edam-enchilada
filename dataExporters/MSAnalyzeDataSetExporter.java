@@ -54,6 +54,7 @@ import atom.ATOFMSAtomFromDB;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import errorframework.DisplayException;
+import errorframework.ErrorLogger;
 import gui.ProgressBarWrapper;
 
 public class MSAnalyzeDataSetExporter {
@@ -89,6 +90,8 @@ public class MSAnalyzeDataSetExporter {
 	public boolean exportToPar(Collection coll, String parFileName, String msAnalyzeFileName) throws DisplayException
 	{
 		String name;
+		File setFile = null;
+		
 		if (parFileName == null) {
 			return false;
 		} else if (! parFileName.endsWith(".par")) {
@@ -102,7 +105,6 @@ public class MSAnalyzeDataSetExporter {
 		// parFileName is an absolute pathname to the par file.
 		// the set file goes in the same directory
 		File parFile = new File(parFileName);
-		File setFile = new File(parFileName.replaceAll("\\.par$", ".set"));
 		System.out.println(parFile.getAbsolutePath());
 		
 		// String name is the basename of the par file---the dataset name.
@@ -122,8 +124,10 @@ public class MSAnalyzeDataSetExporter {
 		}
 
 		try {
+			// make the par file first, then the set file
 			writeParFile(parFile, name, date, coll.getComment());
 			
+			setFile = new File(parFileName.replaceAll("\\.par$", ".set"));
 			int particleCount = 1;
 			DateFormat dFormat = 
 				new SimpleDateFormat("MM/dd/yyyy kk:mm:ss");
@@ -190,7 +194,13 @@ public class MSAnalyzeDataSetExporter {
 			out.close();
 			System.out.println("Finished exporting to MSA");
 		} catch (IOException e) {
-			System.err.println("Problem writing .par file: ");
+			if (setFile == null) {
+				ErrorLogger.writeExceptionToLogAndPrompt("MSAAnalyze Exporter","Error writing .par file please ensure the applicaiton can write to the specified par file.");
+			}
+			else {
+				ErrorLogger.writeExceptionToLogAndPrompt("MSAAnalyze Exporter","Error writing .set file please ensure the applicaiton can write to the specified par file.");
+			}
+			System.err.println("Problem writing file: ");
 			e.printStackTrace();
 			return false;
 		}
