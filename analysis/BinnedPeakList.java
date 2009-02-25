@@ -48,6 +48,7 @@ import analysis.dataCompression.Pair;
 /**
  * @author andersbe
  * @author smitht
+ * @author jtbigwoo
  *
  * An implementation of a sparse array, this class is essentially
  * a peak list where every key is an integer value (rounded 
@@ -897,6 +898,19 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		while (iter.hasNext()) {
 			temp = iter.next();
 			temp.setValue(temp.getValue() * factor);
+		}
+	}
+	
+	/** 
+	 * Divide each value by a scalar factor.
+	 * @param factor
+	 */
+	public void divideAreasBy(float factor) {
+		Iterator<Map.Entry<Integer, Float>> iter = peaks.entrySet().iterator();
+		Map.Entry<Integer,Float> temp;
+		while (iter.hasNext()) {
+			temp = iter.next();
+			temp.setValue(temp.getValue() / factor);
 		}
 	}
 	

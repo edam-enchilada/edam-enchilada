@@ -59,6 +59,7 @@ import java.awt.*;
  *TODO:  Problems entering text, getting the buttons to work, and closing the window.
  *
  * @author ritza
+ * @author jtbigwoo
  */
 public class AdvancedClusterDialog extends JDialog implements ActionListener {
 	private JDialog parent;
@@ -73,11 +74,12 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 	private JTextField errorField;
 	private JTextField numSamplesField;
 	private JTextField powerField;
+	private JTextField smallestNormalizedPeakField;
 	
 	public AdvancedClusterDialog(JDialog frame) {
 		super(frame,"Advanced Cluster Options", true);
 		parent = frame;
-		setSize(350,150);
+		setSize(350,190);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
 		JLabel kHeader = new JLabel("K-Cluster:");
@@ -104,6 +106,12 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		powerField = new JTextField(initialPower, 5);
 		p.add(peakPower);
 		p.add(powerField);
+		JPanel p2 = new JPanel();
+		JLabel smallestPeakLabel = new JLabel("Smallest normalized peak to include:");
+		String initialSmallestPeak = Double.toString(0.0001);//get the current power
+		smallestNormalizedPeakField = new JTextField(initialSmallestPeak, 5);
+		p2.add(smallestPeakLabel);
+		p2.add(smallestNormalizedPeakField);
 		
 		/*Add the buttons to the bottom of the dialog*/
 		JPanel buttons = new JPanel();
@@ -121,6 +129,7 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		add(k);
 		add(preProcess);
 		add(p);
+		add(p2);
 		add(buttons);
 		setLayout(new FlowLayout());
 		
@@ -138,6 +147,8 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 			ClusterK.setNumSamples(Integer.parseInt(text));
 			text = powerField.getText();
 			Cluster.setPower(Double.parseDouble(text));
+			text = smallestNormalizedPeakField.getText();
+			Cluster.setSmallestNormalizedPeak(Float.parseFloat(text));
 			} catch (Exception exception) {
 				JOptionPane.showMessageDialog(parent,
 						"Error with parameters.\n" +

@@ -65,6 +65,7 @@ import errorframework.NoSubCollectionException;
 
 /**
  * @author andersbe
+ * @author jtbigwoo
  * This abstract class implements methods specific to Cluster 
  * algorithms.
  */
@@ -76,10 +77,12 @@ public abstract class Cluster extends CollectionDivider {
 	protected ClusterInformation clusterInfo;
 	protected static double power = 1.0;	//the power to which the peak areas
 											//are raised during preprocessing.
-	
-///////////////////////////////////////////////////////////////////////////////
-	private static final int BOOST = 1000;		//EVIL HACK CONSTANT!!!!!
-///////////////////////////////////////////////////////////////////////////////
+
+	// this used to be called the EVIL HACK CONSTANT.  Now it's a user-
+	// specified value.  It's the smallest normalized peak value that we'll
+	// include in the graphing.  We divide by this value to de-normalize the
+	// data.  (It's still a hack, but it's only shameful rather than evil now.)
+	private static float smallestNormalizedPeak = 0.0001f;
 
 	public static final int ARRAYOFFSET = 600; // size of centroid array
 			// in both negative and positive directions (1201 total) when
@@ -125,7 +128,16 @@ public abstract class Cluster extends CollectionDivider {
 	public static void setPower(double newPower){
 		power = newPower;
 	}
-	
+
+	/**
+	 * Sets the smallest peak that we'll include in the clusters for graphing.
+	 * Peaks will be divided by this value.
+	 * Any cluster smaller than this will be set to zero.
+	 * @param newSmallestPeak
+	 */
+	public static void setSmallestNormalizedPeak(float newSmallestPeak) {
+		smallestNormalizedPeak = newSmallestPeak;
+	}
 	
 	// For efficiency it can be useful to represent a list of centroids as
 	// a list of arrays of floats.
@@ -448,24 +460,18 @@ public abstract class Cluster extends CollectionDivider {
 			sums.get(i).divideAreasBy(centroidList.get(i).numMembers);
 			centroidList.get(i).peaks = sums.get(i);
 		}
-////////////////////////////////////////////////////////////////////////////////
-//		EVIL HACK OF DOOOOOOOOM!										  //
-//	/* @author steinbel													  //
-//	 * Because we store the peak area as ints, in order to keep the peak  //
-//	 * areas for normalized centroids/centeratoms, we need to scale up.   //
-//	 */																	  //
-////////////////////////////////////////////////////////////////////////////////
+
 	if (normalize){
 		//boost the peaklist
-
+		// by dividing by the smallest peak area, all peaks get scaled up
+		// because we're going to convert these to ints in a minute anything
+		// smaller than the smallest peak area will get converted to zero
+		// it's a hack, I know-jtbigwoo
 		for (Centroid c: centroidList){
-			c.peaks.multiply(BOOST);
+			c.peaks.divideAreasBy(smallestNormalizedPeak);
 		}
 	}
 	
-////////////////////////////////////////////////////////////////////////////////
-//		End of evil hack.									//					  //
-////////////////////////////////////////////////////////////////////////////////
 		createCenterAtoms(centroidList, subCollectionIDs);
 		
 		printDescriptionToDB(particleCount, centroidList);
@@ -549,24 +555,17 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 
-////////////////////////////////////////////////////////////////////////////////
-//		EVIL HACK OF DOOOOOOOOM!										  //
-//	/* @author steinbel													  //
-//	 * Because we store the peak area as ints, in order to keep the peak  //
-//	 * areas for normalized centroids/centeratoms, we need to scale up.   //
-//	 */																	  //
-////////////////////////////////////////////////////////////////////////////////
 	if (clusterInfo.normalize){
 		//boost the peaklist
-
+		// by dividing by the smallest peak area, all peaks get scaled up
+		// because we're going to convert these to ints in a minute anything
+		// smaller than the smallest peak area will get converted to zero
+		// it's a hack, I know-jtbigwoo
 		for (Centroid c: centroidList){
-			c.peaks.multiply(BOOST);
+			c.peaks.divideAreasBy(smallestNormalizedPeak);
 		}
 	}
 	
-////////////////////////////////////////////////////////////////////////////////
-//		End of evil hack.									//					  //
-////////////////////////////////////////////////////////////////////////////////
 		createCenterAtoms(centroidList, subCollectionIDs);
 		totalDistancePerPass.add(new Double(totalDistance));
 		printDescriptionToDB(particleCount, centroidList);

@@ -62,6 +62,25 @@ public class BinnedPeakListTest extends TestCase {
 		assertEquals("failed at location 3, value: " + bpl.getAreaAt(3), bpl.getAreaAt(3), 60000f);
 		
 	}
+
+	/*
+	 * @author jtbigwoo
+	 * adding a quick test for dividing the areas
+	 */
+	public void testDivideAreasByFloat(){
+		BinnedPeakList bpl = new BinnedPeakList();
+		bpl.add(-1, (float)-0.001);
+		bpl.add(1, (float)0.001);
+		bpl.add(2, (float)0.002);
+		bpl.add(3, (float)0.003);
+		
+		bpl.divideAreasBy((float).0005);
+		
+		assertEquals("failed at location -1, value: " + bpl.getAreaAt(-1), bpl.getAreaAt(-1), -2f);
+		assertEquals("failed at location 1, value: " + bpl.getAreaAt(1), bpl.getAreaAt(1), 2f);
+		assertEquals("failed at location 2, value: " + bpl.getAreaAt(2), bpl.getAreaAt(2), 4f);
+		assertEquals("failed at location 3, value: " + bpl.getAreaAt(3), bpl.getAreaAt(3), 6f);
+	}
 	
 	/**
 	 * @author shaferia
@@ -205,6 +224,9 @@ public class BinnedPeakListTest extends TestCase {
 		
 		bpl.divideAreasBy(3);
 		bpl.multiply(3);
+		assertEquals(0.0f, bpl.getDistance(bpl2, CITY_BLOCK));
+		bpl.divideAreasBy(3f);
+		bpl.multiply(3f);
 		assertEquals(0.0f, bpl.getDistance(bpl2, CITY_BLOCK));
 		bpl2.add(3, .2f);
 		assertEquals(.2f, bpl.getDistance(bpl2, CITY_BLOCK));
