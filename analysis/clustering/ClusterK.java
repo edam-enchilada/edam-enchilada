@@ -59,6 +59,7 @@ import analysis.SubSampleCursor;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
+import errorframework.ErrorLogger;
 import externalswing.SwingWorker;
 
 /**
@@ -365,7 +366,7 @@ public abstract class ClusterK extends Cluster {
 			for (int j = 0; j < k; j++) {
 				ParticleInfo p = curs.getCurrent();
 				p.getBinnedList().preProcess(power);
-				p.getBinnedList().normalize(distanceMetric);
+				p.getBinnedList().posNegNormalize(distanceMetric);
 				centroidList.add(new Centroid(p.getBinnedList(),1));
 			}
 			return centroidList;
@@ -373,7 +374,7 @@ public abstract class ClusterK extends Cluster {
 		
 		// If there are fewer centroids than particles, display an error. 
 		if (k > numParticles) {
-			System.err.println("Not enough particles to cluster " +
+			ErrorLogger.writeExceptionToLogAndPrompt("KCluster","Not enough particles to cluster " +
 					"with this many centroids. (You requested more" +
 			"centroids than there are particles");
 			return centroidList;
@@ -382,7 +383,8 @@ public abstract class ClusterK extends Cluster {
 		// If the centroid list contains some centroids, but not the right
 		// amount, display an error.
 		if (centroidList.size() > 0 && centroidList.size() != k) {
-			System.err.println("There are some initial centroids, but" +
+			ErrorLogger.writeExceptionToLogAndPrompt("KCluster","The system was able to" +
+					" create some initial centroids, but" +
 					"not the right amount of them.");
 			return centroidList;
 		}
@@ -392,61 +394,8 @@ public abstract class ClusterK extends Cluster {
 		// has a peak at that key.
 		if (centroidList.size() == 0) {
 		    
-		    // Take the first point as the first centroid. For each succeeding
-		    // point, take the one that is furthest away from the closest
-		    // of the points chosen so far.
-			curs.reset();
-		    boolean status = curs.next();
-		    assert status : "Cursor is empty.";
-		    Centroid newCent = null; 
-			ParticleInfo p = curs.getCurrent();
-			p.getBinnedList().preProcess(power);
-			p.getBinnedList().normalize(distanceMetric);
-		    newCent = new Centroid(p.getBinnedList(),0);
-		  
-		    assert (newCent != null) : "Error adding centroid";
-		    assert (newCent.peaks != null) : "New centroid has no peaklist!";
-		    centroidList.add(newCent);
-		    for (int i=1; i < k; i++) {
-				curs.reset();
-				BinnedPeakList furthestPeakList = null;
-				double furthestGlobalDistance = (double) 0;
-		        while (curs.next()) {
-					p = curs.getCurrent();
-					BinnedPeakList thisBinnedPeakList =	p.getBinnedList();
-					thisBinnedPeakList.normalize(distanceMetric);
-					//thisBinnedPeakList.printPeakList();
-					//System.out.println("***");
-					double nearestDistance = Double.MAX_VALUE;
-					
-					for (int curCent = 0; 
-					     curCent < centroidList.size(); 
-					     curCent++)		
-					{// for each centroid
-						double distance =
-							centroidList.get(curCent).peaks.
-								getDistance(thisBinnedPeakList, distanceMetric);
-						//If nearestDistance hasn't been set or is larger 
-						//than found distance, set the nearestCentroid index.
-						if (distance < nearestDistance)
-							nearestDistance = distance;
-					}// end for each centroid
-					//System.out.println("nearestDist: " + nearestDistance);
-					if (nearestDistance >= furthestGlobalDistance) {
-					    furthestGlobalDistance = nearestDistance;
-					    furthestPeakList = thisBinnedPeakList;
-					}
-		        } // end while curs.next()
-		        if (furthestPeakList == null) {
-		        	// XXX this would be better as a dialog box, we should
-		        	// do something about that.
-		        	throw new RuntimeException("No furthest particle: probably "
-		        		+"ran out of particles to make into centroids!");
-		        }
-		        newCent = new Centroid(furthestPeakList,0);
-		        centroidList.add(newCent);
-		    } // for i:1 to k    
-		} // if centroid list size is 0
+			centroidList = chooseRandomCentroids();
+		}
 		
 		// Since TreeSet does not allow dups, insert distinct but
 		// small initial values.
@@ -486,7 +435,7 @@ public abstract class ClusterK extends Cluster {
 					System.out.println("Particle number = " + particleNumber);
 				ParticleInfo p = curs.getCurrent();
 				BinnedPeakList thisBinnedPeakList = p.getBinnedList();
-				thisBinnedPeakList.normalize(distanceMetric);	
+				thisBinnedPeakList.posNegNormalize(distanceMetric);	
 				double nearestDistance = Double.MAX_VALUE;
 				int nearestCentroid = -1;
 				for (int curCent = 0; curCent < k; curCent++)
@@ -637,7 +586,72 @@ public abstract class ClusterK extends Cluster {
 			return false;
 		return true;
 	}
-	
+
+	/**
+	 * Generates a random set of centroids for the given cursor.
+	 * The centroids will be generated out of the cursor curs.  The number of
+	 * centroids we'll generate is k.
+	 * @return
+	 */
+	private ArrayList<Centroid> chooseRandomCentroids()
+	{
+		ArrayList<Centroid> centroidList = new ArrayList<Centroid>();
+	    // Take the first point as the first centroid. For each succeeding
+	    // point, take the one that is furthest away from the closest
+	    // of the points chosen so far.
+		curs.reset();
+	    boolean status = curs.next();
+	    assert status : "Cursor is empty.";
+	    Centroid newCent = null; 
+		ParticleInfo p = curs.getCurrent();
+		p.getBinnedList().preProcess(power);
+		p.getBinnedList().posNegNormalize(distanceMetric);
+	    newCent = new Centroid(p.getBinnedList(),0);
+	  
+	    assert (newCent != null) : "Error adding centroid";
+	    assert (newCent.peaks != null) : "New centroid has no peaklist!";
+	    centroidList.add(newCent);
+	    for (int i=1; i < k; i++) {
+			curs.reset();
+			BinnedPeakList furthestPeakList = null;
+			double furthestGlobalDistance = (double) 0;
+	        while (curs.next()) {
+				p = curs.getCurrent();
+				BinnedPeakList thisBinnedPeakList =	p.getBinnedList();
+				thisBinnedPeakList.posNegNormalize(distanceMetric);
+				//thisBinnedPeakList.printPeakList();
+				//System.out.println("***");
+				double nearestDistance = Double.MAX_VALUE;
+				
+				for (int curCent = 0; 
+				     curCent < centroidList.size(); 
+				     curCent++)		
+				{// for each centroid
+					double distance =
+						centroidList.get(curCent).peaks.
+							getDistance(thisBinnedPeakList, distanceMetric);
+					//If nearestDistance hasn't been set or is larger 
+					//than found distance, set the nearestCentroid index.
+					if (distance < nearestDistance)
+						nearestDistance = distance;
+				}// end for each centroid
+				//System.out.println("nearestDist: " + nearestDistance);
+				if (nearestDistance >= furthestGlobalDistance) {
+				    furthestGlobalDistance = nearestDistance;
+				    furthestPeakList = thisBinnedPeakList;
+				}
+	        } // end while curs.next()
+	        if (furthestPeakList == null) {
+	        	// XXX this would be better as a dialog box, we should
+	        	// do something about that.
+	        	throw new RuntimeException("No furthest particle: probably "
+	        		+"ran out of particles to make into centroids!");
+	        }
+	        newCent = new Centroid(furthestPeakList,0);
+	        centroidList.add(newCent);
+	    } // for i:1 to k    
+	    return centroidList;
+	}
 	/**
 	 * The following four get and set methods are used in the Advanced dialog box
 	 * for the user to input specifications.
