@@ -463,9 +463,9 @@ public abstract class Cluster extends CollectionDivider {
 
 	if (normalize){
 		//boost the peaklist
-		// by dividing by the smallest peak area, all peaks get scaled up
-		// because we're going to convert these to ints in a minute anything
-		// smaller than the smallest peak area will get converted to zero
+		// By dividing by the smallest peak area, all peaks get scaled up.
+		// Because we're going to convert these to ints in a minute anything
+		// smaller than the smallest peak area will get converted to zero.
 		// it's a hack, I know-jtbigwoo
 		for (Centroid c: centroidList){
 			c.peaks.divideAreasBy(smallestNormalizedPeak);
@@ -557,9 +557,9 @@ public abstract class Cluster extends CollectionDivider {
 
 	if (clusterInfo.normalize){
 		//boost the peaklist
-		// by dividing by the smallest peak area, all peaks get scaled up
-		// because we're going to convert these to ints in a minute anything
-		// smaller than the smallest peak area will get converted to zero
+		// By dividing by the smallest peak area, all peaks get scaled up.
+		// Because we're going to convert these to ints in a minute anything
+		// smaller than the smallest peak area will get converted to zero.
 		// it's a hack, I know-jtbigwoo
 		for (Centroid c: centroidList){
 			c.peaks.divideAreasBy(smallestNormalizedPeak);
