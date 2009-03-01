@@ -853,8 +853,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		// to reverse the pos/neg normalization effect for purposes of
 		// incrementally adding new cluster features. Once that works, this
 		// can be changed back.
-		//return normalizable.posNegNormalize(this, dMetric);
-		return normalizable.normalize(this, dMetric);
+		
+		// [jtbigwoo] I have switched this back without knowing enough about
+		// BIRCH to know what to do to fix that part.
+		// TODO: Change this back if BIRCH breaks
+		return normalizable.posNegNormalize(this, dMetric);
+		//return normalizable.normalize(this, dMetric);
 	}
 	
 	/**
