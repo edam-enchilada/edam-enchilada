@@ -1,52 +1,46 @@
 package analysis.clustering;
 
+import java.util.ArrayList;
+
+import analysis.BinnedPeakList;
+import database.InfoWarehouse;
+import junit.framework.TestCase;
+
 
 /**
- * Still working on this one . . . having lots of trouble with importing
- * from Excel.
+ * Just added a basic test for generateCentroidArrays.
  * 
- * @author steinbel
+ * @author jtbigwoo
  *
  */
-/*
- // Commented out by dmusican, since test was never finished. Didn't make
- // sense for test to be failing when whole battery was run.
-public class ClusterTest extends DatabaseTestCase{
+// TODO: Add a test or two for createCenterAtoms
+public class ClusterTest extends TestCase{
 
 	private InfoWarehouse db;
-	private IDataSet loadedDataSet;
 
 	
-	public void testCheckDataLoaded() throws Exception
+	public void testGenerateCentroidArrays()
 	{
-		// IDataSet createdDataSet = getConnection().createDataSet(
-		//		 new String[]{"CenterAtoms"});
-		// assertNotNull(createdDataSet);
-		     
-
-		assertNotNull(loadedDataSet);
-		XlsDataSet.write(loadedDataSet, new FileOutputStream("testExcel.xls"));
-
-		//  int rowCount = loadedDataSet.getTable("MANUFACTURER").getRowCount();
-		//  assertEquals(2, rowCount);
+		ArrayList<float[]> resultList;
+		// just try it with two centroids
+		BinnedPeakList peakList = new BinnedPeakList();
+		peakList.add(12, 57.0f);
+		peakList.add(-12, 57.5f);
+		Centroid center = new Centroid(peakList, 1);
+		ArrayList<Centroid> list = new ArrayList<Centroid>();
+		list.add(center);
+		peakList = new BinnedPeakList();
+		peakList.add(13, .58f);
+		peakList.add(26, .42f);
+		center = new Centroid(peakList, 1);
+		list.add(center);
+		resultList = Cluster.generateCentroidArrays(list, Cluster.ARRAYOFFSET);
+		float[] resultArray = resultList.get(0);
+		assertEquals(57.5f, resultArray[-12 + Cluster.ARRAYOFFSET]);
+		assertEquals(57.0f, resultArray[12 + Cluster.ARRAYOFFSET]);
+		resultArray = resultList.get(1);
+		assertEquals(0f, resultArray[-13 + Cluster.ARRAYOFFSET]);
+		assertEquals(.58f, resultArray[13 + Cluster.ARRAYOFFSET]);
+		assertEquals(.42f, resultArray[26 + Cluster.ARRAYOFFSET]);
 	}
-	
-	@Override
-	protected IDatabaseConnection getConnection() throws Exception {
-		db = Database.getDatabase("TestDB2");
-		db.openConnection();
-		IDatabaseConnection con = new DatabaseConnection(db.getCon());
-		return con;
-	}
-
-	@Override
-	protected IDataSet getDataSet() throws Exception {
-		//File file = new File("C:/Documents And Settings/steinbel/workspace/Copy of edam-enchilada/testing/smallTest.xls");
-		InputStream in =  this.getClass().getClassLoader().getResourceAsStream("testing/small.xml");
-		loadedDataSet = new FlatXmlDataSet(in);
-		
-		return loadedDataSet;
-	}
-
 }
-*/
