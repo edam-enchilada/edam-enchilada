@@ -40,6 +40,8 @@
 
 package analysis.clustering;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import collection.Collection;
@@ -65,6 +67,7 @@ import junit.framework.TestCase;
 
 /**
  * @author dmusican
+ * @author jtbigwoo
  *
  */
 public class KMeansTest extends TestCase {
@@ -159,46 +162,79 @@ public class KMeansTest extends TestCase {
     	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
     	
     	/** Output:
-Error: 1.8666667342185974
-Change in error: -1.1920928955078125E-7
-Zero count = 1
-returning
-Clustering Parameters: 
-Test clusteringKMeans,K=2
-
-
-Number of ignored particles with zero peaks = 1
-Total clustering passes during sampling = 0
-Total number of centroid clustering passes = 0
-Total number of passes = 3
-Average distance of all points from their centers at each iteration:
-0.46666665375232697
-0.46666668355464935
-0.46666668355464935
-average distance of all points from their centers on final assignment:
-0.46666668355464935
-
-Peaks in centroids:
-Centroid 1: Number of particles = 3
-Centroid 2: Number of particles = 1
-
-Centroid 1:
-Number of particles in cluster: 3
-Key:	Value:
--300	0.06666667
--30	0.34444448
--20	0.06666667
-6	0.06666667
-30	0.34444448
-45	0.11111111
-Centroid 2:
-Number of particles in cluster: 1
-Key:	Value:
--30	0.25
--20	0.25
--10	0.25
-20	0.25
-    	 */
+			Error: 1.8888885974884033
+			Change in error: -0.22222203016281128
+			Time taken for getDistance (ms): 0
+			Time taken for other getDistance (ms): 0
+			Total time taken for getDistance methods (ms): 0
+			Time taken for processPart (clustering): 2323
+			returning
+			Clustering Parameters:   KMeans,K=2,Test comment    
+			Number of ignored particles with zero peaks = 0  
+			Total clustering passes during sampling = 0  
+			Total number of centroid clustering passes = 0  
+			Total number of passes = 3  
+			Average distance of all points from their centers at each iteration:  
+			0.416666641831398  
+			0.47222214937210083  
+			0.4722222685813904  
+			average distance of all points from their centers on final assignment:  
+			0.4722222685813904    
+			Peaks in centroids:  
+			Centroid 1: Number of particles = 3  
+			Centroid 2: Number of particles = 1    
+			Centroid 1:  
+			Number of particles in cluster: 3  
+			Key: Value:  
+			-300 555.5556  
+			-30 3888.8887  
+			-20 555.5556  
+			6 833.3334  
+			30 3333.3335  
+			45 833.3334  
+			Centroid 2:  
+			Number of particles in cluster: 1  
+			Key: Value:  
+			-30 1666.6667  
+			-20 1666.6667  
+			-10 1666.6667  
+			20 5000.0
+		*/
+    }
+    
+    /**
+     * This one is set up as a test that breaks if you don't normalize the
+     * positive and negative sections of the original peak lists separately
+     * (Output of this cluster should be the same as the one above if
+     * pos/neg normalization is working right.)
+     * @author jtbigwoo
+     */
+    public void testKMeansPosNeg() throws Exception
+    {
+    	Connection con = db.getCon();
+    	Statement stmt = con.createStatement();
+    	
+    	stmt.executeUpdate("UPDATE ATOFMSAtomInfoSparse set peakarea = 1 " + 
+    			"where atomid in (select atomid from atommembership where collectionid = 2) and " +
+    			" peaklocation > 0");
+    	
+    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertTrue(collectionID == 7);
+    	
+    	Collection cluster1 = db.getCollection(8);
+    	Collection cluster2 = db.getCollection(9);
+    	
+    	assertTrue(cluster1.containsData());
+    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+       	assertTrue(particles.get(0) == 2);
+    	assertTrue(particles.get(1) == 3);
+    	assertTrue(particles.get(2) == 5);
+    	
+    	assertTrue(cluster2.containsData());
+    	particles = cluster2.getParticleIDs();
+    	assertTrue(particles.get(0) == 4);
     	
     }
 
