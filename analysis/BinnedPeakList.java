@@ -42,7 +42,6 @@ package analysis;
 import java.util.*;
 import java.util.Map.Entry;
 
-import analysis.dataCompression.BIRCH;
 import analysis.dataCompression.Pair;
 
 /**
@@ -698,7 +697,6 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 			else {
 				hash.put(temp.getKey(), temp.getValue()*factor);
 			}
-			BIRCH.buildTime += (System.currentTimeMillis()-beginTime);
 		}	
 		return hash;
 	}
@@ -847,18 +845,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @param dMetric  the distance metric to use when normalizing
 	 */
 	public float posNegNormalize(DistanceMetric dMetric){
-		// [dmusican] I have commented out posNegNormalize here and replaced
-		// it with normalize for the BIRCH speed improvements I've made.
-		// It is not intended to be permanent. BIRCH needs to be updated
-		// to reverse the pos/neg normalization effect for purposes of
-		// incrementally adding new cluster features. Once that works, this
-		// can be changed back.
-		
-		// [jtbigwoo] I have switched this back without knowing enough about
-		// BIRCH to know what to do to fix that part.
-		// TODO: Change this back if BIRCH breaks
 		return normalizable.posNegNormalize(this, dMetric);
-		//return normalizable.normalize(this, dMetric);
 	}
 	
 	/**
