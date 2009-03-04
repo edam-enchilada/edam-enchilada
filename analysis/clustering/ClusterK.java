@@ -385,7 +385,7 @@ public abstract class ClusterK extends Cluster {
 		if (centroidList.size() > 0 && centroidList.size() != k) {
 			ErrorLogger.writeExceptionToLogAndPrompt("KCluster","The system was able to" +
 					" create some initial centroids, but" +
-					"not the right amount of them.");
+					" not the right amount of them.");
 			return centroidList;
 		}
 		
@@ -497,6 +497,8 @@ public abstract class ClusterK extends Cluster {
 					// we have the sums - divide by the particle number to get mean.
 					cumulativeCentroids[i].divideAreasBy(centroidList.get(i).numMembers);
 					//Create and return a centroid with the new list and 0 members.
+					// don't want to do pos/neg normalization here, we've already done
+					// pos/neg normalization on the peaks for the particles
 					cumulativeCentroids[i].normalize(distanceMetric);
 					newCent = new Centroid(cumulativeCentroids[i],0);
 				}
