@@ -1,5 +1,7 @@
 package analysis.clustering;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
@@ -199,6 +201,48 @@ Key:	Value:
 	    	
 	    }
 	    
+	    /**
+	     * This one is set up as a test that breaks if you don't normalize the
+	     * positive and negative sections of the original peak lists separately
+	     * (Output of this cluster should be the same as the one above if
+	     * pos/neg normalization is working right.)
+	     * @author jtbigwoo
+	     */
+	    public void testArt2APosNeg() throws Exception {
+	    	Connection con = db.getCon();
+	    	Statement stmt = con.createStatement();
+	    	
+	    	stmt.executeUpdate("UPDATE ATOFMSAtomInfoSparse set peakarea = 1 " + 
+	    			"where atomid in (select atomid from atommembership where collectionid = 2) and " +
+	    			" peaklocation > 0");
+	    	
+	    	art2a.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+	    	int collectionID = art2a.cluster();
+	    	
+	    	assertTrue(collectionID == 7);
+	    	
+	    	Collection cluster1 = db.getCollection(8);
+	    	Collection cluster2 = db.getCollection(9);
+	    	Collection cluster3 = db.getCollection(10);
+	    	
+	    	assertTrue(cluster1.containsData());
+	    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+	       	assertTrue(particles.get(0) == 2);
+	    	assertTrue(particles.get(1) == 3);
+	    	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
+	    	
+	    	assertTrue(cluster2.containsData());
+	    	particles = cluster2.getParticleIDs();
+	    	assertTrue(particles.get(0) == 4);
+	    	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+	    	
+	    	assertTrue(cluster3.containsData());
+	    	particles = cluster3.getParticleIDs();
+	    	assertTrue(particles.get(0) == 5);
+	    	assertTrue(cluster3.getSubCollectionIDs().isEmpty());
+	    	
+	    }
+
 	    /**
 		 * @author rzeszotj
 	     * Tests whether Art2A can cluster the centers of a previously clustered collection,

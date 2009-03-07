@@ -206,7 +206,8 @@ public class Art2A extends Cluster
 				thisParticleInfo = curs.getCurrent();
 				thisBinnedPeakList = thisParticleInfo.getBinnedList();
 				thisBinnedPeakList.preProcess(power);
-				thisBinnedPeakList.normalize(distanceMetric);
+				// [jtbigwoo] added pos/neg normalization 
+				thisBinnedPeakList.posNegNormalize(distanceMetric);
 				
 						
 				// no centroid will be found further than the vigilance
@@ -240,6 +241,7 @@ public class Art2A extends Cluster
 					temp.numMembers++;
 					temp.peaks = adjustByLearningRate(thisBinnedPeakList, 
 							centroidList.get(chosenCluster).peaks);
+					// don't do pos/neg normalize on centroid peaks
 					temp.peaks.normalize(distanceMetric);
 				}// end if atom falls within existing cluster
 				
