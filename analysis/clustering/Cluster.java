@@ -312,7 +312,7 @@ public abstract class Cluster extends CollectionDivider {
 			particleCount++;
 			thisParticleInfo = curs.getCurrent();
 			thisBinnedPeakList = thisParticleInfo.getBinnedList();
-			thisBinnedPeakList.normalize(distanceMetric);
+			thisBinnedPeakList.posNegNormalize(distanceMetric);
 			// no centroid will be found further than the max distance (2.0)
 			// since that centroid would not be considered
 			nearestDistance = 3.0f;
@@ -407,10 +407,10 @@ public abstract class Cluster extends CollectionDivider {
 				particleCount++;
 				thisParticleInfo = curs.getCurrent();
 				thisBinnedPeakList = thisParticleInfo.getBinnedList();
-				thisBinnedPeakList.normalize(distanceMetric);
+				thisBinnedPeakList.posNegNormalize(distanceMetric);
 				nearestDistance = Float.MAX_VALUE;
 				for (int centroidIndex = 0; centroidIndex < centroidList.size(); 
-				centroidIndex++)
+					centroidIndex++)
 				{// for each centroid
 					if (particleCount % 10000 == 0)
 						System.out.println("Particle number = " + particleCount);
@@ -720,6 +720,11 @@ public abstract class Cluster extends CollectionDivider {
 			 * NOTE: Only the peak locations and areas are recorded right now
 			 * because that's the only info found in a BinnedPeakList.
 			 */
+			BinnedPeakList relAreaPeakList = new BinnedPeakList(new Normalizer());
+			relAreaPeakList.copyBinnedPeakList(center.peaks);
+			// don't want posNegNormalize here, we've already normalized the individual peaks,
+			// doing pos/neg separately would create incorrect data
+			relAreaPeakList.normalize(distanceMetric);
 			ArrayList<String> sparse = new ArrayList<String>();
 			//put the sparse info into appropriate format
 			Iterator<BinnedPeak> i = center.peaks.iterator();
@@ -729,7 +734,7 @@ public abstract class Cluster extends CollectionDivider {
 			ArrayList<ArrayList<String>> sparseNamesTypes = 
 				db.getColNamesAndTypes(datatype, DynamicTable.AtomInfoSparse);
 			String s = "";
-			Float area;
+			Float area, relArea;
 			while (i.hasNext()) {
 				p = i.next();
 				//TODO: waaaaaaaaay too type-specific
@@ -739,8 +744,13 @@ public abstract class Cluster extends CollectionDivider {
 				s = EnchiladaDataSetImporter.intersperse(
 							Integer.toString(area.intValue()), Integer.toString(p.key));
 			
-				for (int j=0; j<2; j++)
-					s = EnchiladaDataSetImporter.intersperse("1", s);
+				// relative area is the normalized peak height.
+				relArea = relAreaPeakList.getAreaAt(p.key);
+				s = EnchiladaDataSetImporter.intersperse(relArea.toString(), s);
+
+				// hard-code peakheight to 1.  Height is not meaningful
+				// for cluster centers.
+				s = EnchiladaDataSetImporter.intersperse("1", s);
 				sparse.add(s);
 			}
 			
