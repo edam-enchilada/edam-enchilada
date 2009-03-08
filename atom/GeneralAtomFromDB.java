@@ -1,7 +1,6 @@
 package atom;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import database.DynamicTable;
 import database.InfoWarehouse;
@@ -39,10 +38,10 @@ public class GeneralAtomFromDB {
 	public ArrayList<String> getFieldValues() {
 		return fieldValues;
 	}
-	public ATOFMSAtomFromDB toATOFMSAtom() {
-		return new ATOFMSAtomFromDB(atomID, fieldValues.get(5), 
-				Integer.parseInt(fieldValues.get(4)), 
-				Float.parseFloat(fieldValues.get(2)),
-				new Date(fieldValues.get(1)));
-	}
+//	public ATOFMSAtomFromDB toATOFMSAtom() {
+//		return new ATOFMSAtomFromDB(atomID, fieldValues.get(5), 
+//				Integer.parseInt(fieldValues.get(4)), 
+//				Float.parseFloat(fieldValues.get(2)),
+//				new Date(fieldValues.get(1)));
+//	}
 }
