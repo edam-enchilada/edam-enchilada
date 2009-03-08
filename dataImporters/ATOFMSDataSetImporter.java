@@ -59,6 +59,9 @@ import java.io.IOException;
 import ATOFMS.*;
 
 import java.awt.Window;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringTokenizer;
@@ -228,6 +231,11 @@ public class ATOFMSDataSetImporter {
 						" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
 				throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
 			}catch (DataFormatException e) {
+				//e.printStackTrace();
+				ErrorLogger.writeExceptionToLog("Importing","File "+name+
+						" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace())); 
+				throw new DisplayException("Error importing data: Import aborted.  Check Error Log.");
+			}catch (ParseException e) {
 				//e.printStackTrace();
 				ErrorLogger.writeExceptionToLog("Importing","File "+name+
 						" failed to import: \n\tMessage : "+e.toString()+","+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace())); 
@@ -415,7 +423,7 @@ public class ATOFMSDataSetImporter {
 	
 	// ***SLH
 	public void readSpectraAndCreateParticle() 
-	throws IOException, NumberFormatException, InterruptedException{
+	throws IOException, NumberFormatException, InterruptedException, ParseException{
 		//Read spectra & create particle.
 		File canonical = parFile.getAbsoluteFile();
 		File parent = canonical.getParentFile();
@@ -438,6 +446,7 @@ public class ATOFMSDataSetImporter {
 			collections[collectionIndex] = destination;
 			ATOFMSParticle currentParticle;
 			Date d;
+			DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 				Scanner readSet = new Scanner(new File(name));
 				readSet.useDelimiter("\r\n");
 		        
@@ -468,7 +477,7 @@ public class ATOFMSDataSetImporter {
 						}
 						
 						String time = token.nextToken();						
-						d = new Date(time);
+						d = df.parse(time);
 
 						ReadSpec read = new ReadSpec(particleFileName, d);
 						

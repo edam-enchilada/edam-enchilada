@@ -64,11 +64,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -706,8 +708,14 @@ implements MouseMotionListener, MouseListener, ActionListener, KeyListener {
 		{
 			int length = dateTime.length();
 			String newDate = dateTime.substring(0, length-2);
-			String realDate = newDate.replace('-', '/');
-			time = new Date(realDate);
+			DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			try {
+				time = df.parse(newDate);
+			}
+			catch (ParseException pe)
+			{
+				ErrorLogger.writeExceptionToLog("Particle Analysis", pe.getMessage());
+			}
 		}
 
 		
