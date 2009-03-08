@@ -44,7 +44,7 @@ public class ChainingHistogram
 	}
 	
 	public int getCountAtIndex(int index) {
-		ArrayList target;
+		ArrayList<Integer> target;
 		
 		target = getByIndex(index);
 		if (target == null) { return 0; }
