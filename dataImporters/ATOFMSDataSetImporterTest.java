@@ -433,6 +433,10 @@ public class ATOFMSDataSetImporterTest extends TestCase {
 				ex.printStackTrace();
 				fail("Couldn't read spectra; interrupted.");
 			}
+			catch (java.text.ParseException ex) {
+				ex.printStackTrace();
+				fail("Couldn't read spectra");
+			}
 			
 			try {
 				
