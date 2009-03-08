@@ -65,7 +65,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import dataExporters.MSAnalyzeDataSetExporter;
 import dataImporters.ATOFMSDataSetImporter;
 import dataImporters.FlatFileATOFMSDataSetImporter;
 import database.InfoWarehouse;

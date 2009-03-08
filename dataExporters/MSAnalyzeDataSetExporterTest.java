@@ -39,24 +39,17 @@
  * ***** END LICENSE BLOCK ***** */
 package dataExporters;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import collection.Collection;
 
 import junit.framework.TestCase;
-import dataImporters.ATOFMSDataSetImporter;
 import database.CreateTestDatabase;
 import database.Database;
 import database.InfoWarehouse;

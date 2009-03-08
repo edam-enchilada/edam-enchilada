@@ -2,21 +2,12 @@ package prediction;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.SortedMap;
-
-import analysis.BinnedPeak;
-import analysis.BinnedPeakList;
 
 import database.Database;
 import database.InfoWarehouse;
