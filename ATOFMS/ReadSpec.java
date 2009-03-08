@@ -464,7 +464,9 @@ public class ReadSpec {
 	public static void main(String[] args) throws IOException {
 		ATOFMSParticle.currCalInfo = new CalInfo();
 		ATOFMSParticle.currPeakParams = new PeakParams(30,30,0.01f,.50f);
-		Date d = new Date("3/13/2002 12:04:44");
+		DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		Date d;
+		try { d = df.parse("3/13/2002 12:04:44"); } catch (Exception e) {d = null;}
 		//ReadSpec rs = new ReadSpec
 		//("C:\\Documents and Settings\\andersbe\\My Documents\\" +
 		//		"atofms data\\07-27-2004\\a\\" +
