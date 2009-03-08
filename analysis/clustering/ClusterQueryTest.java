@@ -42,8 +42,6 @@ package analysis.clustering;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
