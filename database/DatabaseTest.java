@@ -55,7 +55,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.BatchUpdateException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
@@ -84,6 +86,8 @@ import atom.ATOFMSAtomFromDB;
 public class DatabaseTest extends TestCase {
 	private Database db;
 	private String dbName = "testDB";
+	private DateFormat df = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+
 	public DatabaseTest(String aString)
 	{
 		
@@ -1215,7 +1219,7 @@ public class DatabaseTest extends TestCase {
 		testCursor(curs);
 		db.closeConnection();
 	}
-	public void testBPLOnlyCursor() {
+	public void testBPLOnlyCursor() throws Exception {
 		db.openConnection(dbName);
 		BPLOnlyCursor curs;
 		try {
@@ -1255,7 +1259,7 @@ public class DatabaseTest extends TestCase {
 
 	
 	
-	public void testSubSampleCursor2() {
+	public void testSubSampleCursor2() throws Exception {
 		db.openConnection(dbName);
 		CollectionCursor curs = new analysis.SubSampleCursor(
 				db.getRandomizedCursor(db.getCollection(2)),0,10);	
@@ -1266,7 +1270,7 @@ public class DatabaseTest extends TestCase {
 		ATOFMSAtomFromDB tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					new Date("9/2/2003 5:30:38 PM"));
+					df.parse("9/2/2003 5:30:38 PM"));
 		//int aID, String fname, int sDelay, float lPower, Date tStamp
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
@@ -1283,7 +1287,7 @@ public class DatabaseTest extends TestCase {
 	}	
 	
 	
-	private void testCursor(BPLOnlyCursor curs)
+	private void testCursor(BPLOnlyCursor curs) throws Exception
 	{
 		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
 		
@@ -1291,7 +1295,7 @@ public class DatabaseTest extends TestCase {
 		ATOFMSAtomFromDB tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					new Date("9/2/2003 5:30:38 PM"));
+					df.parse("9/2/2003 5:30:38 PM"));
 		//int aID, String fname, int sDelay, float lPower, Date tStamp
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
@@ -1327,12 +1331,14 @@ public class DatabaseTest extends TestCase {
 	private void testCursor(CollectionCursor curs)
 	{
 		ArrayList<ParticleInfo> partInfo = new ArrayList<ParticleInfo>();
-		
 		ParticleInfo temp = new ParticleInfo();
-		ATOFMSAtomFromDB tempPI = 
+		ATOFMSAtomFromDB tempPI = null;
+		try {
+		tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					new Date("9/2/2003 5:30:38 PM"));
+					df.parse("9/2/2003 5:30:38 PM"));
+		} catch (ParseException pe) {fail("Programmer should have put in a better date");}
 		//int aID, String fname, int sDelay, float lPower, Date tStamp
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
