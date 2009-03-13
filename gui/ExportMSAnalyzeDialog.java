@@ -39,7 +39,7 @@
 
 
 /*
- * Created on Aug 1, 2004
+ * Created on Feb 8, 2009
  */
 package gui;
 
@@ -72,7 +72,7 @@ public class ExportMSAnalyzeDialog extends JDialog implements ActionListener
 	private Collection collection = null;
 	
 	public ExportMSAnalyzeDialog(JFrame parent, InfoWarehouse db, Collection c) {
-		super (parent,"Empty Collection", true);
+		super (parent,"Export to MS-Analyze", true);
 		this.db = db;
 		this.parent = parent;
 		this.collection = c;
