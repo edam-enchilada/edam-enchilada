@@ -219,12 +219,14 @@ SectionEnd
 Section "-Check for Java 1.5"
     ExecWait "java -version:1.5.0 -version" $0
     IfErrors 0 installedJava
-    	DetailPrint "Java is not installed or is not installed correctly."
-		MessageBox MB_OK|MB_ICONEXCLAMATION "Enchilada was unable to find Java on your computer. Please go to http://java.com/ to download and install Java 1.5 or newer."
-		Abort "Java is not installed."
+        DetailPrint "Java is not installed or is not installed correctly."
+        MessageBox MB_OK|MB_ICONEXCLAMATION "Enchilada was unable to find Java on your computer. Please go to http://java.com/ to download and install Java 1.5 or newer."
+        Abort "Java is not installed."
 
 	installedJava:
     IntCmp $0 0 rightjava
+        ExecWait "java -version:1.6.0 -version" $0
+        IntCmp $0 0 rightjava
         DetailPrint "Insufficient Java version."
         MessageBox MB_OK|MB_ICONEXCLAMATION "A newer version of Java is needed to run Enchilada.  Please go to http://java.com/ and download Java 1.5 or newer."
         Abort "Please go to java.com and install java 1.5"
