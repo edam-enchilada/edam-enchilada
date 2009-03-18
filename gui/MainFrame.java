@@ -106,6 +106,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem txtLoadATOFMSItem;
 	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
+	private JMenuItem CSVexportItem;
 	/*
 	 * These capabilities work, but only with trivially small databases
 	private JMenuItem importXmlDatabaseItem;
@@ -378,13 +379,13 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version feb-2009-24"
+					"Software Version mar-2009-24"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
 //					"Janara Christensen, David Musicant, Jon Sulman\n" +
 //					"Sami Benzaid, Emma Turetsky, Jeff Rzeszotarski,\n +"
-//					"Rob Atlas\n" +
+//					"Rob Atlas, Tom Bigwood\n" +
 //					"Madison Contributors:\n"
 					);
 		}
@@ -525,6 +526,16 @@ public class MainFrame extends JFrame implements ActionListener
 				return;
 			}
 			new ExportMSAnalyzeDialog(this, db, c);
+		}
+		else if (source == CSVexportItem)
+		{
+			final Collection c = getSelectedCollection();
+			if (c == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to export.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			new ExportCSVDialog(this, particlesTable, db, c);
 		}
 		else if (source == deleteAdoptItem)
 		{
@@ -1093,8 +1104,11 @@ public class MainFrame extends JFrame implements ActionListener
 		JMenu exportCollectionMenu = new JMenu("Export Collection. . .");
 		MSAexportItem = new JMenuItem("to MS-Analyze. . .");
 		MSAexportItem.addActionListener(this);
+		CSVexportItem = new JMenuItem("to CSV File. . .");
+		CSVexportItem.addActionListener(this);
 		exportCollectionMenu.setMnemonic(KeyEvent.VK_E);
 		exportCollectionMenu.add(MSAexportItem);
+		exportCollectionMenu.add(CSVexportItem);
 		
 		/*
 		 * These capabilities work, but only with trivially small databases
