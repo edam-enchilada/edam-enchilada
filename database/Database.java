@@ -3371,7 +3371,7 @@ public abstract class Database implements InfoWarehouse {
 			Statement stmt = con.createStatement();
 			rs = stmt.executeQuery(
 					"SELECT * FROM " + getDynamicTableName(DynamicTable.AtomInfoSparse,datatype) + " WHERE AtomID = " +
-					atomID);
+					atomID + " ORDER BY PeakLocation ");
 			//stmt.close();
 		} catch (SQLException e) {
 			System.err.println("Error selecting peaks");
