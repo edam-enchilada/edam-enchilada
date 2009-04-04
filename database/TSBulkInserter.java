@@ -10,6 +10,7 @@ import java.sql.*;
  * Otherwise you'll get conflicting AtomIDs.
  * 
  * @author smitht
+ * @auther jtbigwoo
  *
  */
 public class TSBulkInserter {
@@ -114,6 +115,7 @@ public class TSBulkInserter {
 	 * commits the particles that are currently queued up in the StringBuffers.
 	 * @throws SQLException
 	 */
+	// TODO:  We would be better off using bulk inserts from a file for this.
 	private void interimCommit() throws SQLException {
 		if (db.getNextID() != firstID) {
 			throw new SQLException("Database has changed under a batch insert.. you can't do that!");
@@ -124,6 +126,15 @@ public class TSBulkInserter {
 		st.execute(vals.toString());
 		st.execute(dataset.toString());
 		st.close();
+		// jtbigwood - this next part is a bit hacky, but honestly, who builds 
+		// 4MB of insert statements?
+		// the connection will keep the text of the executed statements until
+		// we close it.  this is a big problem since we might be executing hundreds
+		// of thousands of statements.  closing the connection clears the 
+		// connection's statement cache
+		db.closeConnection();
+		db.openConnection();
+		con = db.getCon();
 		
 		vals.setLength(0); // make it into nothing!
 		dataset.setLength(0);
