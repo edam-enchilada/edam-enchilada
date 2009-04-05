@@ -75,7 +75,6 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 	private InfoWarehouse db;
 	private JFrame parent = null;
 	private Collection collection = null;
-	private ArrayList<Integer> atomIds = null;
 	
 	/**
 	 * Called when you want to export a particular particle or whole collection of particles
@@ -83,13 +82,11 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 	 * @param db
 	 * @param c
 	 */
-	public ExportCSVDialog(JFrame parent, JTable dt, InfoWarehouse db, Collection c) {
+	public ExportCSVDialog(JFrame parent, InfoWarehouse db, Collection c) {
 		super (parent,"Export to CSV file", true);
 		this.db = db;
 		this.parent = parent;
 		this.collection = c;
-		this.atomIds = getSelectedAtomIds(dt);
-		dt.getModel();
 		setSize(450,150);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
@@ -98,7 +95,7 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 		csvDotDotDot = new JButton("...");
 		csvDotDotDot.addActionListener(this);
 		
-		JLabel maxMZLabel = new JLabel("Higest m/z value to export: ");
+		JLabel maxMZLabel = new JLabel("Higest m/z value +/- to export: ");
 		maxMZField = new JTextField(25);
 		
 		JPanel buttonPanel = new JPanel();
@@ -154,8 +151,12 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 		int maxMZValue;
 		Object source = e.getSource();
 		if (source == csvDotDotDot) {
+			String fileName = "*." + EXPORT_FILE_EXTENSION;
+			if (!csvFileField.getText().equals("")) {
+				fileName = csvFileField.getText();
+			}
 			csvFileField.setText((new FileDialogPicker("Choose ." + EXPORT_FILE_EXTENSION + " file destination",
-					 EXPORT_FILE_EXTENSION, this)).getFileName());
+					 fileName, this, false)).getFileName());
 		}
 		else if (source == okButton) {
 			try {
@@ -164,7 +165,7 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 			catch (NumberFormatException nfe) {
 				maxMZValue = -1;
 			}
-			if(!csvFileField.getText().equals("") && !csvFileField.getText().equals("*.csv")) {
+			if(!csvFileField.getText().equals("") && !csvFileField.getText().equals("*." + EXPORT_FILE_EXTENSION)) {
 				if (maxMZValue > 0) {
 					final Database dbRef = (Database)db;
 					
@@ -180,15 +181,11 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 					
 					final SwingWorker worker = new SwingWorker(){
 						public Object construct() {
-							if (atomIds != null && atomIds.size() > 0)
-							{
-								cse.exportToCSV(atomIds, csvFileName, mzValue);
-							}
-							else
-							{
-								// send the whole collection if we haven't selected a particular particle
+							try {
 								cse.exportToCSV(collection, csvFileName, mzValue);
-							}
+							}catch (DisplayException e1) {
+								ErrorLogger.displayException(progressBar,e1.toString());
+							} 
 							return null;
 						}
 						public void finished() {
