@@ -50,6 +50,19 @@ public class TSBulkInserterTest extends TestCase {
 		}
 		insertAndTest(data);
 	}
+
+	// test to see if we still get out of memory exceptions on big collections
+	public void testAdd30000Points() {
+		TreeMap<Date, Float> data = new TreeMap<Date, Float>();
+		Calendar c = new GregorianCalendar();
+		c.setTimeInMillis(System.currentTimeMillis());
+		for (int i = 0; i < 30000; i++) {
+			data.put(c.getTime(), new Float(i));
+			
+			c.add(Calendar.SECOND, 30);
+		}
+		insertAndTest(data);
+	}
 	
 	private void insertAndTest(Map<Date,Float> data) {
 		ins.startDataset("test coll");
