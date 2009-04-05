@@ -43,7 +43,8 @@ package dataExporters;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.Statement;
 
 import javax.swing.JFrame;
 
@@ -65,7 +66,7 @@ import gui.ProgressBarWrapper;
 public class CSVDataSetExporterTest extends TestCase {
 	CSVDataSetExporter exporter;
 	InfoWarehouse db;
-	File csvFile;
+	File csvFile, secondCsvFile;
 	
 	public CSVDataSetExporterTest(String s) {
 		super(s);
@@ -99,65 +100,70 @@ public class CSVDataSetExporterTest extends TestCase {
 		
 		BufferedReader reader = new BufferedReader(new FileReader(csvFile));
 		
-		assertEquals("****** Particle: 1 ******", reader.readLine());
-		assertEquals("Negative Spectrum", reader.readLine());
-		assertEquals("-30,0.00", reader.readLine());
-		assertEquals("-29,0.00", reader.readLine());
-		for (int i = 0; i < 60; i++)
-			reader.readLine();
-		assertEquals("****** Particle: 2 ******", reader.readLine());
-		assertEquals("Negative Spectrum", reader.readLine());
-		assertEquals("-30,15.00", reader.readLine());
-		for (int i = 0; i < 29; i++)
-			reader.readLine();
-		assertEquals("Positive Spectrum", reader.readLine());
-	}
-	
-	public void testSingleParticleExport() throws Exception {
-		boolean result;
-		ArrayList<Integer> atomIDs = new ArrayList<Integer>();
-		atomIDs.add(new Integer(3));
-		csvFile = File.createTempFile("test", ".csv");
-		result = exporter.exportToCSV(atomIDs, csvFile.getPath(), 30);
-		assertTrue("Failure during exportToCSV in a normal export", result);
-		
-		BufferedReader reader = new BufferedReader(new FileReader(csvFile));
-		
-		assertEquals("****** Particle: 3 ******", reader.readLine());
-		assertEquals("Negative Spectrum", reader.readLine());
-		assertEquals("-30,15.00", reader.readLine());
-		assertEquals("-29,0.00", reader.readLine());
+		assertEquals("****** Particle: One ******,,****** Particle: Two ******,,****** Particle: Three ******,,****** Particle: Four ******,,****** Particle: Five ******,,", reader.readLine());
+		assertEquals("Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,", reader.readLine());
+		assertEquals("-30,0.00,-30,15.00,-30,15.00,-30,15.00,-30,15.00,", reader.readLine());
+		assertEquals("-29,0.00,-29,0.00,-29,0.00,-29,0.00,-29,0.00,", reader.readLine());
 		for (int i = 0; i < 28; i++)
 			reader.readLine();
-		assertEquals("Positive Spectrum", reader.readLine());
-		assertEquals("0,0.00", reader.readLine());
-		for (int i = 0; i < 29; i++)
+		assertEquals("Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,", reader.readLine());
+		assertEquals("0,0.00,0,0.00,0,0.00,0,0.00,0,0.00,", reader.readLine());
+		for (int i = 0; i < 30; i++)
 			reader.readLine();
-		assertEquals("30,15.00", reader.readLine());
 		assertEquals(null, reader.readLine());
 	}
 	
-	public void testMultipleParticleExport() throws Exception {
+	public void testCollectionExportSmallMZ() throws Exception {
 		boolean result;
-		ArrayList<Integer> atomIDs = new ArrayList<Integer>();
-		atomIDs.add(new Integer(3));
-		atomIDs.add(new Integer(4));
+		Collection coll = db.getCollection(2);
 		csvFile = File.createTempFile("test", ".csv");
-		result = exporter.exportToCSV(atomIDs, csvFile.getPath(), 30);
+		result = exporter.exportToCSV(coll, csvFile.getPath(), 1);
 		assertTrue("Failure during exportToCSV in a normal export", result);
 		
 		BufferedReader reader = new BufferedReader(new FileReader(csvFile));
 		
-		assertEquals("****** Particle: 3 ******", reader.readLine());
-		assertEquals("Negative Spectrum", reader.readLine());
-		assertEquals("-30,15.00", reader.readLine());
-		for (int i = 0; i < 60; i++)
+		assertEquals("****** Particle: One ******,,****** Particle: Two ******,,****** Particle: Three ******,,****** Particle: Four ******,,****** Particle: Five ******,,", reader.readLine());
+		assertEquals("Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,", reader.readLine());
+		assertEquals("-1,0.00,-1,0.00,-1,0.00,-1,0.00,-1,0.00,", reader.readLine());
+		assertEquals("Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,", reader.readLine());
+		assertEquals("0,0.00,0,0.00,0,0.00,0,0.00,0,0.00,", reader.readLine());
+		assertEquals("1,0.00,1,0.00,1,0.00,1,0.00,1,0.00,", reader.readLine());
+		assertEquals(null, reader.readLine());
+	}
+	
+	public void testBigCollectionExport() throws Exception {
+		boolean result;
+		// let's make a big collection
+		Connection con = db.getCon();
+		Statement stmt = con.createStatement();
+		for (int i = 12; i < 140; i++)
+		{
+			stmt.executeUpdate("USE TestDB INSERT INTO ATOFMSAtomInfoDense VALUES (" + i + ",'9/2/2003 5:30:38 PM'," + i + ",0." + i + "," + i + ",'Orig file')\n");
+			stmt.executeUpdate("USE TestDB INSERT INTO AtomMembership VALUES(2," + i + ")\n");
+			stmt.executeUpdate("USE TestDB INSERT INTO InternalAtomOrder VALUES(" + i + ",2)\n");
+		}
+		stmt.executeUpdate("USE TestDB INSERT INTO ATOFMSAtomInfoSparse VALUES(139,-30,15,0.006,12)\n" +
+				"INSERT INTO ATOFMSAtomInfoSparse VALUES(139,-20,15,0.006,12)\n" +
+				"INSERT INTO ATOFMSAtomInfoSparse VALUES(139,0,15,0.006,12)\n" +
+				"INSERT INTO ATOFMSAtomInfoSparse VALUES(139,20,15,0.006,12)\n"
+		);
+		Collection coll = db.getCollection(2);
+		csvFile = File.createTempFile("test", ".csv");
+		result = exporter.exportToCSV(coll, csvFile.getPath(), 30);
+		assertTrue("Failure during exportToCSV in a normal export", result);
+		
+		secondCsvFile = new File(csvFile.getPath().replace(".csv", "_1.csv"));
+		BufferedReader reader = new BufferedReader(new FileReader(secondCsvFile));
+		
+		assertEquals("****** Particle: Orig file ******,,****** Particle: Orig file ******,,****** Particle: Orig file ******,,****** Particle: Orig file ******,,****** Particle: Orig file ******,,****** Particle: Orig file ******,,", reader.readLine());
+		assertEquals("Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,Negative Spectrum,,", reader.readLine());
+		assertEquals("-30,0.00,-30,0.00,-30,0.00,-30,0.00,-30,0.00,-30,15.00,", reader.readLine());
+		assertEquals("-29,0.00,-29,0.00,-29,0.00,-29,0.00,-29,0.00,-29,0.00,", reader.readLine());
+		for (int i = 0; i < 28; i++)
 			reader.readLine();
-		assertEquals("30,15.00", reader.readLine());
-		assertEquals("****** Particle: 4 ******", reader.readLine());
-		assertEquals("Negative Spectrum", reader.readLine());
-		assertEquals("-30,15.00", reader.readLine());
-		for (int i = 0; i < 61; i++)
+		assertEquals("Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,Positive Spectrum,,", reader.readLine());
+		assertEquals("0,0.00,0,0.00,0,0.00,0,0.00,0,0.00,0,15.00,", reader.readLine());
+		for (int i = 0; i < 30; i++)
 			reader.readLine();
 		assertEquals(null, reader.readLine());
 	}
@@ -165,6 +171,7 @@ public class CSVDataSetExporterTest extends TestCase {
 	public void tearDown()
 	{
 		if (csvFile != null) csvFile.delete();
+		if (secondCsvFile != null) secondCsvFile.delete();
 		db.closeConnection();
 	}
 }
