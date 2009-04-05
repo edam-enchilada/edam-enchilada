@@ -109,6 +109,39 @@ public class FileDialogPicker{
 			fileName = oldFilename;
 		
 	}
+
+	/**
+	 * 
+	 * @param title	The title for the dialog box.
+	 * @param origFileName The file name for the filter.  It could be *.extension.
+	 * @param pDialog The owner dialog for this dialog
+	 * @param load true if load is the desired option, false if save is the desired option
+	 */
+	public FileDialogPicker(String title, String origFileName, Dialog pDialog, Boolean load){
+		if(load)
+			fileChooser = new FileDialog(pDialog,title,FileDialog.LOAD);
+		else
+			fileChooser = new FileDialog(pDialog,title,FileDialog.SAVE);
+		fileFilter = origFileName;
+		
+		button = new JButton(oldFilename);
+		button.setBorderPainted(false);
+		button.setBackground(Color.WHITE);
+		fileChooser.setFile(fileFilter);
+		fileChooser.setVisible(true);
+		
+		String returnVal = null;
+		returnVal = fileChooser.getFile();
+		
+		if(returnVal != null)
+		{
+			fileName = fileChooser.getDirectory() + returnVal;
+		}
+		else
+			fileName = oldFilename;
+		
+	}
+
 	public String getFileName(){
 		return fileName;
 	}
