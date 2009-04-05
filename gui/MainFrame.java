@@ -23,6 +23,7 @@
  * David R Musicant dmusican@carleton.edu
  * Anna Ritz ritza@carleton.edu
  * Jonathan Sulman sulmanj@carleton.edu
+ * Tom Bigwood tom.bigwood@nevelex.com
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -324,7 +325,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private void fixFonts(Font f) {
 		UIDefaults defaults = UIManager.getDefaults();
 		Object key = null;
-        for (java.util.Enumeration keys = UIManager.getDefaults().keys(); 
+        for (java.util.Enumeration<Object> keys = UIManager.getDefaults().keys(); 
         	keys.hasMoreElements();
         	key = keys.nextElement())
         {
@@ -379,7 +380,7 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version mar-2009-24"
+					"Software Version apr-2009-07"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
@@ -535,7 +536,7 @@ public class MainFrame extends JFrame implements ActionListener
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
-			new ExportCSVDialog(this, particlesTable, db, c);
+			new ExportCSVDialog(this, db, c);
 		}
 		else if (source == deleteAdoptItem)
 		{
