@@ -49,10 +49,15 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import analysis.clustering.PeakList;
+
 import collection.Collection;
 
+import ATOFMS.ParticleInfo;
 import ATOFMS.Peak;
+import database.CollectionCursor;
 import database.InfoWarehouse;
+import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import gui.ExportCSVDialog;
 import gui.ProgressBarWrapper;
@@ -83,76 +88,141 @@ public class CSVDataSetExporter {
 	}
 
 	/**
-	 * Exports the peak list data for the supplied atom ID's
-	 * @param atomIDs the list of database ids for the particles we want to 
+	 * Exports the peak list data for the supplied collection
+	 * @param coll the collection of the particles we want to 
 	 * export
 	 * @param fileName the path to the file that we're going to create
 	 * @param maxMZValue this is the maximum mass to charge value to export
 	 * (we often filter out the largest and smallest mass to charge values
 	 * @return true if it worked
 	 */
-	public boolean exportToCSV(ArrayList<Integer> atomIDs, String fileName, int maxMZValue)
+	public boolean exportToCSV(Collection coll, String fileName, int maxMZValue)
+		throws DisplayException
 	{
 		double mzConstraint = new Double(maxMZValue);
-		DecimalFormat formatter = new DecimalFormat("0.00");
 		boolean showingNegatives;
-		PrintWriter out = null;
+		CollectionCursor atomInfoCur;
+		ParticleInfo particleInfo;
 		
 		if (fileName == null) {
 			return false;
 		} else if (! fileName.endsWith(ExportCSVDialog.EXPORT_FILE_EXTENSION)) {
 			fileName = fileName + "." + ExportCSVDialog.EXPORT_FILE_EXTENSION;
 		}
-//		if (! coll.getDatatype().equals("ATOFMS")) {
-//			throw new DisplayException("Please choose a ATOFMS collection to export to MSAnalyze.");
-//		}
+		if (! coll.getDatatype().equals("ATOFMS")) {
+			throw new DisplayException("Please choose a ATOFMS collection to export.");
+		}
 
 		fileName = fileName.replaceAll("'", "");
-		File csvFile = new File(fileName);
-		System.out.println(csvFile.getAbsolutePath());
 
 		try {
-			out = new PrintWriter(new FileOutputStream(csvFile, false));
 	
 			progressBar.setText("Exporting peak data");
 			progressBar.setIndeterminate(true);
-	
-			for (Integer atomID: atomIDs) {
-				out.println("****** Particle: " + atomID + " ******");
-				out.println("Negative Spectrum");
-				showingNegatives = true;
-				Iterator<Peak> peaks = db.getPeaks("ATOFMS", atomID).iterator();
-				Peak peak = peaks.hasNext() ? peaks.next() : null;
-				for (int location = -maxMZValue; location <= maxMZValue; location++) {
-					if (showingNegatives && location >= 0) {
-						showingNegatives = false;
-						out.println("Positive Spectrum");
-					}
-					if (peak == null || location < peak.massToCharge) {
-						out.println(location + ",0.00");
-					}
-					else {
-						// write it out
-						out.println(new Double(peak.massToCharge).intValue() +"," + formatter.format(peak.value));
-						peak = peaks.hasNext() ? peaks.next() : null;
-					}
+			
+			atomInfoCur = db.getAtomInfoOnlyCursor(coll);
+
+			ArrayList<ParticleInfo> particleList = new ArrayList<ParticleInfo>();
+			int fileIndex = 0;
+			while (atomInfoCur.next()) {
+				particleInfo = atomInfoCur.getCurrent();
+				PeakList peakList = new PeakList();
+				peakList.setPeakList(db.getPeaks("ATOFMS", particleInfo.getID()));
+				particleInfo.setPeakList(peakList);
+				particleList.add(particleInfo);
+				if (particleList.size() == 127)
+				{
+					writeOutParticlesToFile(particleList, fileName, fileIndex++, maxMZValue);
+					particleList.clear();
 				}
 			}
+			if (particleList.size() > 0)
+			{
+				writeOutParticlesToFile(particleList, fileName, fileIndex++, maxMZValue);
+			}
 		} catch (IOException e) {
-			ErrorLogger.writeExceptionToLogAndPrompt("CSV Data Exporter","Error writing file please ensure the applicaiton can write to the specified file.");
+			ErrorLogger.writeExceptionToLogAndPrompt("CSV Data Exporter","Error writing file please ensure the application can write to the specified file.");
 			System.err.println("Problem writing file: ");
 			e.printStackTrace();
 			return false;
-		} finally {
-			if (out != null) 
-				out.close();
 		}
 		return true;
 	}
-
 	
-	public boolean exportToCSV(Collection coll, String fileName, int maxMZValue)
+	private void writeOutParticlesToFile(ArrayList<ParticleInfo> particleList, String fileName, int fileIndex, int maxMZValue)
+		throws IOException
 	{
-		return exportToCSV(coll.getParticleIDs(), fileName, maxMZValue);
+		PrintWriter out = null;
+		File csvFile;
+		ArrayList<Peak> currentPeakForAllParticles;
+		ArrayList<Iterator<Peak>> peakLists;
+		DecimalFormat formatter = new DecimalFormat("0.00");
+
+		if (fileIndex == 0)
+		{
+			csvFile = new File(fileName);
+		}
+		else
+		{
+			csvFile = new File(fileName.replace(".csv", "_" + fileIndex + ".csv"));
+		}
+
+		out = new PrintWriter(new FileOutputStream(csvFile, false));
+		currentPeakForAllParticles = new ArrayList<Peak>(particleList.size());
+		peakLists = new ArrayList<Iterator<Peak>>(particleList.size());
+		StringBuffer sbHeader = new StringBuffer();
+		StringBuffer sbNegLabels = new StringBuffer();
+		StringBuffer sbPosLabels = new StringBuffer();
+		for (ParticleInfo particleInfo : particleList) {
+			sbHeader.append("****** Particle: ");
+			sbHeader.append(particleInfo.getATOFMSParticleInfo().getFilename());
+			sbHeader.append(" ******,,");
+			Iterator<Peak> peaks = particleInfo.getPeakList().getPeakList().iterator();
+			Peak peak = null;
+			while (peaks.hasNext()) {
+				peak = peaks.next();
+				if (peak.massToCharge >= -maxMZValue)
+					break;
+			}
+			if (peak == null || peak.massToCharge < -maxMZValue)
+				peak = null;
+			currentPeakForAllParticles.add(peak);
+			peakLists.add(peaks);
+			sbNegLabels.append("Negative Spectrum,,");
+			sbPosLabels.append("Positive Spectrum,,");
+		}
+//		sbHeader.setLength(sbHeader.length() - 2);
+//		sbNegLabels.setLength(sbNegLabels.length() - 2);
+//		sbPosLabels.setLength(sbPosLabels.length() - 2);
+		out.println(sbHeader.toString());
+		out.println(sbNegLabels.toString());
+
+		boolean showingNegatives = true;
+		StringBuffer sbValues = new StringBuffer();
+		
+		for (int location = -maxMZValue; location <= maxMZValue; location++) {
+			if (showingNegatives && location >= 0) {
+				showingNegatives = false;
+				out.println(sbPosLabels.toString());
+			}
+			for (int particleIndex = 0; particleIndex < peakLists.size(); particleIndex++) {
+				Peak peak = currentPeakForAllParticles.get(particleIndex);
+				if (peak == null || location < peak.massToCharge) {
+					sbValues.append(location);
+					sbValues.append(",0.00,");
+				}
+				else {
+					// write it out
+					sbValues.append(new Double(peak.massToCharge).intValue());
+					sbValues.append(",");
+					sbValues.append(formatter.format(peak.value));
+					sbValues.append(",");
+					currentPeakForAllParticles.set(particleIndex, peakLists.get(particleIndex).hasNext() ? peakLists.get(particleIndex).next() : null);
+				}
+			}
+			out.println(sbValues.toString());
+			sbValues.setLength(0);
+		}
+		out.close();
 	}
 }
