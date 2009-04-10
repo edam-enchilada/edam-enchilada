@@ -175,7 +175,9 @@ public class CSVDataSetExporter {
 		StringBuffer sbPosLabels = new StringBuffer();
 		for (ParticleInfo particleInfo : particleList) {
 			sbHeader.append("****** Particle: ");
-			sbHeader.append(particleInfo.getATOFMSParticleInfo().getFilename());
+			String choppedName = particleInfo.getATOFMSParticleInfo().getFilename();
+			choppedName = choppedName.indexOf('\\') > 0 ? choppedName.substring(choppedName.lastIndexOf('\\') + 1) : choppedName;
+			sbHeader.append(choppedName);
 			sbHeader.append(" ******,,");
 			Iterator<Peak> peaks = particleInfo.getPeakList().getPeakList().iterator();
 			Peak peak = null;
