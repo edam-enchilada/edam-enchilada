@@ -67,22 +67,6 @@ public class SQLServerDatabase extends Database
 	 */
 	public SQLServerDatabase()
 	{
-		try {
-			tempdir = (new File(".")).getCanonicalPath();
-			tempdir = tempdir +File.separator+"TEMP";
-			File tempdirFile = new File(tempdir);
-			if(!tempdirFile.exists()){
-				tempdirFile.mkdir();
-			}
-			
-			if(!tempdirFile.isDirectory()){
-				tempdirFile.delete();
-				tempdirFile.mkdir();
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		url = "localhost";
 		port = "1433";
 		database = "SpASMSdb";
@@ -190,7 +174,7 @@ public class SQLServerDatabase extends Database
 	protected BulkInserter getBulkInserter(BatchExecuter stmt, String table) {
 		return new BulkInserter(stmt, table) {
 			protected String getBatchSQL() {
-				return "BULK INSERT " + table + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')";
+				return "BULK INSERT " + table + " FROM '" + tempFile.getAbsolutePath() + "' WITH (FIELDTERMINATOR=',')";
 			}
 		};
 	}

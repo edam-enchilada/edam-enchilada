@@ -357,17 +357,11 @@ public abstract class CollectionDivider {
 		//create tempfile used to bulk insert to stuffToDelete
 		//tempfile goes in same place as other temp files
 		System.out.println("Creating tempdelete.data file...");
-		String tempdir = "";
-		try {
-			tempdir = (new File(".")).getCanonicalPath();
-		}
-		catch (Exception e) {
-			System.out.println("Error Creating tempDelte file in proper location.");
-		}
-		tempdir = tempdir + File.separator+ "TEMP" + File.separator + "tempdelete.data";
-		File temp = new File(tempdir);
+//		String tempdir = "";
+		File temp = null;
 		PrintWriter pw = null;
 		try {
+			temp = File.createTempFile("tempdelete", "data");
 			pw = new PrintWriter(temp);
 		}
 		catch (Exception e) {

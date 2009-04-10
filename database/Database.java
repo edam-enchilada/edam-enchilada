@@ -119,7 +119,7 @@ public abstract class Database implements InfoWarehouse {
 	protected String port;
 	protected String database;
 	
-	protected String tempdir;
+//	protected String tempdir;
 	
 	//the name of this database, for debugging and error reporting purposes
 	private String dbType;
@@ -127,8 +127,9 @@ public abstract class Database implements InfoWarehouse {
 	// for batch stuff
 	private Statement batchStatement;
 	private ArrayList<Integer> alteredCollections;
-	private PrintWriter bulkInsertFile;
-	private String bulkInsertFileName;
+	private PrintWriter bulkInsertFileWriter;
+	private File bulkInsertFile;
+//	private String bulkInsertFileName;
 	
 	protected boolean isDirty = false;
 	public boolean isDirty(){
@@ -385,16 +386,18 @@ public abstract class Database implements InfoWarehouse {
 	 * @author shaferia
 	 */
 	protected abstract class BulkInserter extends Inserter {
-		protected final String tempFilename = tempdir + File.separator + "bulkfile.txt";
+		protected File tempFile;
 		protected BufferedWriter file;
 		
 		public BulkInserter(BatchExecuter stmt, String table) {
 			super(stmt, table);
 			try {
-				file = new BufferedWriter(new FileWriter(tempFilename));
+				tempFile = File.createTempFile("bulkfile", ".txt");
+				tempFile.deleteOnExit();
+				file = new BufferedWriter(new FileWriter(tempFile));
 			}
 			catch (IOException ex) {
-				System.err.println("Couldn't create bulk file " + tempFilename + 
+				System.err.println("Couldn't create bulk file " + tempFile.getAbsolutePath() + "" + 
 						" for table " + table);
 				ex.printStackTrace();
 			}
@@ -418,7 +421,7 @@ public abstract class Database implements InfoWarehouse {
 				file.newLine();
 			}
 			catch (IOException ex) {
-				throw new SQLException("Couldn't write to file: " + tempFilename);
+				throw new SQLException("Couldn't write to file: " + tempFile.getAbsolutePath());
 			}
 		}
 		
@@ -427,7 +430,7 @@ public abstract class Database implements InfoWarehouse {
 				file.close();
 			}
 			catch (IOException ex) {
-				System.err.println("Couldn't close bulk file " + tempFilename +
+				System.err.println("Couldn't close bulk file " + tempFile.getAbsolutePath() +
 						" for table " + table);
 				ex.printStackTrace();
 			}
@@ -442,19 +445,20 @@ public abstract class Database implements InfoWarehouse {
 	{
 		protected BufferedWriter file;
 		protected String table;
-		protected String tempFilename;
-
+		protected File tempFile;
+		
 	    public BulkBucket(String tableName) throws SQLException {
 
 			table = tableName;
 
-			tempFilename = tempdir + File.separator + table + ".txt";
 			try {
-				file = new BufferedWriter(new FileWriter(tempFilename));
+				tempFile = File.createTempFile(table, ".txt");
+				tempFile.deleteOnExit();
+				file = new BufferedWriter(new FileWriter(tempFile));
 			}
 			catch (IOException ex) {
-				System.err.println("Couldn't create bulk file " + tempFilename +
-						" for table " + table);
+				System.err.println("Couldn't create bulk file " + table +
+						".txt for table " + table);
 				ex.printStackTrace();
 			}
 		}
@@ -465,7 +469,7 @@ public abstract class Database implements InfoWarehouse {
 				file.newLine();
 			}
 			catch (IOException ex) {
-				throw new SQLException("Couldn't write to file: " + tempFilename);
+				throw new SQLException("Couldn't write to file: " + tempFile.getAbsolutePath());
 			}
 		}
 
@@ -474,14 +478,14 @@ public abstract class Database implements InfoWarehouse {
 				file.close();
 			}
 			catch (IOException ex) {
-				System.err.println("Couldn't close bulk file " + tempFilename +
+				System.err.println("Couldn't close bulk file " + tempFile.getAbsolutePath() +
 						" for table " + table);
 				ex.printStackTrace();
 			}
 		}
 
 		public String sqlCmd() {
-			return "BULK INSERT " + table + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n";
+			return "BULK INSERT " + table + " FROM '" + tempFile.getAbsolutePath() + "' WITH (FIELDTERMINATOR=',')\n";
 		}
 	}
 	
@@ -1795,12 +1799,14 @@ public abstract class Database implements InfoWarehouse {
 			
 			Iterator<Integer> allsubcollections = hierarchy.keySet().iterator();
 			if (url.equals("localhost")) {
-				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
-					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					tempFile = File.createTempFile("bulkfile", ".txt");
+					tempFile.deleteOnExit();
+					bulkFile = new PrintWriter(new FileWriter(tempFile));
 				} catch (IOException e) {
-					System.err.println("Trouble creating " + tempFilename);
+					System.err.println("Trouble creating " + tempFile.getAbsolutePath() + "");
 					e.printStackTrace();
 				}
 				bulkFile.println(collection.getCollectionID());
@@ -1813,9 +1819,8 @@ public abstract class Database implements InfoWarehouse {
 				}
 				bulkFile.close();
 				sql.append("BULK INSERT #collections\n" +
-						"FROM '" + tempFilename + "'\n" +
+						"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 				"WITH (FIELDTERMINATOR=',');\n");
-				
 				
 			} else {
 				sql.append("INSERT INTO #collections VALUES("+collection.getCollectionID()+");\n");
@@ -2062,13 +2067,15 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public void bulkInsertInit() throws Exception {
 		if (url.equals("localhost")) {
-			bulkInsertFileName = tempdir + File.separator + "bulkfile.txt";
 			bulkInsertFile = null;
+			bulkInsertFileWriter = null;
 			alteredCollections = new ArrayList<Integer>();
 			try {
-				bulkInsertFile = new PrintWriter(new FileWriter(bulkInsertFileName));
+				bulkInsertFile = File.createTempFile("bulkfile", ".txt");
+				bulkInsertFile.deleteOnExit();
+				bulkInsertFileWriter = new PrintWriter(new FileWriter(bulkInsertFile));
 			} catch (IOException e) {
-				System.err.println("Trouble creating " + bulkInsertFileName);
+				System.err.println("Trouble creating " + bulkInsertFile.getAbsolutePath() + "");
 				e.printStackTrace();
 			}
 		}else{
@@ -2121,7 +2128,7 @@ public abstract class Database implements InfoWarehouse {
 		try {
 			long time = System.currentTimeMillis();
 			
-			if(bulkInsertFile==null || bulkInsertFileName==null){
+			if(bulkInsertFileWriter==null || bulkInsertFile == null){
 				try {
 					throw new Exception("Must initialize bulk insert first!");
 				} catch (Exception e) {
@@ -2129,17 +2136,16 @@ public abstract class Database implements InfoWarehouse {
 					e.printStackTrace();
 				}
 			}
-			bulkInsertFile.close();
+			bulkInsertFileWriter.close();
 
 			dropTempTable();
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
-			String tempFilename = tempdir + File.separator + "bulkfile.txt";
+			File tempFile = null;
 			sql.append("CREATE TABLE #temp (CollectionID INT, AtomID INT);\n");
 			sql.append("BULK INSERT #temp" +
-					" FROM '"+bulkInsertFileName+"' " +
+					" FROM '"+bulkInsertFile.getAbsolutePath()+"' " +
 					"WITH (FIELDTERMINATOR=',');\n");
-				
 			sql.append("INSERT INTO AtomMembership (CollectionID, AtomID)" +
 					" SELECT CollectionID, AtomID " +
 					"FROM #temp;\n");
@@ -2192,14 +2198,14 @@ public abstract class Database implements InfoWarehouse {
 	 * @author olsonja
 	 */
 	public void bulkInsertAtom(int atomID,int parentID) throws Exception{
-		if(bulkInsertFile==null || bulkInsertFileName==null){
+		if(bulkInsertFileWriter==null || bulkInsertFile==null){
 			throw new Exception("Must initialize bulk insert first!");
 		}
 		if (!alteredCollections.contains(new Integer(parentID)))
 			alteredCollections.add(new Integer(parentID));
 		
 		//alteredCollections.add(parentID);
-		bulkInsertFile.println(parentID+","+atomID);	
+		bulkInsertFileWriter.println(parentID+","+atomID);	
 	}
 	/* Get functions for collections and table names */
 	
@@ -4658,12 +4664,14 @@ public abstract class Database implements InfoWarehouse {
 				
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+						tempFile = File.createTempFile("bulkfile", ".txt");
+						tempFile.deleteOnExit();
+						bulkFile = new PrintWriter(new FileWriter(tempFile));
 					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
+						System.err.println("Trouble creating " + tempFile.getAbsolutePath() + "");
 						e.printStackTrace();
 					}
 					while (next && basisRS.next()) { 
@@ -4683,7 +4691,7 @@ public abstract class Database implements InfoWarehouse {
 					}
 					bulkFile.close();
 					tempTable.append("BULK INSERT #TimeBins\n" +
-							"FROM '" + tempFilename + "'\n" +
+							"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 					"WITH (FIELDTERMINATOR=',');\n");
 				} else {
 					int counter = 0;
@@ -4770,12 +4778,14 @@ public abstract class Database implements InfoWarehouse {
 //			while the next time bin is legal...
 //			 Only bulk insert if client and server are on the same machine...
 			if (url.equals("localhost")) {
-				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
-					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					tempFile = File.createTempFile("bulkfile", ".txt");
+					tempFile.deleteOnExit();
+					bulkFile = new PrintWriter(new FileWriter(tempFile));
 				} catch (IOException e) {
-					System.err.println("Trouble creating " + tempFilename);
+					System.err.println("Trouble creating " + tempFile.getAbsolutePath() + "");
 					e.printStackTrace();
 				}
 				while (next) {
@@ -4798,7 +4808,7 @@ public abstract class Database implements InfoWarehouse {
 				}	
 				bulkFile.close();
 				tempTable.append("BULK INSERT #TimeBins\n" +
-						"FROM '" + tempFilename + "'\n" +
+						"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 				"WITH (FIELDTERMINATOR=',');\n");
 			} else {
 				while (next) {
@@ -5058,12 +5068,14 @@ public abstract class Database implements InfoWarehouse {
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+						tempFile = File.createTempFile("bulkfile", ".txt");
+						tempFile.deleteOnExit();
+						bulkFile = new PrintWriter(new FileWriter(tempFile));
 					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
+						System.err.println("Trouble creating " + tempFile.getAbsolutePath() + "");
 						e.printStackTrace();
 					}
 					for (int i = 0; i < mzValues.length; i++){
@@ -5071,7 +5083,7 @@ public abstract class Database implements InfoWarehouse {
 					}
 					bulkFile.close();
 					sql.append("BULK INSERT #mz\n" +
-							"FROM '" + tempFilename + "'\n" +
+							"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 					"WITH (FIELDTERMINATOR=',');\n");
 				} else {
 					for (int i = 0; i < mzValues.length; i++){
@@ -5171,12 +5183,14 @@ public abstract class Database implements InfoWarehouse {
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					String tempFilename = tempdir + File.separator + "bulkfile.txt";
+					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
-						bulkFile = new PrintWriter(new FileWriter(tempFilename));
+						tempFile = File.createTempFile("bulkfile", ".txt");
+						tempFile.deleteOnExit();
+						bulkFile = new PrintWriter(new FileWriter(tempFile));
 					} catch (IOException e) {
-						System.err.println("Trouble creating " + tempFilename);
+						System.err.println("Trouble creating " + tempFile.getAbsolutePath() + "");
 						e.printStackTrace();
 					}
 					for (int i = 0; i < options.mzValues.size(); i++){
@@ -5184,7 +5198,7 @@ public abstract class Database implements InfoWarehouse {
 					}
 					bulkFile.close();
 					sql.append("BULK INSERT #mz\n" +
-							"FROM '" + tempFilename + "'\n" +
+							"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 							"WITH (FIELDTERMINATOR=',');\n");
 				} else {
 					for (int i = 0; i < options.mzValues.size(); i++) {
@@ -6182,12 +6196,14 @@ public abstract class Database implements InfoWarehouse {
 			
 			// Only bulk insert if client and server are on the same machine...
 			if (url.equals("localhost")) {
-				String tempFilename = tempdir + File.separator + "bulkfile.txt";
+				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
-					bulkFile = new PrintWriter(new FileWriter(tempFilename));
+					tempFile = File.createTempFile("bulkfile", ".txt");
+					tempFile.deleteOnExit();
+					bulkFile = new PrintWriter(new FileWriter(tempFile));
 				} catch (IOException e) {
-					System.err.println("Trouble creating " + tempFilename);
+					System.err.println("Trouble creating " + tempFile.getAbsolutePath());
 					e.printStackTrace();
 				}
 				while (rs.next()) {
@@ -6196,7 +6212,7 @@ public abstract class Database implements InfoWarehouse {
 				}
 				bulkFile.close();
 				stmt.addBatch("BULK INSERT InternalAtomOrder\n" +
-						"FROM '" + tempFilename + "'\n" +
+						"FROM '" + tempFile.getAbsolutePath() + "'\n" +
 				"WITH (FIELDTERMINATOR=',')");
 			} else {
 				while (rs.next()) {			

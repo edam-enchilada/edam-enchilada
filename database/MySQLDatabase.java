@@ -135,7 +135,7 @@ public class MySQLDatabase extends Database {
 	protected Inserter getBulkInserter(BatchExecuter stmt, String table) {
 		return new BulkInserter(stmt, table) {
 			protected String getBatchSQL() {
-				return "LOAD DATA INFILE '" + tempFilename.replaceAll("\\\\", "\\\\\\\\") 
+				return "LOAD DATA INFILE '" + tempFile.getAbsolutePath().replaceAll("\\\\", "\\\\\\\\") 
 					+ "' INTO TABLE " + table + 
 					" FIELDS TERMINATED BY ','" +
 					" ENCLOSED BY '\\''" + 

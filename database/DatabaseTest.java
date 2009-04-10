@@ -2390,22 +2390,13 @@ public class DatabaseTest extends TestCase {
 	
 	// ***SLH
 	public void testgetDatabulkBucket() {
-		String tempdir = "";
-		try {
-			tempdir = (new File(".")).getCanonicalPath();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		tempdir = tempdir +File.separator+"TEMP";
-		String tempFilename;
 		String[] tables = {"ATOFMSAtomInfoDense", "AtomMembership", "DataSetMembers", "ATOFMSAtomInfoSparse", "InternalAtomOrder"};
 		Database.Data_bulkBucket buckets = db.getDatabulkBucket(tables);
 		
 		for( int i = 0; i< tables.length; i++) {
 			assertEquals(buckets.buckets[i].table, tables[i]);
-			tempFilename = tempdir + File.separator + buckets.buckets[i].table + ".txt";
-			assertEquals(buckets.buckets[i].sqlCmd(), "BULK INSERT " +  tables[i] + " FROM '" + tempFilename + "' WITH (FIELDTERMINATOR=',')\n");
+			assertTrue(buckets.buckets[i].sqlCmd().startsWith("BULK INSERT " + tables[i] + " FROM '"));
+			assertTrue(buckets.buckets[i].sqlCmd().endsWith("' WITH (FIELDTERMINATOR=',')\n"));
 		}	
 	}
 	// ***SLH  BulkInsertDataParticles saveDataParticle
@@ -2453,38 +2444,40 @@ public class DatabaseTest extends TestCase {
 			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
 		}
 		db.closeConnection();
-		String tempdir = "";
-		try {
-			tempdir = (new File(".")).getCanonicalPath();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		tempdir = tempdir +File.separator+"TEMP";
-		//Only checked the content of one file, others should work the same way.
-		File dense_file = new File(tempdir + "\\ATOFMSAtomInfoDense.txt");
-		assertTrue(dense_file.isFile());
-		assertTrue(dense_file.canRead());
-		
-		try {
-			String line = "";
-			String[] tokens;
-			in = new Scanner(dense_file);
-			while (in.hasNext()) {
-				line = in.nextLine();
-				tokens = line.split(",");
-				assertEquals(tokens[0], Integer.toString(nextAtomID));
-				assertEquals(tokens[1], "12-30-06 10:59:49");
-				assertEquals(tokens[2], " 1.89E-4");
-				assertEquals(tokens[3], " 2.4032946");
-				assertEquals(tokens[4], " 4286");
-				assertEquals(tokens[5], "E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz");
-				return;
-			}
+		// switching to the window-friendly temp files means we don't know the file name anymore
 
-		} catch (IOException e) {
-			System.err.println("IOException occurs when checking the output file content");
-		}
+//		String tempdir = "";
+//		try {
+//			tempdir = (new File(".")).getCanonicalPath();
+//		} catch (IOException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		tempdir = tempdir +File.separator+"TEMP";
+//		//Only checked the content of one file, others should work the same way.
+//		File dense_file = new File(tempdir + "\\ATOFMSAtomInfoDense.txt");
+//		assertTrue(dense_file.isFile());
+//		assertTrue(dense_file.canRead());
+//
+//		try {
+//			String line = "";
+//			String[] tokens;
+//			in = new Scanner(dense_file);
+//			while (in.hasNext()) {
+//				line = in.nextLine();
+//				tokens = line.split(",");
+//				assertEquals(tokens[0], Integer.toString(nextAtomID));
+//				assertEquals(tokens[1], "12-30-06 10:59:49");
+//				assertEquals(tokens[2], " 1.89E-4");
+//				assertEquals(tokens[3], " 2.4032946");
+//				assertEquals(tokens[4], " 4286");
+//				assertEquals(tokens[5], "E:\\Data\\12-29-2003\\h\\h-031230105949-00001.amz");
+//				return;
+//			}
+//
+//		} catch (IOException e) {
+//			System.err.println("IOException occurs when checking the output file content");
+//		}
 		
 	}
 	
@@ -2518,7 +2511,7 @@ public class DatabaseTest extends TestCase {
 			Statement stmt = db.getCon().createStatement();
 			ResultSet rs = stmt.executeQuery("USE TestDB;\n" + "SELECT * FROM AMSAtomInfoDense where AtomID = 100" );
 			assertTrue(rs.next());
-			assertEquals(rs.getInt(1), 100);
+			assertEquals(100, rs.getInt(1));
 			// Date are the same but different format. 
 			//assertEquals(rs.getDate(2), "12-30-06");
 			assertEquals(rs.getTime(2).toString(), "10:59:50");
@@ -2527,34 +2520,36 @@ public class DatabaseTest extends TestCase {
 			fail("Problem inserting ATOFMS data with saveDataParticle() or BulkInsertDataParticles");
 		}
 		db.closeConnection();
-		String tempdir = "";
-		try {
-			tempdir = (new File(".")).getCanonicalPath();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		tempdir = tempdir +File.separator+"TEMP";
-		//Only checked the content of one file, others should work the same way.
-		File dense_file = new File(tempdir + "\\AMSAtomInfoDense.txt");
-		assertTrue(dense_file.isFile());
-		assertTrue(dense_file.canRead());
 		
-		try {
-			String line = "";
-			String[] tokens;
-			in = new Scanner(dense_file);
-			while (in.hasNext()) {
-				line = in.nextLine();
-				tokens = line.split(",");
-				assertEquals(tokens[0], Integer.toString(nextAtomID));
-				assertEquals(tokens[1], "12-30-06 10:59:50");
-				return;
-			}
-
-		} catch (IOException e) {
-			System.err.println("IOException occurs when checking the output file content");
-		}
+		// because we moved to more windows vista-friendly naming for temp files, we can't find our temp file anymore
+//		String tempdir = "";
+//		try {
+//			tempdir = (new File(".")).getCanonicalPath();
+//		} catch (IOException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		tempdir = tempdir +File.separator+"TEMP";
+//		//Only checked the content of one file, others should work the same way.
+//		File dense_file = new File(tempdir + "\\AMSAtomInfoDense.txt");
+//		assertTrue(dense_file.isFile());
+//		assertTrue(dense_file.canRead());
+//		
+//		try {
+//			String line = "";
+//			String[] tokens;
+//			in = new Scanner(dense_file);
+//			while (in.hasNext()) {
+//				line = in.nextLine();
+//				tokens = line.split(",");
+//				assertEquals(tokens[0], Integer.toString(nextAtomID));
+//				assertEquals(tokens[1], "12-30-06 10:59:50");
+//				return;
+//			}
+//
+//		} catch (IOException e) {
+//			System.err.println("IOException occurs when checking the output file content");
+//		}
 		
 	}
 	
