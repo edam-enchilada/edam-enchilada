@@ -156,6 +156,7 @@ public class ClusterQueryTest extends TestCase {
 		try{
 			qc.divide();
 		}catch (NoSubCollectionException sce){
+			System.out.println("There should be an exception about no sub collection here:");
 			sce.printStackTrace();
 		}
 	}
