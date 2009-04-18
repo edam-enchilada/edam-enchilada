@@ -40,18 +40,23 @@
 
 package analysis.clustering;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Map;
 
 import collection.Collection;
 
+import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import analysis.DistanceMetric;
 import analysis.Normalizer;
 
 
+import database.CollectionCursor;
 import database.CreateTestDatabase;
 import database.InfoWarehouse;
 import database.Database;
@@ -130,75 +135,119 @@ public class KMeansTest extends TestCase {
     	assertTrue(kmeans.parameterString.equals("KMeans,K=2,Test comment"));
     }
     
-    public void testKMeans() {
+    public void testKMeans() throws Exception {
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
     	int collectionID = kmeans.cluster(false);
     	
     	assertTrue(collectionID == 7);
     	
+    	Collection clusterParent = db.getCollection(7);
+    	BufferedReader descReader = new BufferedReader(new StringReader(clusterParent.getDescription()));
+    	for (int i = 0; i < 4; i++) descReader.readLine();
+    	assertEquals("Number of ignored particles with zero peaks = 0", descReader.readLine());
+    	// the preceeding test assertion is actually incorrect, the correct test follows, see bug 2772661
+    	//assertEquals("Number of ignored particles with zero peaks = 1", descReader.readLine());
+
+    	// check the std deviations in the collection description
+    	for (int i = 0; i < 16; i++) descReader.readLine();
+		assertEquals("Mean size: 0.33333334 Std dev: +/-0.12472187", descReader.readLine());
+		assertEquals("Geometric mean size: 0.31072325", descReader.readLine());
+		for (int i = 0; i < 9; i++) descReader.readLine();
+		assertEquals("Mean size: 0.4 Std dev: +/-0.0", descReader.readLine());
+		assertEquals("Geometric mean size: 0.4", descReader.readLine());
+    	
     	Collection cluster1 = db.getCollection(8);
     	Collection cluster2 = db.getCollection(9);
+    	Collection clusterCenters = db.getCollection(10);
 
     	assertTrue(cluster1.containsData());
-    	assertTrue(cluster1.getComment().equals("1"));
-    	assertTrue(cluster1.getDatatype().equals("ATOFMS"));
+    	assertEquals("1", cluster1.getComment());
+    	assertEquals("ATOFMS", cluster1.getDatatype());
     	assertTrue(cluster1.getDescription().startsWith("Key:\tValue:"));
-    	assertTrue(cluster1.getName().equals("1"));
-    	assertTrue(cluster1.getParentCollection().getCollectionID() == 7);
+    	assertEquals("1", cluster1.getName());
+    	assertEquals(7, cluster1.getParentCollection().getCollectionID());
     	ArrayList<Integer> particles = cluster1.getParticleIDs();
-       	assertTrue(particles.get(0) == 2);
-    	assertTrue(particles.get(1) == 3);
-    	assertTrue(particles.get(2) == 5);
+       	assertEquals(2, particles.get(0).intValue());
+    	assertEquals(3, particles.get(1).intValue());
+    	assertEquals(5, particles.get(2).intValue());
     	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
     	
     	assertTrue(cluster2.containsData());
-    	assertTrue(cluster2.getComment().equals("2"));
-    	assertTrue(cluster2.getDatatype().equals("ATOFMS"));
+    	assertEquals("2", cluster2.getComment());
+    	assertEquals("ATOFMS", cluster2.getDatatype());
     	assertTrue(cluster2.getDescription().startsWith("Key:\tValue:"));
-    	assertTrue(cluster2.getName().equals("2"));
-    	assertTrue(cluster2.getParentCollection().getCollectionID() == 7);
+    	assertEquals("2", cluster2.getName());
+    	assertEquals(7, cluster2.getParentCollection().getCollectionID());
     	particles = cluster2.getParticleIDs();
-    	assertTrue(particles.get(0) == 4);
+    	assertEquals(4, particles.get(0).intValue());
     	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+
+    	CollectionCursor denseCurs = db.getAtomInfoOnlyCursor(clusterCenters);
+    	denseCurs.next();
+    	ParticleInfo info = denseCurs.getCurrent();
+    	assertEquals(0.33333334f, info.getATOFMSParticleInfo().getSize());
+    	denseCurs.next();
+    	info = denseCurs.getCurrent();
+    	assertEquals(.4f, info.getATOFMSParticleInfo().getSize());
+
+    	CollectionCursor sparseCurs = db.getBPLOnlyCursor(clusterCenters);
+    	sparseCurs.next();
+    	info = sparseCurs.getCurrent();
+    	Map<Integer, Float> peaks = info.getBinnedList().getPeaks();
+    	assertEquals(555.0f, peaks.get(-300).floatValue());
+    	assertEquals(3888.0f, peaks.get(-30).floatValue());
+    	assertEquals(555.0f, peaks.get(-20).floatValue());
+    	assertEquals(833.0f, peaks.get(6).floatValue());
+    	assertEquals(3333.0f, peaks.get(30).floatValue());
+    	assertEquals(833.0f, peaks.get(45).floatValue());
+    	sparseCurs.next();
+    	info = sparseCurs.getCurrent();
+    	peaks = info.getBinnedList().getPeaks();
+    	assertEquals(1666.0f, peaks.get(-30).floatValue());
+    	assertEquals(1666.0f, peaks.get(-20).floatValue());
+    	assertEquals(1666.0f, peaks.get(-10).floatValue());
+    	assertEquals(5000.0f, peaks.get(20).floatValue());
     	
     	/** Output:
-			Error: 1.8888885974884033
-			Change in error: -0.22222203016281128
-			Time taken for getDistance (ms): 0
-			Time taken for other getDistance (ms): 0
-			Total time taken for getDistance methods (ms): 0
-			Time taken for processPart (clustering): 2323
-			returning
-			Clustering Parameters:   KMeans,K=2,Test comment    
-			Number of ignored particles with zero peaks = 0  
-			Total clustering passes during sampling = 0  
-			Total number of centroid clustering passes = 0  
-			Total number of passes = 3  
-			Average distance of all points from their centers at each iteration:  
-			0.416666641831398  
-			0.47222214937210083  
-			0.4722222685813904  
-			average distance of all points from their centers on final assignment:  
-			0.4722222685813904    
-			Peaks in centroids:  
-			Centroid 1: Number of particles = 3  
-			Centroid 2: Number of particles = 1    
-			Centroid 1:  
-			Number of particles in cluster: 3  
-			Key: Value:  
-			-300 555.5556  
-			-30 3888.8887  
-			-20 555.5556  
-			6 833.3334  
-			30 3333.3335  
-			45 833.3334  
-			Centroid 2:  
-			Number of particles in cluster: 1  
-			Key: Value:  
-			-30 1666.6667  
-			-20 1666.6667  
-			-10 1666.6667  
-			20 5000.0
+			Clustering Parameters: 
+			KMeans,K=2,Test comment
+			
+			
+			Number of ignored particles with zero peaks = 0
+			Total clustering passes during sampling = 0
+			Total number of centroid clustering passes = 0
+			Total number of passes = 3
+			Average distance of all points from their centers at each iteration:
+			0.416666641831398
+			0.47222214937210083
+			0.4722222685813904
+			average distance of all points from their centers on final assignment:
+			0.4722222685813904
+			
+			Peaks in centroids:
+			Centroid 1: Number of particles = 3
+			Centroid 2: Number of particles = 1
+			
+			Centroid 1:
+			Number of particles in cluster: 3
+			Mean size: 0.33333334 Std dev: +/-0.12472187
+			Geometric mean size: 0.31072325
+			Key:	Value:
+			-300	555.5556
+			-30	3888.8887
+			-20	555.5556
+			6	833.3334
+			30	3333.3335
+			45	833.3334
+			Centroid 2:
+			Number of particles in cluster: 1
+			Mean size: 0.4 Std dev: +/-0.0
+			Geometric mean size: 0.4
+			Key:	Value:
+			-30	1666.6667
+			-20	1666.6667
+			-10	1666.6667
+			20	5000.0
 		*/
     }
     
