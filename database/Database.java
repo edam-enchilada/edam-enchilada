@@ -3739,7 +3739,7 @@ public abstract class Database implements InfoWarehouse {
 				e.printStackTrace();
 			}
 			String q = "SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
-						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" LaserPower, [Time], Size FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID";
 			System.out.println(q);
@@ -3760,7 +3760,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				partInfRS.close();
 				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
-						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" LaserPower, [Time], Size FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID");
 			} catch (SQLException e) {
@@ -3797,7 +3797,8 @@ public abstract class Database implements InfoWarehouse {
 								partInfRS.getInt(3),
 								partInfRS.getFloat(4), 
 								new Date(partInfRS.getTimestamp(5).
-										getTime())));
+										getTime()),
+								partInfRS.getFloat(6)));
 				particleInfo.setID(particleInfo.getATOFMSParticleInfo().getAtomID());
 				return particleInfo; 
 			} catch (SQLException e) {
@@ -3961,7 +3962,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				stmt = con.createStatement();
 				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
-						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" LaserPower, [Time], Size FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
@@ -3986,7 +3987,7 @@ public abstract class Database implements InfoWarehouse {
 			try {
 				partInfRS.close();
 				partInfRS = stmt.executeQuery("SELECT "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID, OrigFilename, ScatDelay," +
-						" LaserPower, [Time] FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
+						" LaserPower, [Time], Size FROM "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+", InternalAtomOrder WHERE" +
 						" InternalAtomOrder.CollectionID = "+collection.getCollectionID() +
 						" AND "+getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype())+".AtomID = InternalAtomOrder.AtomID" +
 						" AND " + where);
