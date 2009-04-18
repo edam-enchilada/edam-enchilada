@@ -50,7 +50,6 @@ import gui.ProgressBarWrapper;
 import junit.framework.TestCase;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1270,8 +1269,8 @@ public class DatabaseTest extends TestCase {
 		ATOFMSAtomFromDB tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					df.parse("9/2/2003 5:30:38 PM"));
-		//int aID, String fname, int sDelay, float lPower, Date tStamp
+					df.parse("9/2/2003 5:30:38 PM"), 0);
+		//int aID, String fname, int sDelay, float lPower, Date tStamp, float size
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
 
@@ -1295,8 +1294,8 @@ public class DatabaseTest extends TestCase {
 		ATOFMSAtomFromDB tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					df.parse("9/2/2003 5:30:38 PM"));
-		//int aID, String fname, int sDelay, float lPower, Date tStamp
+					df.parse("9/2/2003 5:30:38 PM"), 0);
+		//int aID, String fname, int sDelay, float lPower, Date tStamp, float size
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
 
@@ -1337,9 +1336,9 @@ public class DatabaseTest extends TestCase {
 		tempPI = 
 			new ATOFMSAtomFromDB(
 					1,"One",1,0.1f,
-					df.parse("9/2/2003 5:30:38 PM"));
+					df.parse("9/2/2003 5:30:38 PM"), 0);
 		} catch (ParseException pe) {fail("Programmer should have put in a better date");}
-		//int aID, String fname, int sDelay, float lPower, Date tStamp
+		//int aID, String fname, int sDelay, float lPower, Date tStamp, float size
 		temp.setParticleInfo(tempPI);
 		temp.setID(1);
 
