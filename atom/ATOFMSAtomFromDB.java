@@ -74,13 +74,14 @@ public class ATOFMSAtomFromDB extends GeneralAtomFromDB {
 		super.fieldNames.add("OrigFilename");
 	}
 	
-	public ATOFMSAtomFromDB(int aID, String fname, int sDelay, float lPower, Date tStamp)
+	public ATOFMSAtomFromDB(int aID, String fname, int sDelay, float lPower, Date tStamp, float siz)
 	{
 		atomID = aID;
 		filename = fname;
 		laserPower = lPower;
 		timeStamp = tStamp;
 		scatDelay = sDelay;
+		size = siz;
 		super.fieldNames = new ArrayList<String>();
 		super.fieldNames.add("AtomID");
 		super.fieldNames.add("Time");
@@ -92,7 +93,7 @@ public class ATOFMSAtomFromDB extends GeneralAtomFromDB {
 		super.fieldValues.add(Integer.toString(aID));
 		super.fieldValues.add(timeStamp.toString());
 		super.fieldValues.add(Float.toString(lPower));
-		super.fieldValues.add("0");	//there is no size info
+		super.fieldValues.add(Float.toString(siz));
 		super.fieldValues.add(Integer.toString(sDelay));
 		super.fieldValues.add(fname);
 	}
