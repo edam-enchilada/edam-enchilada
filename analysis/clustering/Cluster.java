@@ -191,6 +191,33 @@ public abstract class Cluster extends CollectionDivider {
 		}
 	}
 	
+	/**
+	 * Writes out the mean and standard deviation of the sizes of particles in
+	 * the supplied collection.
+	 * @param collectionId
+	 */
+	protected void writeSizeMeanAndStdDev(int collectionId, PrintWriter out)
+	{
+		// mean and standard deviation of size
+		CollectionCursor densecurs = db.getAtomInfoOnlyCursor(db.getCollection(collectionId));
+		int count = 0;
+		float sum = 0f;
+		float product = 1f;
+		float squaresum = 0f;
+		for (count = 0; densecurs.next(); count++)
+		{
+			ParticleInfo info = densecurs.getCurrent();
+			sum += info.getATOFMSParticleInfo().getSize();
+			squaresum += info.getATOFMSParticleInfo().getSize() * info.getATOFMSParticleInfo().getSize();
+			product *= info.getATOFMSParticleInfo().getSize();
+		}
+		densecurs.close();
+		float mean = sum / count;
+		float standardDevation = (float) Math.sqrt(squaresum / count - mean * mean);
+		out.println("Mean size: " + mean + " Std dev: +/-" + standardDevation);
+		float geometricMean = (float) Math.pow(product, 1f/count);
+		out.println("Geometric mean size: " + geometricMean);
+	}
 	
 	/**
 	 * Prints out each peak in a peaklist.  Used for reporting results.
@@ -840,6 +867,8 @@ public abstract class Cluster extends CollectionDivider {
 			":");
 			out.println("Number of particles in cluster: " + 
 					centroidList.get(centroidIndex).numMembers);
+
+			writeSizeMeanAndStdDev(subCollectionIDs.get(centroidList.get(centroidIndex).subCollectionNum-1), out);
 			
 			StringWriter centroidPeaks = new StringWriter();
 			PrintWriter pr = new PrintWriter(centroidPeaks);
