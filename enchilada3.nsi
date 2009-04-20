@@ -74,7 +74,6 @@ Section "EDAM Enchilada (required)"
   SectionIn RO
   
   StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\SQLCMD"
-  
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   
@@ -239,11 +238,17 @@ SectionEnd
 Section "-Check DB and user existence"
   ; See if the SQL Server that theoretically exists, actually does.
   ExecWait '"$OSQL" -?' $0
-  IfErrors 0 +3
+  IfErrors 0 foundsql
     ; we don't support running without a local installation of SQL Server yet.
-    MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
-    Abort "Not smart enough to find SQL Server on your system."
+    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\SQLCMD"
+      ExecWait '"$OSQL" -?' $0
+      IfErrors 0 foundsql
+        MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005/2008 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
+        Abort "Not smart enough to find SQL Server on your system."
+
+  foundsql:
   DetailPrint "Found SQL Server installation."
+
   
   ; 2. is the SpASMS user installed?
   ExecWait '"$OSQL" -U SpASMS -P finally -Q ""' $0
