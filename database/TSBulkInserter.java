@@ -133,7 +133,8 @@ public class TSBulkInserter {
 		// of thousands of statements.  closing the connection clears the 
 		// connection's statement cache
 		db.closeConnection();
-		db.openConnection();
+		String databaseName = db.getDatabaseName();
+		db.openConnection(databaseName);
 		con = db.getCon();
 		
 		vals.setLength(0); // make it into nothing!
