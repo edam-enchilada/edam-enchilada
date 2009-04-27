@@ -6,15 +6,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.Map.Entry;
 
 /**
- * Note that I'm not clever enough to check if the particles we put in
- * actually get there intact.  Oops.  Sounds like something for DbUnit.
- * 
+ * Does what it says.
+ *  
  * @author smitht
+ * @auther jtbigwoo
  */
 
 public class TSBulkInserterTest extends TestCase {
@@ -127,10 +126,6 @@ public class TSBulkInserterTest extends TestCase {
 			e.printStackTrace();
 			fail();
 		}
-
-		return;
-		// starts at 22, date, 0
-		
 	}
 
 }
