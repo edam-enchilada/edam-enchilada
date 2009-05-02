@@ -558,8 +558,6 @@ public abstract class ClusterK extends Cluster {
 	 * Determines whether the centroids are stable or not.  It does this by
 	 * determining how much the centroids moved on the last pass and comparing
 	 * it to a pre-determined error.
-	 * TODO:  Error here is arbitrary. We need to either determine a best 
-	 * error or be able to change the error from the application.	  
 	 * 
 	 * @param totDist - total distance array
 	 * @param error - pre-determined error
