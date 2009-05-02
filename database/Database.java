@@ -2593,8 +2593,6 @@ public abstract class Database implements InfoWarehouse {
 		
 		try {
 			Statement stmt = con.createStatement();
-			int starter = getFirstAtomInCollection(collection) - 1;
-			System.out.println("starter " + starter);//TESTING
 			
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT ");
