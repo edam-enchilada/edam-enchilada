@@ -1,5 +1,7 @@
 package analysis.clustering;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import collection.Collection;
@@ -150,4 +152,41 @@ Key:	Value:
 	    	
 	    }
 
+	    /**
+	     * KMedians used to blow up when we tried to cluster a collection w/only
+	     * one particle.  This checks for that.
+	     * @throws Exception
+	     */
+	    public void testKMediansOneParticle() throws Exception {
+	    	Connection con = db.getCon();
+	    	Statement stmt = con.createStatement();
+
+	    	stmt.executeUpdate("DELETE from AtomMembership where collectionId = 2");
+	    	stmt.executeUpdate("DELETE from InternalAtomOrder where collectionId = 2");
+			stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,2)");
+			stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(2,2)");
+			
+	        int cID = 2;
+	        int k = 1;
+	        String name = "";
+	        String comment = "Test comment";
+	        boolean refine = false;
+	        ArrayList<String> list = new ArrayList<String>();
+	        list.add("ATOFMSAtomInfoSparse.PeakArea");
+	    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+	    	kmedians = new KMedians(cID,db,k,name,comment,refine, cInfo);
+	    	kmedians.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+
+	    	int collectionID = kmedians.cluster(false);
+	    	
+	    	assertEquals(8, collectionID); // this is 8 because we made 7 in the setup method and didn't use it.
+	    	
+	    	Collection cluster1 = db.getCollection(9);
+	    	Collection cluster2 = db.getCollection(10);
+	    	
+	    	assertTrue(cluster1.containsData());
+	    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+	       	assertEquals(2, particles.get(0).intValue());
+	       	assertEquals(1, particles.size());
+	    }
 	}

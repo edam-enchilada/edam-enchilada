@@ -122,24 +122,22 @@ public class KMeansTest extends TestCase {
         list2.add(3,0.3f);
 
         kmeans.setDistanceMetric(DistanceMetric.CITY_BLOCK);
-        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.CITY_BLOCK)*100)/100. == 0.7);
+        assertEquals(0.7, Math.round(list1.getDistance(list2,DistanceMetric.CITY_BLOCK)*100)/100.);
         kmeans.setDistanceMetric(DistanceMetric.EUCLIDEAN_SQUARED);
-        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.EUCLIDEAN_SQUARED)*100)/100.
-                == 0.17);
+        assertEquals(0.17, Math.round(list1.getDistance(list2,DistanceMetric.EUCLIDEAN_SQUARED)*100)/100.);
         kmeans.setDistanceMetric(DistanceMetric.DOT_PRODUCT);
-        assertTrue(Math.round(list1.getDistance(list2,DistanceMetric.DOT_PRODUCT)*100)/100.
-                == 0.97);
+        assertEquals(0.97, Math.round(list1.getDistance(list2,DistanceMetric.DOT_PRODUCT)*100)/100.);
     }
     
     public void testName() {
-    	assertTrue(kmeans.parameterString.equals("KMeans,K=2,Test comment"));
+    	assertEquals("KMeans,K=2,Test comment", kmeans.parameterString);
     }
     
     public void testKMeans() throws Exception {
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
     	int collectionID = kmeans.cluster(false);
     	
-    	assertTrue(collectionID == 7);
+    	assertEquals(7, collectionID);
     	
     	Collection clusterParent = db.getCollection(7);
     	BufferedReader descReader = new BufferedReader(new StringReader(clusterParent.getDescription()));
@@ -270,21 +268,56 @@ public class KMeansTest extends TestCase {
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
     	int collectionID = kmeans.cluster(false);
     	
-    	assertTrue(collectionID == 7);
+    	assertEquals(7, collectionID);
     	
     	Collection cluster1 = db.getCollection(8);
     	Collection cluster2 = db.getCollection(9);
     	
     	assertTrue(cluster1.containsData());
     	ArrayList<Integer> particles = cluster1.getParticleIDs();
-       	assertTrue(particles.get(0) == 2);
-    	assertTrue(particles.get(1) == 3);
-    	assertTrue(particles.get(2) == 5);
+       	assertEquals(2, particles.get(0).intValue());
+    	assertEquals(3, particles.get(1).intValue());
+    	assertEquals(5, particles.get(2).intValue());
     	
     	assertTrue(cluster2.containsData());
     	particles = cluster2.getParticleIDs();
-    	assertTrue(particles.get(0) == 4);
+    	assertEquals(4, particles.get(0).intValue());
     	
     }
 
+    /**
+     * KMeans used to blow up when we tried to cluster a collection w/only
+     * one particle.  This checks for that.
+     * @throws Exception
+     */
+    public void testKMeansOneParticle() throws Exception {
+    	Connection con = db.getCon();
+    	Statement stmt = con.createStatement();
+
+    	stmt.executeUpdate("DELETE from AtomMembership where collectionId = 2");
+    	stmt.executeUpdate("DELETE from InternalAtomOrder where collectionId = 2");
+		stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,2)");
+		stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(2,2)");
+		
+        int cID = 2;
+        int k = 1;
+        String name = "";
+        String comment = "Test comment";
+        boolean refine = false;
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertEquals(8, collectionID); // this is 8 because we made 7 in the setup method and didn't use it.
+    	
+    	Collection cluster1 = db.getCollection(9);
+    	
+    	assertTrue(cluster1.containsData());
+    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+    }
 }
