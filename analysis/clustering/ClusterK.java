@@ -362,13 +362,17 @@ public abstract class ClusterK extends Cluster {
 		// If there are the same number of particles as centroids, 
 		// assign each particle to a centroid and you're done.
 		if (numParticles == k) {
+			// TODO:  numParticles here includes particles with zero peaks.  That could cause problems when assigning particles to centroids.
+			// See bug #2788156
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
+				curs.next();
 				ParticleInfo p = curs.getCurrent();
 				p.getBinnedList().preProcess(power);
 				p.getBinnedList().posNegNormalize(distanceMetric);
-				centroidList.add(new Centroid(p.getBinnedList(),1));
+				centroidList.add(new Centroid(p.getBinnedList(),0));
 			}
+			curs.reset();
 			return centroidList;
 		}
 		
