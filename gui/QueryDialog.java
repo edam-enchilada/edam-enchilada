@@ -497,17 +497,14 @@ implements ActionListener, ItemListener
 				}
 				if (countSelected)
 				{	
-					int startAtom = db.getFirstAtomInCollection(collection);
 					
 					int from = Integer.parseInt(fromCount.getText());
-					from += startAtom;
 					int to = Integer.parseInt(toCount.getText());
-					to += startAtom;
 					if (sizeSelected || timeSelected)
 						where += " AND";
 					String densename = db.getDynamicTableName(DynamicTable.AtomInfoDense, collection.getDatatype());
-					where += " " + densename + ".AtomID <= " + to +
-					" AND " + densename + ".AtomID >= " + from; 
+					where += " rownum <= " + to +
+					" AND rownum >= " + from; 
 				}
 				System.out.println("Dividing now:");
 				System.out.println(where);

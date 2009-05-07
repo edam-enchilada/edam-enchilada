@@ -334,7 +334,7 @@ public interface InfoWarehouse {
 	public void syncWithIonsInDB(ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
 	public void saveAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
 	public void buildAtomRemovedIons(int atomID, ArrayList<LabelingIon> posIons, ArrayList<LabelingIon> negIons);
-	public int getFirstAtomInCollection(Collection collection);
+//	public int getFirstAtomInCollection(Collection collection);
 	
 	public String getDynamicTableName(DynamicTable table, String datatype);
 	

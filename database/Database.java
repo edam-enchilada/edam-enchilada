@@ -813,47 +813,48 @@ public abstract class Database implements InfoWarehouse {
 	 * @return	index[0] The ID of the adjacent atom in the collection.
 	 * 			index[1] The position of the adjacent atom in the collection.
 	 */
-	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
-		int nextID = -99;
-		int pos = -77;
-		String query = "";
-		//have to deal with which window ("page" of collection) we're starting in
-		int startingID = getFirstAtomInCollection(getCollection(collection));
-		
-		//we want the starting id of the window in which this atom lives
-		int i = currentID / 1000;
-		for (int j = 0; j<i; j++)
-			if ( !((startingID + 1000) >= currentID) )
-				startingID +=1000;
-			
-		//if looking for previous atom
-		if (position <0){
-			query = "SELECT MAX(AtomID) FROM InternalAtomOrder " +
-			"WHERE (CollectionID = " + collection + ") AND (AtomID < " + 
-			currentID + ")";
-		} else if (position >0){	//if looking for next atom
-			query = "SELECT MIN(AtomID)FROM InternalAtomOrder " +
-			"WHERE (CollectionID = " + collection + ") AND (AtomID > " +
-			currentID + ")";
-		}
-		
-		Statement stmt;
-		try {
-			stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			rs.next();
-			if (rs.getInt(1) > 0){
-				nextID = rs.getInt(1);
-				pos = ((nextID - startingID)+1); //calculate the row number 
-			}
-			stmt.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return new int[]{nextID, pos};
-	}
+// COMMENTED OUT BECAUSE WE DON'T USE THIS FOR ANYTHING AND IT'S NOT RELIABLE ANYWAY - jtbigwoo
+//	public int[] getAdjacentAtomInCollection(int collection, int currentID, int position){
+//		int nextID = -99;
+//		int pos = -77;
+//		String query = "";
+//		//have to deal with which window ("page" of collection) we're starting in
+//		int startingID = getFirstAtomInCollection(getCollection(collection));
+//		
+//		//we want the starting id of the window in which this atom lives
+//		int i = currentID / 1000;
+//		for (int j = 0; j<i; j++)
+//			if ( !((startingID + 1000) >= currentID) )
+//				startingID +=1000;
+//			
+//		//if looking for previous atom
+//		if (position <0){
+//			query = "SELECT MAX(AtomID) FROM InternalAtomOrder " +
+//			"WHERE (CollectionID = " + collection + ") AND (AtomID < " + 
+//			currentID + ")";
+//		} else if (position >0){	//if looking for next atom
+//			query = "SELECT MIN(AtomID)FROM InternalAtomOrder " +
+//			"WHERE (CollectionID = " + collection + ") AND (AtomID > " +
+//			currentID + ")";
+//		}
+//		
+//		Statement stmt;
+//		try {
+//			stmt = con.createStatement();
+//			ResultSet rs = stmt.executeQuery(query);
+//			rs.next();
+//			if (rs.getInt(1) > 0){
+//				nextID = rs.getInt(1);
+//				pos = ((nextID - startingID)+1); //calculate the row number 
+//			}
+//			stmt.close();
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//		return new int[]{nextID, pos};
+//	}
 	
 	/**
 	 * @author steinbel
@@ -2619,14 +2620,6 @@ public abstract class Database implements InfoWarehouse {
 			query.append(" AND rowNum <= ");
 			query.append(highIndex);
 			query.append(" ORDER BY AtomID\n"); 
-//			String query = "SELECT TOP " + ((highIndex - lowIndex)+ 1) + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".* " +
-//				"FROM " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) +
-//				", InternalAtomOrder\n" +
-//				"WHERE " + getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype()) + ".AtomID = InternalAtomOrder.AtomID\n" +
-//				"AND InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
-//				" AND InternalAtomOrder.AtomID >= " + (starter + lowIndex) + 
-//			" ORDER BY InternalAtomOrder.AtomID";
-//			System.out.println(query);
 			ResultSet rs = stmt.executeQuery(query.toString());//changed with IAO change - steinbel 9.19.06
 			
 			while(rs.next())
@@ -3852,6 +3845,10 @@ public abstract class Database implements InfoWarehouse {
 	 * A cursor that only returns AtomID for a given collection and SQL query string.
 	 * Similar to SQLCursor, but retrieves no associated particle information.
 	 * @author shaferia
+	 * @author jtbigwoo - updated to use rownum in the where clause since 
+	 * AtomID is not a reliable column to query on if you want a certain number
+	 * of particles (e.g. AtomID >= 1 and AtomID <= 5 does _not_ guarantee 
+	 * you'll get five particles--rownum >= 1 and rownum <= 5 does.)
 	 */
 	private class SQLAtomIDCursor implements CollectionCursor {
 		private final String query;
@@ -3859,17 +3856,24 @@ public abstract class Database implements InfoWarehouse {
 		private ResultSet rs;
 		
 		/**
+		 * Sets up a cursor that returns only the AtomIDs in the collection 
+		 * that match the supplied where clause.  The where clause can include
+		 * any AtomInfoDense columns that you want and also rownum which is the
+		 * index of the particle in InternalAtomOrder
 		 * @param collection The collection to retrieve AtomIDs from
 		 * @param where the SQL clause that specifies which AtomIDs to retrieve
 		 */
 		public SQLAtomIDCursor(Collection collection, String where) {
 			System.out.println("Datatype = " + collection.getDatatype());
 			String densename = getDynamicTableName(DynamicTable.AtomInfoDense,collection.getDatatype());
-			query = "SELECT " + densename + ".AtomID " + 
+			query = "SELECT AtomID FROM (\n" +
+				"SELECT " + densename + ".*, " +
+				"ROW_NUMBER() OVER (ORDER BY InternalAtomOrder.AtomID) as rownum " +
 			" FROM " + densename + ", InternalAtomOrder WHERE" +
 			" InternalAtomOrder.CollectionID = " + collection.getCollectionID() +
 			" AND " + densename + ".AtomID = InternalAtomOrder.AtomID" +
-			" AND " + where;	
+			") temptable " +
+			" WHERE " + where;	
 			
 			try {
 				stmt = getCon().createStatement();
@@ -5953,30 +5957,31 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	//TODO: what if collection is a parent with smaller atomID than any of
 	//its children?  need to fix this case.
-	public int getFirstAtomInCollection(Collection collection) {
-		int atom = -99;
-		try{
-			Statement stmt = con.createStatement();
-			String string = "SELECT MIN(AtomID) FROM InternalAtomOrder WHERE CollectionID = " + collection.getCollectionID();
-			ResultSet rs = stmt.executeQuery(string);
-			
-			if (rs.next()){
-				atom = rs.getInt(1);
-				System.out.println("ATOM:" + atom);
-			}
-			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
-			if (atom == 0){
-				atom = -99;
-			}
-			
-			stmt.close();
-		}
-		catch (SQLException e){
-			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting first atom in collection");
-			System.err.println("problems getting first atom in collection from SQLServer.");
-		}
-		return atom;
-	}
+	// THIS SHOULDN'T HAVE BEEN USED - see bug 1604744 (jtbigwoo)
+//	public int getFirstAtomInCollection(Collection collection) {
+//		int atom = -99;
+//		try{
+//			Statement stmt = con.createStatement();
+//			String string = "SELECT MIN(AtomID) FROM InternalAtomOrder WHERE CollectionID = " + collection.getCollectionID();
+//			ResultSet rs = stmt.executeQuery(string);
+//			
+//			if (rs.next()){
+//				atom = rs.getInt(1);
+//				System.out.println("ATOM:" + atom);
+//			}
+//			//Odd SQL behavior: MIN(AtomID) returns a result (0) even if there aren't any atoms in the collection.
+//			if (atom == 0){
+//				atom = -99;
+//			}
+//			
+//			stmt.close();
+//		}
+//		catch (SQLException e){
+//			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception getting first atom in collection");
+//			System.err.println("problems getting first atom in collection from SQLServer.");
+//		}
+//		return atom;
+//	}
 	
 	/**
 	 * If the new, compressed datatype doesn't exist, add it.

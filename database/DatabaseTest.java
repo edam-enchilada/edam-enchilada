@@ -1195,6 +1195,38 @@ public class DatabaseTest extends TestCase {
 		db.openConnection(dbName);
 		CollectionCursor curs = db.getSQLCursor(db.getCollection(2), "ATOFMSAtomInfoDense.AtomID != 50");
 		testCursor(curs);
+
+		// jtbigwoo - need to test sql atom id cursor to make sure we can get 
+		// the atom id's even when the id's are not sequential
+		Statement stmt = null;
+		Connection con = db.getCon();
+		try
+		{
+			stmt = con.createStatement();
+			stmt.executeUpdate(
+					"USE TestDB\n " +
+					"INSERT INTO Collections VALUES (7, 'Seven', 'seven', 'sevendescrip', 'ATOFMS')\n" +
+					"INSERT INTO AtomMembership VALUES (7,1)\n" +
+					"INSERT INTO AtomMembership VALUES (7,3)\n" +
+					"INSERT INTO AtomMembership VALUES (7,5)\n" +
+					"INSERT INTO AtomMembership VALUES (7,7)\n" +
+					"INSERT INTO InternalAtomOrder (AtomID, CollectionID) (SELECT AtomID, CollectionID FROM AtomMembership WHERE CollectionID = 7)");
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+			fail("Failed to insert new collection to test getSQLAtomIDCursor");
+		}
+		curs = db.getSQLAtomIDCursor(db.getCollection(7), "rownum >= 2 and rownum <= 4");
+		for (int i = 3; i < 8; i = i + 2)
+		{
+			assertTrue(curs.next());
+			assertNotNull(curs.getCurrent());
+			assertEquals(i, curs.getCurrent().getID());
+		}
+		assertFalse(curs.next());	
+		curs.next();
+
 		db.closeConnection();
 	}
 	
@@ -1713,35 +1745,36 @@ public class DatabaseTest extends TestCase {
 		
 		db.closeConnection();
 	}
-	
+
 	/**
 	 * @author shaferia
 	 */
-	public void testGetAdjacentAtomInCollection() {
-		db.openConnection(dbName);
-		
-		int[] adj = db.getAdjacentAtomInCollection(2, 3, 1);
-		assertEquals(adj[0], 4);
-		assertEquals(adj[1], 4);
-		
-		adj = db.getAdjacentAtomInCollection(3, 7, -1);
-		assertEquals(adj[0], 6);
-		assertEquals(adj[1], 1);
-		
-		adj = db.getAdjacentAtomInCollection(4, 12, 2);
-		assertEquals(adj[0], 13);
-		assertEquals(adj[1], 3);
-		
-		//The following two assertions should print SQLExceptions.
-		
-		adj = db.getAdjacentAtomInCollection(2, 1, -1);
-		assertTrue((adj[0] < 0) && (adj[1] < 0));
-		
-		adj = db.getAdjacentAtomInCollection(2, 5, 1);
-		assertTrue((adj[0] < 0) && (adj[1] < 0));
-		
-		db.closeConnection();
-	}
+// COMMENTED OUT BECAUSE WE DON'T USE getAdjacentAtomInCollection ANYWHERE AND IT DOESN'T WORK CORRECTLY ANYWAY
+//	public void testGetAdjacentAtomInCollection() {
+//		db.openConnection(dbName);
+//		
+//		int[] adj = db.getAdjacentAtomInCollection(2, 3, 1);
+//		assertEquals(adj[0], 4);
+//		assertEquals(adj[1], 4);
+//		
+//		adj = db.getAdjacentAtomInCollection(3, 7, -1);
+//		assertEquals(adj[0], 6);
+//		assertEquals(adj[1], 1);
+//		
+//		adj = db.getAdjacentAtomInCollection(4, 12, 2);
+//		assertEquals(adj[0], 13);
+//		assertEquals(adj[1], 3);
+//		
+//		//The following two assertions should print SQLExceptions.
+//		
+//		adj = db.getAdjacentAtomInCollection(2, 1, -1);
+//		assertTrue((adj[0] < 0) && (adj[1] < 0));
+//		
+//		adj = db.getAdjacentAtomInCollection(2, 5, 1);
+//		assertTrue((adj[0] < 0) && (adj[1] < 0));
+//		
+//		db.closeConnection();
+//	}
 	
 	/**
 	 * @author shaferia
@@ -1955,34 +1988,35 @@ public class DatabaseTest extends TestCase {
 	/**
 	 * @author shaferia
 	 */
-	public void testGetFirstAtomInCollection() {
-		db.openConnection(dbName);
-		
-		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), 1);
-		assertEquals(db.getFirstAtomInCollection(db.getCollection(3)), 6);
-		
-		try {
-			db.getCon().createStatement().executeUpdate(
-					"DELETE FROM InternalAtomOrder WHERE CollectionID = 2");
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}	
-		
-		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), -99);
-		
-		try {
-			//rebuild the bit deleted above
-			Statement stmt = db.getCon().createStatement();
-			for (int i = 1; i < 6; ++i)
-				stmt.addBatch("INSERT INTO AtomMembership VALUES (2, " + i + ")");
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}		
-		
-		db.closeConnection();
-	}
+//  COMMENTED OUT BECAUSE WE DON'T USE getFirstAtomInCollection() ANYMORE - jtbigwoo
+//	public void testGetFirstAtomInCollection() {
+//		db.openConnection(dbName);
+//		
+//		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), 1);
+//		assertEquals(db.getFirstAtomInCollection(db.getCollection(3)), 6);
+//		
+//		try {
+//			db.getCon().createStatement().executeUpdate(
+//					"DELETE FROM InternalAtomOrder WHERE CollectionID = 2");
+//		}
+//		catch (SQLException ex) {
+//			ex.printStackTrace();
+//		}	
+//		
+//		assertEquals(db.getFirstAtomInCollection(db.getCollection(2)), -99);
+//		
+//		try {
+//			//rebuild the bit deleted above
+//			Statement stmt = db.getCon().createStatement();
+//			for (int i = 1; i < 6; ++i)
+//				stmt.addBatch("INSERT INTO AtomMembership VALUES (2, " + i + ")");
+//		}
+//		catch (SQLException ex) {
+//			ex.printStackTrace();
+//		}		
+//		
+//		db.closeConnection();
+//	}
 	
 	/**
 	 * @author shaferia
