@@ -60,7 +60,7 @@ import database.InfoWarehouse;
  * @author andersbe
  */
 public class SQLDivider extends CollectionDivider {
-	private String select, where;
+	private String where;
 	/**
 	 * Create an SQLDivider which will divide based on your WHERE
 	 * clause (don't include the WHERE). 
