@@ -82,7 +82,7 @@ public abstract class Cluster extends CollectionDivider {
 	// specified value.  It's the smallest normalized peak value that we'll
 	// include in the graphing.  We divide by this value to de-normalize the
 	// data.  (It's still a hack, but it's only shameful rather than evil now.)
-	private static float smallestNormalizedPeak = 0.0001f;
+	protected static float smallestNormalizedPeak = 0.0001f;
 
 	public static final int ARRAYOFFSET = 600; // size of centroid array
 			// in both negative and positive directions (1201 total) when
@@ -798,7 +798,7 @@ public abstract class Cluster extends CollectionDivider {
 	 * @param particleCount
 	 * @param centroidList
 	 */
-	private void printDescriptionToDB(int particleCount,
+	protected void printDescriptionToDB(int particleCount,
 			ArrayList<Centroid> centroidList)
 	{
 	
@@ -831,8 +831,11 @@ public abstract class Cluster extends CollectionDivider {
 		out.println("Total number of centroid clustering passes = " +
 		        clusterCentroidIters);
 		out.println("Total number of passes = " + totalDistancePerPass.size());
-		out.println("Average distance of all points from their centers " +
-		"at each iteration:");
+		if (this instanceof ClusterHierarchical) 
+			out.println("Distance between the merged clusters at each iteration: ");
+		else
+			out.println("Average distance of all points from their centers " +
+				"at each iteration:");
 		
 		for (int distanceIndex = 0; distanceIndex < totalDistancePerPass.size(); 
 		distanceIndex++)
@@ -841,12 +844,13 @@ public abstract class Cluster extends CollectionDivider {
 					totalDistancePerPass.get(
 							distanceIndex).doubleValue()/particleCount);
 		}
-		
-		out.println("average distance of all points from their centers " +
-		"on final assignment:");
-		out.println(totalDistancePerPass.get(
+
+		if (!(this instanceof ClusterHierarchical)) {
+			out.println("average distance of all points from their centers " +
+				"on final assignment:");
+			out.println(totalDistancePerPass.get(
 					totalDistancePerPass.size()-1).doubleValue()/particleCount);
-		
+		}
 		out.println();
 		out.println("Peaks in centroids:");
 		for (int centroidIndex = 0; centroidIndex < centroidList.size();
