@@ -78,19 +78,24 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	private JFrame parent;
 	private JPanel algorithmCards, specificationCards, clusteringInfo; 
 	private JButton okButton, cancelButton, advancedButton;
-	private JTextField commentField, passesText, vigText, learnText, kClusterText, otherText;
+	private JTextField commentField, passesText, vigText, learnText, kClusterText, hClusterText, otherText;
 	private JCheckBox refineCentroids, normalizer;
-	private JComboBox clusterDropDown, metricDropDown, averageClusterDropDown, infoTypeDropdown;
+	protected JComboBox clusterDropDown;
+	private JComboBox metricDropDown, averageClusterDropDown, infoTypeDropdown, hierClusterDropDown;
 	private JLabel denseKeyLabel,sparseKeyLabel;
 	private ArrayList<JRadioButton> sparseButtons;
 	private ArrayList<JCheckBox> denseButtons; 
-
+	private JCheckBox preClusterCheckBox;
+	private JButton preClusterSettings;
+	
 	// dropdown options
 	final static String ART2A = "Art2a";
 	final static String KCLUSTER = "K-Cluster";
 	final static String KMEANS = "K-Means / Euclidean Squared";
 	final static String KMEDIANS = "K-Medians / City Block";
 	final static String SKMEANS = "K-Means / Dot Product";
+	final static String HIERARCHICAL = "Hierarchical";
+	final static String HIER_WARDS = "Ward's Method";
 	final static String OTHER = "Other";
 	final static String CITY_BLOCK = "City Block";
 	final static String EUCLIDEAN_SQUARED = "Euclidean Squared";
@@ -121,7 +126,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		
 		JPanel rootPanel = new JPanel();
 		
-		JPanel clusterAlgorithms = setClusteringAlgorithms();
+		String[] clusterNames = {ART2A, KCLUSTER, HIERARCHICAL, OTHER};
+		JPanel clusterAlgorithms = setClusteringAlgorithms(clusterNames);
 		JPanel clusterSpecs = setClusteringSpecifications();
 		
 		//Create common info panel:
@@ -162,11 +168,10 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 	 * creates panel that displays clustering algorithms.
 	 * @return JPanel
 	 */
-	public JPanel setClusteringAlgorithms() {
+	public JPanel setClusteringAlgorithms(String[] clusterNames) {
 		JLabel header = new JLabel("Cluster using: ");
 		
 		//Create the drop down menu and the dividing line.
-		String[] clusterNames = {ART2A, KCLUSTER, OTHER};
 		JPanel dropDown = new JPanel();
 		clusterDropDown = new JComboBox(clusterNames);
 		clusterDropDown.setEditable(false);
@@ -245,11 +250,36 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 		otherText = new JTextField(10); 
 		otherCard.add(otherLabel);
 		otherCard.add(otherText);
+
+		//Create the kCluster panel that will show when "K-Cluster" is selected.
+		parameters = new JPanel();
+		JLabel hLabel = new JLabel("Number of Clusters:");
+		hClusterText = new JTextField(5);
+		parameters.add(kLabel);
+		parameters.add(hClusterText);
+		
+		JLabel preClusterLabel = new JLabel("Pre-cluster to reduce processing? ");
+		JPanel preClusterPanel = new JPanel();
+		preClusterCheckBox = new JCheckBox();
+		preClusterSettings = new JButton("Settings...");
+		preClusterSettings.setEnabled(false);
+		preClusterPanel.add(preClusterLabel);
+		preClusterPanel.add(preClusterCheckBox);
+		preClusterPanel.add(preClusterSettings);
+
+		JPanel hClusterCard = new JPanel();
+		hClusterCard.add(preClusterPanel);
+		hClusterCard.add(parameters);
+		hClusterCard.setLayout(
+				new BoxLayout(hClusterCard, BoxLayout.PAGE_AXIS));
+		preClusterCheckBox.addActionListener(this);
+		preClusterSettings.addActionListener(this);
 		
 		// Add the previous three panels to the algorithmCards JPanel using CardLayout.
 		algorithmCards = new JPanel (new CardLayout());
 		algorithmCards.add(art2aCard, ART2A);
 		algorithmCards.add(kClusterCard,KCLUSTER);
+		algorithmCards.add(hClusterCard, HIERARCHICAL);
 		algorithmCards.add(otherCard, OTHER);
 				
 	
@@ -445,7 +475,7 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 			dMetInt = DistanceMetric.CITY_BLOCK;
 		}
 		else if (dMetric.equals(EUCLIDEAN_SQUARED) || 
-				dMetric.equals(KMEANS))
+				dMetric.equals(KMEANS) || dMetric.equals(HIER_WARDS))
 		{
 			dMetInt = DistanceMetric.EUCLIDEAN_SQUARED;
 		}
@@ -647,7 +677,68 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 				}
 				cTree.updateTree();
 			}
-			
+			if (currentShowing == HIERARCHICAL)
+			{
+				
+				try {
+					System.out.println("Collection ID: " +
+							cTree.getSelectedCollection().
+							getCollectionID());
+					
+					// Get information from dialogue box:
+					int k = Integer.parseInt(hClusterText.getText());
+					
+					// Check to make sure it's valid:
+					if (k <= 0) {
+						JOptionPane.showMessageDialog(parent,
+								"Error with parameters.\n" +
+								"Appropriate values are: k > 0",
+								"Number Format Exception",
+								JOptionPane.ERROR_MESSAGE);
+					}
+					else {
+						if (dMetInt == DistanceMetric.EUCLIDEAN_SQUARED ||
+						         dMetInt == DistanceMetric.DOT_PRODUCT) {
+							ClusterHierarchical hCluster = new ClusterHierarchical(
+									cTree.getSelectedCollection().
+									getCollectionID(),db, 
+									Integer.parseInt(hClusterText.getText()), 
+									"", commentField.getText(), cInfo);
+							hCluster.addInfo(cInfo);
+							hCluster.setDistanceMetric(dMetInt);
+							//TODO:  When should we use disk based and memory based 
+							// cursors?
+							if (db.getCollectionSize(
+									cTree.getSelectedCollection().
+									getCollectionID()) < 10000) // Was 10000
+							{
+								hCluster.setCursorType(Cluster.STORE_ON_FIRST_PASS);
+							}
+							else
+							{
+								hCluster.setCursorType(Cluster.DISK_BASED);
+							}
+
+							hCluster.divide();
+							dispose();
+						}
+					}
+				} catch (NullPointerException exception) {
+					exception.printStackTrace();
+					JOptionPane.showMessageDialog(parent,
+							"Make sure you have selected a collection.",
+							"Null Pointer Exception",
+							JOptionPane.ERROR_MESSAGE);
+				}
+				catch (NumberFormatException exception) {
+					exception.printStackTrace();
+					JOptionPane.showMessageDialog(parent,
+							"Make sure you have entered parameters.",
+							"Number Format Exception",
+							JOptionPane.ERROR_MESSAGE);
+				}
+				cTree.updateTree();
+			}
 			if (currentShowing == OTHER) 
 			{
 				JOptionPane.showMessageDialog(parent,
@@ -657,7 +748,13 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}
-		if (source == advancedButton) {
+		if (source == preClusterCheckBox) {
+			preClusterSettings.setEnabled(preClusterCheckBox.isSelected());
+		}
+//		else if (source == preClusterSettings) {
+//			new PreClusterDialog(parent, this, cTree, db);
+//		}
+		else if (source == advancedButton) {
 			new AdvancedClusterDialog((JDialog)this);
 		}
 		else  
@@ -680,6 +777,8 @@ public class ClusterDialog extends JDialog implements ItemListener, ActionListen
 				dMetric = KMEANS;
 			if (newEvent.equals(ART2A))
 				dMetric = CITY_BLOCK;
+			if (newEvent.equals(HIERARCHICAL))
+				dMetric = HIER_WARDS;
 			currentShowing = newEvent;
 		}
 		else if (evt.getSource() == metricDropDown)
