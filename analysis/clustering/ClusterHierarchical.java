@@ -43,13 +43,18 @@ package analysis.clustering;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 import ATOFMS.ParticleInfo;
+import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
@@ -81,17 +86,19 @@ public class ClusterHierarchical extends Cluster {
 	public ClusterHierarchical(int cID, InfoWarehouse database, int k,
 			String name, String comment, ClusterInformation c) 
 	{
-		super(cID, database, name.concat("Hierarchical"), comment, true);
+		super(cID, database, name.concat("Hierarchical, Clusters=" + k), comment, c.normalize);
 		collectionID = cID;
 		clusterInfo = c;//set inherited variable
 		numClusters = k;
+		totalDistancePerPass = new ArrayList<Double>();
+		parameterString = name.concat("Hierarchical, Clusters=" + k + super.folderName);
 	}
 	
 	/** 
-	 * method necessary to extend from ClusterK.  Begins the clustering
+	 * method necessary to extend from Cluster.  Begins the clustering
 	 * process.
-	 * @param - interactive or testing mode - christej
-	 * @return - new collection int.
+	 * @param - interactive or testing mode
+	 * @return - new collection id.
 	 */
 	public int cluster(boolean interactive) {
 		if(interactive)
@@ -101,14 +108,9 @@ public class ClusterHierarchical extends Cluster {
 	}
 
 	/**
-	 * Divide refines the centroids if needed and calls the clustering method.
+	 * Calls the clustering method.
 	 * In the end, it finalizes the clusters by calling a method to report 
 	 * the centroids.
-	 * TODO:  The max number of subsamples clustered when we refine centroids is 
-	 * 50.  We need a way to either validate this or a way to change it from the
-	 * application.  
-	 * 
-	 * (non-Javadoc)
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
@@ -120,12 +122,11 @@ public class ClusterHierarchical extends Cluster {
 		};
 		
 		errorUpdate = new JDialog((JFrame)container,"Clustering",true);
-		errorLabel = new JLabel("Clusters stabilize when change in error = 0");
-		errorLabel.setSize(100,250);
+		errorLabel = new JLabel("Start reducing clusters");
+		errorLabel.setSize(250,250);
 		errorUpdate.add(errorLabel);
 		errorUpdate.pack();
 		errorUpdate.validate();
-		// XXX: still a race condition!  Not a really bad one, though.  		System.out.println("HERE");
 		worker.start();
 		errorUpdate.setVisible(true);
 		
@@ -134,24 +135,45 @@ public class ClusterHierarchical extends Cluster {
 
 	public int innerDivide(boolean interactive) {
 		numParticles = db.getCollectionSize(collectionID);
-
-		processPart();
+		long timeInMillis = new Date().getTime();
+		processPart(interactive);
 		returnThis = newHostID;
-		// TODO Auto-generated method stub
+		System.out.println("Milliseconds elapsed: " + (new Date().getTime() - timeInMillis));
+
+		if(interactive){
+			try {
+				SwingUtilities.invokeAndWait(new Runnable() {
+					public void run() {
+						if(true){
+						errorUpdate.setVisible(false);
+						}
+						errorUpdate = null;
+					
+					}
+				});
+			} catch (Exception e) {	e.printStackTrace(); }
+		}		
 		return returnThis;
 	}
 
-	private void processPart()
+	private void processPart(boolean interactive)
 	{
 		ArrayList<ClusterPair> clusterPairs = new ArrayList<ClusterPair>((numParticles * numParticles) / 2);
 		HashMap<Integer, ClusterContents> clusterContents = new HashMap<Integer, ClusterContents>((numParticles * 4) / 2);
 		ArrayList<ParticleInfo> particles = new ArrayList<ParticleInfo>(numParticles);
-		
+		sampleIters = 0; // this is the number of passes
+		clusterCentroidIters = 0; // also the number of passes
+
+		if (interactive) {
+			errorLabel.setText("Building distance matrix");
+			errorUpdate.validate();
+		}
+
 		// set up distance matrix
 		while (curs.next()) {
 			ParticleInfo info = curs.getCurrent();
 			info.getBinnedList().posNegNormalize(distanceMetric);
-			ClusterContents currentCluster = new ClusterContents(info.getID());
+			ClusterContents currentCluster = new ClusterContents(info.getID(), info.getBinnedList());
 			clusterContents.put(info.getID(), currentCluster);
 			for (ParticleInfo infoFromList : particles) {
 				float distance = info.getBinnedList().getDistance(infoFromList.getBinnedList(), distanceMetric);
@@ -163,12 +185,18 @@ public class ClusterHierarchical extends Cluster {
 		
 		while (clusterContents.size() > numClusters && clusterContents.size() > 1)
 		{
+			if (interactive) {
+				errorLabel.setText("Number of clusters: " + clusterContents.size());
+				errorUpdate.validate();
+			}
+
 			// the first pair element in the sorted list has the smallest distance, merge them
 			// name the clusters A and B.  Cluster B will be merged into Cluster A and removed.
 			// Sorry, cluster B.
 			Collections.sort(clusterPairs);
 			int clusterAID = clusterPairs.get(0).getFirstClusterID();
 			int clusterBID = clusterPairs.get(0).getSecondClusterID();
+			totalDistancePerPass.add(new Double(clusterPairs.get(0).getDistance()));
 			float aToBDistance = clusterPairs.get(0).getDistance();
 			int clusterASize = clusterContents.get(clusterAID).getAtomIDList().size();
 			int clusterBSize = clusterContents.get(clusterBID).getAtomIDList().size();
@@ -219,10 +247,68 @@ public class ClusterHierarchical extends Cluster {
 					}
 				}
 			}
+			sampleIters++;
+			clusterCentroidIters++;
 		}
+		if (interactive) {
+			errorLabel.setText("Updating collections");
+			errorUpdate.validate();
+		}
+		assignAtomsToNearestCentroid(clusterContents);
+		
 		return;
 	}
-	
+
+	/**
+	 * For hierarchical clustering we build the clusters as we go, so this is
+	 * pretty easy.
+	 * 
+	 * @param clusterContents
+	 */
+	protected void assignAtomsToNearestCentroid(HashMap<Integer, ClusterContents> clusterContents)
+	{
+		
+		Iterator<Map.Entry<Integer, ClusterContents>> iterator = clusterContents.entrySet().iterator();
+		ArrayList<Centroid> centroidList = new ArrayList<Centroid>();
+		int particleCount = 0;
+		putInSubCollectionBatchInit();
+
+		try {
+			db.bulkInsertInit();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		for (Map.Entry<Integer, ClusterContents> entry : clusterContents.entrySet()) {
+			Centroid temp = new Centroid(entry.getValue().getPeaks(), entry.getValue().getAtomIDList().size());
+			temp.subCollectionNum = createSubCollection();
+			for (int atomID : entry.getValue().getAtomIDList()) {
+				putInSubCollectionBulk(atomID, temp.subCollectionNum);
+			}
+			particleCount += temp.numMembers;
+			centroidList.add(temp);
+		}
+		putInSubCollectionBulkExecute();
+
+		if (isNormalized){
+			//boost the peaklist
+			// By dividing by the smallest peak area, all peaks get scaled up.
+			// Because we're going to convert these to ints in a minute anything
+			// smaller than the smallest peak area will get converted to zero.
+			// it's a hack, I know-jtbigwoo
+			for (Centroid c: centroidList){
+				c.peaks.divideAreasBy(smallestNormalizedPeak);
+			}
+		}
+		createCenterAtoms(centroidList, subCollectionIDs);
+		
+		printDescriptionToDB(particleCount, centroidList);
+	}
+
+	/**
+	 * Holds the id's for a pair of clusters and the distance between them.
+	 */
 	class ClusterPair implements Comparable<ClusterPair> {
 		
 		int firstClusterID;
@@ -260,24 +346,38 @@ public class ClusterHierarchical extends Cluster {
 		}
 	}
 
+	/**
+	 * Holds the atom id's in a cluster and the average peaklist
+	 */
 	class ClusterContents {
 		
 		int clusterID;
 		ArrayList<Integer> atomIDList;
+		BinnedPeakList peaks;
 		
-		public ClusterContents(int atomID) {
+		public ClusterContents(int atomID, BinnedPeakList newPeaks) {
 			clusterID = atomID;
 			atomIDList = new ArrayList<Integer>();
 			atomIDList.add(atomID);
+			peaks = newPeaks;
 		}
 		
 		public void merge(ClusterContents otherOne) {
+			peaks.multiply(atomIDList.size());
+			otherOne.peaks.multiply(otherOne.getAtomIDList().size());
+			peaks.addAnotherParticle(otherOne.getPeaks());
 			atomIDList.addAll(otherOne.atomIDList);
+			peaks.divideAreasBy(atomIDList.size());
 		}
 		
 		public ArrayList<Integer> getAtomIDList() {
 			return atomIDList;
 		}
+		
+		public BinnedPeakList getPeaks() {
+			return peaks;
+		}
+		
 	}
 	/**
 	 * Sets the cursor type; clustering can be done using either by 
