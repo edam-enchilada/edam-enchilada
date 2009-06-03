@@ -71,19 +71,19 @@ public class HistogramDataset {
 			++partnum;
 			
 			for (BinnedPeak p : peakList) {
-				if (p.key >= maxMZ)
+				if (p.getKey() >= maxMZ)
 					continue;
-				else if (p.key >= 0)
+				else if (p.getKey() >= 0)
 					histograms = posHists;
-				else if (p.key > - maxMZ) {
+				else if (p.getKey() > - maxMZ) {
 					histograms = negHists;
-					p.key = - p.key;
+					p.setKey(- p.getKey());
 				} else
 					continue;
-				if (histograms[p.key] == null) {
-					histograms[p.key] = new ChainingHistogram(binWidth);
+				if (histograms[p.getKey()] == null) {
+					histograms[p.getKey()] = new ChainingHistogram(binWidth);
 				}
-				histograms[p.key].addPeak(p.value, t.getID());
+				histograms[p.getKey()].addPeak(p.getValue(), t.getID());
 			}
 		}
 		

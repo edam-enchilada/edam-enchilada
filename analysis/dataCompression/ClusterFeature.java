@@ -444,7 +444,7 @@ public class ClusterFeature {
 		BinnedPeak p;
 		while (iter.hasNext()) {
 			p = iter.next();
-			if (p.value!=0) {
+			if (p.getValue()!=0) {
 				newSums.add(p);
 			}
 		}
@@ -456,7 +456,7 @@ public class ClusterFeature {
 		BinnedPeak p;
 		while (iter.hasNext()) {
 			p = iter.next();
-			assert (p.value!=0) : "p.value!=0";
+			assert (p.getValue()!=0) : "p.value!=0";
 		}
 	}
 	public BinnedPeakList getNonNormalizedSums() {

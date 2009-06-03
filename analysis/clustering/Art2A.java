@@ -108,12 +108,12 @@ public class Art2A extends Cluster
 		while (iter.hasNext())
 		{
 			addedPeak = iter.next();
-			centroidArea = centroid.getAreaAt(addedPeak.key);
-			locationsGrabbed.add(new Integer(addedPeak.key));
+			centroidArea = centroid.getAreaAt(addedPeak.getKey());
+			locationsGrabbed.add(new Integer(addedPeak.getKey()));
 			
-			returnList.addNoChecks(addedPeak.key, 
+			returnList.addNoChecks(addedPeak.getKey(), 
 					centroidArea + 
-					(addedPeak.value-centroidArea)*learningRate);
+					(addedPeak.getValue()-centroidArea)*learningRate);
 		}
 		
 		BinnedPeak centroidPeak;
@@ -126,17 +126,17 @@ public class Art2A extends Cluster
 			centroidPeak = iter.next();
 			alreadyAdded = false;
 			for (int j = 0; j < locationsGrabbed.size(); j++)
-				if (centroidPeak.key == 
+				if (centroidPeak.getKey() == 
 					locationsGrabbed.get(j).intValue())
 					alreadyAdded = true;
 			if (!alreadyAdded)
 			{
 				addedArea = addedParticle.getAreaAt(
-						centroidPeak.key);
+						centroidPeak.getKey());
 				
-				returnList.addNoChecks(centroidPeak.key,
-						centroidPeak.value +
-						(addedArea-centroidPeak.value) *
+				returnList.addNoChecks(centroidPeak.getKey(),
+						centroidPeak.getValue() +
+						(addedArea-centroidPeak.getValue()) *
 						learningRate);
 			}
 		}

@@ -140,7 +140,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak p;
 		while (iter.hasNext()) {
 			p = iter.next();
-			if (p.value==0)
+			if (p.getValue()==0)
 				return true;
 		}
 		return false;
@@ -157,7 +157,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak p;
 		while (iter.hasNext()) {
 			p = iter.next();
-			if (p.value!=0) {
+			if (p.getValue()!=0) {
 				newSums.add(p);
 			}
 		}
@@ -292,14 +292,14 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		if (dMetric == DistanceMetric.CITY_BLOCK){
 			
 			while (iter.hasNext())
-				magnitude += iter.next().value;
+				magnitude += iter.next().getValue();
 			
 		} else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 					dMetric == DistanceMetric.DOT_PRODUCT){
 			
 			float currentArea;
 			while (iter.hasNext()){
-				currentArea = iter.next().value;
+				currentArea = iter.next().getValue();
 				magnitude += currentArea*currentArea;
 			}
 			magnitude = (float) Math.sqrt(magnitude);
@@ -589,7 +589,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 	 * @param bp the BinnedPeak to add.
 	 */
 	public void add(BinnedPeak bp) {
-		add(bp.key, bp.value);
+		add(bp.getKey(), bp.getValue());
 	}
 	private void add(Entry<Integer, Float> entry) {
 		add(entry.getKey(), entry.getValue());
@@ -641,7 +641,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak p;
 		while (i.hasNext()) {
 			p = i.next();
-			System.out.println(p.key + ", " + p.value);
+			System.out.println(p.getKey() + ", " + p.getValue());
 		}
 	}
 
@@ -873,7 +873,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		BinnedPeak peak;
 		while (iterator.hasNext()) {
 			peak = iterator.next();
-			if (peak.value > max)
+			if (peak.getValue() > max)
 				return false;
 		}
 		return true;
@@ -952,7 +952,7 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 		public Iter(BinnedPeakList bpl, boolean negative){
 			BinnedPeakList sub = new BinnedPeakList();
 			for (BinnedPeak peak : bpl)
-				if( (!negative && peak.key >= 0) || (negative && peak.key <0) )
+				if( (!negative && peak.getKey() >= 0) || (negative && peak.getKey() <0) )
 					sub.add(peak);
 			this.entries = sub.peaks.entrySet().iterator();
 		}
@@ -963,13 +963,12 @@ public class BinnedPeakList implements Iterable<BinnedPeak> {
 
 		public BinnedPeak next() {
 			Map.Entry<Integer,Float> e = entries.next();
-			return new BinnedPeak(e.getKey(), e.getValue());
+			return new BinnedPeak(e.getKey(), e.getValue(), e);
 		}
 
 		public void remove() {
 			throw new Error("Not implemented!");
 		}
 	}
-	
 	
 }

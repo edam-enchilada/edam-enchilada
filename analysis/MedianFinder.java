@@ -91,9 +91,9 @@ public class MedianFinder {
 			while (j.hasNext())
 			{
 				BinnedPeak peak = j.next();
-				sortedList[MAX_LOCATION+peak.key][i] = 
-					peak.value;
-				locationsUsed[MAX_LOCATION+peak.key] = true;
+				sortedList[MAX_LOCATION+peak.getKey()][i] = 
+					peak.getValue();
+				locationsUsed[MAX_LOCATION+peak.getKey()] = true;
 			}
 		}
 	}
@@ -171,7 +171,7 @@ public class MedianFinder {
 			while (j.hasNext())
 			{
 				BinnedPeak peak = j.next();
-				data[i][MAX_LOCATION+peak.key] = peak.value;
+				data[i][MAX_LOCATION+peak.getKey()] = peak.getValue();
 			}
 		}
 		for (int i = 0; i < particles.size(); i++)

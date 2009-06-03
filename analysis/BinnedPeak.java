@@ -39,23 +39,65 @@
 
 package analysis;
 
+import java.util.Map;
+
 /**
- * @author andersbe
+ * @author andersbe, jtbigwoo
  *
  * A convenience class for returning both an value and a key
  * of a given peak.
+ * @version 1.1 added the map entry so that we can modify the underlying 
+ * BinnedPeakList if there is one.
  */
 public class BinnedPeak {
-	public float value;
-	public int key;
+	private float value;
+	private int key;
+	private Map.Entry<Integer, Float> entry;
 	
 	public BinnedPeak(int l, float a)
 	{
 		key = l;
 		value = a;
 	}
+
+	/**
+	 * Creates a new binned peak with a reference back to the entry in the 
+	 * BinnedPeakList in case we change something.
+	 * @param l the integer key for this peak
+	 * @param a the float area for this peak
+	 * @param entry the entry in the BinnedPeakList for this peak.  If you're
+	 * not going to be changing the entry behind the BinnedPeak (or if there
+	 * isn't a BinnedPeakList containing this one) you should use the other
+	 * constructor (or you can just pass null for this parameter. 
+	 * @author jtbigwoo
+	 */
+	public BinnedPeak(int l, float a, Map.Entry<Integer, Float> entry)
+	{
+		key = l;
+		value = a;
+		this.entry = entry;
+	}
 	
 	public String toString() {
-		return "BinnedPeak["+key+","+value+"]";
+		return "BinnedPeak["+getKey()+","+getValue()+"]";
+	}
+
+	public void setValue(float value) {
+		this.value = value;
+		if (entry != null) {
+			entry.setValue(value);
+		}
+	}
+
+	public float getValue() {
+		return value;
+	}
+
+	public void setKey(int key) {
+		this.key = key;
+	}
+
+	public int getKey() {
+		return key;
 	}
 }

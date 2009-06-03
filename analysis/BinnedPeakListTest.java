@@ -94,7 +94,7 @@ public class BinnedPeakListTest extends TestCase {
 		bp1.multiply(Float.MAX_VALUE);
 
 		for (BinnedPeak bp : bp1) {
-			assertTrue(bp.value != Float.POSITIVE_INFINITY && bp.value != Float.NEGATIVE_INFINITY);
+			assertTrue(bp.getValue() != Float.POSITIVE_INFINITY && bp.getValue() != Float.NEGATIVE_INFINITY);
 		}
 		
 		float[] comp = new float[50];
@@ -121,15 +121,15 @@ public class BinnedPeakListTest extends TestCase {
 			
 			int i = 0;
 			for (BinnedPeak bp : bp1) {
-				assertEquals(bp.key, i - 25);
-				assertEquals(bp.value, comp[i]);
+				assertEquals(bp.getKey(), i - 25);
+				assertEquals(bp.getValue(), comp[i]);
 				i += 1;
 			}
 			
 			i = 0;
 			for (BinnedPeak bp : bp2) {
-				assertEquals(bp.key, i - 25);
-				assertEquals(bp.value, comp[i]);
+				assertEquals(bp.getKey(), i - 25);
+				assertEquals(bp.getValue(), comp[i]);
 				i += 1;
 			}
 		}
@@ -146,15 +146,15 @@ public class BinnedPeakListTest extends TestCase {
 			
 			int i = 0;
 			for (BinnedPeak bp : bp1) {
-				assertEquals(bp.key, i - 25);
-				assertEquals(bp.value, comp[i]);
+				assertEquals(bp.getKey(), i - 25);
+				assertEquals(bp.getValue(), comp[i]);
 				i += 1;
 			}
 			
 			i = 0;
 			for (BinnedPeak bp : bp2) {
-				assertEquals(bp.key, i - 25);
-				assertEquals(bp.value, comp[i]);
+				assertEquals(bp.getKey(), i - 25);
+				assertEquals(bp.getValue(), comp[i]);
 				i += 1;
 			}
 		}
@@ -328,20 +328,20 @@ public class BinnedPeakListTest extends TestCase {
 		
 		if (zeroKeys) {
 			for (int i = 0; i < sprinkle; ++i) {
-				data[(int) (Math.random() * data.length)].key = 0;
+				data[(int) (Math.random() * data.length)].setKey(0);
 			}
 		}
 		
 		if (zeroVals) {
 			for (int i = 0; i < sprinkle; ++i) {
-				data[(int) (Math.random() * data.length)].value = 0;
+				data[(int) (Math.random() * data.length)].setValue(0);
 			}			
 		}
 		
 		if (zeroKeys && zeroVals) {
 			for (int i = 0; i < sprinkle; ++i) {
-				data[(int) (Math.random() * data.length)].key = 0;
-				data[(int) (Math.random() * data.length)].value = 0;
+				data[(int) (Math.random() * data.length)].setKey(0);
+				data[(int) (Math.random() * data.length)].setValue(0);
 			}				
 		}
 		
@@ -360,11 +360,11 @@ public class BinnedPeakListTest extends TestCase {
 		BinnedPeak[] data = getTestData(100, 10, 0.005f, true, true);
 		assertEquals(data.length, 100);
 		for (BinnedPeak b : data) {
-			zeroKeys |= b.key == 0;
-			zeroVals |= b.value == 0;
-			zeroBoth |= (b.key == 0) && (b.value == 0);
-			maxKey = Math.max(maxKey, b.key);
-			maxVal = Math.max(maxVal, b.value);
+			zeroKeys |= b.getKey() == 0;
+			zeroVals |= b.getValue() == 0;
+			zeroBoth |= (b.getKey() == 0) && (b.getValue() == 0);
+			maxKey = Math.max(maxKey, b.getKey());
+			maxVal = Math.max(maxVal, b.getValue());
 		}
 		assertTrue(zeroKeys && zeroVals && zeroBoth);
 		assertTrue(maxKey <= 10);
@@ -375,11 +375,11 @@ public class BinnedPeakListTest extends TestCase {
 		data = getTestData(10, 10, 100f, true, false);
 		assertEquals(data.length, 10);
 		for (BinnedPeak b : data) {
-			zeroKeys |= b.key == 0;
-			zeroVals |= b.value == 0;
-			zeroBoth |= (b.key == 0) && (b.value == 0);
-			maxKey = Math.max(maxKey, b.key);
-			maxVal = Math.max(maxVal, b.value);
+			zeroKeys |= b.getKey() == 0;
+			zeroVals |= b.getValue() == 0;
+			zeroBoth |= (b.getKey() == 0) && (b.getValue() == 0);
+			maxKey = Math.max(maxKey, b.getKey());
+			maxVal = Math.max(maxVal, b.getValue());
 		}
 		assertTrue(zeroKeys && !zeroVals && !zeroBoth);
 		assertTrue(maxKey <= 10);
@@ -390,11 +390,11 @@ public class BinnedPeakListTest extends TestCase {
 		data = getTestData(2345, 10, 100f, true, false);
 		assertEquals(data.length, 2345);
 		for (BinnedPeak b : data) {
-			zeroKeys |= b.key == 0;
-			zeroVals |= b.value == 0;
-			zeroBoth |= (b.key == 0) && (b.value == 0);
-			maxKey = Math.max(maxKey, b.key);
-			maxVal = Math.max(maxVal, b.value);
+			zeroKeys |= b.getKey() == 0;
+			zeroVals |= b.getValue() == 0;
+			zeroBoth |= (b.getKey() == 0) && (b.getValue() == 0);
+			maxKey = Math.max(maxKey, b.getKey());
+			maxVal = Math.max(maxVal, b.getValue());
 		}
 		assertTrue(zeroKeys && !zeroVals && !zeroBoth);
 		assertTrue(maxKey <= 10);
@@ -405,11 +405,11 @@ public class BinnedPeakListTest extends TestCase {
 		data = getTestData(12, 10000, 100f, false, false);
 		assertEquals(data.length, 12);
 		for (BinnedPeak b : data) {
-			zeroKeys |= b.key == 0;
-			zeroVals |= b.value == 0;
-			zeroBoth |= (b.key == 0) && (b.value == 0);
-			maxKey = Math.max(maxKey, b.key);
-			maxVal = Math.max(maxVal, b.value);
+			zeroKeys |= b.getKey() == 0;
+			zeroVals |= b.getValue() == 0;
+			zeroBoth |= (b.getKey() == 0) && (b.getValue() == 0);
+			maxKey = Math.max(maxKey, b.getKey());
+			maxVal = Math.max(maxVal, b.getValue());
 		}
 		assertTrue(!zeroKeys && !zeroVals && !zeroBoth);
 		assertTrue(maxKey <= 10000);
@@ -473,7 +473,7 @@ public class BinnedPeakListTest extends TestCase {
 			one.add(b);
 		
 		for (BinnedPeak b : one)
-			if (b.value == 0)
+			if (b.getValue() == 0)
 				++numZeroVals;
 		
 		BinnedPeakList nz = one.getFilteredZerosList();
@@ -550,8 +550,8 @@ public class BinnedPeakListTest extends TestCase {
 				float sum = 0f;
 				float stdDev = 0f;
 				for (BinnedPeak b : bpl) {
-					sum += b.value;
-					stdDev += b.value * b.value;
+					sum += b.getValue();
+					stdDev += b.getValue() * b.getValue();
 				}
 				stdDev = (float) Math.sqrt(stdDev);
 				
@@ -575,7 +575,7 @@ public class BinnedPeakListTest extends TestCase {
 			bpl.add(b);
 		
 		for (BinnedPeak b : data)
-			assertEquals(bpl.getAreaAt(b.key), b.value, 0.0001f);
+			assertEquals(bpl.getAreaAt(b.getKey()), b.getValue(), 0.0001f);
 		
 		//look for some values that shouldn't be there: area should be zero.
 		int[] vals = {200, 10000, -1000, -113, -1424, 42523, 233};
@@ -627,7 +627,7 @@ public class BinnedPeakListTest extends TestCase {
 			BinnedPeakList divided = new BinnedPeakList();
 			
 			for (BinnedPeak b : bpl)
-				divided.add(b.key, b.value / factor);
+				divided.add(b.getKey(), b.getValue() / factor);
 			
 			bpl.divideAreasBy(factor);
 			
@@ -672,7 +672,7 @@ public class BinnedPeakListTest extends TestCase {
 			if (dMetric == DistanceMetric.CITY_BLOCK)
 				for (int i = 0; i < length(); i++)
 				{
-					magnitude += getNextLocationAndArea().value;
+					magnitude += getNextLocationAndArea().getValue();
 				}
 			else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED ||
 			         dMetric == DistanceMetric.DOT_PRODUCT)
@@ -680,7 +680,7 @@ public class BinnedPeakListTest extends TestCase {
 				float currentArea;
 				for (int i = 0; i < length(); i++)
 				{
-					currentArea = getNextLocationAndArea().value;
+					currentArea = getNextLocationAndArea().getValue();
 					magnitude += currentArea*currentArea;
 				}
 				magnitude = (float) Math.sqrt(magnitude);
@@ -726,16 +726,16 @@ public class BinnedPeakListTest extends TestCase {
 			for (int i = 0; i < longer.length(); i++)
 			{
 				temp = longer.getNextLocationAndArea();
-				longerLists[temp.key + MAX_LOCATION] = temp.value;
+				longerLists[temp.getKey() + MAX_LOCATION] = temp.getValue();
 				//Do we need this?: - nope
 				//bCheckedLocs[temp.location + MAX_LOCATION] = true;
 
 				// Assume optimistically that each key is unmatched in the
 				// shorter peak list.
 				if (dMetric == DistanceMetric.CITY_BLOCK)
-				    distance += temp.value;
+				    distance += temp.getValue();
 				else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-					distance += temp.value*temp.value;
+					distance += temp.getValue()*temp.getValue();
 				else if (dMetric == DistanceMetric.DOT_PRODUCT)
 				    ; // If no match in shorter list, contributes nothing
 				else {
@@ -750,16 +750,16 @@ public class BinnedPeakListTest extends TestCase {
 			for (int i =  0; i < shorter.length(); i++)
 			{
 				temp = shorter.getNextLocationAndArea();
-				if (longerLists[temp.key+MAX_LOCATION] != 0)
+				if (longerLists[temp.getKey()+MAX_LOCATION] != 0)
 				{
 					if (dMetric == DistanceMetric.CITY_BLOCK)
 					{
-						distance -= longerLists[temp.key+MAX_LOCATION];
+						distance -= longerLists[temp.getKey()+MAX_LOCATION];
 					}
 					else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 					{
-						distance -= longerLists[temp.key+MAX_LOCATION]*
-							longerLists[temp.key+MAX_LOCATION];
+						distance -= longerLists[temp.getKey()+MAX_LOCATION]*
+							longerLists[temp.getKey()+MAX_LOCATION];
 					}
 					else if (dMetric == DistanceMetric.DOT_PRODUCT)
 					    ; // Again, nothing to subtract off here
@@ -769,15 +769,15 @@ public class BinnedPeakListTest extends TestCase {
 					}
 					
 					if (dMetric == DistanceMetric.CITY_BLOCK)
-						distance += Math.abs(temp.value-longerLists[temp.key+MAX_LOCATION]);
+						distance += Math.abs(temp.getValue()-longerLists[temp.getKey()+MAX_LOCATION]);
 					else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 					{
-						eucTemp = temp.value-longerLists[temp.key+MAX_LOCATION];
+						eucTemp = temp.getValue()-longerLists[temp.getKey()+MAX_LOCATION];
 						distance += eucTemp*eucTemp;
 					}
 					else if (dMetric == DistanceMetric.DOT_PRODUCT) {
 					    distance +=
-					        temp.value*longerLists[temp.key+MAX_LOCATION];
+					        temp.getValue()*longerLists[temp.getKey()+MAX_LOCATION];
 					}
 					else {
 					    fail("Invalid distance metric: " + dMetric);
@@ -788,9 +788,9 @@ public class BinnedPeakListTest extends TestCase {
 				else
 				{
 					if (dMetric == DistanceMetric.CITY_BLOCK)
-						distance += temp.value;
+						distance += temp.getValue();
 					else if (dMetric == DistanceMetric.EUCLIDEAN_SQUARED)
-						distance += temp.value*temp.value;
+						distance += temp.getValue()*temp.getValue();
 					else if (dMetric == DistanceMetric.DOT_PRODUCT)
 					    ; // Nothing to add here if new match
 					else {
@@ -953,7 +953,7 @@ public class BinnedPeakListTest extends TestCase {
 			while (!exception) {
 				try {
 					p = getNextLocationAndArea();
-					System.out.println(p.key + ", " + p.value);
+					System.out.println(p.getKey() + ", " + p.getValue());
 				}catch (Exception e) {exception = true;}
 			}
 			resetPosition();
@@ -988,7 +988,7 @@ public class BinnedPeakListTest extends TestCase {
 			for (int i = 0; i < peaks.length(); i++) {
 				peak = new BinnedPeak(peaks.locations.get(i).intValue(), 
 						peaks.areas.get(i).floatValue());
-				add(peak.key, peak.value);
+				add(peak.getKey(), peak.getValue());
 			}
 		}
 	}

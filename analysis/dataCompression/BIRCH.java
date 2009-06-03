@@ -480,8 +480,8 @@ public class BIRCH extends CompressData{
 				Iterator iter = curCF.get(i).getSums().iterator();
 				while (iter.hasNext()) {
 					BinnedPeak p=(BinnedPeak) iter.next();
-					sparseArray.add(p.key + "," + 
-							p.value + "," + p.value + 
+					sparseArray.add(p.getKey() + "," + 
+							p.getValue() + "," + p.getValue() + 
 							"," + 0);
 				}				
 				

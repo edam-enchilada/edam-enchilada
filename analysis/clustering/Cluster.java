@@ -234,7 +234,7 @@ public abstract class Cluster extends CollectionDivider {
 		while (iter.hasNext())
 		{
 			tempPeak = iter.next();
-			out.println(tempPeak.key + "\t" + tempPeak.value);
+			out.println(tempPeak.getKey() + "\t" + tempPeak.getValue());
 		}
 	}
 		
@@ -268,15 +268,15 @@ public abstract class Cluster extends CollectionDivider {
 		while (longIter.hasNext())
 		{
 			temp = longIter.next();
-			checkedLocations.add(new Integer(temp.key));
+			checkedLocations.add(new Integer(temp.getKey()));
 			if (distanceMetric == DistanceMetric.CITY_BLOCK)
-				distance += Math.abs(temp.value - 
-						shorter.getAreaAt(temp.key));
+				distance += Math.abs(temp.getValue() - 
+						shorter.getAreaAt(temp.getKey()));
 			else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 			{
-				shorterTemp = shorter.getAreaAt(temp.key);
-				distance += (temp.value - shorterTemp)
-				* (temp.value - shorterTemp);
+				shorterTemp = shorter.getAreaAt(temp.getKey());
+				distance += (temp.getValue() - shorterTemp)
+				* (temp.getValue() - shorterTemp);
 			}
 			else
 				distance = -1.0f;
@@ -289,19 +289,19 @@ public abstract class Cluster extends CollectionDivider {
 			temp = shortIter.next();
 			double longerTemp;
 			for (Integer loc : checkedLocations)
-				if (temp.key == loc.intValue())
+				if (temp.getKey() == loc.intValue())
 					alreadyChecked = true;
 			if (!(alreadyChecked))
 			{
 				if (distanceMetric == DistanceMetric.CITY_BLOCK)
-					distance += Math.abs(temp.value - 
-							longer.getAreaAt(temp.key));
+					distance += Math.abs(temp.getValue() - 
+							longer.getAreaAt(temp.getKey()));
 
 				else if (distanceMetric == DistanceMetric.EUCLIDEAN_SQUARED)
 				{
-					longerTemp = longer.getAreaAt(temp.key);
-					distance += (temp.value - longerTemp) *
-					(temp.value - longerTemp);
+					longerTemp = longer.getAreaAt(temp.getKey());
+					distance += (temp.getValue() - longerTemp) *
+					(temp.getValue() - longerTemp);
 				}
 				else
 					distance = -1.0f;
@@ -766,13 +766,13 @@ public abstract class Cluster extends CollectionDivider {
 				p = i.next();
 				//TODO: waaaaaaaaay too type-specific
 				
-				area = p.value;
+				area = p.getValue();
 				
 				s = EnchiladaDataSetImporter.intersperse(
-							Integer.toString(area.intValue()), Integer.toString(p.key));
+							Integer.toString(area.intValue()), Integer.toString(p.getKey()));
 			
 				// relative area is the normalized peak height.
-				relArea = relAreaPeakList.getAreaAt(p.key);
+				relArea = relAreaPeakList.getAreaAt(p.getKey());
 				s = EnchiladaDataSetImporter.intersperse(relArea.toString(), s);
 
 				// hard-code peakheight to 1.  Height is not meaningful
