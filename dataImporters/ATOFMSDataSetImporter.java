@@ -640,7 +640,13 @@ public class ATOFMSDataSetImporter {
 			token = new StringTokenizer(readPar.readLine(), "=");
 			token.nextToken();
 			//TODO:  This only takes the first line of comments.
-			data[2] = token.nextToken();
+			if (token.hasMoreTokens()) {
+				data[2] = token.nextToken();
+			}
+			else {
+				// no comment?  just add blank - jtbigwoo
+				data[2] = "";
+			}
 			return data;
 		}
 		else {
