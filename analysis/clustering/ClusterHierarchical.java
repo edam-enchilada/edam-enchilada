@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.swing.JDialog;
@@ -53,12 +52,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
+import collection.Collection;
+
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
 import externalswing.SwingWorker;
+import gui.ProgressBarWrapper;
 
 /**
  * @author jtbigwoo
@@ -71,9 +73,9 @@ public class ClusterHierarchical extends Cluster {
 	private int numParticles; // number of particles in the collection.
 	private int returnThis;
 
-	private JDialog errorUpdate;
-	private JLabel errorLabel;
+	private ProgressBarWrapper progressBar;
 	private JFrame container;
+	private int numCollections = 0;
 
 	/**
 	 * Constructor.  Calls the constructor for ClusterK.
@@ -114,44 +116,24 @@ public class ClusterHierarchical extends Cluster {
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
-		final SwingWorker worker = new SwingWorker() {
-			public Object construct() {
-				int returnThis = innerDivide(true);	
-				return returnThis;
-			}
-		};
-		
-		errorUpdate = new JDialog((JFrame)container,"Clustering",true);
-		errorLabel = new JLabel("Start reducing clusters");
-		errorLabel.setSize(250,250);
-		errorUpdate.add(errorLabel);
-		errorUpdate.pack();
-		errorUpdate.validate();
-		worker.start();
-		errorUpdate.setVisible(true);
+		numParticles = db.getCollectionSize(collectionID);
+	    progressBar = new ProgressBarWrapper(container, "Hierarchical Clustering", numParticles);
+		progressBar.constructThis();
+		progressBar.setIndeterminate(true);
+
+		int returnThis = innerDivide(true);	
 		
 		return returnThis;
 	}
 
 	public int innerDivide(boolean interactive) {
-		numParticles = db.getCollectionSize(collectionID);
 		long timeInMillis = new Date().getTime();
 		processPart(interactive);
 		returnThis = newHostID;
 		System.out.println("Milliseconds elapsed: " + (new Date().getTime() - timeInMillis));
 
 		if(interactive){
-			try {
-				SwingUtilities.invokeAndWait(new Runnable() {
-					public void run() {
-						if(true){
-						errorUpdate.setVisible(false);
-						}
-						errorUpdate = null;
-					
-					}
-				});
-			} catch (Exception e) {	e.printStackTrace(); }
+			progressBar.disposeThis();
 		}		
 		return returnThis;
 	}
@@ -165,8 +147,9 @@ public class ClusterHierarchical extends Cluster {
 		clusterCentroidIters = 0; // also the number of passes
 
 		if (interactive) {
-			errorLabel.setText("Building distance matrix");
-			errorUpdate.validate();
+			progressBar.setText("Building distance matrix");
+			progressBar.setMaximum((numParticles * numParticles)/2);
+			progressBar.setIndeterminate(false);
 		}
 
 		// set up distance matrix
@@ -178,16 +161,20 @@ public class ClusterHierarchical extends Cluster {
 			for (ParticleInfo infoFromList : particles) {
 				float distance = info.getBinnedList().getDistance(infoFromList.getBinnedList(), distanceMetric);
 				clusterPairs.add(new ClusterPair(info.getID(), infoFromList.getID(), distance));
+				progressBar.increment("Building distance matrix");
 			}
 			particles.add(info);
 		}
 		particles = null;
 		
+		if (interactive) {
+			progressBar.setText("Clustering");
+			progressBar.reset();
+		}
 		while (clusterContents.size() > numClusters && clusterContents.size() > 1)
 		{
 			if (interactive) {
-				errorLabel.setText("Number of clusters: " + clusterContents.size());
-				errorUpdate.validate();
+				progressBar.increment("Number of clusters remaining: " + clusterContents.size());
 			}
 
 			// the first pair element in the sorted list has the smallest distance, merge them
@@ -250,11 +237,12 @@ public class ClusterHierarchical extends Cluster {
 			sampleIters++;
 			clusterCentroidIters++;
 		}
-		if (interactive) {
-			errorLabel.setText("Updating collections");
-			errorUpdate.validate();
-		}
-		assignAtomsToNearestCentroid(clusterContents);
+		// no need to create centroids, the cluster hierarchy we've created is what's useful.
+//		if (interactive) {
+//			errorLabel.setText("Updating collections");
+//			errorUpdate.validate();
+//		}
+//		assignAtomsToNearestCentroid(clusterContents);
 		
 		return;
 	}
@@ -268,7 +256,6 @@ public class ClusterHierarchical extends Cluster {
 	protected void assignAtomsToNearestCentroid(HashMap<Integer, ClusterContents> clusterContents)
 	{
 		
-		Iterator<Map.Entry<Integer, ClusterContents>> iterator = clusterContents.entrySet().iterator();
 		ArrayList<Centroid> centroidList = new ArrayList<Centroid>();
 		int particleCount = 0;
 		putInSubCollectionBatchInit();
@@ -276,7 +263,6 @@ public class ClusterHierarchical extends Cluster {
 		try {
 			db.bulkInsertInit();
 		} catch (Exception e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -352,14 +338,19 @@ public class ClusterHierarchical extends Cluster {
 	class ClusterContents {
 		
 		int clusterID;
+		int clusterCollectionID;
 		ArrayList<Integer> atomIDList;
 		BinnedPeakList peaks;
 		
 		public ClusterContents(int atomID, BinnedPeakList newPeaks) {
-			clusterID = atomID;
+			// we use the atom id as the id for this cluster.  we could just
+			// it's not really significant--we could use any id
+			this.clusterID = atomID;
 			atomIDList = new ArrayList<Integer>();
 			atomIDList.add(atomID);
 			peaks = newPeaks;
+			this.clusterCollectionID = createNewCollection();
+			addAtomsToCollection();
 		}
 		
 		public void merge(ClusterContents otherOne) {
@@ -368,6 +359,11 @@ public class ClusterHierarchical extends Cluster {
 			peaks.addAnotherParticle(otherOne.getPeaks());
 			atomIDList.addAll(otherOne.atomIDList);
 			peaks.divideAreasBy(atomIDList.size());
+			int superCollectionID = createNewCollection();
+			Collection newColl = db.getCollection(superCollectionID);
+			db.moveCollection(db.getCollection(otherOne.clusterCollectionID), newColl);
+			db.moveCollection(db.getCollection(clusterCollectionID), newColl);
+			clusterCollectionID = superCollectionID;
 		}
 		
 		public ArrayList<Integer> getAtomIDList() {
@@ -377,7 +373,35 @@ public class ClusterHierarchical extends Cluster {
 		public BinnedPeakList getPeaks() {
 			return peaks;
 		}
-		
+
+		private int createNewCollection() {
+			numCollections++;
+			return db.createEmptyCollection(collection.getDatatype(), newHostID,
+					Integer.toString(numCollections), 
+					Integer.toString(numCollections),"");
+		}
+
+		private void addAtomsToCollection() {
+			StringBuilder atomIDsToDelete = new StringBuilder("");
+			db.atomBatchInit();
+
+			try {
+				db.bulkInsertInit();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+
+			try {
+				for (int atomID : atomIDList) {
+					db.bulkInsertAtom(atomID,
+							clusterCollectionID);
+				}
+				db.bulkInsertExecute();
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	/**
 	 * Sets the cursor type; clustering can be done using either by 
@@ -395,7 +419,6 @@ public class ClusterHierarchical extends Cluster {
 			try {
 					curs = new NonZeroCursor(db.getBPLOnlyCursor(db.getCollection(collectionID)));
 				} catch (SQLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 		return true;
