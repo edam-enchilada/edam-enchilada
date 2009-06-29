@@ -6327,7 +6327,7 @@ public abstract class Database implements InfoWarehouse {
 					"	DROP TABLE #children\n");
 				stmt.executeUpdate("CREATE TABLE #children (AtomID int, CollectionID int)");
 				query = "INSERT INTO #children (AtomID)" +
-				" SELECT AtomID FROM AtomMembership WHERE (CollectionID = ";
+				" SELECT AtomID FROM InternalAtomOrder WHERE (CollectionID = ";
 				for (int i=0; i<subCollections.size(); i++){
 					query += subCollections.get(i) + ")";
 					if (i<subCollections.size()-1)

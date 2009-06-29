@@ -498,7 +498,7 @@ public class DatabaseTest extends TestCase {
 			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership " +
 					"WHERE CollectionID = 2 OR CollectionID = 3 ORDER BY AtomID");
 			ResultSet rs2 = stmt2.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder" +
-					" WHERE CollectionID = 2");
+					" WHERE CollectionID = 2 ORDER BY AtomID");
 			while (rs.next())
 			{
 				assertTrue(rs2.next());
@@ -515,7 +515,55 @@ public class DatabaseTest extends TestCase {
 		}
 		db.closeConnection();
 	}
-	
+
+	/**
+	 * Tests the fix of bug #####
+	 * @author jtbigwoo 
+	 */
+	public void testMoveCollectionTwice() {
+		db.openConnection(dbName);
+		assertTrue(db.moveCollection(db.getCollection(4), db.getCollection(3)));
+		assertTrue(db.moveCollection(db.getCollection(3),db.getCollection(2)));
+		try {
+			Connection con = db.getCon();
+			Statement stmt = con.createStatement();
+			Statement stmt2 = con.createStatement();
+			
+			ResultSet rs = stmt.executeQuery(
+					"USE TestDB\n" +
+					"SELECT ParentID\n" +
+					"FROM CollectionRelationships\n" +
+					"WHERE ChildID in (3,4) " +
+					"ORDER BY ChildID");
+			
+			assertTrue(rs.next());
+			assertTrue(rs.getInt(1) == 2);
+			assertTrue(rs.next());
+			assertTrue(rs.getInt(1) == 3);
+			assertFalse(rs.next());
+
+			rs = stmt.executeQuery("USE TestDB SELECT AtomID FROM AtomMembership " +
+					"WHERE CollectionID in (2, 3, 4) ORDER BY AtomID");
+			ResultSet rs2 = stmt2.executeQuery("USE TestDB SELECT AtomID FROM InternalAtomOrder" +
+					" WHERE CollectionID = 2 ORDER BY AtomID");
+			while (rs.next())
+			{
+				assertTrue(rs2.next()); // if this fails, there are more rows in atom membership than InternalAtomOrder
+				assertTrue(rs.getInt(1) == rs2.getInt(1));
+			}
+			assertFalse(rs2.next());
+			db.closeConnection();
+			rs.close();
+			stmt.close();
+			rs2.close();
+			stmt2.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			fail();
+		}
+		db.closeConnection();
+	}
+
 	public void testInsertATOFMSParticle() {
 		db.openConnection(dbName);
 		final String filename = "'ThisFile'";
