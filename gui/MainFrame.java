@@ -142,9 +142,9 @@ public class MainFrame extends JFrame implements ActionListener
 	
 	private CollectionTree selectedCollectionTree = null;
 	
-	private int copyID = -1;
-	private ArrayList<Integer> childrenIDs;
-	private String copyCollection;
+	private ArrayList<Integer> copyIDs = null;
+	private ArrayList<ArrayList<Integer>> childrenIDs;
+	private ArrayList<String> copyCollectionNames;
 	private boolean cutBool = false;
 	
 	private JTable particlesTable = null;
@@ -619,88 +619,103 @@ public class MainFrame extends JFrame implements ActionListener
 				collectionPane.updateTree(); //Mostly unnecessary, but without it, there is a problem when the name of a collection is changes length.
 			}
 		}
-		
-		else if (source == copyItem)
+		else if (source == copyItem || source == cutItem)
 		{
-			copyID = 
-				getSelectedCollection().getCollectionID();
-			childrenIDs = getSelectedCollection().getSubCollectionIDs(); 
-			copyCollection = getSelectedCollection().getName();
-			if (copyID == 0) { //don't allow copying/pasting of root
-				JOptionPane.showMessageDialog(this, "Please select a collection to copy.",
+			// @author jtbigwoo changed this to copy/cut multiple collections at once
+			Collection[] copyCollections = getSelectedCollections();
+			String dataType = null;
+			copyIDs = new ArrayList<Integer>();
+			childrenIDs = new ArrayList<ArrayList<Integer>>();
+			copyCollectionNames = new ArrayList<String>();
+			if (copyCollections == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to " + (source == cutItem ? "cut" : "copy") + ".",
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
+				copyIDs = null;
+				return;
 			}
-			else {
-				cutBool = false;
-				pasteItem.setEnabled(true);
-			}
-		}
-		
-		else if (source == cutItem)
-		{
-			copyID = 
-				getSelectedCollection().getCollectionID();
-			childrenIDs = getSelectedCollection().getSubCollectionIDs(); 
-			copyCollection = getSelectedCollection().getName();
-			if (copyID == 0) { //don't allow copying/pasting of root
-				JOptionPane.showMessageDialog(this, "Please select a collection to cut.",
-						"No collection selected", JOptionPane.WARNING_MESSAGE);
-			}
-			else {
-				cutBool = true;
-				pasteItem.setEnabled(true);
-			}
-			
-		}
-		
-		else if (source == pasteItem)
-		{
-			//if no collection selected, paste into root - @author steinbel
-
-			if (copyID != 
-				getSelectedCollection().getCollectionID() && copyID>-1)
-			{
-				//Ensure that a collection is not being pasted into one of its children
-				// @author shaferia, @jane
-					
-				if (childrenIDs.contains(getSelectedCollection().getCollectionID())) {
-					JOptionPane.showMessageDialog(this, "Cannot paste "  +  copyCollection + ": " + " the destination is a subcollection of " + copyCollection + "." );
+			for (int i = 0; i < copyCollections.length; i++) {
+				int copyID = copyCollections[i].getCollectionID();
+				if (copyID == 0) { //don't allow copying/pasting of root
+					JOptionPane.showMessageDialog(this, "Please select a collection to " + (source == cutItem ? "cut" : "copy") + ".",
+							"No collection selected", JOptionPane.WARNING_MESSAGE);
+					copyIDs = null;
 					return;
 				}
-				//}
-				
-				//check if the datatypes are the same
-				if(getSelectedCollection().getCollectionID() == 0
-						|| db.getCollection(copyID).getDatatype().equals
-											(getSelectedCollection().getDatatype())){
-					UIWorker worker = new UIWorker() {
-						public Object construct() {
-							if (cutBool == false)
-							{
+				else if (dataType != null && !dataType.equals(copyCollections[i].getDatatype())) {
+					JOptionPane.showMessageDialog(this, "Cannot " + (source == cutItem ? "cut" : "copy") + " collections of different data types.",
+							"Invalid collection", JOptionPane.WARNING_MESSAGE);
+					copyIDs = null;
+					return;
+				}
+				else {
+					copyIDs.add(i, copyID);
+					childrenIDs.add(i, copyCollections[i].getSubCollectionIDs());
+					copyCollectionNames.add(i, copyCollections[i].getName());
+					cutBool = source == cutItem;
+					dataType = copyCollections[i].getDatatype();
+					pasteItem.setEnabled(true);
+				}
+			}
+		}
+		else if (source == pasteItem)
+		{
+			// @author jtbigwoo changed this to paste multiple collections at once
+			// first, check that we have a copied collection(s)
+			if (copyIDs == null || copyIDs.size() == 0) {
+				JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
+						" be of the same data type", "Invalid collection", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			// second check that a collection is not being pasted into itself or it's children
+			Collection targetCollection = getSelectedCollection();
+			if (copyIDs.contains(targetCollection.getCollectionID())) {
+				JOptionPane.showMessageDialog(this, "Cannot copy/paste to the same " +
+						"destination as the source.", "Invalid collection", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			for (int i = 0; i < childrenIDs.size(); i++) {
+				ArrayList<Integer> subCollectionIDs = childrenIDs.get(i);
+				if (subCollectionIDs.contains(targetCollection.getCollectionID())) {
+					JOptionPane.showMessageDialog(this, "Cannot paste "  +  copyCollectionNames.get(i) + ": " + " the destination is a subcollection of " + copyCollectionNames.get(i) + "." );
+					return;
+				}
+			}
+			//if no collection selected, paste into root - @author steinbel
+
+			//check if the datatypes are the same
+			if(getSelectedCollection().getCollectionID() == 0
+					|| db.getCollection(copyIDs.get(0)).getDatatype().equals
+										(getSelectedCollection().getDatatype())){
+				UIWorker worker = new UIWorker() {
+					public Object construct() {
+						if (cutBool == false)
+						{
+							for (int copyID : copyIDs) {
 								db.copyCollection(db.getCollection(copyID), 
 									getSelectedCollection());
 							}
-							else
-							{
+						}
+						else
+						{
+							for (int copyID : copyIDs) {
 								db.moveCollection(db.getCollection(copyID), 
 									getSelectedCollection());
 							}
-							return null;
 						}
-						public void finished() {
-							super.finished();
-							collectionPane.updateTree();
-							validate();
-						}
-					};
-					worker.start(new Component[]{collectionPane});
-				}
-				else
-					JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
-							" be of the same data type", "Invalid collection", JOptionPane.WARNING_MESSAGE);
-			} else
-				JOptionPane.showMessageDialog(this, "Cannot copy/paste to the same " +
-						"destination as the source.", "Invalid collection", JOptionPane.WARNING_MESSAGE);
+						return null;
+					}
+					public void finished() {
+						super.finished();
+						collectionPane.updateTree();
+						validate();
+					}
+				};
+				worker.start(new Component[]{collectionPane});
+			}
+			else
+				JOptionPane.showMessageDialog(this, "Collections within the same folder must" +
+						" be of the same data type", "Invalid collection", JOptionPane.WARNING_MESSAGE);
 		}
 		else if (source == queryItem) {
 			if (collectionPane.getSelectedCollection() == null)

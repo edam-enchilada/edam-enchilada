@@ -232,6 +232,16 @@ Choose the same files as above, selecting "import into parent collection" in the
     __Verify that the system will not allow a blank par file name or a blank maximum m/z value
     __Export a collection to the file and spot check a few peaks
     
+ **Copy/Paste and Cut/Paste collections
+    __Verify that the system will not allow cut or copy if no collections are selected
+    __Verify that the system will not allow cut or copy if two collections of different types are selected
+    __Cut and paste one collection into another collection.
+    __Cut and paste more than one collection into another collection.
+    __Copy and paste one collection into another collection.
+    __Copy and paste more than one collection into another collection.
+    __Verify that the system will not allow a collection to be pasted into a collection of a different type.
+    __Verify that the system will not allow a collection to be pasted into itself.
+    __Verify that the system will not allow a collection to be pasted into one of its child collections.
 <NO LONGER RELEVANT>
 **Try to import an existing datatype in the metadata format.  
 	__Use \\collab.its.carleton.edu\COLLAB\Projects\EDAM\test data\AMS.md
