@@ -290,16 +290,17 @@ public class MedianFinderTest extends TestCase {
 		assertTrue(exception);
 	}
 
-	public void testmakeMPS() {
-		MedianFinder mf = new MedianFinder(allFiveNorm, true);
-		
-		mf.makeMPS();
-		long start = System.currentTimeMillis();
-		BinnedPeakList median = mf.getMedianSumToOne();
-		long stop = System.currentTimeMillis();
-		System.out.println("Elapsed time = " + (stop-start)/1000. + " seconds.");
-		mf.displayError(median);
-		median.printPeakList();
-	}
+// commented out by jtbigwoo, method under test was not used anywhere
+//	public void testmakeMPS() {
+//		MedianFinder mf = new MedianFinder(allFiveNorm, true);
+//		
+//		mf.makeMPS();
+//		long start = System.currentTimeMillis();
+//		BinnedPeakList median = mf.getMedianSumToOne();
+//		long stop = System.currentTimeMillis();
+//		System.out.println("Elapsed time = " + (stop-start)/1000. + " seconds.");
+//		mf.displayError(median);
+//		median.printPeakList();
+//	}
 
 }

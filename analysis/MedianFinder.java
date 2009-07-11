@@ -109,95 +109,100 @@ public class MedianFinder {
 
 	// Make MPS file to try to solve the median problem instead via a linear
 	// program
-	public void makeMPS()
-	{
-		PrintStream out = null;
-		try {
-			out = new PrintStream("C:\\temp\\lp.mps");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		out.printf("NAME%18s\n","MEDIAN");
-		out.printf("ROWS\n");
-		out.printf(" N  OBJ\n");
-		out.printf(" E  NORM\n");
-
-		for (int i = 0; i < particles.size(); i++)
-			for (int j=0; j < DOUBLE_MAX; j++)
-			{
-				out.printf(" L  M%d%d\n",i,j);
-				out.printf(" L  N%d%d\n",i,j);
-			}
-//		for (int j=0; j < DOUBLE_MAX; j++)
-//		{
-//			out.printf(" L  P%d\n",j);
-//			out.printf(" L  Q%d\n",j);
+// commented out by jtbigwoo - this won't work on some Vista machines. 
+// the default "clean" install of Vista doesn't create c:\temp.  
+// This method wasn't used anywhere anyway.  If you need to get it to work,
+// use File.createTempFile() to make the new file instead of specifying
+// a specific file location.
+//	public void makeMPS()
+//	{
+//		PrintStream out = null;
+//		try {
+//			out = new PrintStream("C:\\temp\\lp.mps");
+//		} catch (IOException e) {
+//			e.printStackTrace();
 //		}
-		
-		out.printf("COLUMNS\n");
-		
-		for (int j=0; j < DOUBLE_MAX; j++)
-		{
-			for (int i = 0; i < particles.size(); i++)
-			{
-				out.printf("    %-8s  %-8s  %-12s\n",
-						   "A"+i+j, "OBJ", 1);
-				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-						   "A"+i+j, "M"+i+j, -1, "N"+i+j, -1);
-			}
-
-			for (int i = 0; i < particles.size(); i++)
-				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-						   "C"+j, "M"+i+j, -1, "N"+i+j, +1);
-
-//			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-//					   "C"+j, "P"+j, +1, "Q"+j, -1);
-//			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-//					   "B"+j, "P"+j, -1, "Q"+j, -1);
-
-			out.printf("    %-8s  %-8s  %-12s\n",
-					   "C"+j, "NORM", +1);
-		}
-
-		out.printf("RHS\n");
-		
-		BinnedPeakList tempPL;
-		float[][] data = new float[particles.size()][DOUBLE_MAX];
-		for (int i = 0; i < particles.size(); i++)
-		{
-			tempPL = particles.get(i);
-			Iterator<BinnedPeak> j = tempPL.iterator();
-
-			while (j.hasNext())
-			{
-				BinnedPeak peak = j.next();
-				data[i][MAX_LOCATION+peak.getKey()] = peak.getValue();
-			}
-		}
-		for (int i = 0; i < particles.size(); i++)
-			for (int j=0; j < DOUBLE_MAX; j++)
-			{
-				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-						   "LABEL", "M"+i+j, -data[i][j], "N"+i+j, +data[i][j]);
-			}
-//		for (int j=0; j < DOUBLE_MAX; j++)
-//		{
-//			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
-//					   "LABEL", "P"+j, 0, "Q"+j, 0);
-//		}
-		out.printf("    %-8s  %-8s  %-12s\n",
-				   "LABEL", "NORM", 1);
-		
-//		out.printf("BOUNDS\n");
+//		out.printf("NAME%18s\n","MEDIAN");
+//		out.printf("ROWS\n");
+//		out.printf(" N  OBJ\n");
+//		out.printf(" E  NORM\n");
 //
+//		for (int i = 0; i < particles.size(); i++)
+//			for (int j=0; j < DOUBLE_MAX; j++)
+//			{
+//				out.printf(" L  M%d%d\n",i,j);
+//				out.printf(" L  N%d%d\n",i,j);
+//			}
+////		for (int j=0; j < DOUBLE_MAX; j++)
+////		{
+////			out.printf(" L  P%d\n",j);
+////			out.printf(" L  Q%d\n",j);
+////		}
+//		
+//		out.printf("COLUMNS\n");
+//		
 //		for (int j=0; j < DOUBLE_MAX; j++)
-//			out.printf(" FR %-8s  %-8s\n","BC"+j,"C"+j);
-		
-		out.printf("ENDATA\n");
-		
-		
-		out.close();
-	}
+//		{
+//			for (int i = 0; i < particles.size(); i++)
+//			{
+//				out.printf("    %-8s  %-8s  %-12s\n",
+//						   "A"+i+j, "OBJ", 1);
+//				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+//						   "A"+i+j, "M"+i+j, -1, "N"+i+j, -1);
+//			}
+//
+//			for (int i = 0; i < particles.size(); i++)
+//				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+//						   "C"+j, "M"+i+j, -1, "N"+i+j, +1);
+//
+////			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+////					   "C"+j, "P"+j, +1, "Q"+j, -1);
+////			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+////					   "B"+j, "P"+j, -1, "Q"+j, -1);
+//
+//			out.printf("    %-8s  %-8s  %-12s\n",
+//					   "C"+j, "NORM", +1);
+//		}
+//
+//		out.printf("RHS\n");
+//		
+//		BinnedPeakList tempPL;
+//		float[][] data = new float[particles.size()][DOUBLE_MAX];
+//		for (int i = 0; i < particles.size(); i++)
+//		{
+//			tempPL = particles.get(i);
+//			Iterator<BinnedPeak> j = tempPL.iterator();
+//
+//			while (j.hasNext())
+//			{
+//				BinnedPeak peak = j.next();
+//				data[i][MAX_LOCATION+peak.getKey()] = peak.getValue();
+//			}
+//		}
+//		for (int i = 0; i < particles.size(); i++)
+//			for (int j=0; j < DOUBLE_MAX; j++)
+//			{
+//				out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+//						   "LABEL", "M"+i+j, -data[i][j], "N"+i+j, +data[i][j]);
+//			}
+////		for (int j=0; j < DOUBLE_MAX; j++)
+////		{
+////			out.printf("    %-8s  %-8s  %-12s   %-8s  %-12s\n",
+////					   "LABEL", "P"+j, 0, "Q"+j, 0);
+////		}
+//		out.printf("    %-8s  %-8s  %-12s\n",
+//				   "LABEL", "NORM", 1);
+//		
+////		out.printf("BOUNDS\n");
+////
+////		for (int j=0; j < DOUBLE_MAX; j++)
+////			out.printf(" FR %-8s  %-8s\n","BC"+j,"C"+j);
+//		
+//		out.printf("ENDATA\n");
+//		
+//		
+//		out.close();
+//	}
 	
 	public void displayError(BinnedPeakList median)
 	{
