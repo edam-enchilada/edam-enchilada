@@ -64,6 +64,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.Vector;
 
 import dataImporters.ATOFMSDataSetImporter;
@@ -143,7 +144,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private CollectionTree selectedCollectionTree = null;
 	
 	private ArrayList<Integer> copyIDs = null;
-	private ArrayList<ArrayList<Integer>> childrenIDs;
+	private ArrayList<Set <Integer>> childrenIDs;
 	private ArrayList<String> copyCollectionNames;
 	private boolean cutBool = false;
 	
@@ -380,7 +381,7 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version apr-2009-19"
+					"Software Version jun-2009-29"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
@@ -625,7 +626,7 @@ public class MainFrame extends JFrame implements ActionListener
 			Collection[] copyCollections = getSelectedCollections();
 			String dataType = null;
 			copyIDs = new ArrayList<Integer>();
-			childrenIDs = new ArrayList<ArrayList<Integer>>();
+			childrenIDs = new ArrayList<Set <Integer>>();
 			copyCollectionNames = new ArrayList<String>();
 			if (copyCollections == null) {
 				JOptionPane.showMessageDialog(this, "Please select a collection to " + (source == cutItem ? "cut" : "copy") + ".",
@@ -649,7 +650,8 @@ public class MainFrame extends JFrame implements ActionListener
 				}
 				else {
 					copyIDs.add(i, copyID);
-					childrenIDs.add(i, copyCollections[i].getSubCollectionIDs());
+					// be sure to get sub collections all the way down the tree bug 2078722 - jtbigwoo
+					childrenIDs.add(i, copyCollections[i].getCollectionIDSubTree());
 					copyCollectionNames.add(i, copyCollections[i].getName());
 					cutBool = source == cutItem;
 					dataType = copyCollections[i].getDatatype();
@@ -667,7 +669,7 @@ public class MainFrame extends JFrame implements ActionListener
 				return;
 			}
 
-			// second check that a collection is not being pasted into itself or it's children
+			// second check that a collection is not being pasted into itself or its children
 			Collection targetCollection = getSelectedCollection();
 			if (copyIDs.contains(targetCollection.getCollectionID())) {
 				JOptionPane.showMessageDialog(this, "Cannot copy/paste to the same " +
@@ -675,7 +677,7 @@ public class MainFrame extends JFrame implements ActionListener
 				return;
 			}
 			for (int i = 0; i < childrenIDs.size(); i++) {
-				ArrayList<Integer> subCollectionIDs = childrenIDs.get(i);
+				Set<Integer> subCollectionIDs = childrenIDs.get(i);
 				if (subCollectionIDs.contains(targetCollection.getCollectionID())) {
 					JOptionPane.showMessageDialog(this, "Cannot paste "  +  copyCollectionNames.get(i) + ": " + " the destination is a subcollection of " + copyCollectionNames.get(i) + "." );
 					return;
