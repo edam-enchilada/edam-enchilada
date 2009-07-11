@@ -6284,6 +6284,8 @@ public abstract class Database implements InfoWarehouse {
 	
 	/**
 	 * @author steinbel - removed OrderNumber
+	 * @author jtbigwoo - use InternalAtomOrder for the children so that we get
+	 * the contents from sub-sub collections
 	 * TODO: still needs optimization
 	 */
 	public void updateAncestors(Collection collection) {
