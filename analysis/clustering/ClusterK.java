@@ -366,11 +366,22 @@ public abstract class ClusterK extends Cluster {
 			// See bug #2788156
 			centroidList.clear();
 			for (int j = 0; j < k; j++) {
-				curs.next();
-				ParticleInfo p = curs.getCurrent();
-				p.getBinnedList().preProcess(power);
-				p.getBinnedList().posNegNormalize(distanceMetric);
-				centroidList.add(new Centroid(p.getBinnedList(),0));
+				// because the cursor is a non-zero cursor, you can run
+				// out of particles before you get to K.  If that happens,
+				// clear the centroid list and show an error.
+				if (curs.next()) {
+					ParticleInfo p = curs.getCurrent();
+					p.getBinnedList().preProcess(power);
+					p.getBinnedList().posNegNormalize(distanceMetric);
+					centroidList.add(new Centroid(p.getBinnedList(),0));
+				}
+				else {
+					ErrorLogger.writeExceptionToLogAndPrompt("KCluster","Not enough particles to cluster " +
+							"with this many centroids. (You requested more" +
+					"centroids than there are particles");
+					centroidList.clear();
+					return centroidList;
+				}
 			}
 			curs.reset();
 			return centroidList;

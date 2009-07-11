@@ -320,4 +320,42 @@ public class KMeansTest extends TestCase {
     	ArrayList<Integer> particles = cluster1.getParticleIDs();
        	assertEquals(2, particles.get(0).intValue());
     }
+
+    /**
+     * If K=2 and there are two particles, but one has zero peaks, then the
+     * clustering should not create any clusters.  (In the interactive mode, 
+     * there's an error message, but we can't check that here.)
+     * @throws Exception
+     */
+    public void testKMeansTwoParticlesZeroPeaks() throws Exception {
+    	Connection con = db.getCon();
+    	Statement stmt = con.createStatement();
+
+    	stmt.executeUpdate("DELETE from AtomMembership where collectionId = 2");
+    	stmt.executeUpdate("DELETE from InternalAtomOrder where collectionId = 2");
+		stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,1)");
+		stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(1,2)");
+		stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,2)");
+		stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(2,2)");
+		
+        int cID = 2;
+        int k = 2;
+        String name = "";
+        String comment = "Test comment";
+        boolean refine = false;
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertEquals(8, collectionID); // this is 8 because we made 7 in the setup method and didn't use it.
+    	
+    	Collection cluster1 = db.getCollection(9);
+    	
+    	assertFalse(cluster1.containsData());
+    }
+
 }
