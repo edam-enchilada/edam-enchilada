@@ -190,7 +190,8 @@ public class ClusterHierarchical extends Cluster {
 			clusterPairs.remove(0);
 			clusterContents.get(clusterAID).merge(clusterContents.get(clusterBID));
 			clusterContents.remove(clusterBID);
-			
+
+			// set the size to try to avoid rehashes
 			HashMap<Integer, ClusterPair> removedPairs = new HashMap<Integer, ClusterPair>((clusterContents.size() * 4) / 3);
 			// because we're going to be removing elements, 
 			// it's easier to go backwards through the list
