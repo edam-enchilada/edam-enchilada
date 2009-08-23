@@ -379,6 +379,11 @@ public abstract class Database implements InfoWarehouse {
 		 * @return free any resources used by this Inserter
 		 */
 		public abstract void close();
+		
+		/**
+		 * Get rid of any files or other system stuff we've created.
+		 */
+		public abstract void cleanUp();
 	}
 	
 	/**
@@ -435,6 +440,10 @@ public abstract class Database implements InfoWarehouse {
 				ex.printStackTrace();
 			}
 		}
+		
+		public void cleanUp() {
+			tempFile.delete();
+		}
 	}
 	
 	/**
@@ -487,6 +496,10 @@ public abstract class Database implements InfoWarehouse {
 		public String sqlCmd() {
 			return "BULK INSERT " + table + " FROM '" + tempFile.getAbsolutePath() + "' WITH (FIELDTERMINATOR=',')\n";
 		}
+		
+		public void cleanUp() {
+			tempFile.delete();
+		}
 	}
 	
 	/**
@@ -517,6 +530,11 @@ public abstract class Database implements InfoWarehouse {
 		  for(int i = 0; i<tables.length; i++)
 			  buckets[i].close();
 	  }
+
+		public void cleanUp() {
+			  for(int i = 0; i<tables.length; i++)
+				  buckets[i].cleanUp();
+		  }
 
 		public String sqlCmd() {
 			 String querys = "";
@@ -553,6 +571,8 @@ public abstract class Database implements InfoWarehouse {
     		stmt.executeBatch();
 
     		stmt.close();
+    		
+    		bigBucket.cleanUp();
 
     	} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
@@ -633,6 +653,8 @@ public abstract class Database implements InfoWarehouse {
 		}
 		
 		public void close() {}
+		
+		public void cleanUp() {}
 	}
 	
 	/**
@@ -1558,6 +1580,7 @@ public abstract class Database implements InfoWarehouse {
 			sql.execute();
 			
 			stmt.close();
+			bi.cleanUp();
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");
@@ -1785,6 +1808,7 @@ public abstract class Database implements InfoWarehouse {
 		Collection parent = collection.getParentCollection();
 		String datatype = collection.getDatatype();
 		System.out.println("Deleting " + collection.getCollectionID());
+		File tempFile = null;
 		try {
 			Statement stmt = con.createStatement();
 			StringBuilder sql = new StringBuilder();
@@ -1800,7 +1824,6 @@ public abstract class Database implements InfoWarehouse {
 			
 			Iterator<Integer> allsubcollections = hierarchy.keySet().iterator();
 			if (url.equals("localhost")) {
-				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
 					tempFile = File.createTempFile("bulkfile", ".txt");
@@ -1849,7 +1872,10 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(sql.toString());
 			isDirty = true;
 			stmt.close();
-			
+
+			if (tempFile != null && tempFile.exists()) {
+				tempFile.delete();
+			}
 		} catch (Exception e){
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"Exception deleting collection.");
 			System.err.println("Exception deleting collection: ");
@@ -2068,6 +2094,9 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public void bulkInsertInit() throws Exception {
 		if (url.equals("localhost")) {
+			if (bulkInsertFile != null && bulkInsertFile.exists()) {
+				bulkInsertFile.delete();
+			}
 			bulkInsertFile = null;
 			bulkInsertFileWriter = null;
 			alteredCollections = new ArrayList<Integer>();
@@ -2177,9 +2206,10 @@ public abstract class Database implements InfoWarehouse {
 			//only update each distinct parent once
 			for (int i=0; i<parents.size(); i++)
 				updateAncestors(parents.get(i));
-			batchStatement.close();
+			if (batchStatement != null) {
+				batchStatement.close();
+			}
 			System.out.println("done with updating, time = " + (System.currentTimeMillis()-time));
-
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception executing batch atom adds and inserts.");
 			System.out.println("Exception executing batch atom adds " +
@@ -4607,6 +4637,7 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public void createTempAggregateBasis(Collection c, Collection basis) {
 		System.out.println("collection 1: " + c.getCollectionID() + "\ncollection 2: "+basis.getCollectionID());
+		File tempFile = null;
 		// grabbing the times for all subcollectionIDs
 		try {
 			StringBuilder tempTable = new StringBuilder();
@@ -4667,7 +4698,6 @@ public abstract class Database implements InfoWarehouse {
 				
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
 						tempFile = File.createTempFile("bulkfile", ".txt");
@@ -4726,6 +4756,9 @@ public abstract class Database implements InfoWarehouse {
 			}
 			stmt.execute(tempTable.toString());
 			stmt.close();	
+			if (tempFile != null && tempFile.exists()) {
+				tempFile.delete();
+			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -4744,6 +4777,7 @@ public abstract class Database implements InfoWarehouse {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Calendar increment = (Calendar) start.clone();	
 		int counter = 0;
+		File tempFile = null;
 		try {
 			StringBuilder tempTable = new StringBuilder();
 			Statement stmt = con.createStatement();
@@ -4781,7 +4815,6 @@ public abstract class Database implements InfoWarehouse {
 //			while the next time bin is legal...
 //			 Only bulk insert if client and server are on the same machine...
 			if (url.equals("localhost")) {
-				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
 					tempFile = File.createTempFile("bulkfile", ".txt");
@@ -4845,6 +4878,9 @@ public abstract class Database implements InfoWarehouse {
 			stmt.execute(tempTable.toString());
 			stmt1.close();
 			stmt.close();	
+			if (tempFile != null && tempFile.exists()) {
+				tempFile.delete();
+			}
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL exception creating aggregate basis temp table");
 			System.err.println("SQL exception creating aggregate basis temp table");
@@ -4917,6 +4953,7 @@ public abstract class Database implements InfoWarehouse {
 		AggregationOptions options = curColl.getAggregationOptions();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		File tempFile = null;
 		try {
 		
 		Statement stmt = con.createStatement();
@@ -5071,7 +5108,6 @@ public abstract class Database implements InfoWarehouse {
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
 						tempFile = File.createTempFile("bulkfile", ".txt");
@@ -5132,6 +5168,9 @@ public abstract class Database implements InfoWarehouse {
 		//stmt.execute(sql.toString());
 		
 		stmt.close();
+		if (tempFile != null) {
+			tempFile.delete();
+		}
 		
 		return true;
 		} catch (SQLException e) {
@@ -5153,6 +5192,7 @@ public abstract class Database implements InfoWarehouse {
 		Set<Integer> collectionIDs = collection.getCollectionIDSubTree();
 		AggregationOptions options = collection.getAggregationOptions();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		File tempFile = null;
 		try {
 			Statement stmt = con.createStatement();
 			ResultSet rs = null;
@@ -5186,7 +5226,6 @@ public abstract class Database implements InfoWarehouse {
 				sql.append("CREATE TABLE #mz (Value INT);\n");
 				// Only bulk insert if client and server are on the same machine...
 				if (url.equals("localhost")) {
-					File tempFile = null;
 					PrintWriter bulkFile = null;
 					try {
 						tempFile = File.createTempFile("bulkfile", ".txt");
@@ -5234,6 +5273,9 @@ public abstract class Database implements InfoWarehouse {
 			}
 
 			stmt.close();
+			if (tempFile != null && tempFile.exists()) {
+				tempFile.delete();
+			}
 			
 			int[] ret = new int[peakLocs.size()];
 			int i = 0;
@@ -6176,6 +6218,7 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public void updateInternalAtomOrder(Collection collection) {
 		//System.out.println("updating InternalAtomOrder for collection " + collection.getCollectionID());
+		File tempFile = null;
 		int cID = collection.getCollectionID();
 		if (cID == 0 || cID == 1) 
 			return;
@@ -6200,7 +6243,6 @@ public abstract class Database implements InfoWarehouse {
 			
 			// Only bulk insert if client and server are on the same machine...
 			if (url.equals("localhost")) {
-				File tempFile = null;
 				PrintWriter bulkFile = null;
 				try {
 					tempFile = File.createTempFile("bulkfile", ".txt");
@@ -6226,6 +6268,9 @@ public abstract class Database implements InfoWarehouse {
 			//System.out.println("inserted " + (order-1) + " atoms into cID " + 4);
 			stmt.executeBatch();
 			stmt.close();
+			if (tempFile != null && tempFile.exists()) {
+				tempFile.delete();
+			}
 		} catch (SQLException e) {
 			ErrorLogger.writeExceptionToLogAndPrompt(getName(),"SQL Exception inserting atom.  Please check incoming data for correct format.");
 			System.err.println("Exception inserting particle.");

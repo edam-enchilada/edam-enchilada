@@ -2421,6 +2421,7 @@ public class DatabaseTest extends TestCase {
 			Database.Inserter bi = db.getInserter(ex, "Collections");
 			bi.close();
 			ex.execute();
+			bi.cleanUp();
 		}
 		catch (SQLException ex) {
 			fail("Inserting nothing into from bulk file should be okay.");
@@ -2447,6 +2448,7 @@ public class DatabaseTest extends TestCase {
 						values[i][2] + "," + values[i][3] + "," + values[i][4]);
 			bi.close();
 			ex.execute();
+			bi.cleanUp();
 			
 			
 			ResultSet rs = (stmt = db.getCon().createStatement()).executeQuery(
