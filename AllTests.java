@@ -27,7 +27,8 @@ public class AllTests {
 		suite.addTestSuite(database.TSBulkInserterTest.class);
 		suite.addTestSuite(dataImporters.AMSDataSetImporterTest.class);
 		suite.addTestSuite(dataImporters.ATOFMSDataSetImporterTest.class);
-		suite.addTestSuite(dataImporters.EnchiladaDataSetImporterTest.class);
+		// jtbigwoo - enchilada data format is no longer used in enchilada
+		//suite.addTestSuite(dataImporters.EnchiladaDataSetImporterTest.class);
 		suite.addTestSuite(dataImporters.PALMSDataSetImporterTest.class);
 		suite.addTestSuite(dataImporters.SPASSDataSetImporterTest.class);
 		suite.addTestSuite(dataImporters.TSImportTest.class);
