@@ -45,18 +45,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 
 import collection.Collection;
 
 import ATOFMS.ParticleInfo;
 import analysis.BinnedPeakList;
 import analysis.CollectionDivider;
+import analysis.DistanceMetric;
+import database.CollectionCursor;
 import database.InfoWarehouse;
 import database.NonZeroCursor;
 import externalswing.SwingWorker;
@@ -69,14 +67,16 @@ import gui.ProgressBarWrapper;
 
 public class ClusterHierarchical extends Cluster {
 
-	protected int numClusters; // number of centroids desired.
-	private int numParticles; // number of particles in the collection.
+	private int numInitialClusters; // number of particles in the collection.
 	private int returnThis;
 
 	private ProgressBarWrapper progressBar;
 	private JFrame container;
 	private int numCollections = 0;
 
+	private boolean preClustered = false;
+	private int cursorType = CollectionDivider.DISK_BASED;
+	
 	/**
 	 * Constructor.  Calls the constructor for ClusterK.
 	 * @param cID - collection ID
@@ -84,16 +84,26 @@ public class ClusterHierarchical extends Cluster {
 	 * @param k - number of centroids desired
 	 * @param name - collection name
 	 * @param comment -comment to enter
+	 * @param mainFrame - the parent frame so we can create a progress bar
 	 */
-	public ClusterHierarchical(int cID, InfoWarehouse database, int k,
-			String name, String comment, ClusterInformation c) 
+	public ClusterHierarchical(int cID, InfoWarehouse database,
+			String name, String comment, ClusterInformation c, JFrame mainFrame) 
 	{
-		super(cID, database, name.concat("Hierarchical, Clusters=" + k), comment, c.normalize);
+		super(cID, database, name.concat("Hierarchical, Clusters Ward's"), comment, c.normalize);
 		collectionID = cID;
 		clusterInfo = c;//set inherited variable
-		numClusters = k;
 		totalDistancePerPass = new ArrayList<Double>();
-		parameterString = name.concat("Hierarchical, Clusters=" + k + super.folderName);
+		parameterString = name.concat("Hierarchical, Clusters Ward's " + super.folderName);
+		container = mainFrame;
+		
+		// this is a bit of a hack...
+		// if we're preclustered, we don't want to make another collection
+		// to hold the results in--jtbigwoo
+		if (preClustered) {
+			db.removeEmptyCollection(db.getCollection(newHostID));
+			newHostID = cID;
+			db.renameCollection(db.getCollection(newHostID), "Hierarchical, Clusters Ward's" + folderName);
+		}
 	}
 	
 	/** 
@@ -116,13 +126,25 @@ public class ClusterHierarchical extends Cluster {
 	 * @see analysis.CollectionDivider#divide()
 	 */
 	public int divide() {
-		numParticles = db.getCollectionSize(collectionID);
-	    progressBar = new ProgressBarWrapper(container, "Hierarchical Clustering", numParticles);
+		if (preClustered) {
+			numInitialClusters = db.getImmediateSubCollections(collection).size();
+		}
+		else {
+			numInitialClusters = db.getCollectionSize(collectionID);
+		}
+	    progressBar = new ProgressBarWrapper(container, "Hierarchical Clustering", numInitialClusters);
 		progressBar.constructThis();
 		progressBar.setIndeterminate(true);
 
-		int returnThis = innerDivide(true);	
-		
+		final SwingWorker worker = new SwingWorker() {
+			public Object construct() {
+				int returnThis = innerDivide(true);	
+				return returnThis;
+			}
+		};
+
+		worker.start();
+
 		return returnThis;
 	}
 
@@ -140,41 +162,60 @@ public class ClusterHierarchical extends Cluster {
 
 	private void processPart(boolean interactive)
 	{
-		ArrayList<ClusterPair> clusterPairs = new ArrayList<ClusterPair>((numParticles * numParticles) / 2);
-		HashMap<Integer, ClusterContents> clusterContents = new HashMap<Integer, ClusterContents>((numParticles * 4) / 2);
-		ArrayList<ParticleInfo> particles = new ArrayList<ParticleInfo>(numParticles);
+		ArrayList<ClusterPair> clusterPairs = new ArrayList<ClusterPair>((numInitialClusters * numInitialClusters) / 2);
+		HashMap<Integer, ClusterContents> clusterContentsMap = new HashMap<Integer, ClusterContents>((numInitialClusters * 4) / 2);
 		sampleIters = 0; // this is the number of passes
 		clusterCentroidIters = 0; // also the number of passes
 
 		if (interactive) {
 			progressBar.setText("Building distance matrix");
-			progressBar.setMaximum((numParticles * numParticles)/2);
+			progressBar.setMaximum((numInitialClusters * numInitialClusters)/2);
 			progressBar.setIndeterminate(false);
 		}
 
 		// set up distance matrix
-		while (curs.next()) {
-			ParticleInfo info = curs.getCurrent();
-			info.getBinnedList().posNegNormalize(distanceMetric);
-			ClusterContents currentCluster = new ClusterContents(info.getID(), info.getBinnedList());
-			clusterContents.put(info.getID(), currentCluster);
-			for (ParticleInfo infoFromList : particles) {
-				float distance = info.getBinnedList().getDistance(infoFromList.getBinnedList(), distanceMetric);
-				clusterPairs.add(new ClusterPair(info.getID(), infoFromList.getID(), distance));
-				progressBar.increment("Building distance matrix");
+		if (preClustered) {
+			// set up a ClusterContents for each collection
+			ArrayList<Integer> subCollectionIDs = db.getImmediateSubCollections(collection);
+			for (int subCollectionID : subCollectionIDs) {
+				ClusterContents currentCluster = new ClusterContents(subCollectionID);
 			}
-			particles.add(info);
 		}
-		particles = null;
+		else {
+			// set up a ClusterContents for each particle
+			curs = getCursor(collectionID);
+			while (curs.next()) {
+				ParticleInfo info = curs.getCurrent();
+				info.getBinnedList().posNegNormalize(distanceMetric);
+				ClusterContents currentCluster = new ClusterContents(info.getID(), info.getBinnedList());
+				// after we've constructed our cluster object, get the distances
+				// to all other cluster objects
+				for (ClusterContents otherCluster : clusterContentsMap.values()) {
+					float distance = currentCluster.getDistance(otherCluster, distanceMetric);
+					clusterPairs.add(new ClusterPair(currentCluster.clusterCollectionID, otherCluster.clusterCollectionID, distance));
+					if (interactive) {
+						progressBar.increment("Building Distance Matrix");
+					}
+				}
+				// this next bit is silly, but by waiting 1/10 of a second, we give the garbage collector time to run
+				// the whole process runs faster by waiting because we don't take up so much memory.
+				// in an ideal future, we could the next two lines out -- jtbigwoo
+//				Runtime.getRuntime().gc();
+//				try {Thread.sleep(100);} catch (Exception e) {}
+//				System.out.println(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+				clusterContentsMap.put(currentCluster.clusterCollectionID, currentCluster);
+			}
+		}
 		
 		if (interactive) {
 			progressBar.setText("Clustering");
 			progressBar.reset();
+			progressBar.setMaximum(clusterContentsMap.size());
 		}
-		while (clusterContents.size() > numClusters && clusterContents.size() > 1)
+		while (clusterContentsMap.size() > 1)
 		{
 			if (interactive) {
-				progressBar.increment("Number of clusters remaining: " + clusterContents.size());
+				progressBar.increment("Number of Clusters Remaining: " + clusterContentsMap.size());
 			}
 
 			// the first pair element in the sorted list has the smallest distance, merge them
@@ -185,14 +226,14 @@ public class ClusterHierarchical extends Cluster {
 			int clusterBID = clusterPairs.get(0).getSecondClusterID();
 			totalDistancePerPass.add(new Double(clusterPairs.get(0).getDistance()));
 			float aToBDistance = clusterPairs.get(0).getDistance();
-			int clusterASize = clusterContents.get(clusterAID).getAtomIDList().size();
-			int clusterBSize = clusterContents.get(clusterBID).getAtomIDList().size();
+			int clusterASize = clusterContentsMap.get(clusterAID).getAtomIDList().size();
+			int clusterBSize = clusterContentsMap.get(clusterBID).getAtomIDList().size();
 			clusterPairs.remove(0);
-			clusterContents.get(clusterAID).merge(clusterContents.get(clusterBID));
-			clusterContents.remove(clusterBID);
+			clusterContentsMap.get(clusterAID).merge(clusterContentsMap.get(clusterBID));
+			clusterContentsMap.remove(clusterBID);
 
 			// set the size to try to avoid rehashes
-			HashMap<Integer, ClusterPair> removedPairs = new HashMap<Integer, ClusterPair>((clusterContents.size() * 4) / 3);
+			HashMap<Integer, ClusterPair> removedPairs = new HashMap<Integer, ClusterPair>((clusterContentsMap.size() * 4) / 3);
 			// because we're going to be removing elements, 
 			// it's easier to go backwards through the list
 			for (int i = clusterPairs.size() - 1; i >= 0; i--) {
@@ -217,7 +258,7 @@ public class ClusterHierarchical extends Cluster {
 						// if this is the second time we've encountered Cluster Q, recalculate
 						// distance and put a new pair in the list.
 						ClusterPair removedPair = removedPairs.get(clusterQID);
-						int clusterQSize = clusterContents.get(clusterQID).getAtomIDList().size();
+						int clusterQSize = clusterContentsMap.get(clusterQID).getAtomIDList().size();
 						float aToQDistance, bToQDistance, newDistance;
 						if (clusterAID == removedPair.getFirstClusterID() || clusterAID == removedPair.getSecondClusterID()) {
 							aToQDistance = removedPair.getDistance();
@@ -254,44 +295,44 @@ public class ClusterHierarchical extends Cluster {
 	 * 
 	 * @param clusterContents
 	 */
-	protected void assignAtomsToNearestCentroid(HashMap<Integer, ClusterContents> clusterContents)
-	{
-		
-		ArrayList<Centroid> centroidList = new ArrayList<Centroid>();
-		int particleCount = 0;
-		putInSubCollectionBatchInit();
-
-		try {
-			db.bulkInsertInit();
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-
-		for (Map.Entry<Integer, ClusterContents> entry : clusterContents.entrySet()) {
-			Centroid temp = new Centroid(entry.getValue().getPeaks(), entry.getValue().getAtomIDList().size());
-			temp.subCollectionNum = createSubCollection();
-			for (int atomID : entry.getValue().getAtomIDList()) {
-				putInSubCollectionBulk(atomID, temp.subCollectionNum);
-			}
-			particleCount += temp.numMembers;
-			centroidList.add(temp);
-		}
-		putInSubCollectionBulkExecute();
-
-		if (isNormalized){
-			//boost the peaklist
-			// By dividing by the smallest peak area, all peaks get scaled up.
-			// Because we're going to convert these to ints in a minute anything
-			// smaller than the smallest peak area will get converted to zero.
-			// it's a hack, I know-jtbigwoo
-			for (Centroid c: centroidList){
-				c.peaks.divideAreasBy(smallestNormalizedPeak);
-			}
-		}
-		createCenterAtoms(centroidList, subCollectionIDs);
-		
-		printDescriptionToDB(particleCount, centroidList);
-	}
+//	protected void assignAtomsToNearestCentroid(HashMap<Integer, ClusterContents> clusterContents)
+//	{
+//		
+//		ArrayList<Centroid> centroidList = new ArrayList<Centroid>();
+//		int particleCount = 0;
+//		putInSubCollectionBatchInit();
+//
+//		try {
+//			db.bulkInsertInit();
+//		} catch (Exception e1) {
+//			e1.printStackTrace();
+//		}
+//
+//		for (Map.Entry<Integer, ClusterContents> entry : clusterContents.entrySet()) {
+//			Centroid temp = new Centroid(entry.getValue().getPeaks(), entry.getValue().getAtomIDList().size());
+//			temp.subCollectionNum = createSubCollection();
+//			for (int atomID : entry.getValue().getAtomIDList()) {
+//				putInSubCollectionBulk(atomID, temp.subCollectionNum);
+//			}
+//			particleCount += temp.numMembers;
+//			centroidList.add(temp);
+//		}
+//		putInSubCollectionBulkExecute();
+//
+//		if (isNormalized){
+//			//boost the peaklist
+//			// By dividing by the smallest peak area, all peaks get scaled up.
+//			// Because we're going to convert these to ints in a minute anything
+//			// smaller than the smallest peak area will get converted to zero.
+//			// it's a hack, I know-jtbigwoo
+//			for (Centroid c: centroidList){
+//				c.peaks.divideAreasBy(smallestNormalizedPeak);
+//			}
+//		}
+//		createCenterAtoms(centroidList, subCollectionIDs);
+//		
+//		printDescriptionToDB(particleCount, centroidList);
+//	}
 
 	/**
 	 * Holds the id's for a pair of clusters and the distance between them.
@@ -338,20 +379,44 @@ public class ClusterHierarchical extends Cluster {
 	 */
 	class ClusterContents {
 		
-		int clusterID;
 		int clusterCollectionID;
 		ArrayList<Integer> atomIDList;
 		BinnedPeakList peaks;
-		
+
+		/**
+		 * Creates a new cluster from a single particle.  Makes a new
+		 * collection in the database and puts the particle in the
+		 * collection.
+		 * @param atomID id of the particle
+		 * @param newPeaks peak list of the particle
+		 */
 		public ClusterContents(int atomID, BinnedPeakList newPeaks) {
-			// we use the atom id as the id for this cluster.  we could just
-			// it's not really significant--we could use any id
-			this.clusterID = atomID;
 			atomIDList = new ArrayList<Integer>();
 			atomIDList.add(atomID);
 			peaks = newPeaks;
 			this.clusterCollectionID = createNewCollection();
 			addAtomsToCollection();
+		}
+
+		/**
+		 * Creates a new cluster from a collection.  Doesn't have to
+		 * make anything new in the database.
+		 * @param collID
+		 */
+		public ClusterContents(int collID) {
+			atomIDList = new ArrayList<Integer>();
+			CollectionCursor curs = getCursor(collID);
+			while (curs.next()) {
+				ParticleInfo particle = curs.getCurrent();
+				atomIDList.add(particle.getID());
+				if (peaks == null) {
+					peaks = particle.getBinnedList();
+				}
+				else {
+					peaks.addAnotherParticle(particle.getBinnedList());
+				}
+			}
+			peaks.divideAreasBy(atomIDList.size());
 		}
 		
 		public void merge(ClusterContents otherOne) {
@@ -383,9 +448,6 @@ public class ClusterHierarchical extends Cluster {
 		}
 
 		private void addAtomsToCollection() {
-			StringBuilder atomIDsToDelete = new StringBuilder("");
-			db.atomBatchInit();
-
 			try {
 				db.bulkInsertInit();
 			} catch (Exception e1) {
@@ -403,6 +465,21 @@ public class ClusterHierarchical extends Cluster {
 				e.printStackTrace();
 			}
 		}
+		
+		/**
+		 * Gets the distance from this cluster to another cluster.  Right now
+		 * it's just the distance between the average peak lists which is 
+		 * useful for Ward's and centroid approaches to clustering.  We could
+		 * add other more complicated distance calculations for other 
+		 * hierarchical clustering approaches like single link, complete link,
+		 * group average, or centroid.
+		 * @param otherCluster
+		 * @param metric
+		 * @return
+		 */
+		public float getDistance(ClusterContents otherCluster, DistanceMetric metric) {
+			return peaks.getDistance(otherCluster.getPeaks(), metric);
+		}
 	}
 	/**
 	 * Sets the cursor type; clustering can be done using either by 
@@ -413,23 +490,41 @@ public class ClusterHierarchical extends Cluster {
 	 */
 	public boolean setCursorType(int type) 
 	{
-
 		switch (type) {
 		case CollectionDivider.DISK_BASED :
-			System.out.println("DISK_BASED");
-			try {
-					curs = new NonZeroCursor(db.getBPLOnlyCursor(db.getCollection(collectionID)));
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-		return true;
 		case CollectionDivider.STORE_ON_FIRST_PASS : 
-		    System.out.println("STORE_ON_FIRST_PASS");
-			curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collectionID), clusterInfo));
-		return true;
+			cursorType = type;
+			return true;
 		default :
 			return false;
 		}
 	}
 
+	private CollectionCursor getCursor (int collID) {
+		switch (cursorType) {
+		case CollectionDivider.DISK_BASED :
+			System.out.println("DISK_BASED");
+			try {
+					curs = new NonZeroCursor(db.getBPLOnlyCursor(db.getCollection(collID)));
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+		return curs;
+		case CollectionDivider.STORE_ON_FIRST_PASS : 
+		    System.out.println("STORE_ON_FIRST_PASS");
+			curs = new NonZeroCursor(db.getMemoryClusteringCursor(db.getCollection(collID), clusterInfo));
+		return curs;
+		default :
+			return null;
+		}
+	}
+	/**
+	 * Sets whether we have preclustered the data already.  If we have, we
+	 * don't create new collections to put everything in--we just use the ones
+	 * that are already under the main collection
+	 * @param clustered true if we already did a preclustering step
+	 */
+	public void setPreClustered(boolean clustered) {
+		preClustered = clustered;
+	}
 }

@@ -77,6 +77,7 @@ public abstract class ClusterK extends Cluster {
 	protected int k; // number of centroids desired.
 	private int numParticles; // number of particles in the collection.
 	private Random random;
+	private boolean createCentroids = true;
 
 	private static float error = 0.01f;
 	private static int numSamples = 50;
@@ -231,7 +232,7 @@ public abstract class ClusterK extends Cluster {
 		System.out.println("returning");
 		
 		returnThis = 
-			assignAtomsToNearestCentroid(centroidList, curs);
+			assignAtomsToNearestCentroid(centroidList, curs, createCentroids);
 		curs.close();
 
 		if(interactive){
@@ -686,6 +687,17 @@ public abstract class ClusterK extends Cluster {
 	
 	public static void setNumSamples(int num) {
 		numSamples = num;
+	}
+	
+	/**
+	 * Set this to false if you want to cluster without creating centroids 
+	 * in the database.  Useful if you're only interested in 
+	 * saving the clustered particles in the db.  (i.e. when pre-clustering for 
+	 * hierarchical clustering.)
+	 * @param move
+	 */
+	public void setCreateCentroids(boolean create) {
+		createCentroids = create;
 	}
 	
 	/**

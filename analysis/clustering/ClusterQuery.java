@@ -75,7 +75,7 @@ public class ClusterQuery extends Cluster {
 	}
 	@Override
 	public int divide() {
-		super.assignAtomsToNearestCentroid(centroids, curs, (double)distance, true, false);
+		super.assignAtomsToNearestCentroid(centroids, curs, (double)distance, true, false, true);
 		return 0;
 	}
 	public boolean setCursorType(int type) 

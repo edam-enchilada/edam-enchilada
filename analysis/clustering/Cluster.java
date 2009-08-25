@@ -376,8 +376,8 @@ public abstract class Cluster extends CollectionDivider {
 	 */
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
-			CollectionCursor curs){
-		return assignAtomsToNearestCentroid(centroidList, curs, (double)2.5, clusterInfo.normalize, true);
+			CollectionCursor curs, boolean saveCentroids){
+		return assignAtomsToNearestCentroid(centroidList, curs, (double)2.5, clusterInfo.normalize, true, saveCentroids);
 	}
 	/**
 	* This method assigns atoms to nearest centroid using only centroidList
@@ -388,11 +388,16 @@ public abstract class Cluster extends CollectionDivider {
 	* a particle must be from a centroid
 	* @param normalize whether the centroids are normalized
 	* @param changecentroids whether the centroids should be modified as particles are assigned to them
+	* @param saveCentroids whether the we save the centroids in the db.
+	* Set this to false when you're interested in saving the centroids to the db, but
+	* you don't want to actually divide up the source
+	* particles in the db. (Such as in pre-clustering for hierarchical clustering.)
 	* @author christej
 	*/
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
-			CollectionCursor curs, double minDistance, boolean normalize, boolean changeCentroids)
+			CollectionCursor curs, double minDistance, boolean normalize, boolean changeCentroids,
+			boolean saveCentroids)
 	{
 		System.out.println("in assignAtoms");
 		ArrayList<BinnedPeakList> sums = new ArrayList<BinnedPeakList>();
@@ -488,19 +493,20 @@ public abstract class Cluster extends CollectionDivider {
 			centroidList.get(i).peaks = sums.get(i);
 		}
 
-	if (normalize){
-		//boost the peaklist
-		// By dividing by the smallest peak area, all peaks get scaled up.
-		// Because we're going to convert these to ints in a minute anything
-		// smaller than the smallest peak area will get converted to zero.
-		// it's a hack, I know-jtbigwoo
-		for (Centroid c: centroidList){
-			c.peaks.divideAreasBy(smallestNormalizedPeak);
+		if (normalize){
+			//boost the peaklist
+			// By dividing by the smallest peak area, all peaks get scaled up.
+			// Because we're going to convert these to ints in a minute anything
+			// smaller than the smallest peak area will get converted to zero.
+			// it's a hack, I know-jtbigwoo
+			for (Centroid c: centroidList){
+				c.peaks.divideAreasBy(smallestNormalizedPeak);
+			}
 		}
-	}
 	
-		createCenterAtoms(centroidList, subCollectionIDs);
-		
+		if (saveCentroids) {
+			createCenterAtoms(centroidList, subCollectionIDs);
+		}
 		printDescriptionToDB(particleCount, centroidList);
 		
 		return newHostID;
@@ -518,7 +524,7 @@ public abstract class Cluster extends CollectionDivider {
 	protected int assignAtomsToNearestCentroid(
 			ArrayList<Centroid> centroidList,
 			CollectionCursor curs,
-			float vigilance)
+			float vigilance, boolean saveCentroids)
 	{		
 		Centroid outliers = new Centroid(null, 0);
 		int particleCount = 0;
@@ -528,7 +534,7 @@ public abstract class Cluster extends CollectionDivider {
 		double totalDistance = 0.0;
 		double distance = 3.0;
 		int chosenCluster = -1;
-		putInSubCollectionBatchInit();	
+		putInSubCollectionBatchInit();
 		while(curs.next())
 		{ // while there are particles remaining
 			particleCount++;
@@ -570,6 +576,7 @@ public abstract class Cluster extends CollectionDivider {
 				{
 					temp.subCollectionNum = createSubCollection();
 				}
+					
 				putInSubCollectionBatch(
 						thisParticleInfo.getID(), 
 						temp.subCollectionNum);
@@ -582,21 +589,22 @@ public abstract class Cluster extends CollectionDivider {
 		putInSubCollectionBatchExecute();
 		curs.reset();
 
-	if (clusterInfo.normalize){
-		//boost the peaklist
-		// By dividing by the smallest peak area, all peaks get scaled up.
-		// Because we're going to convert these to ints in a minute anything
-		// smaller than the smallest peak area will get converted to zero.
-		// it's a hack, I know-jtbigwoo
-		for (Centroid c: centroidList){
-			c.peaks.divideAreasBy(smallestNormalizedPeak);
+		if (clusterInfo.normalize){
+			//boost the peaklist
+			// By dividing by the smallest peak area, all peaks get scaled up.
+			// Because we're going to convert these to ints in a minute anything
+			// smaller than the smallest peak area will get converted to zero.
+			// it's a hack, I know-jtbigwoo
+			for (Centroid c: centroidList){
+				c.peaks.divideAreasBy(smallestNormalizedPeak);
+			}
 		}
-	}
 	
-		createCenterAtoms(centroidList, subCollectionIDs);
+		if (saveCentroids) {
+			createCenterAtoms(centroidList, subCollectionIDs);
+		}
 		totalDistancePerPass.add(new Double(totalDistance));
 		printDescriptionToDB(particleCount, centroidList);
-
 		
 		return newHostID;
 	}

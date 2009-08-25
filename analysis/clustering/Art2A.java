@@ -68,6 +68,7 @@ public class Art2A extends Cluster
 	// stableIterations contains the number of iterations that ART-2a
 	// terminates after if there has not been an improvement in totalDistance
 	private final int stableIterations = 10;
+	private boolean createCentroids = true;
 	
 	/**
 	 * @param cID
@@ -149,7 +150,7 @@ public class Art2A extends Cluster
 	public int divide() 
 	{
 		int returnThis = assignAtomsToNearestCentroid(
-				processPart(new ArrayList<Centroid>(), curs), curs, vigilance);
+				processPart(new ArrayList<Centroid>(), curs), curs, vigilance, createCentroids);
 		return returnThis;
 	}
 	
@@ -175,7 +176,18 @@ public class Art2A extends Cluster
 			return false;
 		}
 	}
-	
+
+	/**
+	 * Set this to false if you want to cluster without creating centroids 
+	 * in the database.  Useful if you're only interested in 
+	 * saving the clustered particles in the db.  (i.e. when pre-clustering for 
+	 * hierarchical clustering.)
+	 * @param move
+	 */
+	public void setCreateCentroids(boolean create) {
+		createCentroids = create;
+	}
+
 	private ArrayList<Centroid> processPart(ArrayList<Centroid> centroidList,
 			NonZeroCursor curs)
 	{
