@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -1894,10 +1895,11 @@ public abstract class Database implements InfoWarehouse {
 	 */
 	public boolean renameCollection(Collection collection, String newName) {
 		try {
-			Statement stmt = con.createStatement();
-			String query = "UPDATE Collections SET Name = '" + 
-			newName + "' WHERE CollectionID = '" + collection.getCollectionID()+"'";
-			stmt.executeUpdate(query);
+			String query = "UPDATE Collections SET Name = ? WHERE CollectionID = ?"; 
+			PreparedStatement stmt = con.prepareStatement(query);
+			stmt.setString(1, newName);
+			stmt.setInt(2, collection.getCollectionID());
+			stmt.executeUpdate();
 			stmt.close();
 			return true;
 			}

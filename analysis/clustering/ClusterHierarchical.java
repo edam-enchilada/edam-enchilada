@@ -95,15 +95,6 @@ public class ClusterHierarchical extends Cluster {
 		totalDistancePerPass = new ArrayList<Double>();
 		parameterString = name.concat("Hierarchical, Clusters Ward's " + super.folderName);
 		container = mainFrame;
-		
-		// this is a bit of a hack...
-		// if we're preclustered, we don't want to make another collection
-		// to hold the results in--jtbigwoo
-		if (preClustered) {
-			db.removeEmptyCollection(db.getCollection(newHostID));
-			newHostID = cID;
-			db.renameCollection(db.getCollection(newHostID), "Hierarchical, Clusters Ward's" + folderName);
-		}
 	}
 	
 	/** 
@@ -179,6 +170,14 @@ public class ClusterHierarchical extends Cluster {
 			ArrayList<Integer> subCollectionIDs = db.getImmediateSubCollections(collection);
 			for (int subCollectionID : subCollectionIDs) {
 				ClusterContents currentCluster = new ClusterContents(subCollectionID);
+				for (ClusterContents otherCluster : clusterContentsMap.values()) {
+					float distance = currentCluster.getDistance(otherCluster, distanceMetric);
+					clusterPairs.add(new ClusterPair(currentCluster.clusterCollectionID, otherCluster.clusterCollectionID, distance));
+					if (interactive) {
+						progressBar.increment("Building Distance Matrix");
+					}
+				}
+				clusterContentsMap.put(currentCluster.clusterCollectionID, currentCluster);
 			}
 		}
 		else {
@@ -187,7 +186,7 @@ public class ClusterHierarchical extends Cluster {
 			while (curs.next()) {
 				ParticleInfo info = curs.getCurrent();
 				info.getBinnedList().posNegNormalize(distanceMetric);
-				ClusterContents currentCluster = new ClusterContents(info.getID(), info.getBinnedList());
+				ClusterContents currentCluster = new ClusterContents(info);
 				// after we've constructed our cluster object, get the distances
 				// to all other cluster objects
 				for (ClusterContents otherCluster : clusterContentsMap.values()) {
@@ -387,23 +386,23 @@ public class ClusterHierarchical extends Cluster {
 		 * Creates a new cluster from a single particle.  Makes a new
 		 * collection in the database and puts the particle in the
 		 * collection.
-		 * @param atomID id of the particle
-		 * @param newPeaks peak list of the particle
+		 * @param particle
 		 */
-		public ClusterContents(int atomID, BinnedPeakList newPeaks) {
+		public ClusterContents(ParticleInfo particle) {
 			atomIDList = new ArrayList<Integer>();
-			atomIDList.add(atomID);
-			peaks = newPeaks;
+			atomIDList.add(particle.getID());
+			peaks = particle.getBinnedList();
 			this.clusterCollectionID = createNewCollection();
 			addAtomsToCollection();
 		}
 
 		/**
 		 * Creates a new cluster from a collection.  Doesn't have to
-		 * make anything new in the database.
+		 * make anything new or move anything in the database.
 		 * @param collID
 		 */
 		public ClusterContents(int collID) {
+			this.clusterCollectionID = collID;
 			atomIDList = new ArrayList<Integer>();
 			CollectionCursor curs = getCursor(collID);
 			while (curs.next()) {
@@ -416,7 +415,9 @@ public class ClusterHierarchical extends Cluster {
 					peaks.addAnotherParticle(particle.getBinnedList());
 				}
 			}
-			peaks.divideAreasBy(atomIDList.size());
+			if (peaks != null) {
+				peaks.divideAreasBy(atomIDList.size());
+			}
 		}
 		
 		public void merge(ClusterContents otherOne) {
@@ -519,12 +520,19 @@ public class ClusterHierarchical extends Cluster {
 		}
 	}
 	/**
-	 * Sets whether we have preclustered the data already.  If we have, we
+	 * Tells us whether we have preclustered the data already.  If we have, we
 	 * don't create new collections to put everything in--we just use the ones
 	 * that are already under the main collection
-	 * @param clustered true if we already did a preclustering step
 	 */
-	public void setPreClustered(boolean clustered) {
-		preClustered = clustered;
+	public void setPreClustered() {
+		preClustered = true;
+		// this is a bit of a hack...
+		// if we're preclustered, we don't want to make another collection
+		// to hold the results in--jtbigwoo
+		if (preClustered) {
+			db.removeEmptyCollection(db.getCollection(newHostID));
+			newHostID = collectionID;
+			db.renameCollection(db.getCollection(newHostID), "Hierarchical, Clusters Ward\'s" + folderName);
+		}
 	}
 }

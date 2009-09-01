@@ -294,7 +294,7 @@ public class PreClusterDialog extends AbstractClusterDialog
 			hCluster.setDistanceMetric(dMetInt);
 			//TODO:  When should we use disk based and memory based 
 			// cursors?
-			hCluster.setPreClustered(true);
+			hCluster.setPreClustered();
 			if (db.getCollectionSize(
 					cTree.getSelectedCollection().
 					getCollectionID()) < 10000) // Was 10000
