@@ -4827,7 +4827,9 @@ public abstract class Database implements InfoWarehouse {
 					e.printStackTrace();
 				}
 				while (next) {
-					increment.add(Calendar.HOUR,   interval.get(Calendar.HOUR));
+					// added DATE so that we can have time bins of over 24 hours
+					increment.add(Calendar.DATE,   interval.get(Calendar.DATE) - 1);
+					increment.add(Calendar.HOUR_OF_DAY,   interval.get(Calendar.HOUR_OF_DAY));
 					increment.add(Calendar.MINUTE, interval.get(Calendar.MINUTE));
 					increment.add(Calendar.SECOND, interval.get(Calendar.SECOND));
 					nextTime = increment.getTime();

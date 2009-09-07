@@ -1,6 +1,7 @@
 package gui;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -319,7 +320,8 @@ public class AggregatorTest extends TestCase {
 		//for ATOFMS
 		start = getDate(9, 2, 2003, 5+12, 30, 32);
 		end = getDate(9, 2, 2003, 5+12, 30, 35);
-		interval = getDate(0, 0, 0, 0, 0, 1);
+		// jtbigwoo- this looks a bit funny, but the zero hour for dates is actually 1/1/1970 00:00:00
+		interval = getDate(1, 1, 1970, 0, 0, 1);
 		aggregator = new Aggregator(null, db, start, end, interval);
 		collections = new Collection[] {db.getCollection(2), db.getCollection(3)};
 		test = new Test() {
@@ -375,7 +377,8 @@ public class AggregatorTest extends TestCase {
 		//for TimeSeries
 		start = getDate(9, 2, 2003, 5+12, 30, 32);
 		end = getDate(9, 2, 2003, 5+12, 30, 35);
-		interval = getDate(0, 0, 0, 0, 0, 1);
+		// jtbigwoo- this looks a bit funny, but the zero hour for dates is actually 1/1/1970 00:00:00
+		interval = getDate(1, 1, 1970, 0, 0, 1);
 		aggregator = new Aggregator(null, db, start, end, interval);
 		collections = new Collection[] {db.getCollection(4)};
 		test = new Test() {
@@ -430,7 +433,8 @@ public class AggregatorTest extends TestCase {
 		//for AMS
 		start = getDate(9, 2, 2003, 5+12, 30, 32);
 		end = getDate(9, 2, 2003, 5+12, 30, 35);
-		interval = getDate(0, 0, 0, 0, 0, 1);
+		// jtbigwoo- this looks a bit funny, but the zero hour for dates is actually 1/1/1970 00:00:00
+		interval = getDate(1, 1, 1970, 0, 0, 1);
 		aggregator = new Aggregator(null, db, start, end, interval);
 		collections = new Collection[] {db.getCollection(5)};
 		test = new Test() {
@@ -490,5 +494,101 @@ public class AggregatorTest extends TestCase {
 		testAggregation(aggregator, collections, test);
 		
 		db.closeConnection();
+	}
+
+	/**
+	 * Test interval (time-based) aggregation with an interval of 36 hours
+	 * for ATOFMS data.
+	 * @author jtbigwoo
+	 */
+	public void testLargeIntervalAggregation() throws Exception {
+		Calendar start;
+		Calendar end;
+		Calendar interval;
+		Collection[] collections;
+		Test test;
+		
+		db.openConnection("TestDB2");
+
+		// changes the time between particles from one second to one day
+		spreadOutParticlesInTime();
+		
+		//for ATOFMS
+		start = getDate(9, 3, 2003, 5+12, 30, 32);
+		end = getDate(9, 11, 2003, 5+12, 30, 35);
+		// jtbigwoo- this looks a bit funny, but the zero hour for dates is actually 1/1/1970 00:00:00
+		interval = getDate(1, 2, 1970, 12, 0, 0);
+		aggregator = new Aggregator(null, db, start, end, interval);
+		collections = new Collection[] {db.getCollection(2), db.getCollection(3)};
+		test = new Test() {
+			public void run(int CollectionID) throws SQLException {
+				ResultSet rs;
+				
+				rs = db.getCon().createStatement().executeQuery(
+					"SELECT COUNT(*) FROM AtomMembership WHERE CollectionID > 5");
+				assertTrue(rs.next());
+				assertEquals(55, rs.getInt(1));
+				
+				//check proper collections hierarchy
+				rs = db.getCon().createStatement().executeQuery(
+					"SELECT ChildID FROM CollectionRelationships WHERE ParentID = 8 ORDER BY ChildID");
+				for (int i = 9; i <= 27; ++i) {
+					rs.next();
+					assertEquals(rs.getInt(1), i);
+				}
+				assertFalse(rs.next());
+				
+				rs = db.getCon().createStatement().executeQuery(
+					"SELECT ChildID FROM CollectionRelationships WHERE ParentID = 30 ORDER BY ChildID");
+				for (int i = 31; i <= 44; ++i) {
+					rs.next();
+					assertEquals(rs.getInt(1), i);
+				}
+				assertFalse(rs.next());
+				
+				//check that new collections were created
+				rs = db.getCon().createStatement().executeQuery(
+						"SELECT COUNT(*) FROM Collections");
+				assertTrue(rs.next());
+				assertEquals(rs.getInt(1), 46);
+				rs = db.getCon().createStatement().executeQuery(
+						"SELECT Datatype FROM Collections WHERE Name='M/Z'");
+				assertTrue(rs.next());
+				assertEquals(rs.getString(1), "TimeSeries");
+
+				//make sure there are no times outside of our boundaries
+				rs = db.getCon().createStatement().executeQuery(
+						"SELECT COUNT(*) FROM TimeSeriesAtomInfoDense WHERE AtomID > 30 AND " +
+						"(Time > '2003-09-11 17:30:35.0' OR Time < '2003-09-03 17:30:32.0')");
+				assertTrue(rs.next());
+				assertEquals(rs.getInt(1),0);
+			}
+		};
+		testAggregation(aggregator, collections, test);
+		
+		db.closeConnection();
+	}
+
+	/**
+	 * Sets the time column for the particles to 
+	 * 9/2/2003 00:00:00
+	 * 9/3/2003 00:00:00
+	 * 9/4/2003 00:00:00
+	 * etc. for atomid's 1 through 10
+	 * @throws Exception
+	 */
+	private void spreadOutParticlesInTime() throws Exception {
+		String atofms = "update ATOFMSAtomInfoDense set Time = ? where AtomId = ?";
+		PreparedStatement stmt = db.getCon().prepareStatement(atofms);
+
+		Calendar cal = getDate(9, 2, 2003, 0, 0, 0);
+
+		for (int i = 0; i < 10; i++) {
+			stmt.setDate(1, new java.sql.Date(cal.getTime().getTime()));
+			stmt.setInt(2, i + 1);
+			cal.add(Calendar.DATE, 1);
+			cal.add(Calendar.SECOND, 2);
+			stmt.executeUpdate();
+		}
 	}
 }
