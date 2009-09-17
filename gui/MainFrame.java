@@ -89,7 +89,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JToolBar buttonPanel;
 	private JSplitPane mainSplitPane;
 	
-	private JButton importEnchiladaDataButton;
+//	private JButton importEnchiladaDataButton;
 	private JButton importAMSDataButton;
 	private JButton importParsButton;
 	private JButton importFlatButton;
@@ -100,7 +100,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JButton mapValuesButton;
 //	private JButton clusterDialogButton;
 	private JMenu analysisMenu;
-	private JMenuItem loadEnchiladaDataItem;
+//	private JMenuItem loadEnchiladaDataItem;
 	private JMenuItem loadAMSDataItem;
 	private JMenuItem loadATOFMSItem;
 	private JMenuItem loadSPASSItem;
@@ -381,7 +381,7 @@ public class MainFrame extends JFrame implements ActionListener
 			JOptionPane.showMessageDialog(this, "EDAM Enchilada\n" +
 					"is supported by NSF ITR Grant IIS-0326328.\n" +
 					"For support, please contact dmusican@carleton.edu.\n" +
-					"Software Version jun-2009-29"
+					"Software Version sep-2009-16"
 //					+"Carleton Contributors:\n" +
 //					"Anna Ritz, Ben Anderson, Leah Steinberg,\n" +
 //					"Thomas Smith, Deborah Gross, Jamie Olson,\n" +
@@ -402,13 +402,13 @@ public class MainFrame extends JFrame implements ActionListener
 				outputFrame.setVisible(true);
 		}
 		
-		if (source == importEnchiladaDataButton ||
-				source == loadEnchiladaDataItem) {
-			new ImportEnchiladaDataDialog(this, db);
-			collectionPane.updateTree();
-			validate();
-		}
-		
+//		if (source == importEnchiladaDataButton ||
+//				source == loadEnchiladaDataItem) {
+//			new ImportEnchiladaDataDialog(this, db);
+//			collectionPane.updateTree();
+//			validate();
+//		}
+//		
 		if (source == batchLoadATOFMSItem) {
 			ATOFMSBatchImportGUI abig = new ATOFMSBatchImportGUI(this);
 			if (abig.init()) abig.go(collectionPane);
@@ -1098,8 +1098,8 @@ public class MainFrame extends JFrame implements ActionListener
 		JMenu importCollectionMenu = new JMenu("Import Collection. . . ");
 		loadATOFMSItem = new JMenuItem("from ATOFMS data. . .");
 		loadATOFMSItem.addActionListener(this);
-		loadEnchiladaDataItem = new JMenuItem("from Enchilada data. . .");
-		loadEnchiladaDataItem.addActionListener(this);
+//		loadEnchiladaDataItem = new JMenuItem("from Enchilada data. . .");
+//		loadEnchiladaDataItem.addActionListener(this);
 		loadAMSDataItem = new JMenuItem("from AMS data. . .");
 		loadAMSDataItem.addActionListener(this); 
 		loadSPASSItem = new JMenuItem("from SPASS data. . .");
@@ -1114,7 +1114,7 @@ public class MainFrame extends JFrame implements ActionListener
 		importCollectionMenu.add(loadATOFMSItem);
 		importCollectionMenu.add(batchLoadATOFMSItem);
 		importCollectionMenu.add(txtLoadATOFMSItem);
-		importCollectionMenu.add(loadEnchiladaDataItem);
+//		importCollectionMenu.add(loadEnchiladaDataItem);
 		importCollectionMenu.add(loadAMSDataItem);
 		importCollectionMenu.add(loadSPASSItem);
 		importCollectionMenu.add(loadPALMSItem);
@@ -1291,9 +1291,9 @@ public class MainFrame extends JFrame implements ActionListener
 		importParsButton.setBorder(new EtchedBorder());
 		importParsButton.addActionListener(this);
 		
-		importEnchiladaDataButton = new JButton("Import Enchilada Data Sets");
-		importEnchiladaDataButton.setBorder(new EtchedBorder());
-		importEnchiladaDataButton.addActionListener(this);
+//		importEnchiladaDataButton = new JButton("Import Enchilada Data Sets");
+//		importEnchiladaDataButton.setBorder(new EtchedBorder());
+//		importEnchiladaDataButton.addActionListener(this);
 		
 		importAMSDataButton = new JButton("Import AMS Data");
 		importAMSDataButton.setBorder(new EtchedBorder());
@@ -1314,7 +1314,7 @@ public class MainFrame extends JFrame implements ActionListener
 		buttonPanel.add(emptyCollButton);
 		buttonPanel.add(importParsButton);
 		buttonPanel.add(importFlatButton);
-		buttonPanel.add(importEnchiladaDataButton);
+//		buttonPanel.add(importEnchiladaDataButton);
 		buttonPanel.add(importAMSDataButton);
 		buttonPanel.add(exportParsButton);
 		add(buttonPanel);
