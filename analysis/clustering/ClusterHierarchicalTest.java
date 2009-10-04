@@ -40,6 +40,8 @@
 
 package analysis.clustering;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import collection.Collection;
@@ -59,7 +61,8 @@ import junit.framework.TestCase;
 
 /**
  * @author jtbigwoo
- *
+ * @version 1.0 April 23, 2009
+ * @version 1.1 August 31, 2009 - added tests for preclustering
  */
 public class ClusterHierarchicalTest extends TestCase {
 
@@ -77,14 +80,6 @@ public class ClusterHierarchicalTest extends TestCase {
 		db = Database.getDatabase("TestDB");
 		db.openConnection("TestDB");
 		
-        int cID = 2;
-        String name = "";
-        String comment = "Test comment";
-        boolean refine = false;
-        ArrayList<String> list = new ArrayList<String>();
-        list.add("ATOFMSAtomInfoSparse.PeakArea");
-    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-    	clusterer = new ClusterHierarchical(cID,db,name,comment,cInfo, null);
     }
 
     /*
@@ -98,7 +93,139 @@ public class ClusterHierarchicalTest extends TestCase {
 //	    Database.dropDatabase(dbName);
     }
 
+    public void testHierarchicalWithPreClustering() throws Exception {
+    	Connection con = db.getCon();
+    	Statement stmt = con.createStatement();
+    	stmt.executeUpdate("update atommembership set collectionid = 2 where collectionid = 3");
+    	stmt.executeUpdate("update internalatomorder set collectionid = 2 where collectionid = 3");
+
+    	// precluster
+    	int cID = 2;
+        int k = 4;
+        String name = "";
+        String comment = "Test comment";
+        boolean refine = false;
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+    	KMeans kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+		kmeans.setCreateCentroids(false);
+    	int dividedParticleCollectionId = kmeans.cluster(false);
+
+    	// real clustering
+    	clusterer = new ClusterHierarchical(dividedParticleCollectionId,db,name,comment,cInfo, null);
+    	clusterer.setPreClustered();
+    	clusterer.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+    	int collectionID = clusterer.cluster(false);
+
+    	assertTrue(collectionID == 7);
+
+    	Collection clusterParent = db.getCollection(7);
+
+    	Collection cluster = db.getCollection(8);
+    	assertTrue(cluster.containsData());
+    	assertEquals("1", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("1", cluster.getName());
+    	assertEquals(12, cluster.getParentCollection().getCollectionID()); 
+    	ArrayList<Integer> particles = cluster.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+       	assertEquals(3, particles.get(1).intValue());
+       	assertEquals(9, particles.get(2).intValue());
+       	assertEquals(10, particles.get(3).intValue());
+       	assertEquals(4, particles.size());
+    	assertTrue(cluster.getSubCollectionIDs().isEmpty());
+    	
+    	cluster = db.getCollection(9);
+    	assertTrue(cluster.containsData());
+    	assertEquals("2", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("2", cluster.getName());
+    	assertEquals(12, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+       	assertEquals(4, particles.get(0).intValue());
+       	assertEquals(1, particles.size());
+    	assertTrue(cluster.getSubCollectionIDs().isEmpty());
+    	
+    	cluster = db.getCollection(10);
+    	assertTrue(cluster.containsData());
+    	assertEquals("3", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("3", cluster.getName());
+    	assertEquals(14, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+       	assertEquals(5, particles.get(0).intValue());
+       	assertEquals(6, particles.get(1).intValue());
+       	assertEquals(7, particles.get(2).intValue());
+       	assertEquals(3, particles.size());
+    	assertTrue(cluster.getSubCollectionIDs().isEmpty());
+    	
+    	cluster = db.getCollection(11);
+    	assertTrue(cluster.containsData());
+    	assertEquals("4", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("4", cluster.getName());
+    	assertEquals(13, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+       	assertEquals(8, particles.get(0).intValue());
+       	assertEquals(1, particles.size());
+    	assertTrue(cluster.getSubCollectionIDs().isEmpty());
+    	
+    	cluster = db.getCollection(12);
+    	assertTrue(cluster.containsData());
+    	assertEquals("1", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("1", cluster.getName());
+    	assertEquals(13, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+       	assertEquals(3, particles.get(1).intValue());
+       	assertEquals(4, particles.get(2).intValue());
+       	assertEquals(9, particles.get(3).intValue());
+       	assertEquals(10, particles.get(4).intValue());
+    	assertTrue(cluster.getSubCollectionIDs().size() == 2);
+    	
+    	cluster = db.getCollection(13);
+    	assertTrue(cluster.containsData());
+    	assertEquals("2", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("2", cluster.getName());
+    	assertEquals(14, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+    	assertTrue(cluster.getSubCollectionIDs().size() == 2);
+    	
+    	cluster = db.getCollection(14);
+    	assertTrue(cluster.containsData());
+    	assertEquals("3", cluster.getComment());
+    	assertEquals("ATOFMS", cluster.getDatatype());
+    	assertEquals("3", cluster.getName());
+    	assertEquals(7, cluster.getParentCollection().getCollectionID()); 
+    	particles = cluster.getParticleIDs();
+    	assertTrue(cluster.getSubCollectionIDs().size() == 2);
+
+    	/* how the collection hierarchy should look now:
+    	 * 7
+    	 * |-14
+    	 *   |-13
+    	 *   | |-11 (particle 8)
+    	 *   | |-12
+    	 *   |   |-8 (particles 2, 3, 9, 10)
+    	 *   |   |-9 (particle 4)
+    	 *   |-10 (particles 5, 6, 7)
+    	 */
+
+    }
+    
     public void testHierarchicalClustering() throws Exception {
+        int cID = 2;
+        String name = "";
+        String comment = "Test comment";
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+    	clusterer = new ClusterHierarchical(cID,db,name,comment,cInfo, null);
+    	
     	clusterer.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
     	int collectionID = clusterer.cluster(false);
     	
@@ -182,5 +309,4 @@ public class ClusterHierarchicalTest extends TestCase {
        	assertEquals(5, particles.get(3).intValue());
     	assertTrue(cluster.getSubCollectionIDs().size() == 2);
     }
-    
 }
