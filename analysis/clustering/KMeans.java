@@ -65,12 +65,13 @@ public class KMeans extends ClusterK
 	 * @param k - number of centroids desired
 	 * @param name - collection name
 	 * @param comment -comment to enter
+	 * @param initialCentroids - how to pick the initial centroids
 	 */
 	public KMeans(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine, ClusterInformation c) 
+			String name, String comment, int initialCentroids, ClusterInformation c) 
 			{
 				super(cID, database, k, 
-						name.concat("KMeans"), comment, refine, c);
+						name.concat("KMeans"), comment, initialCentroids, c);
 	}
 
 	/** 

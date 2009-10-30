@@ -73,7 +73,7 @@ import junit.framework.TestCase;
 /**
  * @author dmusican
  * @author jtbigwoo
- *
+ * @version 2.0 October 16, 2009 - updated to include random centroids and kmeans++ 
  */
 public class KMeansTest extends TestCase {
 
@@ -90,16 +90,6 @@ public class KMeansTest extends TestCase {
 		new CreateTestDatabase();
 		db = Database.getDatabase("TestDB");
 		db.openConnection("TestDB");
-		
-        int cID = 2;
-        int k = 2;
-        String name = "";
-        String comment = "Test comment";
-        boolean refine = false;
-        ArrayList<String> list = new ArrayList<String>();
-        list.add("ATOFMSAtomInfoSparse.PeakArea");
-    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
     }
 
     /*
@@ -114,6 +104,7 @@ public class KMeansTest extends TestCase {
     }
 
     public void testGetDistance() {
+    	setupStandardKmeans(ClusterK.FARTHEST_DIST_CENTROIDS);
         BinnedPeakList list1 = new BinnedPeakList(new Normalizer());
         BinnedPeakList list2 = new BinnedPeakList(new Normalizer());
         list1.add(1,0.1f);
@@ -130,11 +121,12 @@ public class KMeansTest extends TestCase {
     }
     
     public void testName() {
+    	setupStandardKmeans(ClusterK.FARTHEST_DIST_CENTROIDS);
     	assertEquals("KMeans,K=2,Test comment", kmeans.parameterString);
     }
     
     public void testKMeans() throws Exception {
-    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+    	setupStandardKmeans(ClusterK.FARTHEST_DIST_CENTROIDS);
     	int collectionID = kmeans.cluster(false);
     	
     	assertEquals(7, collectionID);
@@ -265,7 +257,7 @@ public class KMeansTest extends TestCase {
     			"where atomid in (select atomid from atommembership where collectionid = 2) and " +
     			" peaklocation > 0");
     	
-    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+    	setupStandardKmeans(ClusterK.FARTHEST_DIST_CENTROIDS);
     	int collectionID = kmeans.cluster(false);
     	
     	assertEquals(7, collectionID);
@@ -299,22 +291,17 @@ public class KMeansTest extends TestCase {
 		stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,2)");
 		stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(2,2)");
 		
-        int cID = 2;
-        int k = 1;
-        String name = "";
-        String comment = "Test comment";
-        boolean refine = false;
         ArrayList<String> list = new ArrayList<String>();
         list.add("ATOFMSAtomInfoSparse.PeakArea");
     	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	kmeans = new KMeans(2,db,1,"","Test comment",ClusterK.FARTHEST_DIST_CENTROIDS, cInfo);
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
 
     	int collectionID = kmeans.cluster(false);
     	
-    	assertEquals(8, collectionID); // this is 8 because we made 7 in the setup method and didn't use it.
+    	assertEquals(7, collectionID);
     	
-    	Collection cluster1 = db.getCollection(9);
+    	Collection cluster1 = db.getCollection(8);
     	
     	assertTrue(cluster1.containsData());
     	ArrayList<Integer> particles = cluster1.getParticleIDs();
@@ -338,24 +325,143 @@ public class KMeansTest extends TestCase {
 		stmt.executeUpdate("INSERT INTO AtomMembership VALUES(2,2)");
 		stmt.executeUpdate("INSERT INTO InternalAtomOrder VALUES(2,2)");
 		
-        int cID = 2;
-        int k = 2;
-        String name = "";
-        String comment = "Test comment";
-        boolean refine = false;
-        ArrayList<String> list = new ArrayList<String>();
-        list.add("ATOFMSAtomInfoSparse.PeakArea");
-    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-    	kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
-    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
-
+		setupStandardKmeans(ClusterK.FARTHEST_DIST_CENTROIDS);
     	int collectionID = kmeans.cluster(false);
     	
-    	assertEquals(8, collectionID); // this is 8 because we made 7 in the setup method and didn't use it.
+    	assertEquals(7, collectionID);
     	
-    	Collection cluster1 = db.getCollection(9);
+    	Collection cluster1 = db.getCollection(8);
     	
     	assertFalse(cluster1.containsData());
     }
 
+    /**
+     * Tests to see what happens when we use pseudo-random initial centroids
+     * @throws Exception
+     */
+    public void testKMeansRandomCentroids() throws Exception {
+    	setupStandardKmeans(ClusterK.RANDOM_CENTROIDS);
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertEquals(7, collectionID);
+    	
+    	Collection clusterParent = db.getCollection(7);
+    	BufferedReader descReader = new BufferedReader(new StringReader(clusterParent.getDescription()));
+    	for (int i = 0; i < 4; i++) descReader.readLine();
+    	assertEquals("Number of ignored particles with zero peaks = 0", descReader.readLine());
+    	// the preceeding test assertion is actually incorrect, the correct test follows, see bug 2772661
+    	//assertEquals("Number of ignored particles with zero peaks = 1", descReader.readLine());
+
+    	// check the std deviations in the collection description
+    	for (int i = 0; i < 16; i++) descReader.readLine();
+		assertEquals("Mean size: 0.25 Std dev: +/-0.05000005", descReader.readLine());
+		assertEquals("Geometric mean size: 0.24494898", descReader.readLine());
+		for (int i = 0; i < 6; i++) descReader.readLine();
+		assertEquals("Mean size: 0.45 Std dev: +/-0.050000273", descReader.readLine());
+		assertEquals("Geometric mean size: 0.4472136", descReader.readLine());
+    	
+    	Collection cluster1 = db.getCollection(8);
+    	Collection cluster2 = db.getCollection(9);
+    	Collection clusterCenters = db.getCollection(10);
+
+    	assertTrue(cluster1.containsData());
+    	assertEquals("1", cluster1.getComment());
+    	assertEquals("ATOFMS", cluster1.getDatatype());
+    	assertTrue(cluster1.getDescription().startsWith("Key:\tValue:"));
+    	assertEquals("1", cluster1.getName());
+    	assertEquals(7, cluster1.getParentCollection().getCollectionID());
+    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+    	assertEquals(3, particles.get(1).intValue());
+    	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
+    	
+    	assertTrue(cluster2.containsData());
+    	assertEquals("2", cluster2.getComment());
+    	assertEquals("ATOFMS", cluster2.getDatatype());
+    	assertTrue(cluster2.getDescription().startsWith("Key:\tValue:"));
+    	assertEquals("2", cluster2.getName());
+    	assertEquals(7, cluster2.getParentCollection().getCollectionID());
+    	particles = cluster2.getParticleIDs();
+    	assertEquals(4, particles.get(0).intValue());
+    	assertEquals(5, particles.get(1).intValue());
+    	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+
+    	CollectionCursor denseCurs = db.getAtomInfoOnlyCursor(clusterCenters);
+    	denseCurs.next();
+    	ParticleInfo info = denseCurs.getCurrent();
+    	assertEquals(0.25f, info.getATOFMSParticleInfo().getSize());
+    	denseCurs.next();
+    	info = denseCurs.getCurrent();
+    	assertEquals(.45f, info.getATOFMSParticleInfo().getSize());
+
+    	CollectionCursor sparseCurs = db.getBPLOnlyCursor(clusterCenters);
+    	sparseCurs.next();
+    	info = sparseCurs.getCurrent();
+    	Map<Integer, Float> peaks = info.getBinnedList().getPeaks();
+    	assertEquals(5000.0f, peaks.get(-30).floatValue());
+    	assertEquals(3750.0f, peaks.get(30).floatValue());
+    	assertEquals(1250.0f, peaks.get(45).floatValue());
+    	sparseCurs.next();
+    	info = sparseCurs.getCurrent();
+    	peaks = info.getBinnedList().getPeaks();
+    	assertEquals(833.0f, peaks.get(-300).floatValue());
+    	assertEquals(1666.0f, peaks.get(-30).floatValue());
+    	assertEquals(1666.0f, peaks.get(-20).floatValue());
+    	assertEquals(833.0f, peaks.get(-10).floatValue());
+    	assertEquals(1250.0f, peaks.get(6).floatValue());
+    	assertEquals(2500.0f, peaks.get(20).floatValue());
+    	assertEquals(1250.0f, peaks.get(30).floatValue());
+    }
+
+    /**
+     * Tests to see what happens when we use kmeans++ to generate the initial
+     * centroids.
+     * @throws Exception
+     */
+    public void testKMeansPlusPlus() throws Exception {
+    	setupStandardKmeans(ClusterK.KMEANS_PLUS_PLUS_CENTROIDS);
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertEquals(7, collectionID);
+    	
+    	Collection cluster1 = db.getCollection(8);
+    	Collection cluster2 = db.getCollection(9);
+    	Collection clusterCenters = db.getCollection(10);
+
+    	assertTrue(cluster1.containsData());
+    	assertEquals("1", cluster1.getComment());
+    	assertEquals("ATOFMS", cluster1.getDatatype());
+    	assertTrue(cluster1.getDescription().startsWith("Key:\tValue:"));
+    	assertEquals("1", cluster1.getName());
+    	assertEquals(7, cluster1.getParentCollection().getCollectionID());
+    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+    	assertEquals(3, particles.get(1).intValue());
+    	assertEquals(5, particles.get(2).intValue());
+    	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
+    	
+    	assertTrue(cluster2.containsData());
+    	assertEquals("2", cluster2.getComment());
+    	assertEquals("ATOFMS", cluster2.getDatatype());
+    	assertTrue(cluster2.getDescription().startsWith("Key:\tValue:"));
+    	assertEquals("2", cluster2.getName());
+    	assertEquals(7, cluster2.getParentCollection().getCollectionID());
+    	particles = cluster2.getParticleIDs();
+    	assertEquals(4, particles.get(0).intValue());
+    	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+    }
+
+    /**
+     * Sets up a KMeans object with coll id = 2, k = 2, name = "", comment = 
+     * Test comment
+     * @param clustering TODO
+     * @param clustering specifies the initial clustering algorithm
+     */
+    private void setupStandardKmeans(int clustering) {
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("ATOFMSAtomInfoSparse.PeakArea");
+    	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
+    	kmeans = new KMeans(2,db,2,"","Test comment",clustering, cInfo);
+    	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
+    }
 }
