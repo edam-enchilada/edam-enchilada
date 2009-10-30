@@ -207,16 +207,13 @@ public class ClusterHierarchical extends Cluster {
 		}
 		
 		if (interactive) {
-			progressBar.setText("Clustering");
-			progressBar.reset();
+			System.err.println("done!");
 			progressBar.setMaximum(clusterContentsMap.size());
+			progressBar.reset();
+			progressBar.setText("Number of Clusters Remaining: " + clusterContentsMap.size());
 		}
 		while (clusterContentsMap.size() > 1)
 		{
-			if (interactive) {
-				progressBar.increment("Number of Clusters Remaining: " + clusterContentsMap.size());
-			}
-
 			// the first pair element in the sorted list has the smallest distance, merge them
 			// name the clusters A and B.  Cluster B will be merged into Cluster A and removed.
 			// Sorry, cluster B.
@@ -277,6 +274,10 @@ public class ClusterHierarchical extends Cluster {
 			}
 			sampleIters++;
 			clusterCentroidIters++;
+			if (interactive) {
+				progressBar.increment("Number of Clusters Remaining: " + clusterContentsMap.size());
+			}
+
 		}
 		// no need to create centroids, the cluster hierarchy we've created is what's useful.
 //		if (interactive) {
