@@ -314,10 +314,14 @@ Section "un.Uninstall"
 
   StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\80\Tools\Binn\osql.exe"
   ExecWait '"$OSQL" -?' $0
-  IfErrors 0 +3
-    DetailPrint "Can't find SQL Server, maybe you've already uninstalled it?"
-    Goto donewithuser
+  IfErrors 0 dropdatabase
+    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\osql.exe"
+    ExecWait '"$OSQL" -?' $0
+    IfErrors 0 dropdatabase
+      DetailPrint "Can't find SQL Server, maybe you've already uninstalled it?"
+      Goto donewithuser
   
+  dropdatabase:
   ExecWait `"$OSQL" -E -Q "DROP DATABASE SpASMSdb EXEC sp_droplogin 'SpASMS'"` $0
   IfErrors 0 +3
   	DetailPrint "Can't find SQL Server when trying to drop database."
