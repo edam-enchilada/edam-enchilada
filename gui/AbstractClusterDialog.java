@@ -19,6 +19,7 @@ import analysis.clustering.Art2A;
 import analysis.clustering.Cluster;
 import analysis.clustering.ClusterHierarchical;
 import analysis.clustering.ClusterInformation;
+import analysis.clustering.ClusterK;
 import analysis.clustering.KMeans;
 import analysis.clustering.KMedians;
 
@@ -35,8 +36,8 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 	protected JPanel algorithmCards, specificationCards, clusteringInfo; 
 	protected JButton okButton, cancelButton, advancedButton;
 	protected JTextField commentField, passesText, vigText, learnText, kClusterText, otherText;
-	protected JCheckBox refineCentroids, normalizer;
-	protected JComboBox clusterDropDown;
+	protected JCheckBox normalizer;
+	protected JComboBox clusterDropDown, initialCentroids;
 	protected JComboBox metricDropDown, averageClusterDropDown, infoTypeDropdown, hierClusterDropDown;
 	private JLabel denseKeyLabel,sparseKeyLabel;
 	protected ArrayList<JRadioButton> sparseButtons;
@@ -60,12 +61,16 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 	final static String dense = "Dense Particle Information";
 	final static String sparse = "Sparse Particle Information";
 	final static String denseKey = " Key = Automatic (1, 2, 3, etc) ";
-
+	final static String FARTHEST = "Farthest Point";
+	final static String RANDOM = "Random Points";
+	final static String REFINED = "Refined Centroids";
+	final static String KMEANSPP = "KMeans++";
+	
 	protected String[] clusterNames;
 	
 	protected static ArrayList<String> sparseKey;
 	
-	protected boolean refinedCentroids = false;
+	protected String initialCentroidMethod = FARTHEST;
 	protected String dMetric = CITY_BLOCK;
 	protected String currentShowing = ART2A;
 	private String[] nameArray;
@@ -142,11 +147,15 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 		parameters = new JPanel();
 		JLabel kLabel = new JLabel("Number of Clusters:");
 		kClusterText = new JTextField(5);
-		refineCentroids = new JCheckBox("Refine Centroids");
-		refineCentroids.addItemListener(this);
+		JLabel initialLabel = new JLabel("Initial Centroids:");
+		String[] initialNames = {FARTHEST, RANDOM, REFINED, KMEANSPP};
+		initialCentroids = new JComboBox(initialNames);
+		initialCentroids.setEditable(false);
+		initialCentroids.addItemListener(this);
 		parameters.add(kLabel);
 		parameters.add(kClusterText);
-		parameters.add(refineCentroids);
+		parameters.add(initialLabel);
+		parameters.add(initialCentroids);
 		
 		JLabel kClusterLabel = new JLabel("Choose algorithm: ");
 		JPanel kClusterDropDown = new JPanel();
@@ -396,8 +405,22 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 		{
 			dMetInt = DistanceMetric.DOT_PRODUCT;
 		}
+
+		int initialCentroidsInt = ClusterK.FARTHEST_DIST_CENTROIDS;
+		if (initialCentroidMethod.equals(FARTHEST)) {
+			initialCentroidsInt = ClusterK.FARTHEST_DIST_CENTROIDS;
+		}
+		else if (initialCentroidMethod.equals(RANDOM)) {
+			initialCentroidsInt = ClusterK.RANDOM_CENTROIDS;
+		}
+		else if (initialCentroidMethod.equals(REFINED)) {
+			initialCentroidsInt = ClusterK.REFINED_CENTROIDS;
+		}
+		else if (initialCentroidMethod.equals(KMEANSPP)) {
+			initialCentroidsInt = ClusterK.KMEANS_PLUS_PLUS_CENTROIDS;
+		}
 		if (source == okButton) {
-			doOKButtonAction(dMetInt);
+			doOKButtonAction(dMetInt, initialCentroidsInt);
 		}
 		if (source == preClusterCheckBox) {
 			preClusterSettings.setEnabled(preClusterCheckBox.isSelected());
@@ -415,7 +438,7 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 		db.clearCache();
 	}
 
-	public abstract void doOKButtonAction(DistanceMetric dMetInt);
+	public abstract void doOKButtonAction(DistanceMetric dMetInt, int initialCentroidsInt);
 
 	/**
 	 * itemStateChanged(ItemEvent evt) needs to be defined, as the 
@@ -443,9 +466,9 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 		{
 			dMetric = (String)evt.getItem();
 		}
-		else if (evt.getSource() == refineCentroids)
+		else if (evt.getSource() == initialCentroids)
 		{
-			refinedCentroids = !refinedCentroids;
+			initialCentroidMethod = (String)evt.getItem();
 		}
 		else if (evt.getSource() == infoTypeDropdown) {
 			CardLayout cl = (CardLayout)(specificationCards.getLayout());

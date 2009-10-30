@@ -116,7 +116,7 @@ public class ClusterDialog extends AbstractClusterDialog
 		setVisible(true);
 	}
 	
-	public void doOKButtonAction(DistanceMetric dMetInt) {
+	public void doOKButtonAction(DistanceMetric dMetInt, int initialCentroidsInt) {
 		// TODO: error check here to make sure something is selected.
 		// TODO: make this more graceful.
 		// Get clustering specifications and create ClusterInformation object.
@@ -250,7 +250,9 @@ public class ClusterDialog extends AbstractClusterDialog
 						KMedians kMedians = new KMedians(
 								cTree.getSelectedCollection().
 								getCollectionID(),db, k, "", 
-								commentField.getText(), refinedCentroids, cInfo);
+								commentField.getText(), 
+								initialCentroidsInt, 
+								cInfo);
 						kMedians.addInfo(cInfo);
 						kMedians.setDistanceMetric(dMetInt);
 						if (db.getCollectionSize(
@@ -273,7 +275,7 @@ public class ClusterDialog extends AbstractClusterDialog
 								cTree.getSelectedCollection().
 								getCollectionID(),db, 
 								Integer.parseInt(kClusterText.getText()), 
-								"", commentField.getText(), refinedCentroids, cInfo);
+								"", commentField.getText(), initialCentroidsInt, cInfo);
 						kMeans.addInfo(cInfo);
 						kMeans.setDistanceMetric(dMetInt);
 						//TODO:  When should we use disk based and memory based 
