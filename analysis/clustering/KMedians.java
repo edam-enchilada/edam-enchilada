@@ -60,12 +60,13 @@ public class KMedians extends ClusterK {
 	/**
 	 * @param cID
 	 * @param database
+	 * @param initialCentroids - how to pick the initial centroids
 	 */
 	public KMedians(int cID, InfoWarehouse database, int k,
-			String name, String comment, boolean refine, ClusterInformation c) 
+			String name, String comment, int initialCentroids, ClusterInformation c) 
 	{
 		super(cID, database, k, 
-				name.concat("KMedians"), comment, refine, c);
+				name.concat("KMedians"), comment, initialCentroids, c);
 	}
 
 	public int cluster(boolean interactive) {
