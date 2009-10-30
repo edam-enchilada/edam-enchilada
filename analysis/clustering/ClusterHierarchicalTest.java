@@ -53,12 +53,6 @@ import database.InfoWarehouse;
 import database.Database;
 import junit.framework.TestCase;
 
-/*
- * Created on April 23, 2009
- *
- *
- */
-
 /**
  * @author jtbigwoo
  * @version 1.0 April 23, 2009
@@ -104,11 +98,10 @@ public class ClusterHierarchicalTest extends TestCase {
         int k = 4;
         String name = "";
         String comment = "Test comment";
-        boolean refine = false;
         ArrayList<String> list = new ArrayList<String>();
         list.add("ATOFMSAtomInfoSparse.PeakArea");
     	ClusterInformation cInfo = new ClusterInformation(list, "ATOFMSAtomInfoSparse.PeakLocation", null, false, true);
-    	KMeans kmeans = new KMeans(cID,db,k,name,comment,refine, cInfo);
+    	KMeans kmeans = new KMeans(cID,db,k,name,comment,ClusterK.FARTHEST_DIST_CENTROIDS, cInfo);
     	kmeans.setCursorType(CollectionDivider.STORE_ON_FIRST_PASS);
 		kmeans.setCreateCentroids(false);
     	int dividedParticleCollectionId = kmeans.cluster(false);
@@ -184,6 +177,7 @@ public class ClusterHierarchicalTest extends TestCase {
        	assertEquals(4, particles.get(2).intValue());
        	assertEquals(9, particles.get(3).intValue());
        	assertEquals(10, particles.get(4).intValue());
+       	assertEquals(5, particles.size());
     	assertTrue(cluster.getSubCollectionIDs().size() == 2);
     	
     	cluster = db.getCollection(13);
@@ -208,11 +202,11 @@ public class ClusterHierarchicalTest extends TestCase {
     	 * 7
     	 * |-14
     	 *   |-13
-    	 *   | |-11 (particle 8)
+    	 *   | |-10 (particles 5, 6, 7)
     	 *   | |-12
     	 *   |   |-8 (particles 2, 3, 9, 10)
     	 *   |   |-9 (particle 4)
-    	 *   |-10 (particles 5, 6, 7)
+    	 *   |-11 (particle 8)
     	 */
 
     }
