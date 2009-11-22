@@ -702,7 +702,7 @@ public abstract class ClusterK extends Cluster {
 					// if the current distance is smaller than the last, add it
 					distances.set(cursIndex, new Double(distance));
 				}
-				totalDistanceThisPass += distance;
+				totalDistanceThisPass += distances.get(cursIndex);
 				cursIndex++;
 			}
 			
