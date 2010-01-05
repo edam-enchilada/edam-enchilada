@@ -276,6 +276,7 @@ public abstract class Database implements InfoWarehouse {
 			ErrorLogger.writeExceptionToLogAndPrompt("Database","Failed to establish a connection to " + database);
 			System.err.println("Failed to establish a connection to database");
 			System.err.println(e);
+			e.printStackTrace();
 			return false;
 		}
 		return true;
