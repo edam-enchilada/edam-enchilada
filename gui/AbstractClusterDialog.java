@@ -61,10 +61,10 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 	final static String dense = "Dense Particle Information";
 	final static String sparse = "Sparse Particle Information";
 	final static String denseKey = " Key = Automatic (1, 2, 3, etc) ";
-	final static String FARTHEST = "Farthest Point";
-	final static String RANDOM = "Random Points";
-	final static String REFINED = "Refined Centroids";
-	final static String KMEANSPP = "KMeans++";
+	final static String FARTHEST = "Farthest Point (default)";
+	final static String RANDOM = "Random Points (fastest)";
+	final static String REFINED = "Refined Centroids (slow)";
+	final static String KMEANSPP = "KMeans++ (fast)";
 	
 	protected String[] clusterNames;
 	
