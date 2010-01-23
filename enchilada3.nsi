@@ -5,12 +5,14 @@
 ; System.  Yay!  Adapted shoddily by Thomas Smith
 ;   and further adapted by christja and rzeszotj
 
+; Note from jtbigwoo-
+; If you want to switch back to SQL Express 2005, uncomment the lines marked SQL 2005 and comment the lines marked SQL 2008
 
 ;;; the compiler for this file, which makes an installer executable, is
 ;;; available from http://nsis.sourceforge.net/
 
 ; To build a copy of the installer with EXPRESS, uncomment this line:
-; ;!define WITH_EXPRESS
+;!define WITH_EXPRESS
 
 ; To build a copy of the installer that you'd like to post on the Internets,
 ; uncomment this line: (engages slow but effective compression)
@@ -73,7 +75,8 @@ Section "EDAM Enchilada (required)"
 
   SectionIn RO
   
-  StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\SQLCMD"
+  ;StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\SQLCMD" ;SQL 2005
+  StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\SQLCMD" ;SQL 2008
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   
@@ -142,17 +145,18 @@ Section "MS SQL Desktop Environment (SQL Server Replacement)"
 	
 	; YARR, ok, so, File and Print Sharing needs to be enabled for the install to work.
 	; XXX - password
-	ExecWait `"C:\EXPRESS-install-temp\SQLEXPRESS\SQLEXPR.EXE" SAPWD="sa-account-password" DISABLENETWORKPROTOCOLS=2 SECURITYMODE=SQL` $0
+	;ExecWait `"C:\EXPRESS-install-temp\SQLEXPRESS\SQLEXPR.EXE" SAPWD="sa-account-password" DISABLENETWORKPROTOCOLS=2 SECURITYMODE=SQL` $0 ;SQL 2005
+    ExecWait `C:\EXPRESS-install-temp\SQLEXPRESS\setup.exe /ACTION=Install /FEATURES=SQLEngine,Tools /INSTANCENAME=sqlexpress /SECURITYMODE="SQL" /SAPWD="sa-account-password" /TCPENABLED=1 /NPENABLED=1` ;SQL 2008
     IfErrors 0 +2 
 		Abort "SQLEXPRESS could not be installed. Contact the Enchilada team for assistance."
 	DetailPrint "setup.exe returned $0"
-	IntCmp $0 0 setup_success
-    	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."'
-        SetOutPath "$INSTDIR"
-        RMDir /r "C:\EXPRESS-install-temp"
-	RMDir "C:\EXPRESS-install-temp"
-        Abort 'MSSQL failed to install.'
-    setup_success:
+	;IntCmp $0 0 setup_success ;SQL 2005 (SQL 2008 returns 1 or 2 even on a successful install, so comparing to 0 doesn't work) 
+    ;	MessageBox MB_OK 'MS SQL Server failed to install.  This could be because MS SQL Server is already installed---if so, try installing again, this time unchecking "MS SQL Desktop Environment."' ;SQL 2005
+    ;    SetOutPath "$INSTDIR" ;SQL 2005
+    ;    RMDir /r "C:\EXPRESS-install-temp" ;SQL 2005
+	;RMDir "C:\EXPRESS-install-temp" ;SQL 2005
+    ;    Abort 'MSSQL failed to install.' ;SQL 2005
+    ;setup_success: ;SQL 2005
 
 	ExecWait "net stop $\"sql server (sqlexpress)$\"" $0
 	IfErrors 0 +2
@@ -208,7 +212,7 @@ StrCpy $OSQLLOC "osql"
   IfErrors 0 +5
     !define NOTHING_HERE
     ; we don't support running without a local installation of SQL Server yet.
-    MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
+    MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005/2008 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
     Abort "Not smart enough to find SQL Server on your system."
   DetailPrint "Found SQL Server installation."
 SectionEnd
@@ -298,7 +302,8 @@ SectionEnd
 ; Notify the user of the port issues (port 1433)
 !ifdef WITH_EXPRESS
 Section
-MessageBox MB_OK|MB_ICONEXCLAMATION "Since SQL Server Express was just installed, some of its port settings must be changed.$\nTo do this:$\nChoose Start->Programs$\n->Microsoft SQL Server 2005$\n->Configuration Tools$\n->Microsoft SQL Server Configuration Manager.$\n$\nUnder Network Configuration->Protocols, Right-Click TCP/IP, choose Properties, and choose the IP Addresses Tab.$\n$\nNow, change all the TCP Dynamic ports to 1433."
+;MessageBox MB_OK|MB_ICONEXCLAMATION "Since SQL Server Express was just installed, some of its port settings must be changed.$\nTo do this:$\nChoose Start->Programs$\n->Microsoft SQL Server 2005$\n->Configuration Tools$\n->Microsoft SQL Server Configuration Manager.$\n$\nUnder Network Configuration->Protocols, Right-Click TCP/IP, choose Properties, and choose the IP Addresses Tab.$\n$\nNow, change all the TCP Dynamic ports to 1433." ;SQL 2005
+MessageBox MB_OK|MB_ICONEXCLAMATION "Since SQL Server Express was just installed, some of its port settings must be changed.$\nTo do this:$\nChoose Start->Programs$\n->Microsoft SQL Server 2008$\n->Configuration Tools$\n->Microsoft SQL Server Configuration Manager.$\n$\nUnder Network Configuration->Protocols, Right-Click TCP/IP, choose Properties, and ensure that and choose the IP Addresses Tab.$\n$\nNow, change all the TCP Dynamic ports to 1433." ;SQL 2008
 SectionEnd
 !endif
 
