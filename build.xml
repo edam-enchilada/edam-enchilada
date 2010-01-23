@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<project name="FatJar edam-enchilada.jar (experimental)" default="main" basedir=".">
+    <!-- this file was created by Fat-Jar Eclipse Plug-in -->
+    <!-- the ANT-Export is in a very early stage, so this -->
+    <!-- is only experimental, ANT 1.6 or above is        -->
+    <!-- required, feedback is always welcome:            -->
+    <!--       http://sourceforge.net/projects/fjep       -->
+    <!-- uncomment the following lines if using ANT outside Eclipse -->
+    <!--
+        <property name="fjepPath" value="reference:file:plugins\net.sf.fjep.fatjar_0.0.27\fatjar.jar"/>
+        <taskdef name="fatjar.build" classname="net.sf.fjep.anttask.FJBuildTask" classpath="${fjepPath}"/>
+        <typedef name="fatjar.manifest" classname="net.sf.fjep.anttask.FJManifestType" classpath="${fjepPath}"/>
+        <typedef name="fatjar.exclude" classname="net.sf.fjep.anttask.FJExcludeType" classpath="${fjepPath}"/>
+        <typedef name="fatjar.jarsource" classname="net.sf.fjep.anttask.FJJarSourceType" classpath="${fjepPath}"/>
+        <typedef name="fatjar.filesource" classname="net.sf.fjep.anttask.FJFileSourceType" classpath="${fjepPath}"/>
+    -->
+    <!-- uncomment the above lines to use ANT outside of Eclipse -->
+    <target name="main">
+        <fatjar.build onejar="true" output="edam-enchilada.jar">
+            <fatjar.manifest mainclass="gui.MainFrame"/>
+            <fatjar.filesource path="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada" relpath="">
+            	<fatjar.exclude regexp=".*\.java"/>
+                <fatjar.exclude relpath=".settings/"/>
+                <fatjar.exclude relpath="CVS"/>
+            	<fatjar.exclude relpath="build.xml"/>
+                <fatjar.exclude regexp=".*/CVS"/>
+                <fatjar.exclude regexp=".*/CVS/.*"/>
+                <fatjar.exclude relpath="dbunit-2.1/LICENSE.txt"/>
+                <fatjar.exclude relpath="importation files/"/>
+                <fatjar.exclude relpath="jtds/CVS/"/>
+                <fatjar.exclude relpath="jtds/jtds_LICENSE"/>
+                <fatjar.exclude relpath="jtds/jtds_README"/>
+                <fatjar.exclude relpath="labeling/"/>
+                <fatjar.exclude relpath="opencsv/"/>
+                <fatjar.exclude relpath="Particles for Clustering/"/>
+                <fatjar.exclude relpath="poi-2.5.1/CVS/"/>
+                <fatjar.exclude relpath="poi-2.5.1/legal/"/>
+                <fatjar.exclude relpath="poi-2.5.1/poi-contrib-2.5.1-final-20040804.jar"/>
+                <fatjar.exclude relpath="poi-2.5.1/poi-scratchpad-2.5.1-final-20040804.jar"/>
+                <fatjar.exclude relpath="prediction/"/>
+                <fatjar.exclude relpath="testing/"/>
+                <fatjar.exclude relpath="testRow/"/>
+                <fatjar.exclude relpath=".classpath"/>
+                <fatjar.exclude relpath=".cvsignore"/>
+                <fatjar.exclude relpath=".fatjar"/>
+                <fatjar.exclude relpath=".project"/>
+                <fatjar.exclude relpath="AllTests.class"/>
+                <fatjar.exclude relpath="AllTests.java"/>
+                <fatjar.exclude relpath="config.ini"/>
+                <fatjar.exclude relpath="EDAM-Enchilada-install.exe"/>
+            	<fatjar.exclude relpath="EDAM-Enchilada-EXPRESS-install.exe"/>
+                <fatjar.exclude relpath="edam-enchilada.jar"/>
+                <fatjar.exclude relpath="Enchilada.bat"/>
+                <fatjar.exclude relpath="enchilada3.nsi"/>
+                <fatjar.exclude relpath="gpl.txt"/>
+                <fatjar.exclude relpath="icon.gif"/>
+                <fatjar.exclude relpath="icon.ico"/>
+                <fatjar.exclude relpath="library.txt"/>
+                <fatjar.exclude relpath="MPL-1.1.txt"/>
+                <fatjar.exclude relpath="MSDE-EULA.txt"/>
+                <fatjar.exclude relpath="README-MSSQL.txt"/>
+                <fatjar.exclude relpath="sapassword.ini"/>
+                <fatjar.exclude relpath="server2005.patch"/>
+                <fatjar.exclude relpath="settings.fatjar"/>
+                <fatjar.exclude relpath="SQLServerRebuildDatabase.txt"/>
+                <fatjar.exclude relpath="testExcel.xls"/>
+                <fatjar.exclude relpath="testing script.txt"/>
+            	<fatjar.exclude relpath="jtds/jtds-1.2.jar" />
+                <fatjar.exclude relpath="opencsv-1.3.jar" />
+                <fatjar.exclude relpath="dbunit-2.1\dbunit-2.1.jar" />
+                <fatjar.exclude relpath="poi-2.5.1\poi-2.5.1-final-20040804.jar" />
+                <fatjar.exclude relpath="mysql-connector-java-3.1.13-bin.jar" />
+                <fatjar.exclude relpath="uispec4j-1.2.jar" />
+            </fatjar.filesource>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\jtds\jtds-1.2.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\opencsv-1.3.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\dbunit-2.1\dbunit-2.1.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\poi-2.5.1\poi-2.5.1-final-20040804.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\mysql-connector-java-3.1.13-bin.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Users\Tom Bigwood\workspace-edam\edam-enchilada\uispec4j-1.2.jar" relpath=""/>
+        </fatjar.build>
+    </target>
+</project>
