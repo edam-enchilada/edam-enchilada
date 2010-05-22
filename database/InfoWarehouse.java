@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import analysis.BinnedPeakList;
 import analysis.clustering.ClusterInformation;
 
 import ATOFMS.Peak;
@@ -399,4 +400,10 @@ public interface InfoWarehouse {
 	public String getDatabaseName();
 
 	public void clearCache();
+	
+	/**
+	 * Given a collection, returns the average peak list of all non-zero particles
+	 * @param coll		The collection to average
+	 */
+	public BinnedPeakList getAveragePeakListForCollection(Collection coll);
 }

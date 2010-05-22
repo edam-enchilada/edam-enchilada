@@ -6440,5 +6440,31 @@ public abstract class Database implements InfoWarehouse {
 		}		
 		return ""+sum;
 	}
-	
+
+	public BinnedPeakList getAveragePeakListForCollection(Collection coll) {
+		BinnedPeakList bpl = null;
+		try {
+			Statement stmt = con.createStatement();
+			StringBuilder query = new StringBuilder("SELECT PeakLocation, SUM(PeakArea) FROM " +
+			getDynamicTableName(DynamicTable.AtomInfoSparse, coll.getDatatype()) + " a, InternalAtomOrder b WHERE " +
+			"b.CollectionID = " + coll.getCollectionID() + " and a.AtomID = b.AtomID GROUP BY PeakLocation");
+			ResultSet rs = stmt.executeQuery(query.toString());
+			bpl = new BinnedPeakList();
+			while (rs.next()) {
+				bpl.add(rs.getInt(1), rs.getFloat(2));
+			}
+			query = new StringBuilder("SELECT COUNT(DISTINCT a.AtomID) FROM " + 
+			getDynamicTableName(DynamicTable.AtomInfoSparse, coll.getDatatype()) + " a, InternalAtomOrder b WHERE " +
+			"b.CollectionID = " + coll.getCollectionID() + " and a.AtomID = b.AtomID");
+			rs = stmt.executeQuery(query.toString());
+			rs.next();
+			int numAtoms = rs.getInt(1);
+			bpl.divideAreasBy(numAtoms);
+		}
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return bpl;
+	}
 }
