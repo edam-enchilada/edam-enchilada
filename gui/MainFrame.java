@@ -109,6 +109,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JMenuItem batchLoadATOFMSItem;
 	private JMenuItem MSAexportItem;
 	private JMenuItem CSVexportItem;
+	private JMenuItem HierarchyCSVexportItem;
 	/*
 	 * These capabilities work, but only with trivially small databases
 	private JMenuItem importXmlDatabaseItem;
@@ -537,7 +538,17 @@ public class MainFrame extends JFrame implements ActionListener
 						"No collection selected", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
-			new ExportCSVDialog(this, db, c);
+			new ExportCSVDialog(this, db, c, false);
+		}
+		else if (source == HierarchyCSVexportItem)
+		{
+			final Collection c = getSelectedCollection();
+			if (c == null) {
+				JOptionPane.showMessageDialog(this, "Please select a collection to export.",
+						"No collection selected", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			new ExportCSVDialog(this, db, c, true);
 		}
 		else if (source == deleteAdoptItem)
 		{
@@ -1124,9 +1135,12 @@ public class MainFrame extends JFrame implements ActionListener
 		MSAexportItem.addActionListener(this);
 		CSVexportItem = new JMenuItem("to CSV File. . .");
 		CSVexportItem.addActionListener(this);
+		HierarchyCSVexportItem = new JMenuItem("to CSV File as Hierarchy of Average Particles. . .");
+		HierarchyCSVexportItem.addActionListener(this);
 		exportCollectionMenu.setMnemonic(KeyEvent.VK_E);
 		exportCollectionMenu.add(MSAexportItem);
 		exportCollectionMenu.add(CSVexportItem);
+		exportCollectionMenu.add(HierarchyCSVexportItem);
 		
 		/*
 		 * These capabilities work, but only with trivially small databases

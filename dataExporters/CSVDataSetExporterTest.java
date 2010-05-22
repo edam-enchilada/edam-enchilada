@@ -167,7 +167,36 @@ public class CSVDataSetExporterTest extends TestCase {
 			reader.readLine();
 		assertEquals(null, reader.readLine());
 	}
+
+	public void testHierarchyExport() throws Exception {
+		boolean result;
+		Collection coll = db.getCollection(2);
+		db.moveCollection(db.getCollection(3), coll);
+		csvFile = File.createTempFile("test", ".csv");
+		result = exporter.exportHierarchyToCSV(coll, csvFile.getPath(), 30);
+		assertTrue("Failure during exportHierarchyToCSV in a normal export", result);
+		
+		BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+		
+		assertEquals("****** Collection: One ******,,****** Collection: Two ******,,", reader.readLine());
+		assertEquals("Collection ID: 2,,Collection ID: 3,,", reader.readLine());
+		assertEquals("Parent Collection ID: 0,,Parent Collection ID: 2,,", reader.readLine());
+		assertEquals("Negative Spectrum,,Negative Spectrum,,", reader.readLine());
+		assertEquals("-30,15.00,-30,15.00,", reader.readLine());
+		assertEquals("-29,0.00,-29,0.00,", reader.readLine());
+		for (int i = 0; i < 28; i++)
+			reader.readLine();
+		assertEquals("Positive Spectrum,,Positive Spectrum,,", reader.readLine());
+		assertEquals("0,0.00,0,0.00,", reader.readLine());
+		for (int i = 0; i < 30; i++)
+			reader.readLine();
+		assertEquals(null, reader.readLine());
+		for (int i = 0; i < 30; i++)
+			reader.readLine();
+		assertEquals(null, reader.readLine());
+	}
 	
+
 	public void tearDown()
 	{
 		if (csvFile != null) csvFile.delete();

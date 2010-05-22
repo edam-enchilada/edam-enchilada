@@ -47,14 +47,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
-import analysis.clustering.PeakList;
+import analysis.BinnedPeak;
+import analysis.BinnedPeakList;
 
 import collection.Collection;
 
 import ATOFMS.ParticleInfo;
-import ATOFMS.Peak;
 import database.CollectionCursor;
 import database.InfoWarehouse;
 import errorframework.DisplayException;
@@ -97,8 +98,7 @@ public class CSVDataSetExporter {
 	 * @return true if it worked
 	 */
 	public boolean exportToCSV(Collection coll, String fileName, int maxMZValue)
-		throws DisplayException
-	{
+		throws DisplayException {
 		double mzConstraint = new Double(maxMZValue);
 		boolean showingNegatives;
 		CollectionCursor atomInfoCur;
@@ -126,9 +126,7 @@ public class CSVDataSetExporter {
 			int fileIndex = 0;
 			while (atomInfoCur.next()) {
 				particleInfo = atomInfoCur.getCurrent();
-				PeakList peakList = new PeakList();
-				peakList.setPeakList(db.getPeaks("ATOFMS", particleInfo.getID()));
-				particleInfo.setPeakList(peakList);
+				particleInfo.setBinnedList(atomInfoCur.getPeakListfromAtomID(particleInfo.getID()));
 				particleList.add(particleInfo);
 				if (particleList.size() == 127)
 				{
@@ -148,14 +146,28 @@ public class CSVDataSetExporter {
 		}
 		return true;
 	}
-	
+
+	/**
+	 * Takes a list of ParticleInfo objects and writes it out to a file.
+	 * You probably want to limit your list to 127 items since that's all that
+	 * Excel will display.  If you have more than 127 items, call this method
+	 * repeatedly using increasing file indices.
+	 * @param particleList the list of particles to write out
+	 * @param fileName the name of the file to write out.  please name it 
+	 * &lt;filename&gt;.csv
+	 * @param fileIndex the index if we need to name more than one file.  
+	 * e.g. fileIndex = 0 would be filename.csv, fileIndex = 1 would be 
+	 * filename_1.csv
+	 * @param maxMZValue the largest (and smallest) mz value to export, e.g.
+	 * if you choose maxMZValue=200, m/z = +201 and m/z = -201 will not be included
+	 * @throws IOException
+	 */
 	private void writeOutParticlesToFile(ArrayList<ParticleInfo> particleList, String fileName, int fileIndex, int maxMZValue)
-		throws IOException
-	{
+		throws IOException {
 		PrintWriter out = null;
 		File csvFile;
-		ArrayList<Peak> currentPeakForAllParticles;
-		ArrayList<Iterator<Peak>> peakLists;
+		ArrayList<BinnedPeak> currentPeakForAllParticles;
+		ArrayList<Iterator<BinnedPeak>> peakLists;
 		DecimalFormat formatter = new DecimalFormat("0.00");
 
 		if (fileIndex == 0)
@@ -168,35 +180,46 @@ public class CSVDataSetExporter {
 		}
 
 		out = new PrintWriter(new FileOutputStream(csvFile, false));
-		currentPeakForAllParticles = new ArrayList<Peak>(particleList.size());
-		peakLists = new ArrayList<Iterator<Peak>>(particleList.size());
+		currentPeakForAllParticles = new ArrayList<BinnedPeak>(particleList.size());
+		peakLists = new ArrayList<Iterator<BinnedPeak>>(particleList.size());
 		StringBuffer sbHeader = new StringBuffer();
+		StringBuffer sbSubHeader1 = new StringBuffer();
+		StringBuffer sbSubHeader2 = new StringBuffer();
 		StringBuffer sbNegLabels = new StringBuffer();
 		StringBuffer sbPosLabels = new StringBuffer();
 		for (ParticleInfo particleInfo : particleList) {
-			sbHeader.append("****** Particle: ");
-			String choppedName = particleInfo.getATOFMSParticleInfo().getFilename();
+			sbHeader.append(particleInfo instanceof AverageParticleInfo ? "****** Collection: " : "****** Particle: ");
+			String choppedName = particleInfo instanceof AverageParticleInfo ? ((AverageParticleInfo)particleInfo).getCollection().getName() : particleInfo.getATOFMSParticleInfo().getFilename(); 
 			choppedName = choppedName.indexOf('\\') > 0 ? choppedName.substring(choppedName.lastIndexOf('\\') + 1) : choppedName;
 			sbHeader.append(choppedName);
 			sbHeader.append(" ******,,");
-			Iterator<Peak> peaks = particleInfo.getPeakList().getPeakList().iterator();
-			Peak peak = null;
+			if (particleInfo instanceof AverageParticleInfo) {
+				sbSubHeader1.append("Collection ID: ");
+				sbSubHeader1.append(((AverageParticleInfo)particleInfo).getCollection().getCollectionID());
+				sbSubHeader1.append(",,");
+				sbSubHeader2.append("Parent Collection ID: ");
+				sbSubHeader2.append(((AverageParticleInfo)particleInfo).getCollection().getParentCollection().getCollectionID());
+				sbSubHeader2.append(",,");
+			}
+			Iterator<BinnedPeak> peaks = particleInfo.getBinnedList().iterator();
+			BinnedPeak peak = null;
 			while (peaks.hasNext()) {
 				peak = peaks.next();
-				if (peak.massToCharge >= -maxMZValue)
+				if (peak.getKey() >= -maxMZValue)
 					break;
 			}
-			if (peak == null || peak.massToCharge < -maxMZValue)
+			if (peak == null || peak.getKey() < -maxMZValue)
 				peak = null;
 			currentPeakForAllParticles.add(peak);
 			peakLists.add(peaks);
 			sbNegLabels.append("Negative Spectrum,,");
 			sbPosLabels.append("Positive Spectrum,,");
 		}
-//		sbHeader.setLength(sbHeader.length() - 2);
-//		sbNegLabels.setLength(sbNegLabels.length() - 2);
-//		sbPosLabels.setLength(sbPosLabels.length() - 2);
 		out.println(sbHeader.toString());
+		if (sbSubHeader1.length() > 0) {
+			out.println(sbSubHeader1.toString());
+			out.println(sbSubHeader2.toString());
+		}
 		out.println(sbNegLabels.toString());
 
 		boolean showingNegatives = true;
@@ -208,16 +231,16 @@ public class CSVDataSetExporter {
 				out.println(sbPosLabels.toString());
 			}
 			for (int particleIndex = 0; particleIndex < peakLists.size(); particleIndex++) {
-				Peak peak = currentPeakForAllParticles.get(particleIndex);
-				if (peak == null || location < peak.massToCharge) {
+				BinnedPeak peak = currentPeakForAllParticles.get(particleIndex);
+				if (peak == null || location < peak.getKey()) {
 					sbValues.append(location);
 					sbValues.append(",0.00,");
 				}
 				else {
 					// write it out
-					sbValues.append(new Double(peak.massToCharge).intValue());
+					sbValues.append(new Double(peak.getKey()).intValue());
 					sbValues.append(",");
-					sbValues.append(formatter.format(peak.value));
+					sbValues.append(formatter.format(peak.getValue()));
 					sbValues.append(",");
 					currentPeakForAllParticles.set(particleIndex, peakLists.get(particleIndex).hasNext() ? peakLists.get(particleIndex).next() : null);
 				}
@@ -226,5 +249,81 @@ public class CSVDataSetExporter {
 			sbValues.setLength(0);
 		}
 		out.close();
+	}
+
+	/**
+	 * Exports the peak list data for the supplied collection
+	 * @param coll the collection of the particles we want to 
+	 * export
+	 * @param fileName the path to the file that we're going to create
+	 * @param maxMZValue this is the maximum mass to charge value to export
+	 * (we often filter out the largest and smallest mass to charge values
+	 * @return true if it worked
+	 */
+	public boolean exportHierarchyToCSV(Collection coll, String fileName, int maxMZValue)
+		throws DisplayException {
+		double mzConstraint = new Double(maxMZValue);
+		boolean showingNegatives;
+		ArrayList<Integer> collectionIDList;
+		
+		if (fileName == null) {
+			return false;
+		} else if (! fileName.endsWith(ExportCSVDialog.EXPORT_FILE_EXTENSION)) {
+			fileName = fileName + "." + ExportCSVDialog.EXPORT_FILE_EXTENSION;
+		}
+		if (! coll.getDatatype().equals("ATOFMS")) {
+			throw new DisplayException("Please choose a ATOFMS collection to export.");
+		}
+
+		fileName = fileName.replaceAll("'", "");
+
+		try {
+	
+			progressBar.setText("Exporting peak data");
+			progressBar.setIndeterminate(true);
+
+			collectionIDList = new ArrayList<Integer>();
+			collectionIDList.add(coll.getCollectionID());
+
+			ArrayList<ParticleInfo> particleList = new ArrayList<ParticleInfo>();
+			ArrayList<Integer> collectionIDs = new ArrayList<Integer>();
+			collectionIDs.addAll(db.getAllDescendantCollections(coll.getCollectionID(), true));
+			int fileIndex = 0;
+			for (int collectionID : collectionIDs) {
+				Collection collection = db.getCollection(collectionID);
+				particleList.add(new AverageParticleInfo(collection, db.getAveragePeakListForCollection(collection)));
+				if (particleList.size() == 127)
+				{
+					writeOutParticlesToFile(particleList, fileName, fileIndex++, maxMZValue);
+					particleList.clear();
+				}
+			}
+			if (particleList.size() > 0)
+			{
+				writeOutParticlesToFile(particleList, fileName, fileIndex++, maxMZValue);
+			}
+		} catch (IOException e) {
+			ErrorLogger.writeExceptionToLogAndPrompt("CSV Data Exporter","Error writing file please ensure the application can write to the specified file.");
+			System.err.println("Problem writing file: ");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+
+	class AverageParticleInfo extends ParticleInfo {
+		Collection collection;
+		
+		public AverageParticleInfo(Collection coll, BinnedPeakList peakList) {
+			this.setBinnedList(peakList);
+			this.collection = coll;
+		}
+		
+		public Collection getCollection() {
+			return collection;
+		}
+		
+		
 	}
 }

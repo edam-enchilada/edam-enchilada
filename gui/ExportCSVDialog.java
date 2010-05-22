@@ -75,18 +75,22 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 	private InfoWarehouse db;
 	private JFrame parent = null;
 	private Collection collection = null;
+	private boolean exportAverages = false;
 	
 	/**
 	 * Called when you want to export a particular particle or whole collection of particles
 	 * @param parent
 	 * @param db
 	 * @param c
+	 * @param exportAverages - if this is true, we call exportHierarchyToCSV which exports
+	 * the averages of all subcollections of the selected collection.
 	 */
-	public ExportCSVDialog(JFrame parent, InfoWarehouse db, Collection c) {
-		super (parent,"Export to CSV file", true);
+	public ExportCSVDialog(JFrame parent, InfoWarehouse db, Collection c, boolean exportAverages) {
+		super (parent,"Export " + (exportAverages ? "Hierarchy " : "") + "to CSV file", true);
 		this.db = db;
 		this.parent = parent;
 		this.collection = c;
+		this.exportAverages = exportAverages;
 		setSize(450,150);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
@@ -170,7 +174,7 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 					final Database dbRef = (Database)db;
 					
 					final ProgressBarWrapper progressBar = 
-						new ProgressBarWrapper(parent, MSAnalyzeDataSetExporter.TITLE, 100);
+						new ProgressBarWrapper(parent, CSVDataSetExporter.TITLE, 100);
 					final CSVDataSetExporter cse = 
 							new CSVDataSetExporter(
 									this, dbRef,progressBar);
@@ -182,7 +186,12 @@ public class ExportCSVDialog extends JDialog implements ActionListener
 					final SwingWorker worker = new SwingWorker(){
 						public Object construct() {
 							try {
-								cse.exportToCSV(collection, csvFileName, mzValue);
+								if (exportAverages) {
+									cse.exportHierarchyToCSV(collection, csvFileName, mzValue);
+								}
+								else {
+									cse.exportToCSV(collection, csvFileName, mzValue);
+								}
 							}catch (DisplayException e1) {
 								ErrorLogger.displayException(progressBar,e1.toString());
 							} 
