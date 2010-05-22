@@ -1132,24 +1132,24 @@ public class DatabaseTest extends TestCase {
 	 * 
 	 * @author benzaids
 	 */
-	public void testBatchMemoryProblem() {
-		try {
-			db.openConnection(dbName);
-			db.atomBatchInit();
-			Random rand = new Random();
-			for (int i = 0; i < 100000; i++) {
-				int atom = rand.nextInt(1000000) + 1;
-				assertTrue(db.deleteAtomBatch(atom, db.getCollection(1)));
-			}
-			db.atomBatchExecute();
-			db.closeConnection();
-			
-		}
-		catch (Exception e){
-			System.out.println("Too many queries in a result blew memory, as expected.");
-			//The test passed.
-		}
-	}
+//	public void testBatchMemoryProblem() {
+//		try {
+//			db.openConnection(dbName);
+//			db.atomBatchInit();
+//			Random rand = new Random();
+//			for (int i = 0; i < 100000; i++) {
+//				int atom = rand.nextInt(1000000) + 1;
+//				assertTrue(db.deleteAtomBatch(atom, db.getCollection(1)));
+//			}
+//			db.atomBatchExecute();
+//			db.closeConnection();
+//			
+//		}
+//		catch (Exception e){
+//			System.out.println("Too many queries in a result blew memory, as expected.");
+//			//The test passed.
+//		}
+//	}
 	
 	public void testCheckAtomParent() {
 		db.openConnection(dbName);
@@ -2722,5 +2722,27 @@ public class DatabaseTest extends TestCase {
 		assertEquals("0.5", particleInfo.get(0).get(1));
 		assertEquals("1.0", particleInfo.get(0).get(2));
 		assertEquals(20, particleInfo.get(4).get(0));
+	}
+	
+	/**
+	 * author jtbigwoo
+	 */
+	public void testGetAveragePeakListForCollection() {
+		Connection con;
+		Collection c;
+		BinnedPeakList bpl;
+
+		db.openConnection(dbName);
+		con = db.getCon();
+
+		bpl = db.getAveragePeakListForCollection(db.getCollection(2));
+		assertEquals(15f, bpl.getAreaAt(-30));
+		assertEquals(11.25f, bpl.getAreaAt(30));
+		assertEquals(8, bpl.getPeaks().size());
+		
+		bpl = db.getAveragePeakListForCollection(db.getCollection(3));
+		assertEquals(15f, bpl.getAreaAt(-30));
+		assertEquals(3f, bpl.getAreaAt(306));
+
 	}
 }
