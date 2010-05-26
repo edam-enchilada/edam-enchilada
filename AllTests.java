@@ -36,6 +36,7 @@ public class AllTests {
 		suite.addTestSuite(gui.AggregatorTest.class);
 		suite.addTestSuite(dataExporters.MSAnalyzeDataSetExporterTest.class);
 		suite.addTestSuite(dataExporters.CSVDataSetExporterTest.class);
+		suite.addTestSuite(gui.DialogHelperTest.class);
 		//$JUnit-END$
 		return suite;
 	}
