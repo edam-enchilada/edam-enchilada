@@ -44,7 +44,6 @@
 package gui;
 
 import javax.swing.*;
-import javax.swing.border.*;
 
 import database.DynamicTable;
 import database.InfoWarehouse;
@@ -53,8 +52,8 @@ import analysis.DistanceMetric;
 import analysis.clustering.*;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * 
@@ -228,17 +227,15 @@ public class ClusterDialog extends AbstractClusterDialog
 		}
 		if (currentShowing == KCLUSTER)
 		{
-			
 			try {
+				Set<Integer> kValues = DialogHelper.getRangeValuesFromString(kClusterText.getText());
 				System.out.println("Collection ID: " +
 						cTree.getSelectedCollection().
 						getCollectionID());
 				
 				// Get information from dialogue box:
-				int k = Integer.parseInt(kClusterText.getText());
-				
 				// Check to make sure it's valid:
-				if (k <= 0) {
+				if (kValues.size() <= 0) {
 					JOptionPane.showMessageDialog(parent,
 							"Error with parameters.\n" +
 							"Appropriate values are: k > 0",
@@ -246,53 +243,55 @@ public class ClusterDialog extends AbstractClusterDialog
 							JOptionPane.ERROR_MESSAGE);
 				}
 				else {
-					if (dMetInt == DistanceMetric.CITY_BLOCK) {
-						KMedians kMedians = new KMedians(
-								cTree.getSelectedCollection().
-								getCollectionID(),db, k, "", 
-								commentField.getText(), 
-								initialCentroidsInt, 
-								cInfo);
-						kMedians.addInfo(cInfo);
-						kMedians.setDistanceMetric(dMetInt);
-						if (db.getCollectionSize(
-								cTree.getSelectedCollection().
-								getCollectionID()) < 0) // WAS 10000
-						{
-							kMedians.setCursorType(Cluster.STORE_ON_FIRST_PASS);
+					for (int k : kValues) {
+						if (dMetInt == DistanceMetric.CITY_BLOCK) {
+							KMedians kMedians = new KMedians(
+									cTree.getSelectedCollection().
+									getCollectionID(),db, k, "", 
+									commentField.getText(), 
+									initialCentroidsInt, 
+									cInfo);
+							kMedians.addInfo(cInfo);
+							kMedians.setDistanceMetric(dMetInt);
+							if (db.getCollectionSize(
+									cTree.getSelectedCollection().
+									getCollectionID()) < 0) // WAS 10000
+							{
+								kMedians.setCursorType(Cluster.STORE_ON_FIRST_PASS);
+							}
+							else
+							{
+								kMedians.setCursorType(Cluster.DISK_BASED);
+							}
+	
+							kMedians.divide();
+							dispose();
 						}
-						else
-						{
-							kMedians.setCursorType(Cluster.DISK_BASED);
+						else if (dMetInt == DistanceMetric.EUCLIDEAN_SQUARED ||
+						         dMetInt == DistanceMetric.DOT_PRODUCT) {
+							KMeans kMeans = new KMeans(
+									cTree.getSelectedCollection().
+									getCollectionID(),db, 
+									k,
+									"", commentField.getText(), initialCentroidsInt, cInfo);
+							kMeans.addInfo(cInfo);
+							kMeans.setDistanceMetric(dMetInt);
+							//TODO:  When should we use disk based and memory based 
+							// cursors?
+							if (db.getCollectionSize(
+									cTree.getSelectedCollection().
+									getCollectionID()) < 10000) // Was 10000
+							{
+								kMeans.setCursorType(Cluster.STORE_ON_FIRST_PASS);
+							}
+							else
+							{
+								kMeans.setCursorType(Cluster.DISK_BASED);
+							}
+	
+							kMeans.divide();
+							dispose();
 						}
-
-						kMedians.divide();
-						dispose();
-					}
-					else if (dMetInt == DistanceMetric.EUCLIDEAN_SQUARED ||
-					         dMetInt == DistanceMetric.DOT_PRODUCT) {
-						KMeans kMeans = new KMeans(
-								cTree.getSelectedCollection().
-								getCollectionID(),db, 
-								Integer.parseInt(kClusterText.getText()), 
-								"", commentField.getText(), initialCentroidsInt, cInfo);
-						kMeans.addInfo(cInfo);
-						kMeans.setDistanceMetric(dMetInt);
-						//TODO:  When should we use disk based and memory based 
-						// cursors?
-						if (db.getCollectionSize(
-								cTree.getSelectedCollection().
-								getCollectionID()) < 10000) // Was 10000
-						{
-							kMeans.setCursorType(Cluster.STORE_ON_FIRST_PASS);
-						}
-						else
-						{
-							kMeans.setCursorType(Cluster.DISK_BASED);
-						}
-
-						kMeans.divide();
-						dispose();
 					}
 				}
 			} catch (NullPointerException exception) {
@@ -305,7 +304,7 @@ public class ClusterDialog extends AbstractClusterDialog
 			catch (NumberFormatException exception) {
 				exception.printStackTrace();
 				JOptionPane.showMessageDialog(parent,
-						"Make sure you have entered parameters.",
+						"Make sure you have entered parameters for k value.",
 						"Number Format Exception",
 						JOptionPane.ERROR_MESSAGE);
 			}
