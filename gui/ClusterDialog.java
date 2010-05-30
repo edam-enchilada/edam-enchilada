@@ -87,7 +87,7 @@ public class ClusterDialog extends AbstractClusterDialog
 		
 		JPanel rootPanel = new JPanel();
 		
-		JPanel clusterAlgorithms = setClusteringAlgorithms(clusterNames);
+		JPanel clusterAlgorithms = setClusteringAlgorithms(clusterNames, true);
 		JPanel clusterSpecs = setClusteringSpecifications();
 		
 		//Create common info panel:

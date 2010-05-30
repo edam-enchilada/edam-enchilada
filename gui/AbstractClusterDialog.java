@@ -92,7 +92,7 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 	 * creates panel that displays clustering algorithms.
 	 * @return JPanel
 	 */
-	public JPanel setClusteringAlgorithms(String[] clusterNames) {
+	public JPanel setClusteringAlgorithms(String[] clusterNames, boolean showRangeInstructions) {
 		JLabel header = new JLabel("Cluster using: ");
 		
 		//Create the drop down menu and the dividing line.
@@ -165,10 +165,14 @@ public abstract class AbstractClusterDialog extends JDialog implements ItemListe
 		averageClusterDropDown.addItemListener(this);
 		kClusterDropDown.add(kClusterLabel);
 		kClusterDropDown.add(averageClusterDropDown);
-		
+
 		JPanel kClusterCard = new JPanel();
 		kClusterCard.add(kClusterDropDown);
 		kClusterCard.add(parameters);
+		if (showRangeInstructions) {
+			JLabel kInstructions = new JLabel("Enter number of clusters and or ranges separated by commas (e.g. 10, 12-14)");
+			kClusterCard.add(kInstructions);
+		}
 		kClusterCard.setLayout(
 				new BoxLayout(kClusterCard, BoxLayout.PAGE_AXIS));
 		
