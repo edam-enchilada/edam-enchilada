@@ -203,4 +203,18 @@ public class ClusterTest extends TestCase{
 		stmt.close();
 	}
 
+	public void testIntersperse(){
+		
+		assertTrue(Cluster.intersperse("22.4", "").
+				equals("22.4"));
+		assertTrue(Cluster.intersperse("multiple words", "").
+				equals("'multiple words'"));
+		assertTrue(Cluster.intersperse("13.1", "22.4").
+				equals("22.4, 13.1"));
+		assertTrue(Cluster.intersperse("more words", "'words'").
+				equals("'words', 'more words'"));
+		assertTrue(Cluster.intersperse("mixed numbers and words", "77.7, 'string'").
+				equals("77.7, 'string', 'mixed numbers and words'"));
+	}
+
 }

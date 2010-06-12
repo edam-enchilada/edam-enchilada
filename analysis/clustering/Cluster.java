@@ -50,7 +50,6 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import dataImporters.EnchiladaDataSetImporter;
 import database.CollectionCursor;
 import database.DynamicTable;
 import database.InfoWarehouse;
@@ -77,6 +76,8 @@ public abstract class Cluster extends CollectionDivider {
 	protected ClusterInformation clusterInfo;
 	protected static double power = 1.0;	//the power to which the peak areas
 											//are raised during preprocessing.
+
+	protected static final String quote = "'";
 
 	// this used to be called the EVIL HACK CONSTANT.  Now it's a user-
 	// specified value.  It's the smallest normalized peak value that we'll
@@ -744,7 +745,7 @@ public abstract class Cluster extends CollectionDivider {
 				} else
 					avgValues.add("");
 
-				dense = EnchiladaDataSetImporter.intersperse(avgValues.get(i-1),
+				dense = intersperse(avgValues.get(i-1),
 						dense);
 			
 			}
@@ -776,16 +777,16 @@ public abstract class Cluster extends CollectionDivider {
 				
 				area = p.getValue();
 				
-				s = EnchiladaDataSetImporter.intersperse(
+				s = intersperse(
 							Integer.toString(area.intValue()), Integer.toString(p.getKey()));
 			
 				// relative area is the normalized peak height.
 				relArea = relAreaPeakList.getAreaAt(p.getKey());
-				s = EnchiladaDataSetImporter.intersperse(relArea.toString(), s);
+				s = intersperse(relArea.toString(), s);
 
 				// hard-code peakheight to 1.  Height is not meaningful
 				// for cluster centers.
-				s = EnchiladaDataSetImporter.intersperse("1", s);
+				s = intersperse("1", s);
 				sparse.add(s);
 			}
 			
@@ -895,5 +896,48 @@ public abstract class Cluster extends CollectionDivider {
 		//out.close();
 		System.out.println(sendToDB.toString());
 		db.setCollectionDescription(db.getCollection(newHostID),sendToDB.toString());
+	}
+
+	/**
+	 * Creates a comma-separated string (with all string surrounded by 
+	 * single quotes) from an existing string and an addition.
+	 * 
+	 * @param add		The string to add onto the end of params.
+	 * @param params	The existing string.
+	 * @return	The comma-separated string.
+	 */
+	public static String intersperse(String add, String params){
+		
+		//separate out the numbers from the real men!
+		try{
+			Float number = new Float(add);
+			
+			if (params.equals(""))
+				params = add;
+			else
+				params = params + ", " + add;
+			
+		}
+		//if not a number, surround in single quotes, or it's empty so it's NULL
+		catch (NumberFormatException e){
+			
+			if (add.equals("")) {
+			
+				if (params.equals(""))
+					params = "NULL";
+				else
+					params = params + ",NULL";
+						
+			} else {
+				
+				if (params.equals(""))
+					params = quote + add + quote;
+				else
+					params = params + ", " + quote + add + quote;
+			}	
+		}
+		
+		return params;
+		
 	}
 }
