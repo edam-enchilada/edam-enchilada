@@ -126,7 +126,7 @@ public class TSBulkInserter {
 		st.execute(vals.toString());
 		st.execute(dataset.toString());
 		st.close();
-		// jtbigwood - this next part is a bit hacky, but honestly, who builds 
+		// jtbigwoo - this next part is a bit hacky, but honestly, who builds 
 		// 4MB of insert statements?
 		// the connection will keep the text of the executed statements until
 		// we close it.  this is a big problem since we might be executing hundreds
