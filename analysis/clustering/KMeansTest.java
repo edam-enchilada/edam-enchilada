@@ -101,6 +101,7 @@ public class KMeansTest extends TestCase {
 		System.runFinalization();
 		System.gc();
 	    Database.dropDatabase(dbName);
+	    ClusterK.setRandomSeed(ClusterK.DEFAULT_RANDOM);
     }
 
     public void testGetDistance() {
@@ -448,6 +449,37 @@ public class KMeansTest extends TestCase {
     	assertEquals(7, cluster2.getParentCollection().getCollectionID());
     	particles = cluster2.getParticleIDs();
     	assertEquals(4, particles.get(0).intValue());
+    	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
+    }
+
+    /**
+     * Tests to see what happens when we use a different seed to generate
+     * initial centroids.
+     * @throws Exception
+     */
+    public void testKMeansPPWithRandomSeed() throws Exception {
+    	ClusterK.setRandomSeed(10);
+    	setupStandardKmeans(ClusterK.KMEANS_PLUS_PLUS_CENTROIDS);
+    	int collectionID = kmeans.cluster(false);
+    	
+    	assertEquals(7, collectionID);
+    	
+    	Collection cluster1 = db.getCollection(8);
+    	Collection cluster2 = db.getCollection(9);
+    	Collection clusterCenters = db.getCollection(10);
+
+    	assertTrue(cluster1.containsData());
+    	assertEquals(7, cluster1.getParentCollection().getCollectionID());
+    	ArrayList<Integer> particles = cluster1.getParticleIDs();
+       	assertEquals(2, particles.get(0).intValue());
+    	assertEquals(3, particles.get(1).intValue());
+    	assertTrue(cluster1.getSubCollectionIDs().isEmpty());
+    	
+    	assertTrue(cluster2.containsData());
+    	assertEquals(7, cluster2.getParentCollection().getCollectionID());
+    	particles = cluster2.getParticleIDs();
+    	assertEquals(4, particles.get(0).intValue());
+    	assertEquals(5, particles.get(1).intValue());
     	assertTrue(cluster2.getSubCollectionIDs().isEmpty());
     }
 

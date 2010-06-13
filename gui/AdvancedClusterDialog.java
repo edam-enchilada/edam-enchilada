@@ -76,10 +76,12 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 	private JTextField powerField;
 	private JTextField smallestNormalizedPeakField;
 	
+	private JTextField randomSeedField;
+	
 	public AdvancedClusterDialog(JDialog frame) {
 		super(frame,"Advanced Cluster Options", true);
 		parent = frame;
-		setSize(350,190);
+		setSize(350,240);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
 		JLabel kHeader = new JLabel("K-Cluster:");
@@ -112,6 +114,11 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		smallestNormalizedPeakField = new JTextField(initialSmallestPeak, 5);
 		p2.add(smallestPeakLabel);
 		p2.add(smallestNormalizedPeakField);
+		JPanel p3 = new JPanel();
+		JLabel randomSeedLabel = new JLabel("Integer seed number:");
+		randomSeedField = new JTextField(Integer.toString(ClusterK.DEFAULT_RANDOM), 20);
+		p3.add(randomSeedLabel);
+		p3.add(randomSeedField);
 		
 		/*Add the buttons to the bottom of the dialog*/
 		JPanel buttons = new JPanel();
@@ -129,6 +136,7 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 		add(k);
 		add(preProcess);
 		add(p);
+		add(p3);
 		add(p2);
 		add(buttons);
 		setLayout(new FlowLayout());
@@ -149,6 +157,8 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 			Cluster.setPower(Double.parseDouble(text));
 			text = smallestNormalizedPeakField.getText();
 			Cluster.setSmallestNormalizedPeak(Float.parseFloat(text));
+			text = randomSeedField.getText();
+			ClusterK.setRandomSeed(Integer.parseInt(text));
 			} catch (Exception exception) {
 				JOptionPane.showMessageDialog(parent,
 						"Error with parameters.\n" +
@@ -168,6 +178,7 @@ public class AdvancedClusterDialog extends JDialog implements ActionListener {
 			errorField.setText("0.01");
 			numSamplesField.setText("10");
 			powerField.setText("0.5");
+			randomSeedField.setText(Integer.toString(ClusterK.DEFAULT_RANDOM));
 		}
 	}
 }

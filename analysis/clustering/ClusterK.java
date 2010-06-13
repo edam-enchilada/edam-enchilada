@@ -81,8 +81,7 @@ public abstract class ClusterK extends Cluster {
 	public static final int FARTHEST_DIST_CENTROIDS = 2;
 	public static final int KMEANS_PLUS_PLUS_CENTROIDS = 3;
 
-	private int randomNumber = DEFAULT_RANDOM;
-	private static final int DEFAULT_RANDOM = 90125;
+	public static final int DEFAULT_RANDOM = 90125;
 	/* Declared Class Variables */
 	/**
 	 * sets how we want to pick initial centroids
@@ -98,6 +97,7 @@ public abstract class ClusterK extends Cluster {
 
 	private static float error = 0.01f;
 	private static int numSamples = 50;
+	private static int randomNumber = DEFAULT_RANDOM;
 	protected NonZeroCursor curs;
 	private int returnThis;
 	private JFrame parentContainer;
@@ -121,7 +121,6 @@ public abstract class ClusterK extends Cluster {
 	 * @param k - number of centroids desired
 	 * @param name - collection name
 	 * @param comment - comment to insert
-	 * @param initialCentroids - how we want to pick initial centroids.
 	 * 
 	 */
 	public ClusterK(int cID, InfoWarehouse database, int k, 
@@ -845,6 +844,15 @@ public abstract class ClusterK extends Cluster {
 	 */
 	public void setCreateCentroids(boolean create) {
 		createCentroids = create;
+	}
+	
+	/**
+	 * Sets the seed for the random number generator so we can generate 
+	 * different initial centroids
+	 * @param randomSeed
+	 */
+	public static void setRandomSeed(int randomSeed) {
+		randomNumber = randomSeed;
 	}
 	
 	/**
