@@ -45,6 +45,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,12 +53,15 @@ import java.util.Iterator;
 
 import analysis.BinnedPeak;
 import analysis.BinnedPeakList;
+import analysis.DistanceMetric;
 
 import collection.Collection;
 
 import ATOFMS.ParticleInfo;
 import database.CollectionCursor;
 import database.InfoWarehouse;
+import database.NonZeroCursor;
+import database.Database.BPLOnlyCursor;
 import errorframework.DisplayException;
 import errorframework.ErrorLogger;
 import gui.ExportCSVDialog;
@@ -291,7 +295,7 @@ public class CSVDataSetExporter {
 			int fileIndex = 0;
 			for (int collectionID : collectionIDs) {
 				Collection collection = db.getCollection(collectionID);
-				particleList.add(new AverageParticleInfo(collection, db.getAveragePeakListForCollection(collection)));
+				particleList.add(new AverageParticleInfo(collection, getNormalizedAverageBPL(collection)));
 				if (particleList.size() == 127)
 				{
 					writeOutParticlesToFile(particleList, fileName, fileIndex++, maxMZValue);
@@ -311,7 +315,29 @@ public class CSVDataSetExporter {
 		return true;
 	}
 
-
+	private BinnedPeakList getNormalizedAverageBPL(Collection collection) {
+		BinnedPeakList returnList = new BinnedPeakList();
+		int particleCount = 0;
+		try {
+			NonZeroCursor curs = new NonZeroCursor(db.getBPLOnlyCursor(collection));
+			while (curs.next()) {
+				particleCount++;
+				BinnedPeakList peakList = curs.getCurrent().getBinnedList();
+				peakList.normalize(DistanceMetric.EUCLIDEAN_SQUARED);
+				for (BinnedPeak peak : peakList) {
+					returnList.add(peak);
+				}
+			}
+		}
+		catch (SQLException sqle) {
+			return new BinnedPeakList();
+		}
+		if (particleCount > 0) {
+			returnList.divideAreasBy(particleCount);
+		}
+		return returnList;
+	}
+	
 	class AverageParticleInfo extends ParticleInfo {
 		Collection collection;
 		

@@ -182,7 +182,7 @@ public class CSVDataSetExporterTest extends TestCase {
 		assertEquals("Collection ID: 2,,Collection ID: 3,,", reader.readLine());
 		assertEquals("Parent Collection ID: 0,,Parent Collection ID: 2,,", reader.readLine());
 		assertEquals("Negative Spectrum,,Negative Spectrum,,", reader.readLine());
-		assertEquals("-30,15.00,-30,15.00,", reader.readLine());
+		assertEquals("-30,0.60,-30,0.63,", reader.readLine());
 		assertEquals("-29,0.00,-29,0.00,", reader.readLine());
 		for (int i = 0; i < 28; i++)
 			reader.readLine();
@@ -195,7 +195,6 @@ public class CSVDataSetExporterTest extends TestCase {
 			reader.readLine();
 		assertEquals(null, reader.readLine());
 	}
-	
 
 	public void tearDown()
 	{
