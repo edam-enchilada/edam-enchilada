@@ -10,37 +10,32 @@ import collection.Collection;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
-import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import chartlib.*;
 import database.InfoWarehouse;
-import edu.uci.ics.jung.algorithms.layout.BalloonLayout;
-import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
-import edu.uci.ics.jung.algorithms.layout.TreeLayout;
 import edu.uci.ics.jung.graph.Forest;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.Tree;
-import edu.uci.ics.jung.visualization.BasicVisualizationServer;
-import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.Layer;
+import edu.uci.ics.jung.visualization.VisualizationServer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.GraphMouseListener;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
-import edu.uci.ics.jung.visualization.layout.LayoutTransition;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
-import edu.uci.ics.jung.visualization.util.Animator;
 
 /**
  * A window which contains a tree view of a hierarchy.
@@ -60,12 +55,16 @@ public class TreeViewWindow extends JFrame {
 	
 	private GraphBuilder builder;
 	
-    /**
+	private Tree<Collection, String> tree;
+	
+	/**
      * the visual component and renderer for the graph
      */
     VisualizationViewer<Collection, String> vv;
 
-    Layout<Collection, String> layout;
+    VisualizationServer.Paintable rings;
+    
+    RadialTreeLayout<Collection, String> layout;
 
     TreeCollapser collapser;
 
@@ -77,12 +76,12 @@ public class TreeViewWindow extends JFrame {
 		setLayout(new BorderLayout());
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-		this.add(buttonPanel, BorderLayout.EAST);
+		this.add(buttonPanel, BorderLayout.SOUTH);
 		
 		rootCollection = db.getCollection(collID);
 		builder = new GraphBuilder(db, rootCollection);
 //		Tree<Collection, String> tree = builder.getFullGraph();
-		Tree<Collection, String> tree = builder.getSubGraph(6);
+		tree = builder.getSubGraph(6);
 		
 //		Layout<Collection, String> layout = new TreeLayout<Collection, String>(tree, 25, 25);
 //		Layout<Collection, String> layout = new CircleLayout<Collection, String>(tree);
@@ -105,15 +104,17 @@ public class TreeViewWindow extends JFrame {
 
         vv =  new VisualizationViewer<Collection, String>(layout, new Dimension(600,600));
         vv.setBackground(Color.white);
+        vv.addGraphMouseListener(new TestGraphMouseListener<Collection>());
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
 //        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeFunction());
         // add a listener for ToolTips
         vv.setVertexToolTipTransformer(new CollectionLabeller());
 
-        final GraphZoomScrollPane treePanel = new GraphZoomScrollPane(vv);
+        rings = new Rings();
+		vv.addPreRenderPaintable(rings);
 
-        this.add(treePanel, BorderLayout.CENTER);
+        this.add(vv, BorderLayout.CENTER);
 
         final DefaultModalGraphMouse<Collection, String> graphMouse = new DefaultModalGraphMouse<Collection, String>();
 
@@ -227,8 +228,7 @@ public class TreeViewWindow extends JFrame {
         controls.add(reCenter);
         buttonPanel.add(controls, BorderLayout.SOUTH);
 
-		
-		treePanel.add(vv);
+		this.add(vv, BorderLayout.CENTER);
 			
 		buttonPanel.add(Box.createHorizontalStrut(150));
 		
@@ -236,13 +236,6 @@ public class TreeViewWindow extends JFrame {
 		validate();
 		pack();
 	}
-
-    private void setLtoR(VisualizationViewer<Collection, String> vv) {
-    	Layout<Collection, String> layout = vv.getModel().getGraphLayout();
-    	Dimension d = layout.getSize();
-    	Point2D center = new Point2D.Double(d.width/2, d.height/2);
-    	vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).rotate(-Math.PI/2, center);
-    }
 
     private boolean isBig(Collection coll) {
     	int rootSize = this.rootCollection.getCollectionSize();
@@ -307,4 +300,60 @@ public class TreeViewWindow extends JFrame {
             return v.toString();
         }
     }
+    
+    class Rings implements VisualizationServer.Paintable {
+    	
+    	Set<Double> depths;
+    	
+    	public Rings() {
+    		depths = getDepths();
+    	}
+    	
+    	private Set<Double> getDepths() {
+    		Set<Double> depths = new HashSet<Double>();
+    		Map<Collection,PolarPoint> polarLocations = layout.getPolarLocations();
+    		for(Collection v : tree.getVertices()) {
+    			PolarPoint pp = polarLocations.get(v);
+    			depths.add(pp.getRadius());
+    		}
+    		return depths;
+    	}
+
+		public void paint(Graphics g) {
+			g.setColor(Color.lightGray);
+		
+			Graphics2D g2d = (Graphics2D)g;
+			Point2D center = layout.getCenter();
+
+			Ellipse2D ellipse = new Ellipse2D.Double();
+			for(double d : depths) {
+				ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, 
+						center.getX()+d, center.getY()+d);
+				Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
+				g2d.draw(shape);
+			}
+		}
+
+		public boolean useTransform() {
+			return true;
+		}
+    }
+
+    /**
+     * A nested class to demo the GraphMouseListener finding the
+     * right vertices after zoom/pan
+     */
+    static class TestGraphMouseListener<V> implements GraphMouseListener<V> {
+        
+    		public void graphClicked(V v, MouseEvent me) {
+    		    System.err.println("Vertex "+v+" was clicked at ("+me.getX()+","+me.getY()+")");
+    		}
+    		public void graphPressed(V v, MouseEvent me) {
+    		    System.err.println("Vertex "+v+" was pressed at ("+me.getX()+","+me.getY()+")");
+    		}
+    		public void graphReleased(V v, MouseEvent me) {
+    		    System.err.println("Vertex "+v+" was released at ("+me.getX()+","+me.getY()+")");
+    		}
+    }
+
 }
