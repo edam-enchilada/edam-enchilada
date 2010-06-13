@@ -66,6 +66,7 @@ public class Collection implements Comparable{
 	private Set<Integer> cachedCollectionIDSubTree = null;
 	private Collection[] cachedSubCollections;
 	private int cachedContainsData = -1;
+	private int cachedSize = -1;
 	
 	public Collection(String type, int cID, InfoWarehouse database)
 	{
@@ -278,5 +279,12 @@ public class Collection implements Comparable{
 	
 	public void updateParent(Collection p) {
 		parentCollection = p;
+	}
+	
+	public int getCollectionSize() {
+		if (cachedSize == -1)  {
+			cachedSize = db.getCollectionSize(collectionID);
+		}
+		return cachedSize;
 	}
 }

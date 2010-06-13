@@ -160,6 +160,7 @@ public class MainFrame extends JFrame implements ActionListener
 	private JScrollPane particleTablePane;
 	private JScrollPane collInfoPane;
 	private JMenuItem visualizeItem;
+	private JMenuItem visualizeHierarchyItem;
 	private JMenuItem outputItem;
 	private JMenuItem aboutItem;
 	
@@ -770,6 +771,19 @@ public class MainFrame extends JFrame implements ActionListener
 						" work on ATOFMS collections for now.");
 			}
 		}
+		else if (source == visualizeHierarchyItem) {
+			if (getSelectedCollection().getCollectionID() == 0)
+				JOptionPane.showMessageDialog(this, "Please select a collection to visualize.", 
+						"No collection selected.", JOptionPane.WARNING_MESSAGE);
+			else
+			try {
+				(new chartlib.tree.TreeViewWindow(db,
+					getSelectedCollection().getCollectionID())).setVisible(true);
+			} catch (IllegalArgumentException exce) {
+				JOptionPane.showMessageDialog(this, "Tree View of Hierarchy only" +
+						" work on ATOFMS collections for now.");
+			}
+		}
 		else if (source == detectPlumesItem){
 			if (synchronizedPane.getSelectedCollection() == null)
 				JOptionPane.showMessageDialog(this, "Please select a collection which to detect plumes.", 
@@ -1234,6 +1248,8 @@ public class MainFrame extends JFrame implements ActionListener
 		compressItem.addActionListener(this);
 		visualizeItem = new JMenuItem("Visualize. . .", KeyEvent.VK_V);
 		visualizeItem.addActionListener(this);
+		visualizeHierarchyItem = new JMenuItem("Visualize Hierarchy. . .", KeyEvent.VK_H);
+		visualizeHierarchyItem.addActionListener(this);
 		detectPlumesItem = new JMenuItem("Detect Plumes. . .", KeyEvent.VK_W);
 		detectPlumesItem.addActionListener(this);
 		
@@ -1244,6 +1260,7 @@ public class MainFrame extends JFrame implements ActionListener
 		analysisMenu.add(queryItem);
 //		analysisMenu.add(compressItem);
 		analysisMenu.add(visualizeItem);
+		analysisMenu.add(visualizeHierarchyItem);
 		//analysisMenu.add(detectPlumesItem);
 		
 		//Add a collection menu to the menu bar.
