@@ -261,7 +261,7 @@ public class Collection implements Comparable{
 	
 	public String toString()
 	{
-		return getName().trim();
+		return getName() == null ? "" : getName().trim();
 	}
 	
 	public ArrayList<Integer> getParticleIDs()
