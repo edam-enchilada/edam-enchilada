@@ -26,6 +26,7 @@ public class HistogramsWindow extends JFrame {
 	private HistogramsPlot plot;
 	ZoomableChart zPlot;
 	private JSlider brightnessSlider;
+	private int collID;
 	
 	// default minimum and maximum of the zoom window
 	private int defMin = 0, defMax = 300;
@@ -36,6 +37,8 @@ public class HistogramsWindow extends JFrame {
 	
 	public HistogramsWindow(int collID) {
 		super("Spectrum Histogram");
+		
+		this.collID = collID;
 		
 		String datatype = HistogramsPlot.getDB().getCollection(collID)
 								.getDatatype();
@@ -54,21 +57,7 @@ public class HistogramsWindow extends JFrame {
 		 * This is really drawn-out, I'm sorry.
 		 */
 		try {
-			plot = new HistogramsPlot(collID);
-			plot.setTitle("Spectrum histogram for collection #" + collID);
-			zPlot = new ZoomableChart(plot);
-
-			zPlot.setCScrollMin(defMin);
-			zPlot.setCScrollMax(defMax);
-			
-			plotPanel.add(zPlot);
-			
-			// this is a little silly: zoomablechart registers itself as a listener
-			// of the plot, but we only want it sometimes, so we unregister it
-			// and register it on the MouseRedirector, below.
-			plot.removeMouseListener(zPlot);
-			plot.removeMouseMotionListener(zPlot);
-			
+			setUpPlot();
 			// The datamousejkjkdjfkjdkf listens to the plot.  the redirector
 			// listens to the datamouseuijdfij.  the brush manager and the
 			// zoomablechart both listen to the redirector, which, given
@@ -158,5 +147,26 @@ public class HistogramsWindow extends JFrame {
 		grr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		grr.setVisible(true);
+	}
+
+	/**
+	 * Sets up the HistogramsPlot object and puts it into a ZoomableChart
+	 * @throws SQLException
+	 */
+	protected void setUpPlot() throws SQLException {
+		plot = new HistogramsPlot(collID);
+		plot.setTitle("Spectrum histogram for collection #" + collID);
+		zPlot = new ZoomableChart(plot);
+
+		zPlot.setCScrollMin(defMin);
+		zPlot.setCScrollMax(defMax);
+		
+		plotPanel.add(zPlot);
+		
+		// this is a little silly: zoomablechart registers itself as a listener
+		// of the plot, but we only want it sometimes, so we unregister it
+		// and register it on the MouseRedirector, below.
+		plot.removeMouseListener(zPlot);
+		plot.removeMouseMotionListener(zPlot);
 	}
 }
