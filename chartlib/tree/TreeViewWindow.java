@@ -1,8 +1,8 @@
 package chartlib.tree;
 
 import java.awt.*;
+
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 
 import org.apache.commons.collections15.Transformer;
 
@@ -13,13 +13,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import chartlib.*;
+import chartlib.hist.HistogramMouseDisplay;
+import chartlib.hist.HistogramsPlot;
 import database.InfoWarehouse;
-import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.graph.Forest;
@@ -68,20 +70,36 @@ public class TreeViewWindow extends JFrame {
 
     TreeCollapser collapser;
 
+	private HistogramsPlot plot;
+	ZoomableChart zPlot;
 	
-	public TreeViewWindow(InfoWarehouse db, int collID) {
+	// default minimum and maximum of the zoom window
+	private int defMin = 0, defMax = 300;
+	
+	private JPanel plotPanel;
+
+	private JPanel plotRightPanel;
+	
+	private HistogramMouseDisplay histMouseDisplay;
+
+	private JTextField collectionNameField;
+	
+	public TreeViewWindow(final InfoWarehouse db, int collID) {
 		super("Hierarchy Tree View");
 		this.db = db;
 
 		setLayout(new BorderLayout());
+		JPanel leftPanel = new JPanel();
+		leftPanel.setLayout(new BorderLayout());
+		this.add(leftPanel, BorderLayout.WEST);
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-		this.add(buttonPanel, BorderLayout.SOUTH);
+		leftPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
 		rootCollection = db.getCollection(collID);
 		builder = new GraphBuilder(db, rootCollection);
 //		Tree<Collection, String> tree = builder.getFullGraph();
-		tree = builder.getSubGraph(6);
+		tree = builder.getSubGraph(8);
 		
 //		Layout<Collection, String> layout = new TreeLayout<Collection, String>(tree, 25, 25);
 //		Layout<Collection, String> layout = new CircleLayout<Collection, String>(tree);
@@ -110,11 +128,11 @@ public class TreeViewWindow extends JFrame {
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeFunction());
         // add a listener for ToolTips
         vv.setVertexToolTipTransformer(new CollectionLabeller());
-
+        vv.getRenderContext().setVertexLabelTransformer(new ClusterVertexLabelFunction());
         rings = new Rings();
 		vv.addPreRenderPaintable(rings);
 
-        this.add(vv, BorderLayout.CENTER);
+        leftPanel.add(vv, BorderLayout.NORTH);
 
         final DefaultModalGraphMouse<Collection, String> graphMouse = new DefaultModalGraphMouse<Collection, String>();
 
@@ -186,7 +204,8 @@ public class TreeViewWindow extends JFrame {
                 	Object newRootObj = picked.iterator().next();
                 	if (newRootObj instanceof Collection) {
                     	newRoot = (Collection) newRootObj;
-                		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(builder.getSubGraph(newRoot, 5));
+                		tree = builder.getSubGraph(newRoot, 8);
+                		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(tree);
                 		newLayout.setSize(new Dimension(600,600));
 
                 		vv.setGraphLayout(newLayout);
@@ -197,7 +216,8 @@ public class TreeViewWindow extends JFrame {
                 	else if (newRootObj instanceof Tree)  {
                 		Tree littleTree = (Tree) newRootObj;
                 		newRoot = (Collection) littleTree.getRoot();
-                		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(builder.getSubGraph(newRoot, 5));
+                		tree = builder.getSubGraph(newRoot, 8);
+                		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(tree);
                 		newLayout.setSize(new Dimension(600,600));
 
                 		vv.setGraphLayout(newLayout);
@@ -212,7 +232,8 @@ public class TreeViewWindow extends JFrame {
         reCenter.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-        		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(builder.getSubGraph(rootCollection, 5));
+            	tree = builder.getSubGraph(rootCollection, 8);
+        		RadialTreeLayout<Collection, String> newLayout = new RadialTreeLayout<Collection, String>(tree);
         		newLayout.setSize(new Dimension(600,600));
 
         		vv.setGraphLayout(newLayout);
@@ -228,24 +249,71 @@ public class TreeViewWindow extends JFrame {
         controls.add(reCenter);
         buttonPanel.add(controls, BorderLayout.SOUTH);
 
-		this.add(vv, BorderLayout.CENTER);
-			
 		buttonPanel.add(Box.createHorizontalStrut(150));
+
+		plotPanel = new JPanel();
+		plotPanel.setLayout(new BorderLayout());
+		plotPanel.setSize(600, 600);
+		this.add(plotPanel, BorderLayout.EAST);
 		
-//		setPreferredSize(new Dimension(700, 700));
+		try {
+			plot = new HistogramsPlot(collID);
+			plot.setTitle("Spectrum histogram for collection #" + collID);
+			zPlot = new ZoomableChart(plot);
+
+			zPlot.setCScrollMin(defMin);
+			zPlot.setCScrollMax(defMax);
+			
+			plotPanel.add(zPlot, BorderLayout.CENTER);
+		}
+		catch (SQLException sqe) {
+			plotPanel.add(new JTextArea(sqe.toString()));
+		}
+
+		plotRightPanel = new JPanel();
+		plotRightPanel.setLayout(new BoxLayout(plotRightPanel, BoxLayout.Y_AXIS));
+		plotPanel.add(plotRightPanel, BorderLayout.EAST);
+		JPanel plotButtonPanel = new JPanel();
+		plotRightPanel.add(plotButtonPanel);
+		JButton zdef, zout;
+		zdef = new JButton("Zoom Default");
+		zdef.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				zPlot.zoomOut();
+			}
+		});
+		plotButtonPanel.add(zdef);
+		
+		zout = new JButton("Zoom out");
+		zout.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				zPlot.zoomOutHalf();
+			}
+		});
+		plotButtonPanel.add(zout);
+
+		collectionNameField = new JTextField();
+		plotRightPanel.add(collectionNameField);
+		
+		JButton saveNameButton = new JButton("Save Particle Label");
+		saveNameButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+                Set picked =new HashSet(vv.getPickedVertexState().getPicked());
+                if(picked.size() == 1) {
+                	Collection coll = (Collection) picked.iterator().next();
+                	coll.setName(collectionNameField.getText());
+                	db.renameCollection(coll, collectionNameField.getText());
+                }
+			}
+		});
+		plotRightPanel.add(saveNameButton);
+		
+		histMouseDisplay = new HistogramMouseDisplay(plot);
+		plotRightPanel.add(histMouseDisplay);
+
 		validate();
 		pack();
 	}
-
-    private boolean isBig(Collection coll) {
-    	int rootSize = this.rootCollection.getCollectionSize();
-    	return rootSize / 10 <= coll.getCollectionSize();
-    }
-
-    private boolean isMedium(Collection coll) {
-    	int rootSize = this.rootCollection.getCollectionSize();
-    	return rootSize / 100 <= coll.getCollectionSize() && rootSize / 10 > coll.getCollectionSize();
-    }
 
     class ClusterVertexShapeFunction<V> extends EllipseVertexShapeTransformer<V> {
         ClusterVertexShapeFunction() {
@@ -265,19 +333,39 @@ public class TreeViewWindow extends JFrame {
         }
 
         public Integer transform(V v) {
-            if(v instanceof Graph<?,?>) {
-            	return 18;
-            }
+            return 6;
+        }
+    }
+
+    class ClusterVertexLabelFunction<V> implements Transformer<V, String> {
+    	ClusterVertexLabelFunction() {
+
+    	}
+        
+        public String transform(V v) {
         	if (v instanceof Collection) {
         		Collection coll = (Collection) v;
-        		if (isBig(coll)) {
-        			return 18;
+        		try {
+        			Integer.parseInt(coll.getName());
+        			return "";
         		}
-        		if (isMedium(coll)) {
-        			return 15;
+        		catch (NumberFormatException nfe) {
+        			return coll.getName();
         		}
         	}
-            return 12;
+        	else if (v instanceof Tree)  {
+        		Tree littleTree = (Tree) v;
+        		Collection coll = (Collection) littleTree.getRoot();
+        		try {
+        			Integer.parseInt(coll.getName());
+        			return "";
+        		}
+        		catch (NumberFormatException nfe) {
+        			return coll.getName();
+        		}
+        	}
+        	
+        	return v.toString();
         }
     }
 
@@ -310,16 +398,18 @@ public class TreeViewWindow extends JFrame {
     	}
     	
     	private Set<Double> getDepths() {
-    		Set<Double> depths = new HashSet<Double>();
+    		Set<Double> depths;
+			depths = new HashSet<Double>();
     		Map<Collection,PolarPoint> polarLocations = layout.getPolarLocations();
-    		for(Collection v : tree.getVertices()) {
-    			PolarPoint pp = polarLocations.get(v);
-    			depths.add(pp.getRadius());
+    		for(Object o : tree.getVertices()) {
+    			PolarPoint pp = polarLocations.get(o);
+        			depths.add(pp.getRadius());
     		}
     		return depths;
     	}
 
 		public void paint(Graphics g) {
+			depths = getDepths();
 			g.setColor(Color.lightGray);
 		
 			Graphics2D g2d = (Graphics2D)g;
@@ -343,14 +433,64 @@ public class TreeViewWindow extends JFrame {
      * A nested class to demo the GraphMouseListener finding the
      * right vertices after zoom/pan
      */
-    static class TestGraphMouseListener<V> implements GraphMouseListener<V> {
+    class TestGraphMouseListener<V> implements GraphMouseListener<V> {
         
     		public void graphClicked(V v, MouseEvent me) {
     		    System.err.println("Vertex "+v+" was clicked at ("+me.getX()+","+me.getY()+")");
     		}
     		public void graphPressed(V v, MouseEvent me) {
+                Collection selectedColl;
+    			if (v instanceof Collection) {
+    				selectedColl = (Collection) v;
+    				collectionNameField.setText(selectedColl.getName());
+            		plotPanel.remove(zPlot);
+            		plotRightPanel.remove(histMouseDisplay);
+            		try {
+	        			plot = new HistogramsPlot(selectedColl.getCollectionID());
+	        			plot.setTitle("Spectrum histogram for collection #" + selectedColl.getCollectionID());
+	        			zPlot = new ZoomableChart(plot);
+
+	        			zPlot.setCScrollMin(defMin);
+	        			zPlot.setCScrollMax(defMax);
+	        			
+	        			plotPanel.add(zPlot, BorderLayout.CENTER);
+	        			histMouseDisplay = new HistogramMouseDisplay(plot);
+	        			plotRightPanel.add(histMouseDisplay);
+	        			plotPanel.validate();
+	        			plotPanel.repaint();
+            		}
+                	catch (SQLException sqe) {
+            			plotPanel.add(new JTextArea(sqe.toString()));
+                	}
+    			}
+    			else if (v instanceof Tree) {
+            		Tree littleTree = (Tree) v;
+					selectedColl = (Collection) littleTree.getRoot();
+    				collectionNameField.setText(selectedColl.getName());
+	        		plotPanel.remove(zPlot);
+            		plotRightPanel.remove(histMouseDisplay);
+	        		try {
+	        			
+	        			plot = new HistogramsPlot(selectedColl.getCollectionID());
+	        			plot.setTitle("Spectrum histogram for collection #" + selectedColl.getCollectionID());
+	        			zPlot = new ZoomableChart(plot);
+	
+	        			zPlot.setCScrollMin(defMin);
+	        			zPlot.setCScrollMax(defMax);
+	        			
+	        			plotPanel.add(zPlot);
+	        			histMouseDisplay = new HistogramMouseDisplay(plot);
+	        			plotRightPanel.add(histMouseDisplay);
+	        			plotPanel.validate();
+	        			plotPanel.repaint();
+	        		}
+	            	catch (SQLException sqe) {
+	        			plotPanel.add(new JTextArea(sqe.toString()));
+	            	}
+    			}
     		    System.err.println("Vertex "+v+" was pressed at ("+me.getX()+","+me.getY()+")");
     		}
+
     		public void graphReleased(V v, MouseEvent me) {
     		    System.err.println("Vertex "+v+" was released at ("+me.getX()+","+me.getY()+")");
     		}
