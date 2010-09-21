@@ -13,7 +13,7 @@ import java.util.Map.Entry;
  * Does what it says.
  *  
  * @author smitht
- * @auther jtbigwoo
+ * @author jtbigwoo
  */
 
 public class TSBulkInserterTest extends TestCase {
