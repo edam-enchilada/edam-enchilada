@@ -37,7 +37,6 @@ import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
-import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
 
 /**
  * A window which contains a tree view of a hierarchy.
@@ -67,8 +66,6 @@ public class TreeViewWindow extends JFrame {
     VisualizationServer.Paintable rings;
     
     RadialTreeLayout<Collection, String> layout;
-
-    TreeCollapser collapser;
 
 	private HistogramsPlot plot;
 	ZoomableChart zPlot;
@@ -118,11 +115,9 @@ public class TreeViewWindow extends JFrame {
 
 //      layout = new TreeLayout<Collection, String>(tree, 15, 15);
 
-		collapser = new TreeCollapser();
-
         vv =  new VisualizationViewer<Collection, String>(layout, new Dimension(600,600));
         vv.setBackground(Color.white);
-        vv.addGraphMouseListener(new TestGraphMouseListener<Collection>());
+        vv.addGraphMouseListener(new OurGraphMouseListener<Collection>());
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
 //        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeFunction());
@@ -154,45 +149,6 @@ public class TreeViewWindow extends JFrame {
                 scaler.scale(vv, 1/1.1f, vv.getCenter());
             }
         });
-
-        JButton collapse = new JButton("Collapse");
-        collapse.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                Set picked =new HashSet(vv.getPickedVertexState().getPicked());
-                if(picked.size() == 1) {
-                	Object root = picked.iterator().next();
-                    Forest inGraph = (Forest)layout.getGraph();
-
-                    try {
-						collapser.collapse(vv.getGraphLayout(), inGraph, root);
-					} catch (InstantiationException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (IllegalAccessException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-
-                    vv.getPickedVertexState().clear();
-                    vv.repaint();
-                }
-            }});
-
-        JButton expand = new JButton("Expand");
-        expand.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                Set picked = vv.getPickedVertexState().getPicked();
-                for(Object v : picked) {
-                    if(v instanceof Forest) {
-                        Forest inGraph = (Forest)layout.getGraph();
-            			collapser.expand(inGraph, (Forest)v);
-                    }
-                    vv.getPickedVertexState().clear();
-                   vv.repaint();
-                }
-            }});
 
         JButton moveCenter = new JButton("Recenter Graph on Particle");
         moveCenter.addActionListener(new ActionListener() {
@@ -243,15 +199,33 @@ public class TreeViewWindow extends JFrame {
             }});
 
         JPanel controls = new JPanel();
-        controls.add(collapse);
-        controls.add(expand);
         controls.add(moveCenter);
         controls.add(reCenter);
-        buttonPanel.add(controls, BorderLayout.SOUTH);
+        buttonPanel.add(controls);
 
-		buttonPanel.add(Box.createHorizontalStrut(150));
+		JLabel collectionNameLabel = new JLabel("Collection Name: ");
+        collectionNameField = new JTextField(20);
+        collectionNameField.setText(rootCollection.getName());
+		
+		JButton saveNameButton = new JButton("Save Collection Name");
+		saveNameButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+                Set picked =new HashSet(vv.getPickedVertexState().getPicked());
+                if(picked.size() == 1) {
+                	Collection coll = (Collection) picked.iterator().next();
+                	coll.setName(collectionNameField.getText());
+                	db.renameCollection(coll, collectionNameField.getText());
+                }
+			}
+		});
+		
+		JPanel collectionNamePanel = new JPanel();
+		collectionNamePanel.add(collectionNameLabel);
+		collectionNamePanel.add(collectionNameField);
+		collectionNamePanel.add(saveNameButton);
+		buttonPanel.add(collectionNamePanel);
 
-		plotPanel = new JPanel();
+        plotPanel = new JPanel();
 		plotPanel.setLayout(new BorderLayout());
 		plotPanel.setSize(600, 600);
 		this.add(plotPanel, BorderLayout.EAST);
@@ -272,11 +246,12 @@ public class TreeViewWindow extends JFrame {
 
 		plotRightPanel = new JPanel();
 		plotRightPanel.setLayout(new BoxLayout(plotRightPanel, BoxLayout.Y_AXIS));
-		plotPanel.add(plotRightPanel, BorderLayout.EAST);
+		plotPanel.add(plotRightPanel, BorderLayout.SOUTH);
 		JPanel plotButtonPanel = new JPanel();
 		plotRightPanel.add(plotButtonPanel);
+		
 		JButton zdef, zout;
-		zdef = new JButton("Zoom Default");
+		zdef = new JButton("Reset Spectrum Zoom");
 		zdef.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				zPlot.zoomOut();
@@ -284,7 +259,7 @@ public class TreeViewWindow extends JFrame {
 		});
 		plotButtonPanel.add(zdef);
 		
-		zout = new JButton("Zoom out");
+		zout = new JButton("Zoom Spectrum Out");
 		zout.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				zPlot.zoomOutHalf();
@@ -292,23 +267,7 @@ public class TreeViewWindow extends JFrame {
 		});
 		plotButtonPanel.add(zout);
 
-		collectionNameField = new JTextField();
-		plotRightPanel.add(collectionNameField);
-		
-		JButton saveNameButton = new JButton("Save Particle Label");
-		saveNameButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-                Set picked =new HashSet(vv.getPickedVertexState().getPicked());
-                if(picked.size() == 1) {
-                	Collection coll = (Collection) picked.iterator().next();
-                	coll.setName(collectionNameField.getText());
-                	db.renameCollection(coll, collectionNameField.getText());
-                }
-			}
-		});
-		plotRightPanel.add(saveNameButton);
-		
-		histMouseDisplay = new HistogramMouseDisplay(plot);
+		histMouseDisplay = new HistogramMouseDisplay(plot, false);
 		plotRightPanel.add(histMouseDisplay);
 
 		validate();
@@ -433,7 +392,7 @@ public class TreeViewWindow extends JFrame {
      * A nested class to demo the GraphMouseListener finding the
      * right vertices after zoom/pan
      */
-    class TestGraphMouseListener<V> implements GraphMouseListener<V> {
+    class OurGraphMouseListener<V> implements GraphMouseListener<V> {
         
     		public void graphClicked(V v, MouseEvent me) {
     		    System.err.println("Vertex "+v+" was clicked at ("+me.getX()+","+me.getY()+")");
@@ -454,7 +413,7 @@ public class TreeViewWindow extends JFrame {
 	        			zPlot.setCScrollMax(defMax);
 	        			
 	        			plotPanel.add(zPlot, BorderLayout.CENTER);
-	        			histMouseDisplay = new HistogramMouseDisplay(plot);
+	        			histMouseDisplay = new HistogramMouseDisplay(plot, false);
 	        			plotRightPanel.add(histMouseDisplay);
 	        			plotPanel.validate();
 	        			plotPanel.repaint();
@@ -479,7 +438,7 @@ public class TreeViewWindow extends JFrame {
 	        			zPlot.setCScrollMax(defMax);
 	        			
 	        			plotPanel.add(zPlot);
-	        			histMouseDisplay = new HistogramMouseDisplay(plot);
+	        			histMouseDisplay = new HistogramMouseDisplay(plot, false);
 	        			plotRightPanel.add(histMouseDisplay);
 	        			plotPanel.validate();
 	        			plotPanel.repaint();
