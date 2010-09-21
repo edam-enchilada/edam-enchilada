@@ -23,12 +23,20 @@ public class HistogramMouseDisplay extends JPanel
 	private JLabel xLabel, xValue, yLabel, yValue, zLabel, zValue;
 
 	public HistogramMouseDisplay(HistogramsPlot chart) {
+		this(chart, true);
+	}
+
+	public HistogramMouseDisplay(HistogramsPlot chart, boolean verticalAlign) {
 		super();
 		this.chart = chart;
 		chart.addMouseMotionListener(this);
 		
-		this.setLayout(new GridLayout(3,1));
-		
+		if (verticalAlign) {
+			this.setLayout(new GridLayout(3,1));
+		}
+		else {
+			this.setLayout(new GridLayout(1,3));
+		}
 		xLabel = new JLabel("m/z:");
 		xValue = new JLabel("        ");
 		
