@@ -241,14 +241,19 @@ SectionEnd
 !ifndef WITH_EXPRESS
 Section "-Check DB and user existence"
   ; See if the SQL Server that theoretically exists, actually does.
+  ; Try SQL 2008 first
   ExecWait '"$OSQL" -?' $0
   IfErrors 0 foundsql
-    ; we don't support running without a local installation of SQL Server yet.
-    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\SQLCMD"
-      ExecWait '"$OSQL" -?' $0
-      IfErrors 0 foundsql
-        MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005/2008 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
-        Abort "Not smart enough to find SQL Server on your system."
+    ; Try SQL 2005
+    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\SQLCMD"
+    IfErrors 0 foundsql
+      ; Try SQL 7
+      StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\80\Tools\Binn\SQLCMD"
+        ExecWait '"$OSQL" -?' $0
+        IfErrors 0 foundsql
+        ; we don't support running without a local installation of SQL Server yet.
+          MessageBox MB_OK|MB_ICONEXCLAMATION "SQL Server 2005/2008 doesn't seem to be installed on this system.  If it really is (perhaps with a different 'instance name'?), or if you want to use a remote installation of SQL Server, please contact the developers at dmusican@carleton.edu."
+          Abort "Not smart enough to find SQL Server on your system."
 
   foundsql:
   DetailPrint "Found SQL Server installation."
@@ -317,14 +322,20 @@ Section "un.Uninstall"
   MessageBox MB_OK "Since you are uninstalling Enchilada, it is likely that you should also uninstall SQL Server.  You can do this from the Add/Remove Programs dialog in the Control Panel."
 !endif
 
+  ;SQL 7
   StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\80\Tools\Binn\osql.exe"
   ExecWait '"$OSQL" -?' $0
   IfErrors 0 dropdatabase
-    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\osql.exe"
+    ;SQL 2005
+    StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\90\Tools\Binn\osql.exe"
     ExecWait '"$OSQL" -?' $0
     IfErrors 0 dropdatabase
-      DetailPrint "Can't find SQL Server, maybe you've already uninstalled it?"
-      Goto donewithuser
+      ;SQL 2008
+      StrCpy $OSQL "$PROGRAMFILES\Microsoft SQL Server\100\Tools\Binn\osql.exe"
+      ExecWait '"$OSQL" -?' $0
+      IfErrors 0 dropdatabase
+        DetailPrint "Can't find SQL Server, maybe you've already uninstalled it?"
+        Goto donewithuser
   
   dropdatabase:
   ExecWait `"$OSQL" -E -Q "DROP DATABASE SpASMSdb EXEC sp_droplogin 'SpASMS'"` $0
